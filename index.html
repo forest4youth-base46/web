@@ -2184,21 +2184,24 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 @media (max-width: 1100px) {
   .pb-host { grid-template-columns: 1fr; padding-bottom: 88px; }
 
-  /* Builder on mobile is a popup that grows OUT of the FAB (bottom-right),
-     not a bottom sheet. Fully invisible + non-interactive until .expanded. */
+  /* Builder on mobile: popup that grows OUT of the FAB. Ironclad hide
+     when not .expanded — visibility:hidden + opacity:0 + scale near 0 +
+     pointer-events:none. The visibility transition is delayed so the
+     element only becomes hittable AFTER it has finished animating in. */
   .pb-builder {
-    position: fixed;
-    bottom: 80px;            /* clears the FAB (bottom:16 + ~48 tall) */
-    left: 16px;
-    right: 16px;
-    top: auto;
+    position: fixed !important;
+    bottom: 96px !important;          /* clears the 64px circular FAB */
+    left: 16px !important;
+    right: 16px !important;
+    top: auto !important;
     max-height: 70vh;
     overflow-y: auto;
     border-radius: var(--pb-r-lg);
     transform-origin: bottom right;
     transform: scale(0.05);
     opacity: 0;
-    transition: transform 0.22s ease, opacity 0.22s ease;
+    visibility: hidden;
+    transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0.22s;
     z-index: 50;
     pointer-events: none;
     box-shadow: var(--shadow-lg);
@@ -2206,53 +2209,55 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   .pb-builder.expanded {
     transform: scale(1);
     opacity: 1;
+    visibility: visible;
+    transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0s;
     pointer-events: auto;
   }
   .pb-builder-header { cursor: pointer; }
 
-  /* FAB — visual styles. Visibility is gated by the :has() rule below
-     so it only renders while the pocketbook module is in focus mode. */
+  /* Circular FAB. Just a number on a forest-ink disc. No icon. */
   .pb-fab {
-    align-items: center;
-    gap: 8px;
     position: fixed;
     right: 16px;
     bottom: 16px;
     z-index: 60;                /* above .pb-builder (50), below run-mode (200) */
-    padding: 12px 18px 12px 14px;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
     background: var(--forest-ink);
     color: white;
-    border: none;
-    border-radius: var(--pb-r-pill);
     box-shadow: var(--shadow-lg);
-    font: 600 14px/1 'Open Sans', sans-serif;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    align-items: center;
+    justify-content: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .pb-fab.bump { animation: pbFabBump 0.32s ease; }
-  .pb-fab.open { transform: scale(0.92); opacity: 0.85; }
-  .pb-fab-icon { width: 22px; height: 22px; }
+  .pb-fab.open { transform: scale(0.92); opacity: 0.9; }
   .pb-fab-count {
-    min-width: 22px; height: 22px; padding: 0 6px;
-    border-radius: 999px;
-    background: var(--ember);
-    color: white;
-    font-size: 12px; font-weight: 700;
-    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
     transform-origin: center;
+    display: inline-block;
   }
   .pb-fab-count.bump { animation: pbFabCountBump 0.34s ease; }
 
-  /* Visibility gates — the FAB and its companion builder only exist while
-     the pocketbook module is the focused module. Run-mode overrides both. */
+  /* Visibility gates — FAB only renders while the pocketbook module is
+     the focused module. Run-mode hides both FAB and builder. */
   body:has(#mod-pocket.is-focused) .pb-fab { display: inline-flex; }
   body:has(.pb-run-mode.active) .pb-fab,
-  body:has(.pb-run-mode.active) .pb-builder { display: none; }
-  body:not(:has(#mod-pocket.is-focused)) .pb-builder.expanded {
-    transform: scale(0.05);
-    opacity: 0;
-    pointer-events: none;
+  body:has(.pb-run-mode.active) .pb-builder { display: none !important; }
+  /* Hard guard: builder cannot be expanded outside the pocketbook. */
+  body:not(:has(#mod-pocket.is-focused)) .pb-builder {
+    transform: scale(0.05) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 }
 @media (max-width: 768px) {
@@ -7251,7 +7256,8 @@ function pbRenderRunStep() {
 function pbInit() {
   if (window.__pbInited) return;
   window.__pbInited = true;
-  pbLoadSession();
+  // pbLoadSession() intentionally NOT called: count always starts at 0
+  // on page load so a returning user is never shown a stale count.
   pbRenderGroups();
   pbRenderAdaptations();
   pbRenderBuilder();
@@ -7329,17 +7335,10 @@ if (document.readyState === 'loading') {
 <!-- Mobile session-builder FAB. Direct child of <body> so no transformed
      ancestor (e.g. .screen with animation: fadeUp) creates a containing
      block that would break position:fixed in Chromium. Visibility is
-     controlled entirely by the @media (max-width: 1100px) block. -->
+     gated by body:has(#mod-pocket.is-focused) in the mobile media block. -->
 <button id="pb-fab" class="pb-fab" type="button"
         onclick="pbToggleBuilderMobile()"
         aria-label="Open session builder">
-  <svg class="pb-fab-icon" viewBox="0 0 24 24" fill="none"
-       stroke="currentColor" stroke-width="1.8"
-       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path d="M5 6h14M5 12h14M5 18h10"/>
-    <circle cx="19" cy="18" r="3"/>
-    <path d="M19 16.5v3M17.5 18h3"/>
-  </svg>
   <span class="pb-fab-count" id="pb-fab-count">0</span>
 </button>
 </body>
