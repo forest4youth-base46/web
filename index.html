@@ -2175,21 +2175,78 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   transform: translateX(-50%) translateY(0);
 }
 
+/* ─── MOBILE FAB (visible only on ≤1100px via media query below) ─── */
+.pb-fab { display: none; }
+@keyframes pbFabBump      { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes pbFabCountBump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
 /* ─── RESPONSIVE ─── */
 @media (max-width: 1100px) {
-  .pb-host { grid-template-columns: 1fr; }
+  .pb-host { grid-template-columns: 1fr; padding-bottom: 88px; }
   .pb-builder {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     top: auto;
     max-height: 60vh;
     border-radius: var(--pb-r-lg) var(--pb-r-lg) 0 0;
-    transform: translateY(calc(100% - 56px));
+    transform: translateY(100%);
     transition: transform 0.3s ease;
     z-index: 50;
   }
   .pb-builder.expanded { transform: translateY(0); }
   .pb-builder-header { cursor: pointer; }
+
+  .pb-fab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 60;                /* above .pb-builder (50), below run-mode (200) */
+    padding: 12px 18px 12px 14px;
+    background: var(--forest-ink);
+    color: white;
+    border: none;
+    border-radius: var(--pb-r-pill);
+    box-shadow: var(--shadow-lg);
+    font: 600 14px/1 'Open Sans', sans-serif;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .pb-fab.bump { animation: pbFabBump 0.32s ease; }
+  .pb-fab.open { transform: scale(0.92); opacity: 0.85; }
+  .pb-fab-icon { width: 22px; height: 22px; }
+  .pb-fab-count {
+    min-width: 22px; height: 22px; padding: 0 6px;
+    border-radius: 999px;
+    background: var(--ember);
+    color: white;
+    font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+    transform-origin: center;
+  }
+  .pb-fab-count.bump { animation: pbFabCountBump 0.34s ease; }
+  /* Hide FAB when run-mode overlay is active */
+  body:has(.pb-run-mode.active) #pb-fab { display: none; }
+}
+@media (max-width: 768px) {
+  #site-header {
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    will-change: transform;
+  }
+  #site-header.header-hidden {
+    transform: translateY(-110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
+  .lang-bar {
+    position: static;
+    margin-left: auto;
+    top: auto; right: auto;
+  }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
@@ -2216,20 +2273,17 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   </svg>
 </template>
 
-<!-- LANGUAGE TOGGLE -->
-
-<div class="lang-bar">
-  <button class="lang-btn active" onclick="setLang('en')">EN</button>
-  <button class="lang-btn" onclick="setLang('fr')">FR</button>
-  <button class="lang-btn" onclick="setLang('de')">DE</button>
-</div>
-
 <div class="container">
 
-  <header>
+  <header id="site-header">
     <div class="header-inner">
       <div class="header-text">
         <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
+      </div>
+      <div class="lang-bar">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('de')">DE</button>
       </div>
     </div>
   </header>
@@ -6849,6 +6903,25 @@ function pbRenderBuilder() {
   document.getElementById('pb-stat-count').textContent = pbSession.length;
   document.getElementById('pb-stat-time').textContent = totalMin;
 
+  // Mirror count onto the mobile FAB; bump animation when count rises.
+  const fabCountEl = document.getElementById('pb-fab-count');
+  const fabEl = document.getElementById('pb-fab');
+  if (fabCountEl && fabEl) {
+    const prev = parseInt(fabCountEl.textContent, 10) || 0;
+    fabCountEl.textContent = String(pbSession.length);
+    if (pbSession.length > prev) {
+      fabCountEl.classList.remove('bump');
+      fabEl.classList.remove('bump');
+      void fabCountEl.offsetWidth;          // reflow to restart animation
+      fabCountEl.classList.add('bump');
+      fabEl.classList.add('bump');
+      setTimeout(() => {
+        fabCountEl.classList.remove('bump');
+        fabEl.classList.remove('bump');
+      }, 360);
+    }
+  }
+
   // Arc balance bar
   const groupTime = [0, 0, 0, 0, 0, 0]; // index 0 unused
   pbSession.forEach(id => {
@@ -7030,8 +7103,11 @@ function pbCloseTimer() {
 
 // ───────── MOBILE BUILDER ─────────
 function pbToggleBuilderMobile() {
-  if (window.innerWidth > 1080) return;
-  document.getElementById('pb-builder').classList.toggle('expanded');
+  if (window.innerWidth > 1100) return;          // align with CSS breakpoint
+  const builder = document.getElementById('pb-builder');
+  const fab = document.getElementById('pb-fab');
+  const isOpen = builder.classList.toggle('expanded');
+  if (fab) fab.classList.toggle('open', isOpen);
 }
 
 // ───────── KEY HANDLERS ─────────
@@ -7169,6 +7245,44 @@ if (document.readyState === 'loading') {
   Promise.resolve().then(() => { try { pbInit(); } catch(e) { console.error('pbInit error', e); } });
 }
 
+// ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
+(function () {
+  const THRESHOLD = 50;
+  const MOBILE_BP = 768;
+  let lastY = window.scrollY || 0;
+  let ticking = false;
+
+  function update() {
+    ticking = false;
+    const header = document.getElementById('site-header');
+    if (!header) return;
+    if (window.innerWidth > MOBILE_BP) {
+      header.classList.remove('header-hidden');
+      lastY = window.scrollY || 0;
+      return;
+    }
+    const y = window.scrollY || 0;
+    const dy = y - lastY;
+    if (y < THRESHOLD)        header.classList.remove('header-hidden');
+    else if (dy >  4)         header.classList.add('header-hidden');
+    else if (dy < -4)         header.classList.remove('header-hidden');
+    lastY = y;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > MOBILE_BP) {
+      const h = document.getElementById('site-header');
+      if (h) h.classList.remove('header-hidden');
+    }
+  });
+})();
+
 
 </script>
 
@@ -7187,5 +7301,22 @@ if (document.readyState === 'loading') {
   ro.observe(document.body);
 })();
 </script>
+
+<!-- Mobile session-builder FAB. Direct child of <body> so no transformed
+     ancestor (e.g. .screen with animation: fadeUp) creates a containing
+     block that would break position:fixed in Chromium. Visibility is
+     controlled entirely by the @media (max-width: 1100px) block. -->
+<button id="pb-fab" class="pb-fab" type="button"
+        onclick="pbToggleBuilderMobile()"
+        aria-label="Open session builder">
+  <svg class="pb-fab-icon" viewBox="0 0 24 24" fill="none"
+       stroke="currentColor" stroke-width="1.8"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M5 6h14M5 12h14M5 18h10"/>
+    <circle cx="19" cy="18" r="3"/>
+    <path d="M19 16.5v3M17.5 18h3"/>
+  </svg>
+  <span class="pb-fab-count" id="pb-fab-count">0</span>
+</button>
 </body>
 </html>
