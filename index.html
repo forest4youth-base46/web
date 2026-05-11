@@ -494,6 +494,7 @@ body.module-focus .lang-bar { display: none; }
   margin-bottom: 28px;
 }
 .screen.focus-mode .module-card.is-focused .module-header .module-toggle { display: none; }
+.screen.focus-mode .module-card.is-focused .module-header-right { display: none; }
 .screen.focus-mode .module-card.is-focused .module-icon {
   width: 48px; height: 48px; font-size: 22px;
   background: var(--paper-card);
@@ -2872,7 +2873,10 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
       <h3 data-i18n="guide.intro.h">About this edition</h3>
       <p data-i18n="guide.intro.p1">This handbook is a working companion to the practitioner tool. It is written for clinicians, facilitators, and educators delivering forest-based therapy. It assumes baseline clinical training and builds FBT-specific competence from there.</p>
       <p class="guide-meta"><strong data-i18n="guide.intro.pages">108 pages</strong> · <span data-i18n="guide.intro.chapters">14 chapters across 4 parts</span> · <span data-i18n="guide.intro.edition">Prototype edition · 2026</span></p>
-      <a href="javascript:openGuide()" class="guide-pdf-link placeholder" id="guide-pdf-link" data-i18n="guide.intro.pdf">📄 Open full PDF (link coming soon)</a>
+      <a href="javascript:openGuide()" class="guide-pdf-link placeholder" id="guide-pdf-link">
+        <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0;"><path d="M7 4h10l4 4v16H7V4z"/><path d="M17 4v4h4"/><path d="M10 13h8M10 17h6"/></svg>
+        <span data-i18n="guide.intro.pdf">Open full PDF (link coming soon)</span>
+      </a>
     </div>
 
       <div class="guide-part">
@@ -4395,7 +4399,7 @@ const T = {
     "guide.intro.pages": "108 pages",
     "guide.intro.chapters": "14 chapters across 4 parts",
     "guide.intro.edition": "Prototype edition · 2026",
-    "guide.intro.pdf": "📄 Open full PDF (link coming soon)",
+    "guide.intro.pdf": "Open full PDF (link coming soon)",
     "guide.pdf.unavailable": "The PDF link is not yet available. Once the guide is hosted, this button will open it.",
     "guide.part-1.title": "Foundations",
     "guide.part-1.desc": "Theoretical grounding, historical lineage, and the evidence base.",
@@ -4958,7 +4962,7 @@ const T = {
     "guide.intro.pages": "108 pages",
     "guide.intro.chapters": "14 chapitres en 4 parties",
     "guide.intro.edition": "Édition prototype · 2026",
-    "guide.intro.pdf": "📄 Ouvrir le PDF complet (lien à venir)",
+    "guide.intro.pdf": "Ouvrir le PDF complet (lien à venir)",
     "guide.pdf.unavailable": "Le lien PDF n'est pas encore disponible. Une fois le guide hébergé, ce bouton l'ouvrira.",
     "guide.part-1.title": "Fondements",
     "guide.part-1.desc": "Ancrage théorique, lignée historique et base de données probantes.",
@@ -5446,7 +5450,7 @@ const T = {
     "guide.intro.pages": "108 Seiten",
     "guide.intro.chapters": "14 Kapitel in 4 Teilen",
     "guide.intro.edition": "Prototyp-Ausgabe · 2026",
-    "guide.intro.pdf": "📄 Vollständiges PDF öffnen (Link folgt)",
+    "guide.intro.pdf": "Vollständiges PDF öffnen (Link folgt)",
     "guide.pdf.unavailable": "Der PDF-Link ist noch nicht verfügbar. Sobald das Handbuch gehostet ist, öffnet diese Schaltfläche es.",
     "guide.part-1.title": "Grundlagen",
     "guide.part-1.desc": "Theoretische Fundierung, historische Linie und Evidenzbasis.",
@@ -5649,7 +5653,7 @@ function applyFocusMode(screenEl, modId) {
   back.className = 'module-back-link injected';
   back.type = 'button';
   const screenHash = screenEl.id.replace('-screen','');
-  back.textContent = 'Back';
+  back.textContent = t('nav.back') || 'Back';
   back.onclick = () => { window.location.hash = screenHash; };
   mod.insertBefore(back, mod.firstChild);
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
