@@ -633,6 +633,127 @@ body.module-focus .lang-bar { display: none; }
 .copy-link-btn.copied { background: var(--forest-deep); color: var(--paper-pure); border-color: var(--forest-deep); }
 
 /* ── LEARN BLOCKS ── */
+/* ── REFLECT CARD ENHANCEMENTS ── */
+.module-card .module-desc {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  font-weight: 300;
+  margin-top: 6px;
+  max-width: 520px;
+}
+.module-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.module-count-badge {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+/* Reflect prompt cards (numbered) */
+.reflect-prompts { display: flex; flex-direction: column; gap: 12px; margin-top: 6px; }
+.reflect-prompt {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  background: var(--paper-card);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-md);
+  padding: 18px 20px;
+  transition: border-color 0.2s;
+}
+.reflect-prompt:hover { border-color: var(--forest-soft); }
+.reflect-prompt-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  color: var(--forest-mist);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 28px;
+  margin-top: 2px;
+}
+.reflect-prompt-body h4 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.005em;
+}
+.reflect-prompt-body p { font-size: 13px; color: var(--ink-soft); line-height: 1.65; font-weight: 300; }
+
+/* Indicators check-list style #2 */
+.check-list-v2 { display: flex; flex-direction: column; gap: 0; margin-top: 6px; }
+.check-item-v2 {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--forest-mist);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.check-item-v2:last-child { border-bottom: none; }
+.check-item-v2 .check-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--forest-soft);
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.check-item-v2.checked .check-dot {
+  background: var(--forest-deep);
+  border-color: var(--forest-deep);
+}
+.check-item-v2.checked .check-dot::after {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--paper-pure);
+}
+.check-item-v2 label {
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.55;
+  cursor: pointer;
+  font-weight: 300;
+  transition: all 0.15s;
+}
+.check-item-v2.checked label {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--forest-soft);
+}
+
+/* Glossary */
+.glossary-list { display: flex; flex-direction: column; gap: 0; margin-top: 6px; }
+.glossary-item {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--forest-mist);
+}
+.glossary-item:last-child { border-bottom: none; }
+.glossary-term {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--forest-deep);
+  margin-bottom: 5px;
+  letter-spacing: -0.003em;
+}
+.glossary-def { font-size: 13px; color: var(--ink-soft); line-height: 1.65; font-weight: 300; }
+
 .learn-blocks { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
 
 .learn-block {
@@ -3531,74 +3652,153 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   <div id="reflect-screen" class="screen" data-role-only="practitioner">
     <button class="back-btn" onclick="navigate('')">← <span data-i18n="nav.back">Back</span></button>
     <div class="section-header">
-      <span class="badge" data-i18n="pathway.reflect.title">Reflect & Evaluate</span>
+      <span class="badge" data-i18n="pathway.reflect.title">Reflect &amp; Evaluate</span>
       <h2 data-i18n="reflect.heading">Post-Session Reflection</h2>
       <p data-i18n="reflect.sub">Prompts and indicators to support practitioner reflection after each session.</p>
     </div>
-    <div class="modules-grid">
+    <div class="modules-grid" style="grid-template-columns: 1fr;">
 
-      <div class="module-card is-door" id="mod-reflect-self" style="grid-column: 1 / -1;">
+      <!-- Self-Reflection -->
+      <div class="module-card is-door" id="mod-reflect-self">
         <div class="module-header" onclick="openModulePage('mod-reflect-self','reflect')">
           <div class="module-header-left">
-            <div class="module-icon">🪞</div>
+            <svg class="module-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;background:transparent;border:none;color:var(--forest-deep);">
+              <circle cx="14" cy="10" r="5"/>
+              <path d="M5 24c0-5 4-8 9-8s9 3 9 8"/>
+              <path d="M19 6.5c1 .8 2 2 2 3.5"/>
+            </svg>
             <div>
               <div class="module-title" data-i18n="mod.reflectself.title">Practitioner Self-Reflection</div>
               <div class="module-tag" data-i18n="mod.reflectself.tag">Post-session prompts</div>
+              <div class="module-desc">Structured questions to examine your own responses, the environment's role, and what to bring to supervision.</div>
             </div>
           </div>
-          <div class="module-toggle">+</div>
+          <div class="module-header-right">
+            <span class="module-count-badge">4 prompts</span>
+            <div class="module-toggle">+</div>
+          </div>
         </div>
         <div class="module-body">
-          <div class="learn-blocks">
-            <div class="learn-block"><h4 data-i18n="mod.reflectself.b1.h">What did you notice in yourself?</h4><p data-i18n="mod.reflectself.b1.p">Were there moments you felt drawn to redirect, speed up, or fill silence? What does that tell you about your own relationship to the material or the environment?</p></div>
-            <div class="learn-block"><h4 data-i18n="mod.reflectself.b2.h">What did the environment do?</h4><p data-i18n="mod.reflectself.b2.p">Did anything in the natural space shift the session unexpectedly — weather, an animal, a sound? How did you and the participant respond? Was that response worked with or avoided?</p></div>
-            <div class="learn-block"><h4 data-i18n="mod.reflectself.b3.h">What would you do differently?</h4><p data-i18n="mod.reflectself.b3.p">Was the activity well-matched to the participant's state? Was the timing right? Where did the frame hold and where did it need flexibility?</p></div>
-            <div class="learn-block"><h4 data-i18n="mod.reflectself.b4.h">What needs to be brought to supervision?</h4><p data-i18n="mod.reflectself.b4.p">Note any countertransference, boundary moments, clinical concerns, or powerful projective material that emerged. FBT supervision should include the environmental dimension explicitly.</p></div>
+          <div class="reflect-prompts">
+            <div class="reflect-prompt">
+              <div class="reflect-prompt-num">1</div>
+              <div class="reflect-prompt-body">
+                <h4 data-i18n="mod.reflectself.b1.h">What did you notice in yourself?</h4>
+                <p data-i18n="mod.reflectself.b1.p">Were there moments you felt drawn to redirect, speed up, or fill silence? What does that tell you about your own relationship to the material or the environment?</p>
+              </div>
+            </div>
+            <div class="reflect-prompt">
+              <div class="reflect-prompt-num">2</div>
+              <div class="reflect-prompt-body">
+                <h4 data-i18n="mod.reflectself.b2.h">What did the environment do?</h4>
+                <p data-i18n="mod.reflectself.b2.p">Did anything in the natural space shift the session unexpectedly — weather, an animal, a sound? How did you and the participant respond? Was that response worked with or avoided?</p>
+              </div>
+            </div>
+            <div class="reflect-prompt">
+              <div class="reflect-prompt-num">3</div>
+              <div class="reflect-prompt-body">
+                <h4 data-i18n="mod.reflectself.b3.h">What would you do differently?</h4>
+                <p data-i18n="mod.reflectself.b3.p">Was the activity well-matched to the participant's state? Was the timing right? Where did the frame hold and where did it need flexibility?</p>
+              </div>
+            </div>
+            <div class="reflect-prompt">
+              <div class="reflect-prompt-num">4</div>
+              <div class="reflect-prompt-body">
+                <h4 data-i18n="mod.reflectself.b4.h">What needs to be brought to supervision?</h4>
+                <p data-i18n="mod.reflectself.b4.p">Note any countertransference, boundary moments, clinical concerns, or powerful projective material that emerged. FBT supervision should include the environmental dimension explicitly.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Outcome Indicators -->
       <div class="module-card is-door" id="mod-indicators">
         <div class="module-header" onclick="openModulePage('mod-indicators','reflect')">
           <div class="module-header-left">
-            <div class="module-icon">📈</div>
+            <svg class="module-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;background:transparent;border:none;color:var(--forest-deep);">
+              <path d="M5 20l5-6 4 4 5-8 4 3"/>
+              <circle cx="22" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+            </svg>
             <div>
               <div class="module-title" data-i18n="mod.indicators.title">Observable Outcome Indicators</div>
               <div class="module-tag" data-i18n="mod.indicators.tag">What to document</div>
+              <div class="module-desc">Non-standardised observational markers to note after each session. Use alongside formal assessment tools.</div>
             </div>
           </div>
-          <div class="module-toggle">+</div>
+          <div class="module-header-right">
+            <span class="module-count-badge">6 indicators</span>
+            <div class="module-toggle">+</div>
+          </div>
         </div>
         <div class="module-body">
-          <p class="assessment-intro" data-i18n="mod.indicators.intro">These are non-standardised observational markers — not validated scales. Use alongside formal assessment tools.</p>
-          <div class="check-list">
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.ind.1">Participant appeared more physically relaxed at end than at start</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.ind.2">Spontaneous engagement with the environment (not only prompted)</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.ind.3">Use of metaphor or narrative language unprompted</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.ind.4">Expressed reluctance to leave the space</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.ind.5">Connected current session to personal context without prompting</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.ind.6">Visible emotional response (tears, laughter, stillness)</label></div>
+          <div class="check-list-v2">
+            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+              <div class="check-dot"></div>
+              <label data-i18n="check.ind.1">Participant appeared more physically relaxed at end than at start</label>
+            </div>
+            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+              <div class="check-dot"></div>
+              <label data-i18n="check.ind.2">Spontaneous engagement with the environment (not only prompted)</label>
+            </div>
+            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+              <div class="check-dot"></div>
+              <label data-i18n="check.ind.3">Use of metaphor or narrative language unprompted</label>
+            </div>
+            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+              <div class="check-dot"></div>
+              <label data-i18n="check.ind.4">Expressed reluctance to leave the space</label>
+            </div>
+            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+              <div class="check-dot"></div>
+              <label data-i18n="check.ind.5">Connected current session to personal context without prompting</label>
+            </div>
+            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+              <div class="check-dot"></div>
+              <label data-i18n="check.ind.6">Visible emotional response (tears, laughter, stillness)</label>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Glossary -->
       <div class="module-card is-door" id="mod-glossary">
         <div class="module-header" onclick="openModulePage('mod-glossary','reflect')">
           <div class="module-header-left">
-            <div class="module-icon">📖</div>
+            <svg class="module-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;background:transparent;border:none;color:var(--forest-deep);">
+              <path d="M6 5h13a3 3 0 0 1 3 3v15a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V5z"/>
+              <path d="M6 5v18"/>
+              <path d="M10 10h8M10 14h6"/>
+            </svg>
             <div>
               <div class="module-title" data-i18n="mod.glossary.title">Key Terms</div>
               <div class="module-tag" data-i18n="mod.glossary.tag">Glossary</div>
+              <div class="module-desc">Core concepts from the theoretical foundations of forest-based therapy — ART, biophilia, phytoncides, and somatic awareness.</div>
             </div>
           </div>
-          <div class="module-toggle">+</div>
+          <div class="module-header-right">
+            <span class="module-count-badge">4 terms</span>
+            <div class="module-toggle">+</div>
+          </div>
         </div>
         <div class="module-body">
-          <div class="learn-blocks">
-            <div class="learn-block"><h4>Attention Restoration Theory (ART)</h4><p data-i18n="mod.glossary.art">Natural environments restore directed attention capacity by engaging involuntary fascination — the mind rests its effortful focus, reducing fatigue and improving cognitive function.</p></div>
-            <div class="learn-block"><h4>Biophilia</h4><p data-i18n="mod.glossary.bio">Wilson's hypothesis that humans have an innate affiliation with other living systems — the basis for why natural settings may uniquely support wellbeing.</p></div>
-            <div class="learn-block"><h4>Phytoncides</h4><p data-i18n="mod.glossary.phyto">Volatile organic compounds released by trees, particularly conifers. Inhalation is associated with reduced cortisol, increased NK cell activity, and improved mood.</p></div>
-            <div class="learn-block"><h4>Somatic awareness</h4><p data-i18n="mod.glossary.somatic">In FBT, attention to body sensation as a channel for emotional information — supported by the environmental context, which naturally directs attention outward and then back inward.</p></div>
+          <div class="glossary-list">
+            <div class="glossary-item">
+              <div class="glossary-term">Attention Restoration Theory (ART)</div>
+              <div class="glossary-def" data-i18n="mod.glossary.art">Natural environments restore directed attention capacity by engaging involuntary fascination — the mind rests its effortful focus, reducing fatigue and improving cognitive function.</div>
+            </div>
+            <div class="glossary-item">
+              <div class="glossary-term">Biophilia</div>
+              <div class="glossary-def" data-i18n="mod.glossary.bio">Wilson's hypothesis that humans have an innate affiliation with other living systems — the basis for why natural settings may uniquely support wellbeing.</div>
+            </div>
+            <div class="glossary-item">
+              <div class="glossary-term">Phytoncides</div>
+              <div class="glossary-def" data-i18n="mod.glossary.phyto">Volatile organic compounds released by trees, particularly conifers. Inhalation is associated with reduced cortisol, increased NK cell activity, and improved mood.</div>
+            </div>
+            <div class="glossary-item">
+              <div class="glossary-term">Somatic awareness</div>
+              <div class="glossary-def" data-i18n="mod.glossary.somatic">In FBT, attention to body sensation as a channel for emotional information — supported by the environmental context, which naturally directs attention outward and then back inward.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -5474,6 +5674,10 @@ function toggleActivity(id) {
 function toggleCheck(el) {
   const cb = el.querySelector('input[type="checkbox"]');
   cb.checked = !cb.checked;
+}
+
+function toggleCheckV2(el) {
+  el.classList.toggle('checked');
 }
 
 // ─────────────────────────────────────────
