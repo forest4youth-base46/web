@@ -64,12 +64,12 @@
   --shadow-lg: 0 12px 32px rgba(20,48,42,0.10);
 }
 
-html { height: 100%; }
+html { height: 100%; background: transparent; }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Open Sans', -apple-system, sans-serif;
-  background: var(--paper);
+  background: transparent;
   color: var(--ink);
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
@@ -82,9 +82,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background:
-    radial-gradient(ellipse 800px 600px at 15% 10%, rgba(35,74,62,0.04), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 85% 90%, rgba(127,163,150,0.05), transparent 60%);
+  background: transparent;
   pointer-events: none;
   z-index: 0;
 }
