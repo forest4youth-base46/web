@@ -1,25 +1,103 @@
-# CODING AGENTS: READ THIS FIRST
+# Forest-Based Therapy · Practitioner Tool
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+An interactive web tool for forest therapy practitioners — session planning, activity reference, and guided run mode. Built for the [Forest4Youth NWEurope](https://forest4youth.nweurope.eu) project.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+---
 
-## What you should do — IMPORTANT
+## What the app does
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+The tool supports practitioners through three pathways:
 
-**Read `project/v0.5.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+**Practitioner pathways**
+- **Learn** — foundational knowledge: what forest-based therapy is, the evidence base, contraindications, and dosage guidelines. Includes the full Companion Guide.
+- **Implement in Practice** — session tools: a 17-activity Pocketbook (5 therapeutic groups), Session Builder with arc-balance visualisation, guided Run Mode with per-activity countdown timers, and a Pre-Session Checklist.
+- **Reflect & Evaluate** — post-session tools: observation templates, outcome indicators, and progress tracking.
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+**Participant pathway**
+- What is this? / Is it for me? / Before your session — orientation screens tailored to participants.
 
-## About the design files
+**Features**
+- Language toggle (EN / FR / ES)
+- Role-aware content (Practitioner / Participant)
+- Session Builder: drag-to-reorder activities, live arc-balance bar, localStorage persistence
+- Run Mode: full-screen guided walkthrough, per-activity inline timer (auto-starts at the upper duration threshold), keyboard navigation (← → Esc)
+- Responsive — works on desktop and tablet
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+---
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+## Running locally
 
-## Bundle contents
+No build step required. The app is a single self-contained HTML file.
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `Webtool` project files (HTML prototypes, assets, components)
+```bash
+# Option 1 — open directly in browser (some localStorage features may be limited on file://)
+open index.html
+
+# Option 2 — serve with any static server
+npx serve .
+# or
+python3 -m http.server 8080
+# then open http://localhost:8080
+```
+
+---
+
+## Deploying
+
+### GitHub Pages
+
+1. Push this repository to GitHub.
+2. Go to **Settings → Pages**.
+3. Set source to **main branch / root**.
+4. The app will be live at `https://<your-org>.github.io/<repo-name>/`.
+
+### Netlify
+
+1. Connect the repository in the Netlify dashboard (or drag-and-drop the folder).
+2. No build command needed. Publish directory: `.` (root).
+3. The `_headers` file sets permissive frame options so the app can be embedded via `<iframe>`.
+
+### Embedding via iframe (Odoo / CMS)
+
+Upload `index.html` as a static attachment and embed it with:
+
+```html
+<iframe
+  src="https://your-domain.com/path/to/index.html"
+  style="width: 100%; height: 90vh; border: none;"
+  allow="clipboard-write"
+  loading="lazy"
+></iframe>
+```
+
+The page automatically posts its scroll-height to the parent via `postMessage` so you can auto-size the iframe:
+
+```html
+<script>
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'resize') {
+    document.querySelector('iframe').style.height = e.data.height + 'px';
+  }
+});
+</script>
+```
+
+> **Odoo note:** Upload the file via *Settings → Technical → Attachments*, mark it public, and embed the `/web/content/<id>` URL in an iframe snippet. Avoid pasting the HTML directly into a CMS text block — Odoo's sanitiser strips inline `<script>` tags.
+
+---
+
+## Project structure
+
+```
+.
+├── index.html   # entire app — HTML, CSS, and JS in one file
+├── _headers     # Netlify headers (allows iframe embedding)
+├── .gitignore
+└── README.md
+```
+
+---
+
+## Tech stack
+
+Vanilla HTML / CSS / JavaScript — no build toolchain, no framework dependencies. Google Fonts loaded from CDN (requires internet on first load; cached thereafter).
