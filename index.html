@@ -6792,8 +6792,7 @@ function pbRenderActivity(a) {
         </div>
       </div>
       <div class="pb-activity-detail">
-        <div class="pb-activity-visual">
-          ${VISUAL[a.visual] || ''}
+        <div class="pb-activity-visual" data-visual="${a.visual || ''}">
           <div class="pb-visual-caption">${a.caption}</div>
         </div>
         <div class="pb-detail-grid">
@@ -6829,9 +6828,14 @@ function pbToggleActivity(id) {
   document.querySelectorAll('.pb-activity-item').forEach(a => a.classList.remove('open'));
   if (!wasOpen) {
     item.classList.add('open');
-    item.querySelectorAll('animate, animateTransform, animateMotion').forEach(function(anim) {
-      try { anim.beginElement(); } catch(e) {}
-    });
+    // Re-inject SVG fresh so SMIL animations start from zero on each open
+    const visualEl = item.querySelector('.pb-activity-visual[data-visual]');
+    if (visualEl) {
+      const key = visualEl.dataset.visual;
+      const captionEl = visualEl.querySelector('.pb-visual-caption');
+      const captionHTML = captionEl ? captionEl.outerHTML : '';
+      visualEl.innerHTML = (VISUAL[key] || '') + captionHTML;
+    }
   }
 }
 
@@ -6886,7 +6890,7 @@ function pbRenderBuilder() {
   const list = document.getElementById('pb-builder-list');
   const totalMin = pbSession.reduce((sum, id) => {
     const a = ACTIVITIES.find(x => x.id === id);
-    return sum + (a ? a.durAvg : 0);
+    return sum + (a ? a.durMax : 0);
   }, 0);
 
   document.getElementById('pb-stat-count').textContent = pbSession.length;
@@ -6896,7 +6900,7 @@ function pbRenderBuilder() {
   const groupTime = [0, 0, 0, 0, 0, 0]; // index 0 unused
   pbSession.forEach(id => {
     const a = ACTIVITIES.find(x => x.id === id);
-    if (a) groupTime[a.group] += a.durAvg || 5; // roles/project as 5 for visualization
+    if (a) groupTime[a.group] += a.durMax || 5; // roles/project as 5 for visualization
   });
   const sumTime = groupTime.reduce((s, x) => s + x, 0) || 1;
   const bar = document.getElementById('pb-arc-bar');
@@ -6944,7 +6948,7 @@ function pbRenderBuilder() {
           <span class="pb-builder-row-handle">⋮⋮</span>
           <span class="pb-builder-row-group" style="background:${colors[a.group]}" title="Group ${a.group}: ${GROUPS[a.group-1].title}"></span>
           <span class="pb-builder-row-name">${a.name}</span>
-          <span class="pb-builder-row-dur">${a.durAvg ? a.durAvg + 'm' : '—'}</span>
+          <span class="pb-builder-row-dur">${a.durMax ? a.durMax + 'm' : '—'}</span>
           <button class="pb-builder-row-remove" onclick="pbRemoveFromSession('${id}')" title="Remove">×</button>
         </div>`;
     }).join('');
