@@ -6827,7 +6827,12 @@ function pbToggleActivity(id) {
   const item = document.getElementById('pb-act-' + id);
   const wasOpen = item.classList.contains('open');
   document.querySelectorAll('.pb-activity-item').forEach(a => a.classList.remove('open'));
-  if (!wasOpen) item.classList.add('open');
+  if (!wasOpen) {
+    item.classList.add('open');
+    item.querySelectorAll('animate, animateTransform, animateMotion').forEach(function(anim) {
+      try { anim.beginElement(); } catch(e) {}
+    });
+  }
 }
 
 // ───────── SESSION BUILDER ─────────
