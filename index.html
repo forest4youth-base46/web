@@ -129,40 +129,7 @@ body::before {
   color: var(--paper-pure);
 }
 
-/* ── ROLE BAR (mirror of lang-bar on left) ── */
-.role-bar {
-  position: fixed;
-  top: 16px;
-  left: 24px;
-  display: flex;
-  gap: 4px;
-  z-index: 100;
-  background: var(--paper-pure);
-  border: 1px solid var(--forest-mist);
-  border-radius: var(--r-pill);
-  padding: 4px;
-  box-shadow: var(--shadow-sm);
-}
-body:not([data-role]) .role-bar { display: none; }
 
-.role-btn {
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  padding: 5px 11px;
-  border-radius: var(--r-pill);
-  border: none;
-  background: transparent;
-  color: var(--ink-faint);
-  cursor: pointer;
-  font-family: 'Open Sans', sans-serif;
-  transition: all 0.18s;
-  white-space: nowrap;
-}
-.role-btn.active {
-  background: var(--forest-ink);
-  color: var(--paper-pure);
-}
 
 /* ── ROLE-AWARE VISIBILITY ── */
 body[data-role="participant"] [data-role-only="practitioner"] { display: none !important; }
@@ -2250,10 +2217,6 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 </template>
 
 <!-- LANGUAGE TOGGLE -->
-<div class="role-bar">
-  <button class="role-btn" data-role="participant" onclick="setRole('participant')"><span data-i18n="role.bar.participant">Exploring</span></button>
-  <button class="role-btn" data-role="practitioner" onclick="setRole('practitioner')"><span data-i18n="role.bar.practitioner">Practitioner</span></button>
-</div>
 
 <div class="lang-bar">
   <button class="lang-btn active" onclick="setLang('en')">EN</button>
@@ -5779,8 +5742,7 @@ function setRole(role, fromRoleScreen) {
   currentRole = role;
   try { sessionStorage.setItem('fbt.role', role); } catch(e) {}
   document.body.setAttribute('data-role', role);
-  document.querySelectorAll('.role-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.role === role));
+
   // If coming from the role-screen choice, land on the entry screen.
   // If switching role mid-session, also return to entry if stranded
   // on a screen the new role cannot see.
@@ -5848,14 +5810,6 @@ document.querySelectorAll('.role-card').forEach(card => {
     setRole(isPrac ? 'practitioner' : 'participant', true);
   }, { capture: false });
 });
-document.querySelectorAll('.role-btn').forEach(btn => {
-  btn.addEventListener('click', function(ev) {
-    // Only act if the inline handler failed (data-role mismatch).
-    const want = btn.getAttribute('data-role');
-    if (document.body.getAttribute('data-role') === want) return;
-    setRole(want);
-  }, { capture: false });
-});
 
 // Always-accessible path back to the role-screen via hash.
 // Triggered by footer "Change perspective" link.
@@ -5863,7 +5817,6 @@ function goToRoleScreen() {
   try { sessionStorage.removeItem('fbt.role'); } catch(e) {}
   currentRole = null;
   document.body.removeAttribute('data-role');
-  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
   try {
     history.replaceState(null, '', window.location.pathname + window.location.search);
   } catch(e) {
