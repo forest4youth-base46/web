@@ -1914,6 +1914,14 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-builder-btn.primary:hover:not(:disabled) { background: var(--forest-ink); border-color: var(--forest-ink); }
 .pb-builder-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pb-builder-btn-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ─── RUN MODE (full-screen overlay) ─── */
 .pb-run-mode {
@@ -2180,37 +2188,7 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 @keyframes pbFabBump      { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
 @keyframes pbFabCountBump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
 
-/* ─── EXPORT MODAL + PRINT TEMPLATE ─── */
-.export-modal[hidden] { display: none; }
-.export-modal {
-  position: fixed; inset: 0; z-index: 300;
-  display: flex; align-items: center; justify-content: center;
-}
-.export-modal-overlay { position: absolute; inset: 0; background: rgba(10, 20, 16, 0.55); }
-.export-modal-card {
-  position: relative; background: #fff;
-  border-radius: 12px; padding: 24px 28px;
-  width: min(420px, calc(100% - 32px));
-  box-shadow: 0 12px 36px rgba(0,0,0,0.22);
-  font-family: 'Open Sans', sans-serif;
-}
-.export-modal-card h2 { margin: 0; font: 600 18px/1.3 'Open Sans', sans-serif; color: #2d4a3f; }
-.export-modal-options { display: grid; gap: 12px; margin: 18px 0; }
-.export-option {
-  padding: 14px 16px; border: 1px solid #2d4a3f;
-  background: #fff; color: #2d4a3f; border-radius: 8px;
-  font: 600 15px/1.2 'Open Sans', sans-serif; cursor: pointer; text-align: left;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.export-option:hover { background: #2d4a3f; color: #fff; }
-.export-modal-cancel {
-  background: none; border: none; color: #666;
-  font: 500 13px 'Open Sans', sans-serif; cursor: pointer; padding: 4px 8px;
-}
-.export-modal-cancel:hover { color: #2d4a3f; }
-#pb-export-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
-
-/* Print template: off-screen on screen, on-screen for html2canvas, the only thing in print. */
+/* ─── PRINT TEMPLATE: off-screen on screen, on-screen for html2canvas, the only thing in print. ─── */
 #print-session {
   position: absolute; left: -9999px; top: 0;
   width: 794px;   /* A4 @ 96dpi */
@@ -3696,7 +3674,27 @@ body.is-exporting-png #print-session { left: 0; }
               </div>
               <div class="pb-builder-actions">
                 <button class="pb-builder-btn" id="pb-btn-clear" onclick="pbClearSession()" disabled="">Clear</button>
-                <button class="pb-builder-btn" id="pb-export-btn" type="button" onclick="exportOpenModal()" disabled="" data-i18n="export.button">Export</button>
+                <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-pdf" type="button"
+                        onclick="exportRunPDF()" disabled=""
+                        aria-label="Export to PDF" title="Export to PDF">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 3 14 8 19 8"/>
+                    <text x="12" y="17" text-anchor="middle" font-size="6.5" font-weight="700"
+                          font-family="'Open Sans', sans-serif" stroke="none" fill="currentColor">PDF</text>
+                  </svg>
+                </button>
+                <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-png" type="button"
+                        onclick="exportRunPNG()" disabled=""
+                        aria-label="Export to PNG" title="Export to PNG">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                       stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <circle cx="8.5" cy="10.5" r="1.5"/>
+                    <polyline points="21 16 16 11 5 19"/>
+                  </svg>
+                </button>
                 <button class="pb-builder-btn primary" id="pb-btn-export" onclick="pbStartRunMode()" disabled="">Run mode →</button>
               </div>
             </aside>
@@ -4559,11 +4557,8 @@ const T = {
     "ref.rr.pop_group": "Guide ch. 7, pp. 59–64",
     "ref.rr.int_cbt": "Guide ch. 6, pp. 45–58",
     "ref.rr.int_act": "Guide ch. 6, pp. 45–58",
-    "export.button": "Export",
-    "export.modal.title": "Export session",
-    "export.pdf": "Print to PDF",
-    "export.png": "Download PNG",
-    "export.cancel": "Cancel",
+    "export.pdf": "Export to PDF",
+    "export.png": "Export to PNG",
     "export.qr.label": "Scan to reopen"
   },
   fr: {
@@ -5128,11 +5123,8 @@ const T = {
     "ref.rr.pop_group": "Guide ch. 7, pp. 59–64",
     "ref.rr.int_cbt": "Guide ch. 6, pp. 45–58",
     "ref.rr.int_act": "Guide ch. 6, pp. 45–58",
-    "export.button": "Exporter",
-    "export.modal.title": "Exporter la session",
-    "export.pdf": "Imprimer en PDF",
-    "export.png": "Télécharger PNG",
-    "export.cancel": "Annuler",
+    "export.pdf": "Exporter en PDF",
+    "export.png": "Exporter en PNG",
     "export.qr.label": "Scannez pour rouvrir"
   },
   de: {
@@ -5622,11 +5614,8 @@ const T = {
     "ref.rr.pop_group": "Handbuch Kap. 7, S. 59–64",
     "ref.rr.int_cbt": "Handbuch Kap. 6, S. 45–58",
     "ref.rr.int_act": "Handbuch Kap. 6, S. 45–58",
-    "export.button": "Exportieren",
-    "export.modal.title": "Sitzung exportieren",
-    "export.pdf": "Als PDF drucken",
-    "export.png": "PNG herunterladen",
-    "export.cancel": "Abbrechen",
+    "export.pdf": "Als PDF exportieren",
+    "export.png": "Als PNG exportieren",
     "export.qr.label": "Zum erneuten Öffnen scannen"
   }
 };
@@ -7033,9 +7022,12 @@ function pbRenderBuilder() {
     }
   }
 
-  // Toggle the Export button alongside Clear / Run mode.
-  const exportBtn = document.getElementById('pb-export-btn');
-  if (exportBtn) exportBtn.disabled = pbSession.length === 0;
+  // Toggle PDF / PNG export buttons alongside Clear / Run mode.
+  const empty = pbSession.length === 0;
+  const pdfBtn = document.getElementById('pb-export-pdf');
+  const pngBtn = document.getElementById('pb-export-png');
+  if (pdfBtn) pdfBtn.disabled = empty;
+  if (pngBtn) pngBtn.disabled = empty;
 
   // Arc balance bar
   const groupTime = [0, 0, 0, 0, 0, 0]; // index 0 unused
@@ -7226,18 +7218,6 @@ function pbToggleBuilderMobile() {
 }
 
 // ───────── EXPORT (PDF / PNG with QR) ─────────
-function exportOpenModal() {
-  if (!pbSession.length) return;
-  document.getElementById('export-modal').hidden = false;
-  document.addEventListener('keydown', exportEscHandler);
-}
-function exportCloseModal() {
-  const m = document.getElementById('export-modal');
-  if (m) m.hidden = true;
-  document.removeEventListener('keydown', exportEscHandler);
-}
-function exportEscHandler(e) { if (e.key === 'Escape') exportCloseModal(); }
-
 function exportBuildSessionURL() {
   const state = {
     s: pbSession,
@@ -7301,19 +7281,19 @@ function exportRenderPrintSession() {
 }
 
 function exportRunPDF() {
+  if (!pbSession.length) return;
   exportRenderPrintSession();
-  exportCloseModal();
-  // Brief defer so the modal is fully gone before the print dialog blocks.
+  // Brief defer so any pending re-renders settle before the print dialog blocks.
   setTimeout(() => { window.print(); }, 50);
 }
 
 async function exportRunPNG() {
+  if (!pbSession.length) return;
   if (typeof html2canvas === 'undefined') {
     alert('Export library not loaded.');
     return;
   }
   exportRenderPrintSession();
-  exportCloseModal();
   document.body.classList.add('is-exporting-png');
   try {
     const node = document.getElementById('print-session');
@@ -7539,25 +7519,6 @@ if (document.readyState === 'loading') {
         aria-label="Open session builder">
   <span class="pb-fab-count" id="pb-fab-count">0</span>
 </button>
-
-<!-- ─── EXPORT MODAL ─── -->
-<div id="export-modal" class="export-modal" role="dialog" aria-modal="true"
-     aria-labelledby="export-modal-title" hidden>
-  <div class="export-modal-overlay" onclick="exportCloseModal()"></div>
-  <div class="export-modal-card">
-    <h2 id="export-modal-title" data-i18n="export.modal.title">Export session</h2>
-    <div class="export-modal-options">
-      <button type="button" class="export-option" onclick="exportRunPDF()">
-        <span data-i18n="export.pdf">Print to PDF</span>
-      </button>
-      <button type="button" class="export-option" onclick="exportRunPNG()">
-        <span data-i18n="export.png">Download PNG</span>
-      </button>
-    </div>
-    <button type="button" class="export-modal-cancel"
-            onclick="exportCloseModal()" data-i18n="export.cancel">Cancel</button>
-  </div>
-</div>
 
 <!-- ─── HIDDEN PRINT TEMPLATE ─── -->
 <!-- Populated by exportRenderPrintSession() just before print/PNG.
