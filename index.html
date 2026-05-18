@@ -2302,21 +2302,65 @@ body.is-exporting-png #print-session { left: 0; }
   }
 }
 @media (max-width: 768px) {
+  /* App-shell mode: the iframe is capped at device viewport (see the height
+     reporter near </body>) so scrolling happens inside the iframe, not in
+     the Odoo parent page. We use position:fixed (not sticky) for the
+     header because body { overflow-x:hidden } turns body into a scrolling
+     container, which breaks position:sticky on descendants in Chromium.   */
   #site-header {
-    transition: transform 0.25s ease, opacity 0.25s ease;
-    will-change: transform;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 90;
+    padding: 8px 14px 6px;
+    margin-bottom: 0;
+    background: var(--paper-pure);
+    border-bottom: 1px solid var(--forest-mist);
   }
-  #site-header.header-hidden {
-    transform: translateY(-110%);
-    opacity: 0;
-    pointer-events: none;
+  /* Clear the fixed header so the first content row isn't underneath. */
+  body { padding-top: 48px; }
+  #site-header .header-inner { align-items: center; gap: 10px; }
+  #site-header .header-text h1 {
+    font-size: 14px;
+    line-height: 1.0;
+    letter-spacing: -0.005em;
   }
-  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
+  /* Lang-bar inline with the title, slightly compressed. */
   .lang-bar {
     position: static;
     margin-left: auto;
     top: auto; right: auto;
+    padding: 2px;
   }
+  .lang-bar .lang-btn {
+    font-size: 9.5px;
+    padding: 4px 9px;
+    letter-spacing: 0.1em;
+  }
+  /* Footer: stop wasting half a screen of vertical space. */
+  footer {
+    margin-top: 32px;
+    padding: 14px 0 16px;
+  }
+  /* App-friendly typography & spacing — phone has only ~500-600 px of usable
+     iframe height after browser chrome + the nweurope parent banner. */
+  .container { padding: 0 14px; }
+  .entry-label { font-size: 10px; margin-bottom: 10px; letter-spacing: 0.14em; }
+  .entry-title { font-size: 24px; line-height: 1.18; margin-bottom: 10px; max-width: none; }
+  .entry-sub   { font-size: 14px; line-height: 1.5; margin-bottom: 22px; max-width: none; }
+  .role-screen-inner { padding: 18px 0 16px; }
+  .role-cards  { gap: 12px; margin-top: 18px; grid-template-columns: 1fr; }
+  .role-card   { padding: 18px 18px 16px; border-radius: 12px; }
+  .role-card h2 { font-size: 18px; margin-bottom: 6px; line-height: 1.2; }
+  .role-card .role-card-sub { font-size: 10px; margin-bottom: 10px; }
+  .role-card p { font-size: 13.5px; line-height: 1.55; }
+  .role-card .role-examples { font-size: 11.5px; margin-top: 10px; }
+  .role-card-arrow { margin-top: 14px; font-size: 11px; }
+  .pathways    { gap: 10px; grid-template-columns: 1fr; }
+  .pathway-card { padding: 16px 16px 14px; }
+  .pathway-card h2 { font-size: 16px; margin-bottom: 4px; }
+  .pathway-card p  { font-size: 13px; line-height: 1.5; }
+  .pathway-icon { width: 32px; height: 32px; margin-bottom: 10px; }
+  .pathway-icon svg { width: 18px; height: 18px; }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
@@ -7453,58 +7497,29 @@ if (document.readyState === 'loading') {
   Promise.resolve().then(() => { try { pbInit(); } catch(e) { console.error('pbInit error', e); } });
 }
 
-// ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
-(function () {
-  const THRESHOLD = 50;
-  const MOBILE_BP = 768;
-  let lastY = window.scrollY || 0;
-  let ticking = false;
-
-  function update() {
-    ticking = false;
-    const header = document.getElementById('site-header');
-    if (!header) return;
-    if (window.innerWidth > MOBILE_BP) {
-      header.classList.remove('header-hidden');
-      lastY = window.scrollY || 0;
-      return;
-    }
-    const y = window.scrollY || 0;
-    const dy = y - lastY;
-    if (y < THRESHOLD)        header.classList.remove('header-hidden');
-    else if (dy >  4)         header.classList.add('header-hidden');
-    else if (dy < -4)         header.classList.remove('header-hidden');
-    lastY = y;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  }, { passive: true });
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > MOBILE_BP) {
-      const h = document.getElementById('site-header');
-      if (h) h.classList.remove('header-hidden');
-    }
-  });
-})();
+// Header is now permanently visible (position:fixed) — the previous
+// hide-on-scroll behavior caused the header to disappear and made the
+// scroll feel choppy when nested inside the Odoo iframe.
 
 
 </script>
 
-<!-- iframe height reporter: tells parent page the current document height
-     so an auto-sizing iframe embed doesn't need a fixed height. -->
+<!-- iframe height reporter — app-shell mode.
+     Caps reported height at the device viewport so the Odoo parent doesn't
+     grow the iframe into a giant block (which caused awkward double-scroll
+     between the parent page and our content on phones). When content
+     exceeds the cap we scroll internally inside the iframe, like a webview. -->
 <script>
 (function() {
   if (window.self === window.top) return; // not in an iframe
   function sendHeight() {
-    var h = document.documentElement.scrollHeight;
+    var cap = (window.screen && window.screen.availHeight) ? window.screen.availHeight : 1024;
+    var content = document.documentElement.scrollHeight;
+    var h = Math.min(content, cap);
     window.parent.postMessage({ type: 'resize', height: h }, '*');
   }
-  // Send on load and on every DOM mutation that changes height
   window.addEventListener('load', sendHeight);
+  window.addEventListener('resize', sendHeight);
   var ro = new ResizeObserver(sendHeight);
   ro.observe(document.body);
 })();
