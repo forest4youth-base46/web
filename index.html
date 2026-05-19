@@ -462,6 +462,10 @@ body.module-focus .lang-bar { display: none; }
 }
 .screen.focus-mode .module-card.is-focused .module-header .module-toggle { display: none; }
 .screen.focus-mode .module-card.is-focused .module-header-right { display: none; }
+/* Pocketbook in focus mode: hide the redundant "Pocket Guide to Activities
+   / 12 activities · select to expand" title strip — the injected back-link
+   already provides navigation context. */
+.screen.focus-mode #mod-pocket.is-focused .module-header { display: none; }
 .screen.focus-mode .module-card.is-focused .module-icon {
   width: 48px; height: 48px; font-size: 22px;
   background: var(--paper-card);
@@ -1393,8 +1397,8 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 
 /* Intro prose (pocketbook-style) */
 .pb-prose {
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: 10.5px;
+  line-height: 1.7;
   color: var(--ink);
   font-weight: 300;
   margin: 0 0 36px;
@@ -1406,13 +1410,13 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-prose h3 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--forest-deep);
   margin-bottom: 10px;
   letter-spacing: -0.005em;
 }
-.pb-prose p { margin-bottom: 10px; color: var(--ink-soft); font-size: 14px; }
+.pb-prose p { margin-bottom: 10px; color: var(--ink-soft); font-size: 10.5px; }
 .pb-prose p:last-child { margin-bottom: 0; }
 .pb-prose strong { font-weight: 500; color: var(--forest-ink); }
 
