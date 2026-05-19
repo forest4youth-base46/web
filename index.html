@@ -88,25 +88,31 @@ body::before {
 }
 
 .container {
-  max-width: 960px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px;
+  /* Modest top padding so screens with a back button visually align with
+     the floating lang-bar chip (chip is at top:14, container top:18). */
+  padding: 18px 28px 0;
   position: relative;
   z-index: 1;
 }
 
-/* ── LANGUAGE TOGGLE ── */
+/* Entry / role screens have no back button, so they need their own top
+   clearance to keep content below the floating lang-bar chip. */
+#role-screen, #entry-screen { padding-top: 40px; }
+
+/* ── LANGUAGE TOGGLE — free-floating chip top-right ── */
 .lang-bar {
   position: fixed;
-  top: 16px;
-  right: 24px;
-  display: flex;
-  gap: 4px;
+  top: 14px;
+  right: 18px;
+  display: inline-flex;
+  gap: 3px;
   z-index: 100;
   background: var(--paper-pure);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-pill);
-  padding: 4px;
+  padding: 3px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -129,44 +135,9 @@ body::before {
   color: var(--paper-pure);
 }
 
-
-
 /* ── ROLE-AWARE VISIBILITY ── */
 body[data-role="participant"] [data-role-only="practitioner"] { display: none !important; }
 body[data-role="practitioner"] [data-role-only="participant"] { display: none !important; }
-
-/* ── HEADER ── */
-header {
-  padding: 28px 0 20px;
-  border-bottom: 1px solid var(--forest-mist);
-  margin-bottom: 28px;
-}
-
-.header-inner {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-}
-
-.tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
-
-.header-text h1 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 20px;
-  font-weight: 500;
-  color: var(--forest-ink);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-
-.header-text p {
-  font-size: 12px;
-  color: var(--ink-faint);
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-top: 6px;
-}
 
 /* ── SCREENS ── */
 #entry-screen { animation: fadeUp 0.5s ease both; }
@@ -2302,22 +2273,22 @@ body.is-exporting-png #print-session { left: 0; }
   }
 }
 @media (max-width: 768px) {
-  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
-  .lang-bar {
-    position: static;
-    margin-left: auto;
-    top: auto; right: auto;
-  }
-  /* Tight vertical rhythm: the main page should fit inside the iframe
-     viewport without big chunks of whitespace at top or bottom. */
-  header { padding: 10px 0 8px; margin-bottom: 0; }
-  /* Header title fits on one line at narrow widths (was wrapping to 2 lines
-     and inflating the header to ~135 px). */
-  .header-text h1 { font-size: 15px; line-height: 1.1; }
-  .lang-bar { padding: 2px; }
+  /* Full-width phone layout: parent page is full-bleed and footerless,
+     so the tool owns the viewport. Tighten gutters, compress vertical
+     rhythm, but keep typography generous and readable. */
+  .container { padding: 12px 14px 0; }
+  #role-screen, #entry-screen { padding-top: 32px; }
+
+  /* Lang-bar stays fixed top-right on mobile — slightly smaller chip. */
+  .lang-bar { top: 10px; right: 10px; padding: 2px; }
   .lang-btn { font-size: 9.5px; padding: 4px 9px; letter-spacing: 0.1em; }
 
-  .role-screen-inner { padding: 14px 0 12px; }
+  /* Back button slides up to align visually with the lang-bar row. */
+  .back-btn { margin-bottom: 16px; padding: 4px 0; }
+
+  /* Entry / role screens have no back-btn, so add their own clearance for
+     the floating lang-bar chip. */
+  .role-screen-inner { padding: 8px 0 12px; }
   .role-screen-inner .entry-label { margin-bottom: 6px; }
   .entry-title { margin-bottom: 8px; }
   .entry-sub { margin-bottom: 16px; }
@@ -2329,8 +2300,7 @@ body.is-exporting-png #print-session { left: 0; }
   .role-card h2 { margin-bottom: 6px; }
   .role-card-arrow { margin-top: 10px; }
 
-  /* Pathway cards: 2-column grid (5 cards = 3 rows: 2+2+1). Single-column
-     stacking made the screen 1280 px tall on a 915 px iframe. */
+  /* Pathway cards: 2-column grid (5 cards = 3 rows: 2+2+1). */
   .pathways { gap: 8px; grid-template-columns: 1fr 1fr; }
   .pathway-card { padding: 12px 12px 10px; }
   .pathway-card h2 { font-size: 14px; margin-bottom: 4px; }
@@ -2368,18 +2338,14 @@ body.is-exporting-png #print-session { left: 0; }
 
 <div class="container">
 
-  <header id="site-header">
-    <div class="header-inner">
-      <div class="header-text">
-        <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
-      </div>
-      <div class="lang-bar">
-        <button class="lang-btn active" onclick="setLang('en')">EN</button>
-        <button class="lang-btn" onclick="setLang('fr')">FR</button>
-        <button class="lang-btn" onclick="setLang('de')">DE</button>
-      </div>
-    </div>
-  </header>
+  <!-- Lang-bar is a free-floating chip, top-right of the viewport. Sits in the
+       same visual row as a screen's back button on inner pages, and alone on
+       entry/role screens. No header bar. -->
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('de')">DE</button>
+  </div>
 
   <!-- ROLE SELECTION SCREEN (true landing) -->
   <div id="role-screen" class="screen">
