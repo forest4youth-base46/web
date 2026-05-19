@@ -2308,6 +2308,38 @@ body.is-exporting-png #print-session { left: 0; }
     margin-left: auto;
     top: auto; right: auto;
   }
+  /* Tight vertical rhythm: the main page should fit inside the iframe
+     viewport without big chunks of whitespace at top or bottom. */
+  header { padding: 10px 0 8px; margin-bottom: 0; }
+  /* Header title fits on one line at narrow widths (was wrapping to 2 lines
+     and inflating the header to ~135 px). */
+  .header-text h1 { font-size: 15px; line-height: 1.1; }
+  .lang-bar { padding: 2px; }
+  .lang-btn { font-size: 9.5px; padding: 4px 9px; letter-spacing: 0.1em; }
+
+  .role-screen-inner { padding: 14px 0 12px; }
+  .role-screen-inner .entry-label { margin-bottom: 6px; }
+  .entry-title { margin-bottom: 8px; }
+  .entry-sub { margin-bottom: 16px; }
+
+  /* Role-screen cards stack (only 2 cards, generous size is fine). */
+  .role-cards { margin-top: 14px; gap: 12px; grid-template-columns: 1fr; }
+  .role-card { padding: 16px 18px 14px; }
+  .role-card .role-card-sub { margin-bottom: 8px; }
+  .role-card h2 { margin-bottom: 6px; }
+  .role-card-arrow { margin-top: 10px; }
+
+  /* Pathway cards: 2-column grid (5 cards = 3 rows: 2+2+1). Single-column
+     stacking made the screen 1280 px tall on a 915 px iframe. */
+  .pathways { gap: 8px; grid-template-columns: 1fr 1fr; }
+  .pathway-card { padding: 12px 12px 10px; }
+  .pathway-card h2 { font-size: 14px; margin-bottom: 4px; }
+  .pathway-card p { font-size: 12px; line-height: 1.45; }
+  .pathway-icon { margin-bottom: 6px; width: 26px; height: 26px; }
+  .pathway-icon svg { width: 16px; height: 16px; }
+  .pathway-arrow { margin-top: 8px; font-size: 10px; }
+
+  footer { margin-top: 16px; padding: 12px 0 14px; }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
