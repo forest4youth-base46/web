@@ -2289,15 +2289,12 @@ body.is-exporting-png #print-session { left: 0; }
   .pb-fab-count.bump { animation: pbFabCountBump 0.34s ease; }
 
   /* Visibility gates — FAB only renders while the pocketbook module is
-     the focused module. Run-mode hides both FAB and builder.
-     Driven by body[data-focused] / body.pb-run-active classes rather
-     than :has() — :has() silently fails on older WebViews and was the
-     root cause of the FAB disappearing inside the Odoo embed. */
-  body[data-focused="mod-pocket"] .pb-fab { display: inline-flex; }
-  body.pb-run-active .pb-fab,
-  body.pb-run-active .pb-builder { display: none !important; }
+     the focused module. Run-mode hides both FAB and builder. */
+  body:has(#mod-pocket.is-focused) .pb-fab { display: inline-flex; }
+  body:has(.pb-run-mode.active) .pb-fab,
+  body:has(.pb-run-mode.active) .pb-builder { display: none !important; }
   /* Hard guard: builder cannot be expanded outside the pocketbook. */
-  body:not([data-focused="mod-pocket"]) .pb-builder {
+  body:not(:has(#mod-pocket.is-focused)) .pb-builder {
     transform: scale(0.05) !important;
     opacity: 0 !important;
     visibility: hidden !important;
@@ -2319,47 +2316,7 @@ body.is-exporting-png #print-session { left: 0; }
     position: static;
     margin-left: auto;
     top: auto; right: auto;
-    padding: 2px;
   }
-  .lang-btn { font-size: 9.5px; padding: 4px 9px; letter-spacing: 0.1em; }
-
-  /* Header strip: thin, title fits one line so it doesn't blow up to ~135 px. */
-  header { padding: 14px 0 10px; margin-bottom: 16px; }
-  .header-text h1 { font-size: 15px; line-height: 1.1; }
-
-  /* Entry / role screens: tight rhythm — fits two role cards in viewport. */
-  .role-screen-inner { padding: 16px 0 16px; }
-  .entry-title { font-size: 28px; margin-bottom: 8px; }
-  .entry-sub { font-size: 13.5px; margin-bottom: 16px; line-height: 1.55; }
-  .role-cards { margin-top: 14px; gap: 12px; grid-template-columns: 1fr; }
-  .role-card { padding: 14px 16px 12px; }
-  .role-card h2 { font-size: 18px; margin-bottom: 6px; }
-  .role-card .role-card-sub { margin-bottom: 8px; }
-  .role-card p { font-size: 12.5px; line-height: 1.5; }
-  .role-card .role-examples { margin-top: 10px; font-size: 11px; }
-  .role-card-arrow { margin-top: 10px; }
-
-  /* Practitioner entry: 5 pathway cards in a 2-col grid (3 rows: 2+2+1). */
-  .pathways { gap: 8px; grid-template-columns: 1fr 1fr; }
-  .pathway-card { padding: 12px 12px 10px; }
-  .pathway-card h2 { font-size: 13.5px; margin-bottom: 4px; }
-  .pathway-card p { font-size: 11.5px; line-height: 1.4; }
-  .pathway-icon { margin-bottom: 6px; width: 26px; height: 26px; }
-  .pathway-icon svg { width: 16px; height: 16px; }
-  .pathway-arrow { margin-top: 8px; font-size: 10px; }
-
-  /* Section screens: smaller section-header so module-card grids fit. */
-  .section-header { margin-bottom: 18px; }
-  .section-header h2 { font-size: 22px; margin-bottom: 6px; }
-  .section-header p { font-size: 12.5px; line-height: 1.5; }
-
-  /* Pocket-guide intro prose stays visible, just compact. */
-  .pb-prose { padding: 14px 18px; margin: 0 0 20px; line-height: 1.55; font-size: 13px; }
-  .pb-prose h3 { font-size: 13px; margin-bottom: 6px; }
-  .pb-prose p { font-size: 13px; line-height: 1.55; margin-bottom: 6px; }
-
-  /* Footer: compact, but keeps Change-perspective link visible. */
-  footer { margin-top: 24px; padding: 14px 0 18px; }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
@@ -3678,6 +3635,11 @@ body.is-exporting-png #print-session { left: 0; }
                 <p>The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.</p>
               </section>
               <div id="pb-groups"></div>
+              <section class="pb-adaptations">
+                <h3>Adapting activities for specific presentations</h3>
+                <p class="pb-adaptations-sub">Suggested adjustments for the most common clinical pictures encountered in early sessions.</p>
+                <div class="pb-adaptations-table" id="pb-adaptations-table"></div>
+              </section>
             </main>
             <aside class="pb-builder" id="pb-builder">
               <header class="pb-builder-header" onclick="pbToggleBuilderMobile()">
@@ -3740,32 +3702,6 @@ body.is-exporting-png #print-session { left: 0; }
         </div>
       </div>
 
-
-      <!-- Adapting activities — promoted out of the pocketbook into its own
-           door so the pocket guide page stays focused on the activity groups. -->
-      <div class="module-card is-door" id="mod-adapt">
-        <div class="module-header" onclick="openModulePage('mod-adapt','implement')">
-          <div class="module-header-left">
-            <svg class="module-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;background:transparent;border:none;color:var(--forest-deep);">
-              <line x1="6" y1="9" x2="22" y2="9"/>
-              <line x1="6" y1="14" x2="22" y2="14"/>
-              <line x1="6" y1="19" x2="22" y2="19"/>
-              <circle cx="11" cy="9" r="2" fill="var(--paper-pure)"/>
-              <circle cx="17" cy="14" r="2" fill="var(--paper-pure)"/>
-              <circle cx="9" cy="19" r="2" fill="var(--paper-pure)"/>
-            </svg>
-            <div>
-              <div class="module-title" data-i18n="mod.adapt.title">Adapting Activities</div>
-              <div class="module-tag" data-i18n="mod.adapt.tag">For specific clinical presentations</div>
-            </div>
-          </div>
-          <div class="module-toggle">+</div>
-        </div>
-        <div class="module-body">
-          <p class="pb-adaptations-sub" data-i18n="adapt.sub">Suggested adjustments for the most common clinical pictures encountered in early sessions.</p>
-          <div class="pb-adaptations-table" id="pb-adaptations-table"></div>
-        </div>
-      </div>
 
       <!-- Pre-session checklist -->
       <div class="module-card is-door" id="mod-pre">
@@ -4119,8 +4055,6 @@ const T = {
     "act.council.purpose": "A structured group reflection practice in which participants each choose a tree to identify with and speak from that position. Creates psychological distance for difficult topics while maintaining emotional engagement through embodied metaphor.",
     "act.council.lookfor": "The tree chosen and the qualities attributed to it often reveal the participant's self-concept. Listen for projections onto the tree's environment (too exposed, in the shade, isolated, intertwined with others).",
     "act.council.example": "\"Walk until you find a tree that feels like it could be you right now. Spend five minutes with it. Then we'll sit in a circle and each of us will speak as that tree — what it sees, what it needs, how it stands.\"",
-    "mod.adapt.title": "Adapting Activities", "mod.adapt.tag": "For specific clinical presentations",
-    "adapt.sub": "Suggested adjustments for the most common clinical pictures encountered in early sessions.",
     "mod.pre.title": "Pre-Session Checklist", "mod.pre.tag": "Preparation",
     "mod.pre.intro": "Run through this before each session. Tap each item to mark it.",
     "mod.pre.note": "This checklist does not replace a full risk assessment for clinical settings.",
@@ -4688,8 +4622,6 @@ const T = {
     "act.council.purpose": "Une pratique de réflexion de groupe structurée dans laquelle les participants choisissent chacun un arbre avec lequel s'identifier et parlent depuis cette position. Crée une distance psychologique pour les sujets difficiles.",
     "act.council.lookfor": "L'arbre choisi et les qualités qui lui sont attribuées révèlent souvent le concept de soi du participant. Écoutez les projections sur l'environnement de l'arbre (trop exposé, à l'ombre, isolé, entrelacé avec d'autres).",
     "act.council.example": "« Marchez jusqu'à trouver un arbre qui pourrait être vous en ce moment. Passez cinq minutes avec lui. Ensuite, nous nous assiérons en cercle et chacun parlera en tant que cet arbre — ce qu'il voit, ce dont il a besoin, comment il se tient. »",
-    "mod.adapt.title": "Adapter les activités", "mod.adapt.tag": "Pour des présentations cliniques spécifiques",
-    "adapt.sub": "Ajustements suggérés pour les tableaux cliniques les plus courants rencontrés lors des premières séances.",
     "mod.pre.title": "Liste de vérification pré-séance", "mod.pre.tag": "Préparation",
     "mod.pre.intro": "Parcourez ceci avant chaque séance. Appuyez sur chaque élément pour le cocher.",
     "mod.pre.note": "Cette liste ne remplace pas une évaluation complète des risques pour les contextes cliniques.",
@@ -5232,8 +5164,6 @@ const T = {
     "act.weather.name": "Wetterdialog", "act.weather.purpose": "Aktuelle Wetterbedingungen als projektiven Schirm für emotionale Zustände nutzen. Die Aktivität normalisiert emotionale Variabilität durch Verankerung in natürlichen Zyklen.", "act.weather.lookfor": "Reichtum der Projektionen — „es ist grau wie ich mich fühle“. Beachten Sie auch, wenn Teilnehmer das Wetter als Metapher ablehnen.", "act.weather.example": "„Schauen Sie nach oben. Was macht das Wetter gerade? Wenn dieses Wetter Ihr emotionaler Zustand wäre, was würde das bedeuten? Welches Wetter würden Sie sich wünschen?“",
     "act.roots.name": "Wurzeln & Äste", "act.roots.purpose": "Einen lebenden Baum als strukturelle Metapher für persönliche Fundamente und Zukunftsrichtungen nutzen. Teilnehmer reflektieren, was sie verwurzelt und wohin sie sich strecken.", "act.roots.lookfor": "Welche Hälfte Teilnehmer lieber bearbeiten — Wurzeln oder Äste — offenbart die Orientierung zur Vergangenheit oder Zukunft.", "act.roots.example": "„Stehen Sie neben einem Baum, den Sie mögen. Sehen Sie seine Wurzeln — was hält ihn. Sehen Sie seine Äste — wohin er geht. Was sind Ihre Wurzeln? Ihre Äste?“",
     "act.pairwalk.name": "Stiller Paarspaziergang", "act.pairwalk.purpose": "Relationale Abstimmung durch anhaltende gemeinsame Stille und nonverbale Präsenz entwickeln. Paare gehen ohne Sprechen zusammen und teilen dieselbe Umgebung.", "act.pairwalk.lookfor": "Ob Paare die Nähe halten oder auseinanderdriften. Wer das Tempo vorgibt. Der Druck zu sprechen — und wer zuerst bricht — ist diagnostisch.", "act.pairwalk.example": "„Gehen Sie zwanzig Minuten gemeinsam ohne zu sprechen. Sie müssen nichts zeigen oder erklären. Lassen Sie den Wald genug sein. Wir reden danach.“",
-    "mod.adapt.title": "Aktivitäten anpassen", "mod.adapt.tag": "Für spezifische klinische Bilder",
-    "adapt.sub": "Vorgeschlagene Anpassungen für die häufigsten klinischen Bilder in den ersten Sitzungen.",
     "mod.pre.title": "Checkliste vor der Sitzung", "mod.pre.tag": "Vorbereitung",
     "mod.pre.intro": "Gehen Sie dies vor jeder Sitzung durch. Tippen Sie auf jeden Punkt, um ihn zu markieren.",
     "mod.pre.note": "Diese Checkliste ersetzt keine vollständige Risikobewertung für klinische Settings.",
@@ -5779,7 +5709,7 @@ function applyRoute() {
   }
 
   // Door modules: open the module as a focused page rather than inline
-  const DOOR_MODULES = ['mod-pre','mod-plan','mod-reflect-self','mod-indicators','mod-glossary','mod-pocket','mod-adapt'];
+  const DOOR_MODULES = ['mod-pre','mod-plan','mod-reflect-self','mod-indicators','mod-glossary','mod-pocket'];
   if (moduleId && DOOR_MODULES.indexOf(moduleId) !== -1) {
     applyFocusMode(target, moduleId);
   } else {
@@ -5827,7 +5757,6 @@ function applyFocusMode(screenEl, modId) {
   document.querySelectorAll('.module-card.is-door.open').forEach(m => m.classList.remove('open'));
   document.querySelectorAll('.module-back-link.injected').forEach(b => b.remove());
   document.body.classList.remove('module-focus');
-  delete document.body.dataset.focused;
 
   if (!screenEl || !modId) return;
   const mod = screenEl.querySelector('#' + modId);
@@ -5835,11 +5764,6 @@ function applyFocusMode(screenEl, modId) {
   screenEl.classList.add('focus-mode');
   mod.classList.add('is-focused', 'open');
   document.body.classList.add('module-focus');
-  // Drive the FAB / pb-builder visibility through a plain attribute on
-  // <body> rather than :has(#mod-pocket.is-focused) — :has() silently
-  // fails on older WebViews and was making the pocketbook FAB invisible
-  // inside the Odoo embed on phone.
-  document.body.dataset.focused = modId;
 
   // Inject a back link at the top of the focused module
   const back = document.createElement('button');
@@ -7412,12 +7336,10 @@ function pbStartRunMode() {
   if (!pbSession.length) return;
   pbRunIndex = 0;
   document.getElementById('pb-runMode').classList.add('active');
-  document.body.classList.add('pb-run-active');
   pbRenderRunStep();
 }
 function pbCloseRunMode() {
   document.getElementById('pb-runMode').classList.remove('active');
-  document.body.classList.remove('pb-run-active');
   if (document.getElementById('pb-timerModal').classList.contains('active')) pbCloseTimer();
   pbRunTimerStop();
 }
