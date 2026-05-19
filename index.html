@@ -88,11 +88,11 @@ body::before {
 }
 
 .container {
-  max-width: 1100px;
+  max-width: 1280px;
   margin: 0 auto;
   /* Modest top padding so screens with a back button visually align with
      the floating lang-bar chip (chip is at top:14, container top:18). */
-  padding: 18px 28px 0;
+  padding: 18px 32px 0;
   position: relative;
   z-index: 1;
 }
@@ -413,9 +413,14 @@ body[data-role="practitioner"] [data-role-only="participant"] { display: none !i
 .module-card.open .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
-body.module-focus .lang-bar { display: none; }
+/* Lang-bar stays visible across all screens including focused modules, so
+   language switching is always one tap away on phone. */
 .screen.focus-mode .section-header,
 .screen.focus-mode > .back-btn { display: none; }
+/* The pocketbook page is its own landing once focused — the injected
+   back-link gives navigation context, so the redundant title strip
+   ("Pocketbook of Activities / 12 activities · select to expand") goes. */
+.screen.focus-mode #mod-pocket.is-focused .module-header { display: none; }
 .screen.focus-mode .modules-grid { display: block; grid-template-columns: 1fr; }
 .screen.focus-mode .module-card:not(.is-focused) { display: none; }
 .screen.focus-mode .module-card.is-focused {
@@ -1362,14 +1367,15 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-main { min-width: 0; }
 
-/* Intro prose (pocketbook-style) */
+/* Intro prose (pocketbook-style) — kept compact so it doesn't dominate
+   the page above the activity groups. */
 .pb-prose {
-  font-size: 14px;
-  line-height: 1.75;
+  font-size: 13.5px;
+  line-height: 1.55;
   color: var(--ink);
   font-weight: 300;
-  margin: 0 0 36px;
-  padding: 22px 26px;
+  margin: 0 0 22px;
+  padding: 14px 18px;
   background: var(--paper-card);
   border: 1px solid var(--forest-mist);
   border-radius: var(--pb-r-md);
@@ -1377,13 +1383,13 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-prose h3 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--forest-deep);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   letter-spacing: -0.005em;
 }
-.pb-prose p { margin-bottom: 10px; color: var(--ink-soft); font-size: 14px; }
+.pb-prose p { margin-bottom: 6px; color: var(--ink-soft); font-size: 13.5px; line-height: 1.55; }
 .pb-prose p:last-child { margin-bottom: 0; }
 .pb-prose strong { font-weight: 500; color: var(--forest-ink); }
 
@@ -3624,11 +3630,6 @@ body.is-exporting-png #print-session { left: 0; }
                 <p>The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.</p>
               </section>
               <div id="pb-groups"></div>
-              <section class="pb-adaptations">
-                <h3>Adapting activities for specific presentations</h3>
-                <p class="pb-adaptations-sub">Suggested adjustments for the most common clinical pictures encountered in early sessions.</p>
-                <div class="pb-adaptations-table" id="pb-adaptations-table"></div>
-              </section>
             </main>
             <aside class="pb-builder" id="pb-builder">
               <header class="pb-builder-header" onclick="pbToggleBuilderMobile()">
@@ -3691,6 +3692,32 @@ body.is-exporting-png #print-session { left: 0; }
         </div>
       </div>
 
+
+      <!-- Adapting activities — promoted out of the pocketbook into its own
+           door so the pocket guide page stays focused on the activity groups. -->
+      <div class="module-card is-door" id="mod-adapt">
+        <div class="module-header" onclick="openModulePage('mod-adapt','implement')">
+          <div class="module-header-left">
+            <svg class="module-icon" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;background:transparent;border:none;color:var(--forest-deep);">
+              <line x1="6" y1="9" x2="22" y2="9"/>
+              <line x1="6" y1="14" x2="22" y2="14"/>
+              <line x1="6" y1="19" x2="22" y2="19"/>
+              <circle cx="11" cy="9" r="2" fill="var(--paper-pure)"/>
+              <circle cx="17" cy="14" r="2" fill="var(--paper-pure)"/>
+              <circle cx="9" cy="19" r="2" fill="var(--paper-pure)"/>
+            </svg>
+            <div>
+              <div class="module-title" data-i18n="mod.adapt.title">Adapting Activities</div>
+              <div class="module-tag" data-i18n="mod.adapt.tag">For specific clinical presentations</div>
+            </div>
+          </div>
+          <div class="module-toggle">+</div>
+        </div>
+        <div class="module-body">
+          <p class="pb-adaptations-sub" data-i18n="adapt.sub">Suggested adjustments for the most common clinical pictures encountered in early sessions.</p>
+          <div class="pb-adaptations-table" id="pb-adaptations-table"></div>
+        </div>
+      </div>
 
       <!-- Pre-session checklist -->
       <div class="module-card is-door" id="mod-pre">
@@ -4044,6 +4071,8 @@ const T = {
     "act.council.purpose": "A structured group reflection practice in which participants each choose a tree to identify with and speak from that position. Creates psychological distance for difficult topics while maintaining emotional engagement through embodied metaphor.",
     "act.council.lookfor": "The tree chosen and the qualities attributed to it often reveal the participant's self-concept. Listen for projections onto the tree's environment (too exposed, in the shade, isolated, intertwined with others).",
     "act.council.example": "\"Walk until you find a tree that feels like it could be you right now. Spend five minutes with it. Then we'll sit in a circle and each of us will speak as that tree — what it sees, what it needs, how it stands.\"",
+    "mod.adapt.title": "Adapting Activities", "mod.adapt.tag": "For specific clinical presentations",
+    "adapt.sub": "Suggested adjustments for the most common clinical pictures encountered in early sessions.",
     "mod.pre.title": "Pre-Session Checklist", "mod.pre.tag": "Preparation",
     "mod.pre.intro": "Run through this before each session. Tap each item to mark it.",
     "mod.pre.note": "This checklist does not replace a full risk assessment for clinical settings.",
@@ -4611,6 +4640,8 @@ const T = {
     "act.council.purpose": "Une pratique de réflexion de groupe structurée dans laquelle les participants choisissent chacun un arbre avec lequel s'identifier et parlent depuis cette position. Crée une distance psychologique pour les sujets difficiles.",
     "act.council.lookfor": "L'arbre choisi et les qualités qui lui sont attribuées révèlent souvent le concept de soi du participant. Écoutez les projections sur l'environnement de l'arbre (trop exposé, à l'ombre, isolé, entrelacé avec d'autres).",
     "act.council.example": "« Marchez jusqu'à trouver un arbre qui pourrait être vous en ce moment. Passez cinq minutes avec lui. Ensuite, nous nous assiérons en cercle et chacun parlera en tant que cet arbre — ce qu'il voit, ce dont il a besoin, comment il se tient. »",
+    "mod.adapt.title": "Adapter les activités", "mod.adapt.tag": "Pour des présentations cliniques spécifiques",
+    "adapt.sub": "Ajustements suggérés pour les tableaux cliniques les plus courants rencontrés lors des premières séances.",
     "mod.pre.title": "Liste de vérification pré-séance", "mod.pre.tag": "Préparation",
     "mod.pre.intro": "Parcourez ceci avant chaque séance. Appuyez sur chaque élément pour le cocher.",
     "mod.pre.note": "Cette liste ne remplace pas une évaluation complète des risques pour les contextes cliniques.",
@@ -5153,6 +5184,8 @@ const T = {
     "act.weather.name": "Wetterdialog", "act.weather.purpose": "Aktuelle Wetterbedingungen als projektiven Schirm für emotionale Zustände nutzen. Die Aktivität normalisiert emotionale Variabilität durch Verankerung in natürlichen Zyklen.", "act.weather.lookfor": "Reichtum der Projektionen — „es ist grau wie ich mich fühle“. Beachten Sie auch, wenn Teilnehmer das Wetter als Metapher ablehnen.", "act.weather.example": "„Schauen Sie nach oben. Was macht das Wetter gerade? Wenn dieses Wetter Ihr emotionaler Zustand wäre, was würde das bedeuten? Welches Wetter würden Sie sich wünschen?“",
     "act.roots.name": "Wurzeln & Äste", "act.roots.purpose": "Einen lebenden Baum als strukturelle Metapher für persönliche Fundamente und Zukunftsrichtungen nutzen. Teilnehmer reflektieren, was sie verwurzelt und wohin sie sich strecken.", "act.roots.lookfor": "Welche Hälfte Teilnehmer lieber bearbeiten — Wurzeln oder Äste — offenbart die Orientierung zur Vergangenheit oder Zukunft.", "act.roots.example": "„Stehen Sie neben einem Baum, den Sie mögen. Sehen Sie seine Wurzeln — was hält ihn. Sehen Sie seine Äste — wohin er geht. Was sind Ihre Wurzeln? Ihre Äste?“",
     "act.pairwalk.name": "Stiller Paarspaziergang", "act.pairwalk.purpose": "Relationale Abstimmung durch anhaltende gemeinsame Stille und nonverbale Präsenz entwickeln. Paare gehen ohne Sprechen zusammen und teilen dieselbe Umgebung.", "act.pairwalk.lookfor": "Ob Paare die Nähe halten oder auseinanderdriften. Wer das Tempo vorgibt. Der Druck zu sprechen — und wer zuerst bricht — ist diagnostisch.", "act.pairwalk.example": "„Gehen Sie zwanzig Minuten gemeinsam ohne zu sprechen. Sie müssen nichts zeigen oder erklären. Lassen Sie den Wald genug sein. Wir reden danach.“",
+    "mod.adapt.title": "Aktivitäten anpassen", "mod.adapt.tag": "Für spezifische klinische Bilder",
+    "adapt.sub": "Vorgeschlagene Anpassungen für die häufigsten klinischen Bilder in den ersten Sitzungen.",
     "mod.pre.title": "Checkliste vor der Sitzung", "mod.pre.tag": "Vorbereitung",
     "mod.pre.intro": "Gehen Sie dies vor jeder Sitzung durch. Tippen Sie auf jeden Punkt, um ihn zu markieren.",
     "mod.pre.note": "Diese Checkliste ersetzt keine vollständige Risikobewertung für klinische Settings.",
@@ -5698,7 +5731,7 @@ function applyRoute() {
   }
 
   // Door modules: open the module as a focused page rather than inline
-  const DOOR_MODULES = ['mod-pre','mod-plan','mod-reflect-self','mod-indicators','mod-glossary','mod-pocket'];
+  const DOOR_MODULES = ['mod-pre','mod-plan','mod-reflect-self','mod-indicators','mod-glossary','mod-pocket','mod-adapt'];
   if (moduleId && DOOR_MODULES.indexOf(moduleId) !== -1) {
     applyFocusMode(target, moduleId);
   } else {
