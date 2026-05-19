@@ -7446,16 +7446,15 @@ if (document.readyState === 'loading') {
 
 </script>
 
-<!-- iframe height reporter — caps at the device viewport so the Odoo parent
-     page doesn't grow the iframe into one giant block. Content longer than
-     the cap scrolls inside the iframe (app-shell behaviour). -->
+<!-- iframe height reporter — reports the full content height to the parent
+     so the parent page (Odoo) sizes the iframe to fit and scrolls the whole
+     thing inline. No internal iframe scroll; surrounding header/footer flow
+     naturally around the embedded tool. -->
 <script>
 (function() {
   if (window.self === window.top) return; // not in an iframe
   function sendHeight() {
-    var cap = (window.screen && window.screen.availHeight) ? window.screen.availHeight : 1024;
-    var content = document.documentElement.scrollHeight;
-    var h = Math.min(content, cap);
+    var h = document.documentElement.scrollHeight;
     window.parent.postMessage({ type: 'resize', height: h }, '*');
   }
   window.addEventListener('load', sendHeight);
