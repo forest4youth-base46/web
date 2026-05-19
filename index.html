@@ -88,31 +88,25 @@ body::before {
 }
 
 .container {
-  max-width: 1280px;
+  max-width: 960px;
   margin: 0 auto;
-  /* Modest top padding so screens with a back button visually align with
-     the floating lang-bar chip (chip is at top:14, container top:18). */
-  padding: 18px 32px 0;
+  padding: 0 24px;
   position: relative;
   z-index: 1;
 }
 
-/* Entry / role screens have no back button, so they need their own top
-   clearance to keep content below the floating lang-bar chip. */
-#role-screen, #entry-screen { padding-top: 40px; }
-
-/* ── LANGUAGE TOGGLE — free-floating chip top-right ── */
+/* ── LANGUAGE TOGGLE ── */
 .lang-bar {
   position: fixed;
-  top: 14px;
-  right: 18px;
-  display: inline-flex;
-  gap: 3px;
+  top: 16px;
+  right: 24px;
+  display: flex;
+  gap: 4px;
   z-index: 100;
   background: var(--paper-pure);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-pill);
-  padding: 3px;
+  padding: 4px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -135,9 +129,44 @@ body::before {
   color: var(--paper-pure);
 }
 
+
+
 /* ── ROLE-AWARE VISIBILITY ── */
 body[data-role="participant"] [data-role-only="practitioner"] { display: none !important; }
 body[data-role="practitioner"] [data-role-only="participant"] { display: none !important; }
+
+/* ── HEADER ── */
+header {
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--forest-mist);
+  margin-bottom: 28px;
+}
+
+.header-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
+
+.header-text h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.header-text p {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
 
 /* ── SCREENS ── */
 #entry-screen { animation: fadeUp 0.5s ease both; }
@@ -413,14 +442,9 @@ body[data-role="practitioner"] [data-role-only="participant"] { display: none !i
 .module-card.open .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
-/* Lang-bar stays visible across all screens including focused modules, so
-   language switching is always one tap away on phone. */
+body.module-focus .lang-bar { display: none; }
 .screen.focus-mode .section-header,
 .screen.focus-mode > .back-btn { display: none; }
-/* The pocketbook page is its own landing once focused — the injected
-   back-link gives navigation context, so the redundant title strip
-   ("Pocketbook of Activities / 12 activities · select to expand") goes. */
-.screen.focus-mode #mod-pocket.is-focused .module-header { display: none; }
 .screen.focus-mode .modules-grid { display: block; grid-template-columns: 1fr; }
 .screen.focus-mode .module-card:not(.is-focused) { display: none; }
 .screen.focus-mode .module-card.is-focused {
@@ -1367,15 +1391,14 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-main { min-width: 0; }
 
-/* Intro prose (pocketbook-style) — kept compact so it doesn't dominate
-   the page above the activity groups. */
+/* Intro prose (pocketbook-style) */
 .pb-prose {
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.75;
   color: var(--ink);
   font-weight: 300;
-  margin: 0 0 22px;
-  padding: 14px 18px;
+  margin: 0 0 36px;
+  padding: 22px 26px;
   background: var(--paper-card);
   border: 1px solid var(--forest-mist);
   border-radius: var(--pb-r-md);
@@ -1383,13 +1406,13 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-prose h3 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--forest-deep);
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   letter-spacing: -0.005em;
 }
-.pb-prose p { margin-bottom: 6px; color: var(--ink-soft); font-size: 13.5px; line-height: 1.55; }
+.pb-prose p { margin-bottom: 10px; color: var(--ink-soft); font-size: 14px; }
 .pb-prose p:last-child { margin-bottom: 0; }
 .pb-prose strong { font-weight: 500; color: var(--forest-ink); }
 
@@ -2266,12 +2289,15 @@ body.is-exporting-png #print-session { left: 0; }
   .pb-fab-count.bump { animation: pbFabCountBump 0.34s ease; }
 
   /* Visibility gates — FAB only renders while the pocketbook module is
-     the focused module. Run-mode hides both FAB and builder. */
-  body:has(#mod-pocket.is-focused) .pb-fab { display: inline-flex; }
-  body:has(.pb-run-mode.active) .pb-fab,
-  body:has(.pb-run-mode.active) .pb-builder { display: none !important; }
+     the focused module. Run-mode hides both FAB and builder.
+     Driven by body[data-focused] / body.pb-run-active classes rather
+     than :has() — :has() silently fails on older WebViews and was the
+     root cause of the FAB disappearing inside the Odoo embed. */
+  body[data-focused="mod-pocket"] .pb-fab { display: inline-flex; }
+  body.pb-run-active .pb-fab,
+  body.pb-run-active .pb-builder { display: none !important; }
   /* Hard guard: builder cannot be expanded outside the pocketbook. */
-  body:not(:has(#mod-pocket.is-focused)) .pb-builder {
+  body:not([data-focused="mod-pocket"]) .pb-builder {
     transform: scale(0.05) !important;
     opacity: 0 !important;
     visibility: hidden !important;
@@ -2279,183 +2305,70 @@ body.is-exporting-png #print-session { left: 0; }
   }
 }
 @media (max-width: 768px) {
-  /* Full-width phone layout: parent page is full-bleed and footerless,
-     so the tool owns the viewport. Tighten gutters, compress vertical
-     rhythm, but keep typography generous and readable. */
-  .container { padding: 12px 14px 0; }
-  #role-screen, #entry-screen { padding-top: 32px; }
-
-  /* Lang-bar stays fixed top-right on mobile — slightly smaller chip. */
-  .lang-bar { top: 10px; right: 10px; padding: 2px; }
+  #site-header {
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    will-change: transform;
+  }
+  #site-header.header-hidden {
+    transform: translateY(-110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
+  .lang-bar {
+    position: static;
+    margin-left: auto;
+    top: auto; right: auto;
+    padding: 2px;
+  }
   .lang-btn { font-size: 9.5px; padding: 4px 9px; letter-spacing: 0.1em; }
 
-  /* Back button slides up to align visually with the lang-bar row. */
-  .back-btn { margin-bottom: 16px; padding: 4px 0; }
+  /* Header strip: thin, title fits one line so it doesn't blow up to ~135 px. */
+  header { padding: 14px 0 10px; margin-bottom: 16px; }
+  .header-text h1 { font-size: 15px; line-height: 1.1; }
 
-  /* Entry / role screens have no back-btn, so add their own clearance for
-     the floating lang-bar chip. */
-  .role-screen-inner { padding: 8px 0 12px; }
-  .role-screen-inner .entry-label { margin-bottom: 6px; }
-  .entry-title { margin-bottom: 8px; }
-  .entry-sub { margin-bottom: 16px; }
-
-  /* Role-screen cards stack (only 2 cards, generous size is fine). */
+  /* Entry / role screens: tight rhythm — fits two role cards in viewport. */
+  .role-screen-inner { padding: 16px 0 16px; }
+  .entry-title { font-size: 28px; margin-bottom: 8px; }
+  .entry-sub { font-size: 13.5px; margin-bottom: 16px; line-height: 1.55; }
   .role-cards { margin-top: 14px; gap: 12px; grid-template-columns: 1fr; }
-  .role-card { padding: 16px 18px 14px; }
+  .role-card { padding: 14px 16px 12px; }
+  .role-card h2 { font-size: 18px; margin-bottom: 6px; }
   .role-card .role-card-sub { margin-bottom: 8px; }
-  .role-card h2 { margin-bottom: 6px; }
+  .role-card p { font-size: 12.5px; line-height: 1.5; }
+  .role-card .role-examples { margin-top: 10px; font-size: 11px; }
   .role-card-arrow { margin-top: 10px; }
 
-  /* Pathway cards: 2-column grid (5 cards = 3 rows: 2+2+1). */
+  /* Practitioner entry: 5 pathway cards in a 2-col grid (3 rows: 2+2+1). */
   .pathways { gap: 8px; grid-template-columns: 1fr 1fr; }
-  .pathway-card { padding: 10px 11px 8px; }
-  .pathway-card h2 { font-size: 13px; margin-bottom: 3px; }
-  .pathway-card p { font-size: 11px; line-height: 1.35; }
-  .pathway-icon { margin-bottom: 4px; width: 22px; height: 22px; }
-  .pathway-icon svg { width: 14px; height: 14px; }
-  .pathway-arrow { margin-top: 6px; font-size: 9.5px; }
+  .pathway-card { padding: 12px 12px 10px; }
+  .pathway-card h2 { font-size: 13.5px; margin-bottom: 4px; }
+  .pathway-card p { font-size: 11.5px; line-height: 1.4; }
+  .pathway-icon { margin-bottom: 6px; width: 26px; height: 26px; }
+  .pathway-icon svg { width: 16px; height: 16px; }
+  .pathway-arrow { margin-top: 8px; font-size: 10px; }
 
-  /* Section header on every screen: smaller on phone so module cards fit. */
-  .section-header { margin-bottom: 16px; }
+  /* Section screens: smaller section-header so module-card grids fit. */
+  .section-header { margin-bottom: 18px; }
   .section-header h2 { font-size: 22px; margin-bottom: 6px; }
   .section-header p { font-size: 12.5px; line-height: 1.5; }
-  .section-header .badge { font-size: 9.5px; padding: 3px 9px; margin-bottom: 10px; }
 
-  /* ─── POCKETBOOK PHONE MOSAIC ──────────────────────────────────────────
-     5 group "entry cubes" are collapsed by default in a 2-col grid.
-     Tap one and it expands inline below the cube row to reveal its
-     activities as small cubes (also 2-col). Tap a small cube and it
-     becomes full-width with the activity detail. Radio behaviour on the
-     groups keeps the open document height bounded so the page never
-     needs to scroll. */
-  .pb-host { display: block; margin-top: 0; }  /* drop the 2-col grid; builder is a sheet on phone */
-  /* Hide the "How to use this section" prose on phone — the mosaic is
-     self-explanatory, and the prose was eating ~110 px above the fold. */
-  .pb-prose { display: none; }
+  /* Pocket-guide intro prose stays visible, just compact. */
+  .pb-prose { padding: 14px 18px; margin: 0 0 20px; line-height: 1.55; font-size: 13px; }
+  .pb-prose h3 { font-size: 13px; margin-bottom: 6px; }
+  .pb-prose p { font-size: 13px; line-height: 1.55; margin-bottom: 6px; }
 
-  /* Groups become a 2-col mosaic of compact "entry cubes". */
-  #pb-groups {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    grid-auto-flow: dense;
-  }
-  .pb-group { margin-bottom: 0; }
-  .pb-group:last-of-type { margin-bottom: 0; }
-  .pb-group-header {
-    cursor: pointer;
-    user-select: none;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    margin-bottom: 0;
-    padding: 10px 12px;
-    border-bottom: none;
-    background: var(--paper-card);
-    border: 1px solid var(--forest-mist);
-    border-radius: var(--pb-r-md);
-    position: relative;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  .pb-group-header:hover { border-color: var(--forest-soft); }
-  .pb-group-headline { gap: 6px; }
-  .pb-group-num { font-size: 18px; }
-  .pb-group-title { font-size: 14px; }
-  .pb-group-meta {
-    font-size: 9.5px;
-    color: var(--ink-faint);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-  .pb-group-header::after {
-    content: '+';
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    font-size: 16px;
-    line-height: 1;
-    color: var(--ink-faint);
-    font-weight: 400;
-  }
-  .pb-group.expanded .pb-group-header {
-    border-color: var(--forest-mid);
-    background: var(--paper-pure);
-    box-shadow: var(--shadow-sm);
-    grid-column: 1 / -1;       /* expanded group banner spans both columns */
-  }
-  .pb-group.expanded .pb-group-header::after { content: '−'; }
-
-  /* Activity list = drawer beneath the expanded group, spans both cols. */
-  .pb-group .pb-activity-list { display: none; }
-  .pb-group.expanded .pb-activity-list {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    grid-column: 1 / -1;
-    grid-auto-flow: dense;
-    margin-top: -4px;
-  }
-
-  /* Compact activity "cubes". Glyph + name + tiny duration. */
-  .pb-host .pb-activity-item { border-radius: var(--pb-r-md); }
-  .pb-host .pb-activity-trigger {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    padding: 10px 12px 10px;
-  }
-  .pb-activity-glyph { width: 22px; height: 22px; }
-  .pb-host .pb-activity-name { font-size: 12.5px; line-height: 1.25; }
-  /* Hide the busy meta row on collapsed cubes — duration only, tucked to corner. */
-  .pb-activity-meta { gap: 6px; align-self: flex-start; margin-top: 2px; }
-  .pb-host .pb-activity-duration { font-size: 10px; }
-  .pb-host .pb-activity-item:not(.open) .pb-timer-icon,
-  .pb-host .pb-activity-item:not(.open) .pb-chevron { display: none; }
-  .pb-host .pb-activity-item:not(.open) .pb-add-icon {
-    width: 22px; height: 22px; font-size: 14px;
-  }
-
-  /* Open cube takes both columns + shows detail. */
-  .pb-host .pb-activity-item.open { grid-column: 1 / -1; }
-  .pb-host .pb-activity-item.open .pb-activity-trigger {
-    flex-direction: row;
-    align-items: center;
-    padding: 10px 12px;
-  }
-
-  /* Hide tool footer on phone (footer markup is empty now anyway). */
-  footer { display: none; }
+  /* Footer: compact, but keeps Change-perspective link visible. */
+  footer { margin-top: 24px; padding: 14px 0 18px; }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
   .pb-detail-grid { grid-template-columns: 1fr; gap: 4px 0; }
   .pb-detail-label { padding-top: 12px; }
   .pb-detail-grid > div:first-child { padding-top: 0; }
-
-  /* Adapting Activities table: collapse rows by default, radio toggle.
-     Label is the trigger; text is hidden until tapped. */
-  .pb-adapt-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-    padding: 10px 14px;
-    cursor: pointer;
-    user-select: none;
-    position: relative;
-  }
-  .pb-adapt-row::after {
-    content: '+';
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    font-size: 16px;
-    line-height: 1;
-    color: var(--ink-faint);
-  }
-  .pb-adapt-row.expanded::after { content: '−'; }
-  .pb-adapt-label { font-size: 12.5px; padding-right: 20px; }
-  .pb-adapt-text { display: none; padding-top: 6px; font-size: 12px; line-height: 1.55; }
-  .pb-adapt-row.expanded .pb-adapt-text { display: block; }
+  .pb-adapt-row { grid-template-columns: 1fr; gap: 8px; padding: 16px 18px; }
+  .pb-group-title { font-size: 18px; }
+  .pb-group-num { font-size: 22px; }
 }
 
 </style>
@@ -2475,14 +2388,18 @@ body.is-exporting-png #print-session { left: 0; }
 
 <div class="container">
 
-  <!-- Lang-bar is a free-floating chip, top-right of the viewport. Sits in the
-       same visual row as a screen's back button on inner pages, and alone on
-       entry/role screens. No header bar. -->
-  <div class="lang-bar">
-    <button class="lang-btn active" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" onclick="setLang('fr')">FR</button>
-    <button class="lang-btn" onclick="setLang('de')">DE</button>
-  </div>
+  <header id="site-header">
+    <div class="header-inner">
+      <div class="header-text">
+        <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
+      </div>
+      <div class="lang-bar">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('de')">DE</button>
+      </div>
+    </div>
+  </header>
 
   <!-- ROLE SELECTION SCREEN (true landing) -->
   <div id="role-screen" class="screen">
@@ -4058,6 +3975,11 @@ body.is-exporting-png #print-session { left: 0; }
 
     </div>
   </div>
+
+  <footer>
+    <a href="javascript:void(0)" onclick="goToRoleScreen()" style="color: var(--forest-mid); text-decoration: none; border-bottom: 1px dotted var(--forest-pale); cursor: pointer;" data-i18n="footer.changerole">Change perspective</a>
+    <span class="f4y-badge">forest4youth.nweurope.eu</span>
+  </footer>
 
 </div>
 
@@ -5905,6 +5827,7 @@ function applyFocusMode(screenEl, modId) {
   document.querySelectorAll('.module-card.is-door.open').forEach(m => m.classList.remove('open'));
   document.querySelectorAll('.module-back-link.injected').forEach(b => b.remove());
   document.body.classList.remove('module-focus');
+  delete document.body.dataset.focused;
 
   if (!screenEl || !modId) return;
   const mod = screenEl.querySelector('#' + modId);
@@ -5912,6 +5835,11 @@ function applyFocusMode(screenEl, modId) {
   screenEl.classList.add('focus-mode');
   mod.classList.add('is-focused', 'open');
   document.body.classList.add('module-focus');
+  // Drive the FAB / pb-builder visibility through a plain attribute on
+  // <body> rather than :has(#mod-pocket.is-focused) — :has() silently
+  // fails on older WebViews and was making the pocketbook FAB invisible
+  // inside the Odoo embed on phone.
+  document.body.dataset.focused = modId;
 
   // Inject a back link at the top of the focused module
   const back = document.createElement('button');
@@ -7484,10 +7412,12 @@ function pbStartRunMode() {
   if (!pbSession.length) return;
   pbRunIndex = 0;
   document.getElementById('pb-runMode').classList.add('active');
+  document.body.classList.add('pb-run-active');
   pbRenderRunStep();
 }
 function pbCloseRunMode() {
   document.getElementById('pb-runMode').classList.remove('active');
+  document.body.classList.remove('pb-run-active');
   if (document.getElementById('pb-timerModal').classList.contains('active')) pbCloseTimer();
   pbRunTimerStop();
 }
@@ -7601,53 +7531,58 @@ if (document.readyState === 'loading') {
   Promise.resolve().then(() => { try { pbInit(); } catch(e) { console.error('pbInit error', e); } });
 }
 
-// Phone-only radio toggle for pocketbook group cubes + Adapting Activities
-// rows. Keeps the document height bounded so the iframe never has to scroll.
-(function() {
-  const mq = window.matchMedia('(max-width: 768px)');
-  document.addEventListener('click', (e) => {
-    if (!mq.matches) return;
+// ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
+(function () {
+  const THRESHOLD = 50;
+  const MOBILE_BP = 768;
+  let lastY = window.scrollY || 0;
+  let ticking = false;
 
-    // Group cube header: radio (only one group open at a time).
-    const groupHeader = e.target.closest('.pb-group-header');
-    if (groupHeader) {
-      const group = groupHeader.closest('.pb-group');
-      if (!group) return;
-      const wasExpanded = group.classList.contains('expanded');
-      document.querySelectorAll('.pb-group.expanded').forEach(g => g.classList.remove('expanded'));
-      // Also close any open activity in the previously-expanded group.
-      document.querySelectorAll('.pb-activity-item.open').forEach(a => a.classList.remove('open'));
-      if (!wasExpanded) group.classList.add('expanded');
+  function update() {
+    ticking = false;
+    const header = document.getElementById('site-header');
+    if (!header) return;
+    if (window.innerWidth > MOBILE_BP) {
+      header.classList.remove('header-hidden');
+      lastY = window.scrollY || 0;
       return;
     }
+    const y = window.scrollY || 0;
+    const dy = y - lastY;
+    if (y < THRESHOLD)        header.classList.remove('header-hidden');
+    else if (dy >  4)         header.classList.add('header-hidden');
+    else if (dy < -4)         header.classList.remove('header-hidden');
+    lastY = y;
+  }
 
-    // Adapt row: radio (only one row open at a time).
-    const adaptRow = e.target.closest('.pb-adapt-row');
-    if (adaptRow) {
-      const wasExpanded = adaptRow.classList.contains('expanded');
-      document.querySelectorAll('.pb-adapt-row.expanded').forEach(r => r.classList.remove('expanded'));
-      if (!wasExpanded) adaptRow.classList.add('expanded');
-      return;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > MOBILE_BP) {
+      const h = document.getElementById('site-header');
+      if (h) h.classList.remove('header-hidden');
     }
   });
 })();
 
+
 </script>
 
-<!-- iframe height reporter — caps at the device viewport so the Odoo parent
-     page doesn't grow the iframe into one giant block. Content longer than
-     the cap scrolls inside the iframe (app-shell behaviour). -->
+<!-- iframe height reporter: tells parent page the current document height
+     so an auto-sizing iframe embed doesn't need a fixed height. -->
 <script>
 (function() {
   if (window.self === window.top) return; // not in an iframe
   function sendHeight() {
-    var cap = (window.screen && window.screen.availHeight) ? window.screen.availHeight : 1024;
-    var content = document.documentElement.scrollHeight;
-    var h = Math.min(content, cap);
+    var h = document.documentElement.scrollHeight;
     window.parent.postMessage({ type: 'resize', height: h }, '*');
   }
+  // Send on load and on every DOM mutation that changes height
   window.addEventListener('load', sendHeight);
-  window.addEventListener('resize', sendHeight);
   var ro = new ResizeObserver(sendHeight);
   ro.observe(document.body);
 })();
