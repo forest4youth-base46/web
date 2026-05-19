@@ -2302,15 +2302,6 @@ body.is-exporting-png #print-session { left: 0; }
   }
 }
 @media (max-width: 768px) {
-  #site-header {
-    transition: transform 0.25s ease, opacity 0.25s ease;
-    will-change: transform;
-  }
-  #site-header.header-hidden {
-    transform: translateY(-110%);
-    opacity: 0;
-    pointer-events: none;
-  }
   /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
   .lang-bar {
     position: static;
@@ -7453,58 +7444,22 @@ if (document.readyState === 'loading') {
   Promise.resolve().then(() => { try { pbInit(); } catch(e) { console.error('pbInit error', e); } });
 }
 
-// ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
-(function () {
-  const THRESHOLD = 50;
-  const MOBILE_BP = 768;
-  let lastY = window.scrollY || 0;
-  let ticking = false;
-
-  function update() {
-    ticking = false;
-    const header = document.getElementById('site-header');
-    if (!header) return;
-    if (window.innerWidth > MOBILE_BP) {
-      header.classList.remove('header-hidden');
-      lastY = window.scrollY || 0;
-      return;
-    }
-    const y = window.scrollY || 0;
-    const dy = y - lastY;
-    if (y < THRESHOLD)        header.classList.remove('header-hidden');
-    else if (dy >  4)         header.classList.add('header-hidden');
-    else if (dy < -4)         header.classList.remove('header-hidden');
-    lastY = y;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  }, { passive: true });
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > MOBILE_BP) {
-      const h = document.getElementById('site-header');
-      if (h) h.classList.remove('header-hidden');
-    }
-  });
-})();
-
-
 </script>
 
-<!-- iframe height reporter: tells parent page the current document height
-     so an auto-sizing iframe embed doesn't need a fixed height. -->
+<!-- iframe height reporter — caps at the device viewport so the Odoo parent
+     page doesn't grow the iframe into one giant block. Content longer than
+     the cap scrolls inside the iframe (app-shell behaviour). -->
 <script>
 (function() {
   if (window.self === window.top) return; // not in an iframe
   function sendHeight() {
-    var h = document.documentElement.scrollHeight;
+    var cap = (window.screen && window.screen.availHeight) ? window.screen.availHeight : 1024;
+    var content = document.documentElement.scrollHeight;
+    var h = Math.min(content, cap);
     window.parent.postMessage({ type: 'resize', height: h }, '*');
   }
-  // Send on load and on every DOM mutation that changes height
   window.addEventListener('load', sendHeight);
+  window.addEventListener('resize', sendHeight);
   var ro = new ResizeObserver(sendHeight);
   ro.observe(document.body);
 })();
