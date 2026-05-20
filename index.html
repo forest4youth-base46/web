@@ -90,17 +90,10 @@ body::before {
 .container {
   max-width: 960px;
   margin: 0 auto;
-  /* Top padding clears the floating lang-bar chip (top:16 + ~28 chip
-     height = ~44 px). On screens with a Back button this also puts
-     Back at the same y-row as the lang-bar. */
-  padding: 18px 24px 0;
+  padding: 0 24px;
   position: relative;
   z-index: 1;
 }
-
-/* Entry / role screens have no Back button, so push their content a
-   touch further down so the title doesn't crowd the lang-bar chip. */
-#role-screen, #entry-screen { padding-top: 28px; }
 
 /* ── LANGUAGE TOGGLE ── */
 .lang-bar {
@@ -143,6 +136,38 @@ body[data-role="participant"] [data-role-only="practitioner"] { display: none !i
 body[data-role="practitioner"] [data-role-only="participant"] { display: none !important; }
 
 /* ── HEADER ── */
+header {
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--forest-mist);
+  margin-bottom: 28px;
+}
+
+.header-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
+
+.header-text h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.header-text p {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
 /* ── SCREENS ── */
 #entry-screen { animation: fadeUp 0.5s ease both; }
 
@@ -181,107 +206,77 @@ body[data-role="practitioner"] [data-role-only="participant"] { display: none !i
 
 .pathways {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
 }
 
-/* App-style pathway row: icon left (spans both text rows), title + desc
-   stacked in centre, chevron right. Sleeker, smaller typography,
-   professional list-cell aesthetic. */
 .pathway-card {
   background: var(--paper-card);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-md);
-  padding: 12px 14px;
+  padding: 28px 28px 24px;
   cursor: pointer;
-  transition: border-color 0.18s ease, background-color 0.18s ease;
-  display: grid;
-  grid-template-columns: 36px 1fr 16px;
-  grid-template-rows: auto auto;
-  column-gap: 14px;
-  row-gap: 2px;
-  align-items: center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   position: relative;
+  overflow: hidden;
+}
+
+.pathway-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--forest-deep);
+  transform: scaleY(0);
+  transition: transform 0.25s ease;
+  transform-origin: top;
 }
 
 .pathway-card:hover {
   border-color: var(--forest-soft);
-  background: var(--paper-pure);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
+.pathway-card:hover::before { transform: scaleY(1); }
 
 .pathway-icon {
-  grid-column: 1;
-  grid-row: 1 / span 2;
+  font-size: 22px;
+  margin-bottom: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px; height: 32px;
+  width: 38px; height: 38px;
   background: var(--paper);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-sm);
   color: var(--forest-deep);
-  margin: 0;
 }
-.pathway-icon svg { width: 17px; height: 17px; }
+.pathway-icon svg { width: 20px; height: 20px; }
 
 .pathway-card h2 {
-  grid-column: 2;
-  grid-row: 1;
   font-family: 'Montserrat', sans-serif;
-  font-size: 13.5px;
+  font-size: 18px;
   font-weight: 500;
   color: var(--forest-ink);
-  margin: 0;
+  margin-bottom: 8px;
   letter-spacing: -0.005em;
-  line-height: 1.25;
 }
 
 .pathway-card p {
-  grid-column: 2;
-  grid-row: 2;
-  font-size: 11px;
+  font-size: 13.5px;
   color: var(--ink-soft);
-  line-height: 1.4;
+  line-height: 1.6;
   font-weight: 300;
-  margin: 0;
-  /* Two-line max for clean alignment; tail ellipsises. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
-/* Chevron in lieu of the old "Explore →" CTA — one indicator,
-   list-style. The data-i18n text content is hidden via font-size 0
-   while the ::before draws a clean rotated-square chevron. */
 .pathway-arrow {
-  grid-column: 3;
-  grid-row: 1 / span 2;
-  font-size: 0;
-  width: 16px; height: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-faint);
-  margin: 0;
-}
-.pathway-arrow::before {
-  content: '';
-  width: 6px; height: 6px;
-  border-top: 1.5px solid currentColor;
-  border-right: 1.5px solid currentColor;
-  transform: rotate(45deg);
-  transition: transform 0.18s ease, color 0.18s ease;
-}
-.pathway-card:hover .pathway-arrow { color: var(--forest-deep); }
-.pathway-card:hover .pathway-arrow::before { transform: translateX(2px) rotate(45deg); }
-
-/* Desktop: two columns of these list rows, still small + clean. */
-@media (min-width: 769px) {
-  .pathways { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .pathway-card { padding: 14px 16px; }
-  .pathway-card h2 { font-size: 14px; }
-  .pathway-card p { font-size: 11.5px; }
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--forest-deep);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 /* ── SECTION SCREEN ── */
@@ -447,8 +442,7 @@ body[data-role="practitioner"] [data-role-only="participant"] { display: none !i
 .module-card.open .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
-/* Lang-bar stays visible on every screen, including focused modules
-   (pocket guide etc), so language switching is always one tap away. */
+body.module-focus .lang-bar { display: none; }
 .screen.focus-mode .section-header,
 .screen.focus-mode > .back-btn { display: none; }
 .screen.focus-mode .modules-grid { display: block; grid-template-columns: 1fr; }
@@ -1403,8 +1397,8 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 
 /* Intro prose (pocketbook-style) */
 .pb-prose {
-  font-size: 10.5px;
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.75;
   color: var(--ink);
   font-weight: 300;
   margin: 0 0 36px;
@@ -1416,13 +1410,13 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-prose h3 {
   font-family: 'Montserrat', sans-serif;
-  font-size: 11.5px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--forest-deep);
   margin-bottom: 10px;
   letter-spacing: -0.005em;
 }
-.pb-prose p { margin-bottom: 10px; color: var(--ink-soft); font-size: 10.5px; }
+.pb-prose p { margin-bottom: 10px; color: var(--ink-soft); font-size: 14px; }
 .pb-prose p:last-child { margin-bottom: 0; }
 .pb-prose strong { font-weight: 500; color: var(--forest-ink); }
 
@@ -2246,9 +2240,7 @@ body.is-exporting-png #print-session { left: 0; }
     right: 16px !important;
     top: auto !important;
     max-height: 70vh;
-    /* Only the inner activity list scrolls — the panel itself doesn't,
-       so we don't get a second scrollbar wrapping the whole popup. */
-    overflow: hidden;
+    overflow-y: auto;
     border-radius: var(--pb-r-lg);
     transform-origin: bottom right;
     transform: scale(0.05);
@@ -2258,12 +2250,7 @@ body.is-exporting-png #print-session { left: 0; }
     z-index: 50;
     pointer-events: none;
     box-shadow: var(--shadow-lg);
-    display: flex;
-    flex-direction: column;
   }
-  /* Hide the inner list's scrollbar chrome — content still scrolls. */
-  .pb-builder-list::-webkit-scrollbar { width: 0; height: 0; }
-  .pb-builder-list { scrollbar-width: none; }
   .pb-builder.expanded {
     transform: scale(1);
     opacity: 1;
@@ -2307,9 +2294,8 @@ body.is-exporting-png #print-session { left: 0; }
 
   /* Visibility gates — FAB only renders while the pocketbook module is
      the focused module. Run-mode hides both FAB and builder.
-     Class/attribute selectors instead of :has() because :has() silently
-     fails on older WebViews (the Odoo embed test path) and was making
-     the FAB invisible. */
+     Class/attribute selectors (not :has()) for compatibility with the
+     older WebView used by the Odoo embed test path. */
   body[data-focused="mod-pocket"] .pb-fab { display: inline-flex; }
   body.pb-run-active .pb-fab,
   body.pb-run-active .pb-builder { display: none !important; }
@@ -2322,11 +2308,21 @@ body.is-exporting-png #print-session { left: 0; }
   }
 }
 @media (max-width: 768px) {
-  /* Lang-bar tucks into the corner with a slightly smaller chip on phone. */
-  .lang-bar { top: 10px; right: 10px; padding: 2px; }
-  .lang-btn { font-size: 9.5px; padding: 4px 9px; letter-spacing: 0.1em; }
-  .container { padding: 14px 16px 0; }
-  #role-screen, #entry-screen { padding-top: 22px; }
+  #site-header {
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    will-change: transform;
+  }
+  #site-header.header-hidden {
+    transform: translateY(-110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
+  .lang-bar {
+    position: static;
+    margin-left: auto;
+    top: auto; right: auto;
+  }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
@@ -2355,13 +2351,18 @@ body.is-exporting-png #print-session { left: 0; }
 
 <div class="container">
 
-  <!-- Lang-bar lives as a free-floating chip top-right of the viewport.
-       On screens with a Back button, it sits on the same y row as Back. -->
-  <div class="lang-bar">
-    <button class="lang-btn active" onclick="setLang('en')">EN</button>
-    <button class="lang-btn" onclick="setLang('fr')">FR</button>
-    <button class="lang-btn" onclick="setLang('de')">DE</button>
-  </div>
+  <header id="site-header">
+    <div class="header-inner">
+      <div class="header-text">
+        <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
+      </div>
+      <div class="lang-bar">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <button class="lang-btn" onclick="setLang('fr')">FR</button>
+        <button class="lang-btn" onclick="setLang('de')">DE</button>
+      </div>
+    </div>
+  </header>
 
   <!-- ROLE SELECTION SCREEN (true landing) -->
   <div id="role-screen" class="screen">
@@ -3643,6 +3644,7 @@ body.is-exporting-png #print-session { left: 0; }
             </main>
             <aside class="pb-builder" id="pb-builder">
               <header class="pb-builder-header" onclick="pbToggleBuilderMobile()">
+                <div class="pb-builder-eyebrow">Practitioner tool</div>
                 <div class="pb-builder-title">Session Builder</div>
                 <div class="pb-builder-tagline">Compose a session by adding activities. Sequence reflects the therapeutic arc.</div>
               </header>
@@ -3702,9 +3704,8 @@ body.is-exporting-png #print-session { left: 0; }
       </div>
 
 
-      <!-- Adapting activities — lives as its own door alongside the
-           pocketbook so the pocket guide page stays focused on the
-           activity groups. -->
+      <!-- Adapting activities — its own door alongside the pocketbook
+           so the pocket guide page stays focused on the activity groups. -->
       <div class="module-card is-door" id="mod-adapt">
         <div class="module-header" onclick="openModulePage('mod-adapt','implement')">
           <div class="module-header-left">
@@ -3937,6 +3938,11 @@ body.is-exporting-png #print-session { left: 0; }
 
     </div>
   </div>
+
+  <footer>
+    <a href="javascript:void(0)" onclick="goToRoleScreen()" style="color: var(--forest-mid); text-decoration: none; border-bottom: 1px dotted var(--forest-pale); cursor: pointer;" data-i18n="footer.changerole">Change perspective</a>
+    <span class="f4y-badge">forest4youth.nweurope.eu</span>
+  </footer>
 
 </div>
 
@@ -5791,10 +5797,10 @@ function applyFocusMode(screenEl, modId) {
   if (!mod) return;
   screenEl.classList.add('focus-mode');
   mod.classList.add('is-focused', 'open');
-  // The FAB / pb-builder visibility is gated on this attribute rather than
-  // on :has(), which silently fails on older WebViews (Odoo embed).
-  document.body.dataset.focused = modId;
   document.body.classList.add('module-focus');
+  // FAB / builder visibility is driven by this attribute (not :has()),
+  // which works on every WebView including the Odoo embed test path.
+  document.body.dataset.focused = modId;
 
   // Inject a back link at the top of the focused module
   const back = document.createElement('button');
@@ -7485,6 +7491,45 @@ if (document.readyState === 'loading') {
   // Defer to next tick so pbInit definition lower in this script has been parsed
   Promise.resolve().then(() => { try { pbInit(); } catch(e) { console.error('pbInit error', e); } });
 }
+
+// ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
+(function () {
+  const THRESHOLD = 50;
+  const MOBILE_BP = 768;
+  let lastY = window.scrollY || 0;
+  let ticking = false;
+
+  function update() {
+    ticking = false;
+    const header = document.getElementById('site-header');
+    if (!header) return;
+    if (window.innerWidth > MOBILE_BP) {
+      header.classList.remove('header-hidden');
+      lastY = window.scrollY || 0;
+      return;
+    }
+    const y = window.scrollY || 0;
+    const dy = y - lastY;
+    if (y < THRESHOLD)        header.classList.remove('header-hidden');
+    else if (dy >  4)         header.classList.add('header-hidden');
+    else if (dy < -4)         header.classList.remove('header-hidden');
+    lastY = y;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }, { passive: true });
+
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > MOBILE_BP) {
+      const h = document.getElementById('site-header');
+      if (h) h.classList.remove('header-hidden');
+    }
+  });
+})();
+
 
 </script>
 
