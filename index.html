@@ -90,10 +90,17 @@ body::before {
 .container {
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 24px;
+  /* Top padding clears the floating lang-bar chip (top:16 + ~28 chip
+     height = ~44 px). On screens with a Back button this also puts
+     Back at the same y-row as the lang-bar. */
+  padding: 18px 24px 0;
   position: relative;
   z-index: 1;
 }
+
+/* Entry / role screens have no Back button, so push their content a
+   touch further down so the title doesn't crowd the lang-bar chip. */
+#role-screen, #entry-screen { padding-top: 28px; }
 
 /* ── LANGUAGE TOGGLE ── */
 .lang-bar {
@@ -136,38 +143,6 @@ body[data-role="participant"] [data-role-only="practitioner"] { display: none !i
 body[data-role="practitioner"] [data-role-only="participant"] { display: none !important; }
 
 /* ── HEADER ── */
-header {
-  padding: 28px 0 20px;
-  border-bottom: 1px solid var(--forest-mist);
-  margin-bottom: 28px;
-}
-
-.header-inner {
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-}
-
-.tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
-
-.header-text h1 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 20px;
-  font-weight: 500;
-  color: var(--forest-ink);
-  line-height: 1.1;
-  letter-spacing: -0.01em;
-}
-
-.header-text p {
-  font-size: 12px;
-  color: var(--ink-faint);
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-top: 6px;
-}
-
 /* ── SCREENS ── */
 #entry-screen { animation: fadeUp 0.5s ease both; }
 
@@ -2346,21 +2321,11 @@ body.is-exporting-png #print-session { left: 0; }
   }
 }
 @media (max-width: 768px) {
-  #site-header {
-    transition: transform 0.25s ease, opacity 0.25s ease;
-    will-change: transform;
-  }
-  #site-header.header-hidden {
-    transform: translateY(-110%);
-    opacity: 0;
-    pointer-events: none;
-  }
-  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
-  .lang-bar {
-    position: static;
-    margin-left: auto;
-    top: auto; right: auto;
-  }
+  /* Lang-bar tucks into the corner with a slightly smaller chip on phone. */
+  .lang-bar { top: 10px; right: 10px; padding: 2px; }
+  .lang-btn { font-size: 9.5px; padding: 4px 9px; letter-spacing: 0.1em; }
+  .container { padding: 14px 16px 0; }
+  #role-screen, #entry-screen { padding-top: 22px; }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
@@ -2389,18 +2354,13 @@ body.is-exporting-png #print-session { left: 0; }
 
 <div class="container">
 
-  <header id="site-header">
-    <div class="header-inner">
-      <div class="header-text">
-        <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
-      </div>
-      <div class="lang-bar">
-        <button class="lang-btn active" onclick="setLang('en')">EN</button>
-        <button class="lang-btn" onclick="setLang('fr')">FR</button>
-        <button class="lang-btn" onclick="setLang('de')">DE</button>
-      </div>
-    </div>
-  </header>
+  <!-- Lang-bar lives as a free-floating chip top-right of the viewport.
+       On screens with a Back button, it sits on the same y row as Back. -->
+  <div class="lang-bar">
+    <button class="lang-btn active" onclick="setLang('en')">EN</button>
+    <button class="lang-btn" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('de')">DE</button>
+  </div>
 
   <!-- ROLE SELECTION SCREEN (true landing) -->
   <div id="role-screen" class="screen">
@@ -3954,11 +3914,6 @@ body.is-exporting-png #print-session { left: 0; }
 
     </div>
   </div>
-
-  <footer>
-    <a href="javascript:void(0)" onclick="goToRoleScreen()" style="color: var(--forest-mid); text-decoration: none; border-bottom: 1px dotted var(--forest-pale); cursor: pointer;" data-i18n="footer.changerole">Change perspective</a>
-    <span class="f4y-badge">forest4youth.nweurope.eu</span>
-  </footer>
 
 </div>
 
@@ -7501,45 +7456,6 @@ if (document.readyState === 'loading') {
   // Defer to next tick so pbInit definition lower in this script has been parsed
   Promise.resolve().then(() => { try { pbInit(); } catch(e) { console.error('pbInit error', e); } });
 }
-
-// ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
-(function () {
-  const THRESHOLD = 50;
-  const MOBILE_BP = 768;
-  let lastY = window.scrollY || 0;
-  let ticking = false;
-
-  function update() {
-    ticking = false;
-    const header = document.getElementById('site-header');
-    if (!header) return;
-    if (window.innerWidth > MOBILE_BP) {
-      header.classList.remove('header-hidden');
-      lastY = window.scrollY || 0;
-      return;
-    }
-    const y = window.scrollY || 0;
-    const dy = y - lastY;
-    if (y < THRESHOLD)        header.classList.remove('header-hidden');
-    else if (dy >  4)         header.classList.add('header-hidden');
-    else if (dy < -4)         header.classList.remove('header-hidden');
-    lastY = y;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(update);
-  }, { passive: true });
-
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > MOBILE_BP) {
-      const h = document.getElementById('site-header');
-      if (h) h.classList.remove('header-hidden');
-    }
-  });
-})();
-
 
 </script>
 
