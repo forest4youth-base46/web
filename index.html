@@ -447,7 +447,8 @@ body[data-role="practitioner"] [data-role-only="participant"] { display: none !i
 .module-card.open .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
-body.module-focus .lang-bar { display: none; }
+/* Lang-bar stays visible on every screen, including focused modules
+   (pocket guide etc), so language switching is always one tap away. */
 .screen.focus-mode .section-header,
 .screen.focus-mode > .back-btn { display: none; }
 .screen.focus-mode .modules-grid { display: block; grid-template-columns: 1fr; }
