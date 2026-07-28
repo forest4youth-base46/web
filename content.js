@@ -1658,4 +1658,14 @@ function setLang(lang) {
   currentLang = lang;
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === lang.toUpperCase()));
   applyTranslations();
+  // The Pocketbook is built via innerHTML from JS, not [data-i18n] markup,
+  // so applyTranslations() above doesn't touch it — re-render it directly
+  // if it's already been initialized, so switching language updates any
+  // already-visible Pocketbook content immediately instead of only on
+  // next reload.
+  if (window.__pbInited) {
+    pbRenderGroups();
+    pbRenderAdaptations();
+    pbRenderBuilder();
+  }
 }

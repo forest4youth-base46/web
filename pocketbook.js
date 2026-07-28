@@ -8,6 +8,34 @@ function pbFmtDuration(a) {
   return `${a.durMin}–${a.durMax} min`;
 }
 
+// ───────── i18n lookups (fall back to the English literal in
+// pocketbook-data.js if no translation exists for the current language,
+// or if PB_I18N itself has no entry for that field) ─────────
+function pbT(a, field) {
+  const entry = PB_I18N[currentLang] && PB_I18N[currentLang].activities[a.id];
+  return (entry && entry[field]) || a[field];
+}
+function pbGroupT(g, field) {
+  const entry = PB_I18N[currentLang] && PB_I18N[currentLang].groups[g.id];
+  return (entry && entry[field]) || g[field];
+}
+function pbAdaptT(r, field) {
+  const entry = PB_I18N[currentLang] && PB_I18N[currentLang].adaptations[r.label];
+  return (entry && entry[field]) || r[field];
+}
+function pbTagT(tag) {
+  const dict = PB_I18N[currentLang] && PB_I18N[currentLang].tags;
+  return (dict && dict[tag]) || tag;
+}
+function pbLabel(key) {
+  const dict = PB_I18N[currentLang] && PB_I18N[currentLang].labels;
+  return (dict && dict[key]) || PB_LABELS_EN[key];
+}
+const PB_LABELS_EN = {
+  purpose: 'Purpose', materials: 'Materials', introduce: 'How to introduce',
+  close: 'How to close', suitable: 'Suitable for',
+};
+
 function pbRenderGroups() {
   const root = document.getElementById('pb-groups');
   const html = GROUPS.map(g => {
@@ -17,9 +45,9 @@ function pbRenderGroups() {
         <header class="pb-group-header">
           <div class="pb-group-headline">
             <span class="pb-group-num">${g.num}.</span>
-            <h2 class="pb-group-title">${g.title}</h2>
+            <h2 class="pb-group-title">${pbGroupT(g, 'title')}</h2>
           </div>
-          <span class="pb-group-meta">${g.meta}</span>
+          <span class="pb-group-meta">${pbGroupT(g, 'meta')}</span>
         </header>
         <div class="pb-activity-list">
           ${items.map(pbRenderActivity).join('')}
@@ -37,7 +65,7 @@ function pbRenderActivity(a) {
     <article class="pb-activity-item" id="pb-act-${a.id}" data-group="${a.group}">
       <div class="pb-activity-trigger" onclick="pbToggleActivity('${a.id}')">
         <div class="pb-activity-glyph">${GLYPH[a.glyph] || ''}</div>
-        <div class="pb-activity-name">${a.name}</div>
+        <div class="pb-activity-name">${pbT(a, 'name')}</div>
         <div class="pb-activity-meta">
           <span class="pb-activity-duration">${dur}</span>
           ${showTimer ? `<button class="pb-timer-icon" title="Start timer" onclick="event.stopPropagation(); pbStartTimer('${a.id}')">
@@ -51,19 +79,19 @@ function pbRenderActivity(a) {
       </div>
       <div class="pb-activity-detail">
         <div class="pb-activity-visual" data-visual="${a.visual || ''}">
-          <div class="pb-visual-caption">${a.caption}</div>
+          <div class="pb-visual-caption">${pbT(a, 'caption')}</div>
         </div>
         <div class="pb-detail-grid">
-          <div class="pb-detail-label">Purpose</div>
-          <div class="pb-detail-text">${a.purpose}</div>
-          <div class="pb-detail-label">Materials</div>
-          <div class="pb-detail-text">${a.materials}</div>
-          <div class="pb-detail-label">How to introduce</div>
-          <div class="pb-detail-text"><div class="pb-detail-text-example">${a.intro}</div></div>
-          <div class="pb-detail-label">How to close</div>
-          <div class="pb-detail-text">${a.close || ''}</div>
-          <div class="pb-detail-label">Suitable for</div>
-          <div class="pb-detail-text"><div class="pb-detail-tags">${a.tags.map(t => `<span class="pb-detail-tag">${t}</span>`).join('')}</div></div>
+          <div class="pb-detail-label">${pbLabel('purpose')}</div>
+          <div class="pb-detail-text">${pbT(a, 'purpose')}</div>
+          <div class="pb-detail-label">${pbLabel('materials')}</div>
+          <div class="pb-detail-text">${pbT(a, 'materials')}</div>
+          <div class="pb-detail-label">${pbLabel('introduce')}</div>
+          <div class="pb-detail-text"><div class="pb-detail-text-example">${pbT(a, 'intro')}</div></div>
+          <div class="pb-detail-label">${pbLabel('close')}</div>
+          <div class="pb-detail-text">${pbT(a, 'close') || ''}</div>
+          <div class="pb-detail-label">${pbLabel('suitable')}</div>
+          <div class="pb-detail-text"><div class="pb-detail-tags">${a.tags.map(t => `<span class="pb-detail-tag">${pbTagT(t)}</span>`).join('')}</div></div>
         </div>
       </div>
     </article>
@@ -73,8 +101,8 @@ function pbRenderActivity(a) {
 function pbRenderAdaptations() {
   document.getElementById('pb-adaptations-table').innerHTML = ADAPTATIONS.map(r => `
     <div class="pb-adapt-row">
-      <div class="pb-adapt-label">${r.label}</div>
-      <div class="pb-adapt-text">${r.text}</div>
+      <div class="pb-adapt-label">${pbAdaptT(r, 'label')}</div>
+      <div class="pb-adapt-text">${pbAdaptT(r, 'text')}</div>
     </div>
   `).join('');
 }
@@ -206,7 +234,7 @@ function pbRenderBuilder() {
     : legendEntries.map(g => {
         const grp = GROUPS.find(x => x.id === g);
         const colors = { 1:'var(--forest-soft)', 2:'var(--forest-mid)', 3:'var(--forest-deep)', 4:'var(--bark)', 5:'var(--ember)' };
-        return `<span class="pb-arc-legend-item"><span class="pb-arc-dot" style="background:${colors[g]}"></span>${grp.title}</span>`;
+        return `<span class="pb-arc-legend-item"><span class="pb-arc-dot" style="background:${colors[g]}"></span>${pbGroupT(grp, 'title')}</span>`;
       }).join('');
 
   // List
@@ -230,12 +258,12 @@ function pbRenderBuilder() {
              ondragstart="pbOnDragStart(event)" ondragover="pbOnDragOver(event)"
              ondrop="pbOnDrop(event)" ondragend="pbOnDragEnd(event)">
           <span class="pb-builder-row-handle">⋮⋮</span>
-          <span class="pb-builder-row-group" style="background:${colors[a.group]}" title="Group ${a.group}: ${GROUPS[a.group-1].title}"></span>
-          <span class="pb-builder-row-name">${a.name}</span>
+          <span class="pb-builder-row-group" style="background:${colors[a.group]}" title="Group ${a.group}: ${pbGroupT(GROUPS[a.group-1], 'title')}"></span>
+          <span class="pb-builder-row-name">${pbT(a, 'name')}</span>
           <span class="pb-builder-row-dur">${a.durMax ? a.durMax + 'm' : '—'}</span>
           <span class="pb-builder-row-move">
-            <button class="pb-move-btn" onclick="pbMoveUp(${i})" ${i === 0 ? 'disabled' : ''} title="Move up" aria-label="Move ${a.name} up">▲</button>
-            <button class="pb-move-btn" onclick="pbMoveDown(${i})" ${i === pbSession.length - 1 ? 'disabled' : ''} title="Move down" aria-label="Move ${a.name} down">▼</button>
+            <button class="pb-move-btn" onclick="pbMoveUp(${i})" ${i === 0 ? 'disabled' : ''} title="Move up" aria-label="Move ${pbT(a, 'name')} up">▲</button>
+            <button class="pb-move-btn" onclick="pbMoveDown(${i})" ${i === pbSession.length - 1 ? 'disabled' : ''} title="Move down" aria-label="Move ${pbT(a, 'name')} down">▼</button>
           </span>
           <button class="pb-builder-row-remove" onclick="pbRemoveFromSession('${id}')" title="Remove">×</button>
         </div>`;
@@ -293,9 +321,9 @@ function pbExportSession() {
     const a = ACTIVITIES.find(x => x.id === id);
     if (!a) return;
     const grp = GROUPS[a.group - 1];
-    lines.push(`${i+1}. ${a.name}  (${pbFmtDuration(a)})`);
-    lines.push(`   ${grp.title}`);
-    lines.push(`   ${a.purpose}`);
+    lines.push(`${i+1}. ${pbT(a, 'name')}  (${pbFmtDuration(a)})`);
+    lines.push(`   ${pbGroupT(grp, 'title')}`);
+    lines.push(`   ${pbT(a, 'purpose')}`);
     lines.push('');
     total += a.durAvg || 0;
   });
@@ -342,7 +370,7 @@ function pbStartTimer(id) {
   pbTimerTotal = minutes * 60;
   pbTimerSeconds = pbTimerTotal;
   pbTimerPaused = false;
-  nameEl.textContent = a.name;
+  nameEl.textContent = pbT(a, 'name');
   pauseBtn.textContent = 'Pause';
   modal.classList.add('active');
 
@@ -436,9 +464,9 @@ function exportRenderPrintSession() {
       '<div class="print-row">' +
         '<div style="width:28px;font-weight:700;color:#666;">' + (i + 1) + '.</div>' +
         '<div style="flex:1;">' +
-          '<div class="print-row-name">' + a.name + '</div>' +
+          '<div class="print-row-name">' + pbT(a, 'name') + '</div>' +
           '<div class="print-row-meta">Group ' + a.group + ' · ' +
-            a.durMin + '–' + a.durMax + ' min · ' + a.caption + '</div>' +
+            a.durMin + '–' + a.durMax + ' min · ' + pbT(a, 'caption') + '</div>' +
         '</div>' +
       '</div>'
     ).join('') +
@@ -585,13 +613,13 @@ function pbRenderRunStep() {
   if (!a) return;
   const grp = GROUPS[a.group - 1];
   document.getElementById('pb-runStep').textContent = `${pbRunIndex+1} / ${pbSession.length}`;
-  document.getElementById('pb-runGroup').textContent = grp ? grp.title : '';
-  document.getElementById('pb-runName').textContent = a.name;
+  document.getElementById('pb-runGroup').textContent = grp ? pbGroupT(grp, 'title') : '';
+  document.getElementById('pb-runName').textContent = pbT(a, 'name');
   document.getElementById('pb-runDuration').textContent = pbFmtDuration(a);
-  document.getElementById('pb-runPurpose').textContent = a.purpose || '';
-  document.getElementById('pb-runIntro').textContent = a.intro || '';
-  document.getElementById('pb-runMaterials').textContent = a.materials || '';
-  document.getElementById('pb-runClose').textContent = a.close || '';
+  document.getElementById('pb-runPurpose').textContent = pbT(a, 'purpose') || '';
+  document.getElementById('pb-runIntro').textContent = pbT(a, 'intro') || '';
+  document.getElementById('pb-runMaterials').textContent = pbT(a, 'materials') || '';
+  document.getElementById('pb-runClose').textContent = pbT(a, 'close') || '';
   document.getElementById('pb-runPrev').disabled = (pbRunIndex === 0);
   document.getElementById('pb-runNext').textContent = (pbRunIndex === pbSession.length - 1) ? 'Finish' : 'Next →';
   // Auto-start the inline timer for this step using the top duration threshold
