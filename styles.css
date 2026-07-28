@@ -1001,7 +1001,22 @@ body.module-focus .lang-bar { display: none; }
   white-space: pre-wrap;
 }
 .reflect-session-recap-actions { margin-top: 16px; }
+
+/* Export action panel — always rendered (never [hidden]) unlike the recap
+   section above it, so the button is disabled-with-a-reason rather than
+   missing whenever the gate (pbUpdateReflectExportGate() in pocketbook.js)
+   isn't satisfied yet. */
+.reflect-export-panel {
+  margin-bottom: 28px;
+}
 #reflect-export-btn { min-height: 44px; padding: 10px 20px; }
+.reflect-export-hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+.reflect-export-hint:empty { display: none; }
 
 .reflect-history {
   margin-top: 8px;
@@ -2414,6 +2429,19 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   align-items: center;
   justify-content: center;
 }
+/* Explanatory reason for the disabled PDF/PNG/Run-mode buttons above —
+   kept always in the DOM (empty string when the plan isn't empty) rather
+   than toggled with [hidden], matching pb-arc-advice's :empty pattern, so
+   a screen reader tracking this aria-live region isn't announced into and
+   back out of existence on every render. */
+.pb-builder-hint {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-style: italic;
+  padding: 0 16px 12px;
+  margin: -4px 0 0;
+}
+.pb-builder-hint:empty { display: none; }
 
 /* ─── RUN MODE (full-screen overlay) ─── */
 .pb-run-mode {

@@ -352,12 +352,24 @@ function pbRenderBuilder() {
     }
   }
 
-  // Toggle PDF / PNG export buttons alongside Clear / Run mode.
+  // Toggle PDF / PNG export buttons alongside Clear / Run mode. Disabled
+  // (never hidden) when the plan is empty — a disabled button with a
+  // visible reason is more discoverable than a button that isn't there.
+  // aria-label/title double as that reason while disabled, and the hint
+  // paragraph below the actions row states it in plain text too.
   const empty = pbSession.length === 0;
   const pdfBtn = document.getElementById('pb-export-pdf');
   const pngBtn = document.getElementById('pb-export-png');
-  if (pdfBtn) pdfBtn.disabled = empty;
-  if (pngBtn) pngBtn.disabled = empty;
+  [[pdfBtn, 'export.pdf'], [pngBtn, 'export.png']].forEach(([btn, labelKey]) => {
+    if (!btn) return;
+    btn.disabled = empty;
+    btn.setAttribute('aria-disabled', String(empty));
+    const label = empty ? t('pbui.export.disabled.hint') : t(labelKey);
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
+  });
+  const builderHint = document.getElementById('pb-builder-export-hint');
+  if (builderHint) builderHint.textContent = empty ? t('pbui.export.disabled.hint') : '';
 
   // Arc balance bar
   const groupTime = [0, 0, 0, 0, 0, 0]; // index 0 unused
@@ -431,7 +443,9 @@ function pbRenderBuilder() {
   }
 
   document.getElementById('pb-btn-clear').disabled = pbSession.length === 0;
-  document.getElementById('pb-btn-export').disabled = pbSession.length === 0;
+  const runBtn = document.getElementById('pb-btn-export');
+  runBtn.disabled = pbSession.length === 0;
+  runBtn.setAttribute('aria-disabled', String(pbSession.length === 0));
 }
 
 // ───────── ARC ADVICE ─────────
@@ -809,11 +823,56 @@ function exportRenderPrintReport() {
     '<div class="print-footer"><div>' + tHead + '</div></div>';
 }
 
+// Belt-and-suspenders alongside the button's own disabled state: same two
+// conditions pbUpdateReflectExportGate() below uses to enable the button,
+// checked again here so a somehow-triggered click (e.g. programmatically,
+// or before the gate has re-rendered) still can't produce a report with
+// nothing in it.
 function exportSessionReportPDF() {
   if (!pbLoadSessionRecords().length) return;
+  if (!pbHasReflectionContent()) return;
   exportRenderPrintReport();
   pbSetPrintTarget('print-report');
   setTimeout(() => { window.print(); }, 50);
+}
+
+// True once the practitioner has written *something* in the reflection UI —
+// at least one of the 4 self-reflection prompts, or at least one outcome
+// indicator ticked. Read straight from the live DOM (values already restored
+// by pbRestoreReflectState() on load, or just typed/toggled), same source
+// exportRenderPrintReport() itself reads from — so "has content" and "what
+// gets exported" can never disagree.
+function pbHasReflectionContent() {
+  const anyAnswer = Array.prototype.some.call(
+    document.querySelectorAll('.reflect-answer'), ta => ta.value.trim().length > 0);
+  if (anyAnswer) return true;
+  return Array.prototype.some.call(
+    document.querySelectorAll('#mod-indicators .check-item-v2'), el => el.classList.contains('checked'));
+}
+
+// Live-updates the Reflect screen's export button + its adjacent
+// explanatory text against two conditions together: a session record must
+// exist (pbLoadSessionRecords().length > 0) AND at least one reflection
+// field must have content (pbHasReflectionContent()). Called whenever
+// either side of that could have changed — a run finishes/closes
+// (pbRenderReflectSummary), a reflection answer is typed
+// (pbSaveReflectAnswer), an indicator is toggled (pbToggleIndicator), and
+// once more on load after restoring saved reflection state — so the button
+// is never stale relative to what's actually on screen.
+function pbUpdateReflectExportGate() {
+  const btn = document.getElementById('reflect-export-btn');
+  const hint = document.getElementById('reflect-export-hint');
+  if (!btn) return;
+  const hasRecord = pbLoadSessionRecords().length > 0;
+  const hasContent = pbHasReflectionContent();
+  const enabled = hasRecord && hasContent;
+  btn.disabled = !enabled;
+  btn.setAttribute('aria-disabled', String(!enabled));
+  if (hint) {
+    hint.textContent = !hasRecord ? t('pbui.reflect.export.norecord')
+      : !hasContent ? t('pbui.reflect.export.needcontent')
+      : t('pbui.reflect.export.hint');
+  }
 }
 
 // ───────── KEY HANDLERS ─────────
@@ -1116,6 +1175,7 @@ function pbRenderReflectSummary() {
   if (!records.length) {
     recap.hidden = true;
     history.hidden = true;
+    pbUpdateReflectExportGate();
     return;
   }
 
@@ -1123,11 +1183,11 @@ function pbRenderReflectSummary() {
   recap.hidden = false;
   document.getElementById('reflect-recap-when').textContent = pbFormatWhen(latest.when);
   document.getElementById('reflect-recap-list').innerHTML = latest.items.map(pbRenderReflectRecapRow).join('');
-  const exportBtn = document.getElementById('reflect-export-btn');
-  if (exportBtn) exportBtn.disabled = false;
 
   history.hidden = false;
   document.getElementById('reflect-history-list').innerHTML = records.map(pbRenderReflectHistoryRow).join('');
+
+  pbUpdateReflectExportGate();
 }
 
 // ───────── REFLECT: SELF-REFLECTION ANSWERS + INDICATORS ─────────
@@ -1143,6 +1203,7 @@ function pbSaveReflectAnswer(idx, value) {
     answers[idx] = value;
     localStorage.setItem('f4y.reflect.answers', JSON.stringify(answers));
   } catch (e) {}
+  pbUpdateReflectExportGate();
 }
 // Keyboard equivalent for the indicator rows' role="checkbox" (plain divs,
 // same reasoning as pbActivityTriggerKeydown() above — no nested
@@ -1163,6 +1224,7 @@ function pbToggleIndicator(el, idx) {
     flags[idx] = on;
     localStorage.setItem('f4y.reflect.indicators', JSON.stringify(flags));
   } catch (e) {}
+  pbUpdateReflectExportGate();
 }
 function pbRestoreReflectState() {
   try {

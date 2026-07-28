@@ -1238,7 +1238,7 @@
               <div class="pb-builder-actions">
                 <button class="pb-builder-btn" id="pb-btn-clear" onclick="pbClearSession()" disabled="" data-i18n="pbui.builder.clear">Clear</button>
                 <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-pdf" type="button"
-                        onclick="exportRunPDF()" disabled=""
+                        onclick="exportRunPDF()" disabled="" aria-disabled="true"
                         aria-label="Export to PDF" title="Export to PDF" data-i18n-attr="aria-label,title:export.pdf">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1249,7 +1249,7 @@
                   </svg>
                 </button>
                 <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-png" type="button"
-                        onclick="exportRunPNG()" disabled=""
+                        onclick="exportRunPNG()" disabled="" aria-disabled="true"
                         aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1260,6 +1260,7 @@
                 </button>
                 <button class="pb-builder-btn primary" id="pb-btn-export" onclick="pbStartRunMode()" disabled="" data-i18n="pbui.builder.runmode">Run mode →</button>
               </div>
+              <p class="pb-builder-hint" id="pb-builder-export-hint" aria-live="polite"></p>
             </aside>
           </div>
         </div>
@@ -1325,9 +1326,22 @@
         <span class="reflect-session-recap-when" id="reflect-recap-when"></span>
       </div>
       <div class="reflect-session-recap-list" id="reflect-recap-list"></div>
-      <div class="reflect-session-recap-actions">
-        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn" onclick="exportSessionReportPDF()" disabled data-i18n="pbui.reflect.export">Export session report</button>
-      </div>
+    </section>
+
+    <!-- Export action — deliberately its own always-rendered section (never
+         [hidden], unlike the recap above): a disabled button with a reason
+         is more discoverable than one that's missing until conditions are
+         met. Gated live by pbUpdateReflectExportGate() in pocketbook.js on
+         two things together — a session record exists
+         (pbLoadSessionRecords().length > 0) AND at least one reflection
+         field has content (a self-reflection answer or a ticked outcome
+         indicator) — not just record existence, so an export can't be
+         produced from an empty reflection. -->
+    <section class="reflect-export-panel" id="reflect-export-panel">
+      <button type="button" class="pb-builder-btn primary" id="reflect-export-btn"
+              onclick="exportSessionReportPDF()" disabled aria-disabled="true"
+              data-i18n="pbui.reflect.export">Export session report</button>
+      <p class="reflect-export-hint" id="reflect-export-hint" aria-live="polite"></p>
     </section>
 
     <div class="modules-grid">
