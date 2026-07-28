@@ -15,7 +15,7 @@ body {
   color: var(--ink);
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  min-height: calc(var(--vh, 1vh) * 100);
   overflow-x: hidden;
   letter-spacing: 0.005em;
 }
@@ -1641,7 +1641,7 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   border-radius: var(--pb-r-lg);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  max-height: calc(100vh - 48px);
+  max-height: calc(var(--vh, 1vh) * 100 - 48px);
   display: flex;
   flex-direction: column;
 }
@@ -2182,7 +2182,7 @@ body.is-exporting-png #print-session { left: 0; }
     left: 16px !important;
     right: 16px !important;
     top: auto !important;
-    max-height: 70vh;
+    max-height: calc(var(--vh, 1vh) * 70);
     overflow-y: auto;
     border-radius: var(--pb-r-lg);
     transform-origin: bottom right;

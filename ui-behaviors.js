@@ -35,3 +35,17 @@
     }
   });
 })();
+
+// ───────── VIEWPORT HEIGHT FIX ─────────
+// Mobile browsers change the visible viewport height as their address
+// bar/toolbar show or hide, but 100vh keeps using the *largest* height,
+// leaving a gap under fixed/full-height elements. --vh tracks the real
+// visible height so `calc(var(--vh, 1vh) * 100)` stays accurate.
+(function () {
+  function setVH() {
+    document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px');
+  }
+  setVH();
+  window.addEventListener('resize', setVH);
+  window.addEventListener('orientationchange', setVH);
+})();
