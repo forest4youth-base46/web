@@ -1,0 +1,56 @@
+:root {
+  /* Forest palette */
+  --forest-ink:    #14302A;
+  --forest-deep:   #234A3E;
+  --forest-mid:    #3A6B5A;
+  --forest-soft:   #7FA396;
+  --forest-mist:   #C8D8D0;
+
+  /* Paper / surfaces */
+  --paper:         #F4F1EA;
+  --paper-card:    #FBF9F4;
+  --paper-pure:    #FFFFFF;
+
+  /* Earth + accent */
+  --bark:          #6B5240;
+  --ember:         #B8552E;
+  --ember-soft:    #D87B4F;
+
+  /* Text */
+  --ink:           #1B2A24;
+  --ink-soft:      #4D6359;
+  --ink-faint:     #7C8E85;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(20,48,42,0.04);
+  --shadow-md: 0 4px 16px rgba(20,48,42,0.06);
+  --shadow-lg: 0 12px 32px rgba(20,48,42,0.10);
+
+  /* Spacing scale (px-based rem so it still respects user font-size prefs) */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-7: 2.5rem;    /* 40px */
+  --space-8: 3rem;      /* 48px */
+
+  /* Breakpoints (documented here; CSS custom properties can't drive
+     @media conditions directly, so @media rules still hardcode these
+     same values — keep the two in sync if either changes):
+       --bp-sm: 640px   (compact detail/table layouts)
+       --bp-md: 768px   (header scroll hide/show)
+       --bp-lg: 1100px  (Session Builder becomes a mobile sheet + FAB) */
+
+  /* Fluid type scale: replaces the fixed px sizes that used to need a
+     manual per-breakpoint override to shrink on narrow viewports. */
+  --fs-h1:    clamp(1.65rem, 1.5rem + 0.8vw, 2rem);        /* ~26.4px → 32px, section headings */
+  --fs-h3:    clamp(0.9rem, 0.87rem + 0.15vw, 0.9375rem);  /* ~14.4px → 15px, card/prose subheads */
+  --fs-body:  clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem); /* 13px → 14px, running prose */
+  --fs-sub:   clamp(0.8125rem, 0.79rem + 0.15vw, 0.90625rem); /* 13px → 14.5px, section intros */
+}
