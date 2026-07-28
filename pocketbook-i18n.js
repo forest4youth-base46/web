@@ -115,6 +115,7 @@ const PB_I18N = {
         materials: `Des rôles pratiques précis définis avant le départ : qui porte les tasses, le thé, vérifie le chemin, tient la carte.`,
         intro: `« J'ai besoin d'aide aujourd'hui. Je ne peux pas faire cela seul. Je vais demander à chacun d'entre vous d'être responsable de quelque chose. »`,
         close: `À la fin, nommez précisément ce que chaque personne a fait. C'est la reconnaissance d'une contribution réelle.`,
+        durLabel: `Tout au long de la séance`,
       },
       project: {
         name: `Le projet individuel`,
@@ -123,6 +124,7 @@ const PB_I18N = {
         materials: `Temps de séance, matériaux disponibles sur place.`,
         intro: `« Cette partie de la forêt ne sert à rien de particulier. Je me demandais si vous aimeriez en faire quelque chose au cours des prochaines semaines ? Construire quelque chose, planter quelque chose, créer quelque chose ? »`,
         close: `À la fin du programme, le groupe s'y rend ensemble. Le jeune guide la visite et décrit ce qu'il a fait et pourquoi.`,
+        durLabel: `Sur plusieurs séances`,
       },
       object: {
         name: `L'objet de la forêt`,
@@ -308,6 +310,7 @@ const PB_I18N = {
         materials: `Konkrete praktische Rollen vor dem Aufbruch: wer trägt die Becher, den Tee, prüft den Weg, hält die Karte.`,
         intro: `„Ich brauche heute Hilfe. Ich kann das nicht allein schaffen. Ich werde jeden von Ihnen bitten, für etwas verantwortlich zu sein.“`,
         close: `Benennen Sie am Ende genau, was jede Person getan hat. Das ist die Anerkennung eines echten Beitrags.`,
+        durLabel: `Während der gesamten Sitzung`,
       },
       project: {
         name: `Das individuelle Projekt`,
@@ -316,6 +319,7 @@ const PB_I18N = {
         materials: `Sitzungszeit, vor Ort verfügbare Materialien.`,
         intro: `„Dieser Teil des Waldes wird für nichts genutzt. Ich habe mich gefragt, ob Sie in den nächsten Wochen etwas damit machen möchten? Etwas bauen, etwas pflanzen, etwas erschaffen?“`,
         close: `Am Ende des Programms besucht die Gruppe den Ort gemeinsam. Der Jugendliche führt und beschreibt, was er gemacht hat und warum.`,
+        durLabel: `Über mehrere Sitzungen`,
       },
       object: {
         name: `Das Waldobjekt`,

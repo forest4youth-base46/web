@@ -3,7 +3,7 @@
 
 // ───────── RENDER ─────────
 function pbFmtDuration(a) {
-  if (a.durLabel) return a.durLabel;
+  if (a.durLabel) return pbT(a, 'durLabel');
   if (a.durMin === a.durMax) return `${a.durMin} min`;
   return `${a.durMin}–${a.durMax} min`;
 }
@@ -68,12 +68,12 @@ function pbRenderActivity(a) {
         <div class="pb-activity-name">${pbT(a, 'name')}</div>
         <div class="pb-activity-meta">
           <span class="pb-activity-duration">${dur}</span>
-          ${showTimer ? `<button class="pb-timer-icon" title="Start timer" onclick="event.stopPropagation(); pbStartTimer('${a.id}')">
+          ${showTimer ? `<button class="pb-timer-icon" title="${t('pbui.activity.starttimer')}" onclick="event.stopPropagation(); pbStartTimer('${a.id}')">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
               <circle cx="8" cy="9" r="5.5"/><path d="M8 9V6"/><path d="M6 2h4"/><path d="M8 2v1.5"/>
             </svg>
           </button>` : ''}
-          <button class="pb-add-icon" title="Add to pbSession" onclick="event.stopPropagation(); pbToggleInSession('${a.id}')" data-add="${a.id}">+</button>
+          <button class="pb-add-icon" title="${t('pbui.export.addtitle')}" onclick="event.stopPropagation(); pbToggleInSession('${a.id}')" data-add="${a.id}">+</button>
           <svg class="pb-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l4 4 4-4"/></svg>
         </div>
       </div>
@@ -143,7 +143,7 @@ function pbRefreshAddButtons() {
     const inSession = pbSession.includes(id);
     btn.classList.toggle('in-pbSession', inSession);
     btn.textContent = inSession ? '✓' : '+';
-    btn.title = inSession ? 'Remove from pbSession' : 'Add to pbSession';
+    btn.title = inSession ? t('pbui.export.removetitle') : t('pbui.export.addtitle');
   });
 }
 
@@ -155,7 +155,7 @@ function pbRemoveFromSession(id) {
 }
 
 function pbClearSession() {
-  if (pbSession.length && !confirm('Clear all activities from the pbSession?')) return;
+  if (pbSession.length && !confirm(t('pbui.export.clearconfirm'))) return;
   pbSession = [];
   pbSaveSession();
   pbRenderBuilder();
@@ -230,7 +230,7 @@ function pbRenderBuilder() {
   }
   const legend = document.getElementById('pb-arc-legend');
   legend.innerHTML = legendEntries.length === 0
-    ? '<span style="opacity:0.5">All five themes will appear as you add.</span>'
+    ? `<span style="opacity:0.5">${t('pbui.arc.empty')}</span>`
     : legendEntries.map(g => {
         const grp = GROUPS.find(x => x.id === g);
         const colors = { 1:'var(--forest-soft)', 2:'var(--forest-mid)', 3:'var(--forest-deep)', 4:'var(--bark)', 5:'var(--ember)' };
@@ -246,7 +246,7 @@ function pbRenderBuilder() {
           <circle cx="28" cy="26" r="4"/>
           <path d="M28 24v4M26 26h4"/>
         </svg>
-        <div>No activities yet.<br>Tap <strong>+</strong> next to any activity to begin.</div>
+        <div>${t('pbui.builder.empty')}</div>
       </div>`;
   } else {
     const colors = { 1:'var(--forest-soft)', 2:'var(--forest-mid)', 3:'var(--forest-deep)', 4:'var(--bark)', 5:'var(--ember)' };
@@ -315,7 +315,7 @@ function pbMoveDown(idx) {
 
 // ───────── EXPORT ─────────
 function pbExportSession() {
-  const lines = ['SESSION PLAN', '='.repeat(40), ''];
+  const lines = [t('pbui.export.sessionplan'), '='.repeat(40), ''];
   let total = 0;
   pbSession.forEach((id, i) => {
     const a = ACTIVITIES.find(x => x.id === id);
@@ -328,19 +328,19 @@ function pbExportSession() {
     total += a.durAvg || 0;
   });
   lines.push('-'.repeat(40));
-  lines.push(`Total: ${pbSession.length} activities · ${total} min`);
+  lines.push(`${t('pbui.export.total')}: ${pbSession.length} ${t('pbui.export.activitiesword')} · ${total} min`);
   const txt = lines.join('\n');
 
   navigator.clipboard?.writeText(txt).then(() => {
-    pbShowToast('Session plan copied to clipboard');
+    pbShowToast(t('pbui.export.copied'));
   }).catch(() => {
     const blob = new Blob([txt], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'pbSession-plan.txt';
+    a.href = url; a.download = 'session-plan.txt';
     a.click();
     URL.revokeObjectURL(url);
-    pbShowToast('Session plan downloaded');
+    pbShowToast(t('pbui.export.downloaded'));
   });
 }
 
@@ -371,7 +371,7 @@ function pbStartTimer(id) {
   pbTimerSeconds = pbTimerTotal;
   pbTimerPaused = false;
   nameEl.textContent = pbT(a, 'name');
-  pauseBtn.textContent = 'Pause';
+  pauseBtn.textContent = t('pbui.timer.pause');
   modal.classList.add('active');
 
   pbUpdateTimerDisplay();
@@ -401,13 +401,13 @@ function pbUpdateTimerDisplay() {
 
 function pbPauseTimer() {
   pbTimerPaused = !pbTimerPaused;
-  document.getElementById('pb-pauseBtn').textContent = pbTimerPaused ? 'Resume' : 'Pause';
+  document.getElementById('pb-pauseBtn').textContent = pbTimerPaused ? t('pbui.timer.resume') : t('pbui.timer.pause');
 }
 
 function pbCloseTimer() {
   document.getElementById('pb-timerModal').classList.remove('active');
   if (pbTimerInterval) clearInterval(pbTimerInterval);
-  document.getElementById('pb-pauseBtn').textContent = 'Pause';
+  document.getElementById('pb-pauseBtn').textContent = t('pbui.timer.pause');
   document.getElementById('pb-timerProgress').style.stroke = '';
 }
 
@@ -457,7 +457,7 @@ function exportRenderPrintSession() {
     '<div class="print-header">' +
       '<div style="font-size:18px;font-weight:700;">' + tHead + '</div>' +
       '<div style="font-size:13px;color:#555;margin-top:4px;">' +
-        date + ' · ' + items.length + ' activities · ~' + totalMin + ' min' +
+        date + ' · ' + items.length + ' ' + t('pbui.export.activitiesword') + ' · ~' + totalMin + ' min' +
       '</div>' +
     '</div>' +
     items.map((a, i) =>
@@ -567,7 +567,7 @@ function pbRunTimerStart(minutes) {
   pbRunTimerPaused = false;
   const wrap = document.getElementById('pb-runTimer');
   wrap.classList.remove('done','paused');
-  document.getElementById('pb-runTimerPause').textContent = 'Pause';
+  document.getElementById('pb-runTimerPause').textContent = t('pbui.timer.pause');
   pbRunTimerRender();
   pbRunTimerInterval = setInterval(() => {
     if (pbRunTimerPaused) return;
@@ -577,7 +577,7 @@ function pbRunTimerStart(minutes) {
       clearInterval(pbRunTimerInterval);
       pbRunTimerInterval = null;
       document.getElementById('pb-runTimer').classList.add('done');
-      document.getElementById('pb-runTimerHint').textContent = 'Time complete · move when ready.';
+      document.getElementById('pb-runTimerHint').textContent = t('pbui.runtimer.hint.done');
     }
   }, 1000);
 }
@@ -595,7 +595,7 @@ function pbRunTimerRender() {
 function pbRunTimerPause() {
   if (!pbRunTimerInterval && pbRunTimerSeconds <= 0) return;
   pbRunTimerPaused = !pbRunTimerPaused;
-  document.getElementById('pb-runTimerPause').textContent = pbRunTimerPaused ? 'Resume' : 'Pause';
+  document.getElementById('pb-runTimerPause').textContent = pbRunTimerPaused ? t('pbui.timer.resume') : t('pbui.timer.pause');
   document.getElementById('pb-runTimer').classList.toggle('paused', pbRunTimerPaused);
 }
 function pbRunTimerReset() {
@@ -616,18 +616,22 @@ function pbRenderRunStep() {
   document.getElementById('pb-runGroup').textContent = grp ? pbGroupT(grp, 'title') : '';
   document.getElementById('pb-runName').textContent = pbT(a, 'name');
   document.getElementById('pb-runDuration').textContent = pbFmtDuration(a);
+  document.getElementById('pb-runLabelPurpose').textContent = pbLabel('purpose');
   document.getElementById('pb-runPurpose').textContent = pbT(a, 'purpose') || '';
+  document.getElementById('pb-runLabelIntro').textContent = pbLabel('introduce');
   document.getElementById('pb-runIntro').textContent = pbT(a, 'intro') || '';
+  document.getElementById('pb-runLabelMaterials').textContent = pbLabel('materials');
   document.getElementById('pb-runMaterials').textContent = pbT(a, 'materials') || '';
+  document.getElementById('pb-runLabelClose').textContent = pbLabel('close');
   document.getElementById('pb-runClose').textContent = pbT(a, 'close') || '';
   document.getElementById('pb-runPrev').disabled = (pbRunIndex === 0);
-  document.getElementById('pb-runNext').textContent = (pbRunIndex === pbSession.length - 1) ? 'Finish' : 'Next →';
+  document.getElementById('pb-runNext').textContent = (pbRunIndex === pbSession.length - 1) ? t('pbui.run.finish') : t('pbui.run.next');
   // Auto-start the inline timer for this step using the top duration threshold
   const timerWrap = document.getElementById('pb-runTimer');
   const mins = a.durMax || a.durAvg;
   if (mins && mins > 0) {
     timerWrap.classList.remove('untimed');
-    document.getElementById('pb-runTimerHint').textContent = `Counts down ${mins} min · advance when ready.`;
+    document.getElementById('pb-runTimerHint').textContent = t('pbui.runtimer.hint.mins').replace('{mins}', mins);
     pbRunTimerStart(mins);
   } else {
     timerWrap.classList.add('untimed');
