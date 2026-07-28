@@ -581,6 +581,55 @@ body.no-scroll { overflow: hidden; }
 #reference-screen .modules-grid {
   grid-template-columns: 1fr;
 }
+/* Reflect's remaining module-cards (self-reflection, indicators — glossary
+   was removed) stack single-column too, and drop the boxed card look
+   entirely: no border/background/radius, just open content separated by a
+   rule, since this is working reflection material feeding the report, not
+   reference cards to browse. */
+#reflect-screen .modules-grid {
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+#reflect-screen .module-card {
+  background: none;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--forest-mist);
+}
+#reflect-screen .module-card:last-child { border-bottom: none; padding-bottom: 0; }
+#reflect-screen .module-card .module-body { padding: 0; }
+
+/* Reference page's own search — distinct from the global ⌘K dialog's
+   .search-input, but same visual language (bordered pill, icon inline). */
+.reference-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-md);
+  padding: 0 14px;
+  min-height: 44px;
+  background: var(--paper-pure);
+  margin-bottom: 18px;
+  color: var(--ink-faint);
+}
+.reference-search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 15px;
+  color: var(--ink);
+  min-height: 42px;
+}
+.reference-search-empty {
+  font-size: 14px;
+  color: var(--ink-faint);
+  margin: -8px 0 18px;
+}
 
 .module-card {
   background: var(--paper-pure);

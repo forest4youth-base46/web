@@ -793,6 +793,21 @@
       <p class="section-sub" data-i18n="ref.sub">Indications, contraindications, population-specific guidance, dosage framing, and integration with other modalities. Evidence-informed starting points — not protocols. Clinical judgement governs all applications.</p>
     </div>
 
+    <!-- Page-level search, scoped to this screen's content — distinct from
+         the global ⌘K dialog, which searches across the whole app.
+         Live-filters every indication/contraindication/population/
+         dosage-row/integration entry by text match (refApplyFilter() in
+         router.js), hiding non-matching entries rather than whole cards,
+         since a card can hold a dozen+ entries and filtering at that
+         granularity would hide almost nothing. -->
+    <label class="reference-search">
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg>
+      <span class="sr-only" data-i18n="ref.search.label">Search this page</span>
+      <input type="search" id="reference-search-input" oninput="refApplyFilter()"
+             data-i18n-attr="placeholder:ref.search.placeholder" placeholder="Search indications, contraindications, dosage…">
+    </label>
+    <p class="reference-search-empty" id="reference-search-empty" hidden data-i18n="ref.search.empty">Nothing on this page matches that.</p>
+
     <div class="modules-grid">
 
       <!-- Module 1: Clinical Indications -->
@@ -1401,30 +1416,6 @@
             <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 5)" onkeydown="pbIndicatorKeydown(event, this, 5)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.6">Visible emotional response (tears, laughter, stillness)</label>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Glossary -->
-      <div class="module-card" id="mod-glossary">
-        <div class="module-body">
-          <div class="glossary-list">
-            <div class="glossary-item">
-              <div class="glossary-term">Attention Restoration Theory (ART)</div>
-              <div class="glossary-def" data-i18n="mod.glossary.art">Natural environments restore directed attention capacity by engaging involuntary fascination — the mind rests its effortful focus, reducing fatigue and improving cognitive function.</div>
-            </div>
-            <div class="glossary-item">
-              <div class="glossary-term">Biophilia</div>
-              <div class="glossary-def" data-i18n="mod.glossary.bio">Wilson's hypothesis that humans have an innate affiliation with other living systems — the basis for why natural settings may uniquely support wellbeing.</div>
-            </div>
-            <div class="glossary-item">
-              <div class="glossary-term">Phytoncides</div>
-              <div class="glossary-def" data-i18n="mod.glossary.phyto">Volatile organic compounds released by trees, particularly conifers. Inhalation is associated with reduced cortisol, increased NK cell activity, and improved mood.</div>
-            </div>
-            <div class="glossary-item">
-              <div class="glossary-term">Somatic awareness</div>
-              <div class="glossary-def" data-i18n="mod.glossary.somatic">In FBT, attention to body sensation as a channel for emotional information — supported by the environmental context, which naturally directs attention outward and then back inward.</div>
             </div>
           </div>
         </div>

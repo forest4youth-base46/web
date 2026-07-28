@@ -992,6 +992,12 @@ function pbCloseRunMode() {
   pbRunTimerStop();
   pbRunLog = {};
   pbRenderReflectSummary();
+  // The whole point of "Finish & reflect" is to land on the Reflect screen
+  // with the session that was just run already showing — this was
+  // building the recap data (pbRenderReflectSummary above) but never
+  // actually navigating there, leaving the practitioner on whatever screen
+  // was behind the overlay (usually Plan).
+  navigate('reflect');
 }
 function pbRunPrev() { if (pbRunIndex > 0) { pbRunCaptureStep(); pbRunIndex--; pbRenderRunStep(); } }
 function pbRunNext() {

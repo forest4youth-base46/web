@@ -158,6 +158,28 @@ function toggleModule(id) {
   document.getElementById(id).classList.toggle('open');
 }
 
+// ─────────────────────────────────────────
+// REFERENCE PAGE SEARCH
+// ─────────────────────────────────────────
+// Filters at entry granularity (one indication, one contraindication, one
+// population note, one dosage row, one integration pairing) rather than
+// whole module-cards, since a card holds a dozen+ entries and card-level
+// filtering would hide almost nothing for most queries.
+const REFERENCE_FILTER_SELECTOR = '.indication-block, .warn-block, .learn-block, .integration-block, .dosage-row:not(.dosage-head)';
+function refApplyFilter() {
+  const input = document.getElementById('reference-search-input');
+  const q = (input && input.value || '').trim().toLowerCase();
+  const items = document.querySelectorAll('#reference-screen ' + REFERENCE_FILTER_SELECTOR);
+  let anyVisible = false;
+  items.forEach(el => {
+    const match = !q || el.textContent.toLowerCase().indexOf(q) !== -1;
+    el.style.display = match ? '' : 'none';
+    if (match) anyVisible = true;
+  });
+  const empty = document.getElementById('reference-search-empty');
+  if (empty) empty.hidden = !q || anyVisible;
+}
+
 // Open a module as its own "page" — focuses screen on that module only.
 function openModulePage(modId, screenName) {
   window.location.hash = screenName + '/' + modId;
