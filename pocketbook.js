@@ -859,20 +859,31 @@ function pbHasReflectionContent() {
 // (pbSaveReflectAnswer), an indicator is toggled (pbToggleIndicator), and
 // once more on load after restoring saved reflection state — so the button
 // is never stale relative to what's actually on screen.
+// Two export buttons on the Reflect screen share this one gate: an early
+// one right under the "session just run" recap for quick access, and the
+// primary one at the end of the page (after prompts/indicators, before
+// Session history) for the natural end-of-flow action. Both read/write the
+// same underlying state, so keeping them in sync here (rather than two
+// separate gate functions) means they can never disagree.
+const PB_REFLECT_EXPORT_PAIRS = [
+  ['reflect-export-btn', 'reflect-export-hint'],
+  ['reflect-export-btn-end', 'reflect-export-hint-end'],
+];
 function pbUpdateReflectExportGate() {
-  const btn = document.getElementById('reflect-export-btn');
-  const hint = document.getElementById('reflect-export-hint');
-  if (!btn) return;
   const hasRecord = pbLoadSessionRecords().length > 0;
   const hasContent = pbHasReflectionContent();
   const enabled = hasRecord && hasContent;
-  btn.disabled = !enabled;
-  btn.setAttribute('aria-disabled', String(!enabled));
-  if (hint) {
-    hint.textContent = !hasRecord ? t('pbui.reflect.export.norecord')
-      : !hasContent ? t('pbui.reflect.export.needcontent')
-      : t('pbui.reflect.export.hint');
-  }
+  const hintText = !hasRecord ? t('pbui.reflect.export.norecord')
+    : !hasContent ? t('pbui.reflect.export.needcontent')
+    : t('pbui.reflect.export.hint');
+  PB_REFLECT_EXPORT_PAIRS.forEach(([btnId, hintId]) => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.setAttribute('aria-disabled', String(!enabled));
+    const hint = document.getElementById(hintId);
+    if (hint) hint.textContent = hintText;
+  });
 }
 
 // ───────── KEY HANDLERS ─────────

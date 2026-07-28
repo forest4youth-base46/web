@@ -1009,7 +1009,7 @@ body.module-focus .lang-bar { display: none; }
 .reflect-export-panel {
   margin-bottom: 28px;
 }
-#reflect-export-btn { min-height: 44px; padding: 10px 20px; }
+#reflect-export-btn, #reflect-export-btn-end { min-height: 44px; padding: 10px 20px; }
 .reflect-export-hint {
   margin: 8px 0 0;
   font-size: 12px;

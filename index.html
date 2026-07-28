@@ -1448,6 +1448,18 @@
 
     </div>
 
+    <!-- Second export action, same gate/behavior as reflect-export-panel
+         above (pbUpdateReflectExportGate() updates both together) — this
+         is the primary end-of-flow export, reached after the prompts and
+         indicators are actually filled in, positioned right before Session
+         history per the intended reading order. -->
+    <section class="reflect-export-panel" id="reflect-export-panel-end">
+      <button type="button" class="pb-builder-btn primary" id="reflect-export-btn-end"
+              onclick="exportSessionReportPDF()" disabled aria-disabled="true"
+              data-i18n="pbui.reflect.export">Export session report</button>
+      <p class="reflect-export-hint" id="reflect-export-hint-end" aria-live="polite"></p>
+    </section>
+
     <!-- Session history — every recorded run (pbLoadSessionRecords()),
          most recent first, each with its own mini arc-balance bar reusing
          the same per-group colors as the Session Builder. -->
