@@ -355,6 +355,23 @@ const T = {
     "ref.search.label": "Search this page",
     "ref.search.placeholder": "Search indications, contraindications, dosage…",
     "ref.search.empty": "Nothing on this page matches that.",
+
+    // New UI chrome for the Reference screen's type filter + flat entry
+    // list (EN-only, same rationale as the header-chrome block above —
+    // t() falls back to English until these are translated on purpose).
+    "ref.search.clear": "Clear the search",
+    "ref.abs.badge": "Never collapsed",
+    "ref.filter.all": "All",
+    "ref.filter.indication": "Indication",
+    "ref.filter.adjunctive": "Adjunctive",
+    "ref.filter.competency": "Competency flag",
+    "ref.filter.contraindication": "Contraindication",
+    "ref.filter.population": "Population",
+    "ref.filter.dosage": "Dosage",
+    "ref.filter.integration": "Integration",
+    "ref.count.summary": "{n} of {total} entries",
+    "ref.count.summary.kind": "{n} of {total} entries in {kind}",
+
     "ref.ind.title": "Clinical indications",
     "ref.ind.tag": "Three tiers · evidence level · recommended format",
     "ref.ind.tier1": "Tier 1 · Primary indications — FBT may be first-line",
@@ -1881,5 +1898,12 @@ function setLang(lang) {
     pbRenderGroups();
     pbRenderAdaptations();
     pbRenderBuilder();
+  }
+  // Same idea for the Reference screen's type-filter chips + result count
+  // — built via innerHTML/textContent from router.js, not [data-i18n], so
+  // they need an explicit re-render too.
+  if (typeof refRenderFilters === 'function') {
+    refRenderFilters();
+    refApplyFilter();
   }
 }

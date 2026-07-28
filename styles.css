@@ -573,14 +573,6 @@ body.no-scroll { overflow: hidden; }
   margin-bottom: 16px;
   align-items: start;
 }
-/* Reference specifically reads better single-column — its cards
-   (indications/contraindications/populations/dosage/integration) are long
-   and text-dense, not the shorter, more scannable cards other screens
-   using .modules-grid have. Scoped to #reference-screen only so Learn,
-   Reflect, and the participant screens keep their multi-column layout. */
-#reference-screen .modules-grid {
-  grid-template-columns: 1fr;
-}
 /* Reflect's remaining module-cards (self-reflection, indicators — glossary
    was removed) stack single-column too, and drop the boxed card look
    entirely: no border/background/radius, just open content separated by a
@@ -626,9 +618,90 @@ body.no-scroll { overflow: hidden; }
   min-height: 42px;
 }
 .reference-search-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
   font-size: 14px;
   color: var(--ink-faint);
-  margin: -8px 0 18px;
+  margin: 4px 0 18px;
+}
+/* Same-specificity author rule above would otherwise beat the UA
+   stylesheet's [hidden] { display: none }, since author origin wins ties
+   — this one line is what actually lets refApplyFilter() hide the
+   message by toggling the hidden attribute. */
+.reference-search-empty[hidden] { display: none; }
+.ref-clear-btn {
+  padding: 6px 12px;
+  min-height: 36px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--forest-deep);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ref-clear-btn:hover { border-color: var(--forest-soft); background: var(--paper); }
+
+/* ── REFERENCE: type filter chips + result count ── */
+.ref-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.ref-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 13px;
+  min-height: 44px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--ink-faint);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ref-filter-chip:hover { border-color: var(--forest-soft); color: var(--ink-soft); }
+.ref-filter-chip[aria-pressed="true"] {
+  background: var(--forest-ink);
+  border-color: var(--forest-ink);
+  color: var(--paper-pure);
+}
+.ref-count { font-size: 12px; color: var(--ink-faint); margin: 0 0 18px; }
+
+/* ── REFERENCE: absolute contraindications — always visible, never
+   collapsible, never touched by refApplyFilter(). Kept visually distinct
+   (safety-tinted heading + badge) so it reads as categorically different
+   from the filterable list below it, not just "first in the list". ── */
+.ref-absolute { margin-bottom: 28px; }
+.ref-absolute-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ref-absolute-head h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--safety-ink);
+  margin: 0;
+}
+.ref-absolute-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ember);
+  background: var(--paper-pure);
+  border: 1px solid #E5C7B2;
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
 }
 
 .module-card {
@@ -1508,28 +1581,13 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   }
 }
 
-/* ── INTEGRATION BLOCK ── */
-.integration-block {
-  background: var(--paper-card);
-  border: 1px solid var(--forest-mist);
-  border-radius: var(--r-md);
-  padding: 16px 18px;
-  margin-bottom: 8px;
-}
-.integration-block h4 {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13.5px;
-  font-weight: 500;
-  color: var(--forest-ink);
-  margin-bottom: 6px;
-  letter-spacing: -0.005em;
-}
-.integration-block p { font-size: 13px; color: var(--ink-soft); line-height: 1.6; font-weight: 300; margin-bottom: 8px; }
-.integration-block .int-pair {
+/* ── INTEGRATION PAIRING (inside a .ref-panel, see REFERENCE ENTRIES below) ── */
+.int-pair {
   font-size: 11.5px;
   color: var(--forest-mid);
   font-style: italic;
   letter-spacing: 0.02em;
+  margin-top: 6px;
 }
 
 /* ── QUESTION LIST ── */
@@ -1558,51 +1616,135 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .tier-header:first-child { margin-top: 0; }
 
-.indication-block {
+/* Two card flavours, shared by both the always-visible absolute
+   contraindications (plain h4+p, no accordion — see .ref-absolute above)
+   and the flat reference list's entries (.ref-entry, below). Keeping
+   these two classnames — rather than inventing new ones for the list —
+   is what keeps search.js's live #mod-indications/#mod-contraindications
+   .closest('.indication-block, .warn-block') lookup working unmodified
+   for every entry type it already indexed. */
+.indication-block, .warn-block {
   background: var(--paper-card);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-md);
   padding: 14px 18px;
   margin-bottom: 8px;
 }
-.indication-block h4 {
+.warn-block {
+  background: var(--safety-bg);
+  border: 1px solid #E5C7B2;
+  border-left: 3px solid var(--ember);
+}
+.indication-block h4, .warn-block h4 {
   font-family: 'Montserrat', sans-serif;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--forest-ink);
   margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
   letter-spacing: -0.005em;
 }
-.indication-block p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; font-weight: 300; margin-bottom: 6px; }
-.indication-block .ind-meta {
-  font-size: 11.5px;
-  color: var(--forest-mid);
-  line-height: 1.55;
-  margin-top: 6px;
-}
-.indication-block .ind-meta strong { font-weight: 500; color: var(--forest-deep); }
+.warn-block h4 { color: var(--safety-ink); }
+.indication-block p, .warn-block p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; font-weight: 300; margin-bottom: 6px; }
+.warn-block p { color: var(--safety-ink); }
+.ind-meta { font-size: 11.5px; color: var(--forest-mid); line-height: 1.55; margin-top: 6px; }
+.ind-meta strong { font-weight: 500; color: var(--forest-deep); }
 
-.warn-block {
-  background: var(--safety-bg);
-  border: 1px solid #E5C7B2;
-  border-left: 3px solid var(--ember);
-  border-radius: var(--r-md);
-  padding: 14px 18px;
-  margin-bottom: 8px;
+/* ── REFERENCE ENTRIES: the flat, independently-expandable list ──
+   .ref-entry layers accordion behaviour onto .indication-block/
+   .warn-block: trigger row (kind badge, title, optional evidence
+   indicator, chevron) always visible; .ref-panel collapses via the
+   native [hidden] attribute, toggled by refToggleEntry() in router.js.
+   The trigger itself is a real <button>, absolutely positioned to cover
+   the whole row (transparent — nothing to see, just a full-row hit
+   target) so its accessible name can come from aria-labelledby pointing
+   at the entry's own <h4>, keeping that <h4> exactly as it always was
+   (plain data-i18n on the h4, or on its first-child span for the
+   evidence-bearing Tier-1 entries) rather than nesting it — invalidly —
+   inside the button. */
+.ref-entry { padding: 0; overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; }
+.ref-entry.open { border-color: var(--forest-mid); box-shadow: var(--shadow-sm); }
+.ref-entry .ref-panel { padding: 0 18px 16px; }
+.ref-entry .ref-panel > *:first-child { margin-top: 0; }
+.ref-entry .related-reading { margin-top: 12px; }
+
+.ref-trigger-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 12px 18px;
+  cursor: pointer;
 }
-.warn-block h4 {
+.ref-trigger-row:hover { background: rgba(20,48,42,0.03); }
+.warn-block .ref-trigger-row:hover { background: rgba(143,63,31,0.05); }
+.ref-trigger {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.ref-trigger:focus-visible { outline: 2px solid var(--forest-deep); outline-offset: -2px; }
+
+.ref-kind-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--forest-deep);
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+}
+.warn-block .ref-kind-badge { color: var(--safety-ink); border-color: #E5C7B2; }
+
+.ref-trigger-row h4 {
+  flex: 1 1 auto;
+  min-width: 120px;
+  margin: 0;
   font-family: 'Montserrat', sans-serif;
   font-size: 13.5px;
   font-weight: 500;
-  color: var(--safety-ink);
-  margin-bottom: 4px;
+  color: var(--forest-ink);
   letter-spacing: -0.005em;
+  line-height: 1.4;
 }
-.warn-block p { font-size: 12.5px; color: var(--safety-ink); line-height: 1.6; font-weight: 300; }
+.warn-block .ref-trigger-row h4 { color: var(--safety-ink); }
+
+/* Evidence: bars + a text label together, never colour alone (WCAG
+   1.4.1) — the label already carries the same "Strong/Moderate/
+   Emerging" text this app's .evidence-pill has always shown, just
+   relocated out of the <h4> and into its own indicator here. Fill
+   pattern (strong=3 bars, moderate=2, emerging=1) is a static class per
+   entry, transcribed once from that same entry's original
+   evidence-pill--strong/moderate/emerging class — nothing computed or
+   duplicated at runtime. */
+.ref-evidence { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ref-ev-bars { display: flex; align-items: flex-end; gap: 2px; height: 16px; }
+.ref-ev-bar { width: 3px; border-radius: 1px; background: var(--forest-mist); }
+.ref-ev-bar:nth-child(1) { height: 8px; }
+.ref-ev-bar:nth-child(2) { height: 12px; }
+.ref-ev-bar:nth-child(3) { height: 16px; }
+.ref-evidence--strong .ref-ev-bar { background: var(--forest-ink); }
+.ref-evidence--moderate .ref-ev-bar:nth-child(1),
+.ref-evidence--moderate .ref-ev-bar:nth-child(2) { background: var(--forest-mid); }
+.ref-evidence--emerging .ref-ev-bar:nth-child(1) { background: var(--forest-soft); }
+.ref-ev-label { font-size: 10px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); white-space: nowrap; }
+
+.ref-chevron { width: 14px; height: 14px; flex-shrink: 0; color: var(--ink-faint); transition: transform 0.2s; }
+.ref-entry.open .ref-chevron { transform: rotate(180deg); color: var(--forest-deep); }
+
+@media (max-width: 640px) {
+  .ref-trigger-row { flex-wrap: wrap; }
+  .ref-evidence { order: 3; margin-left: 32px; }
+}
 
 /* ── PARTICIPANT EXPERIENCE CARDS ── */
 .exp-card {

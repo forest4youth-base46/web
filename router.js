@@ -159,25 +159,95 @@ function toggleModule(id) {
 }
 
 // ─────────────────────────────────────────
-// REFERENCE PAGE SEARCH
+// REFERENCE PAGE: type filter + search (combined)
 // ─────────────────────────────────────────
-// Filters at entry granularity (one indication, one contraindication, one
-// population note, one dosage row, one integration pairing) rather than
-// whole module-cards, since a card holds a dozen+ entries and card-level
-// filtering would hide almost nothing for most queries.
-const REFERENCE_FILTER_SELECTOR = '.indication-block, .warn-block, .learn-block, .integration-block, .dosage-row:not(.dosage-head)';
+// The absolute contraindications (.ref-absolute in index.html) sit
+// outside this entirely — never queried, never hidden — so the single
+// most safety-critical content on the page can never be searched or
+// filtered away by accident. Everything else is one flat list of
+// independently-toggleable entries (#reference-screen .ref-entry),
+// grouped only under .ref-group wrappers for the tier-header dividers
+// (Tier 1/2/3, Relative/Practitioner-competency); refKind (the chip row)
+// and the search box both narrow the same list together, replacing the
+// page-search-only refApplyFilter() from the previous commit — one
+// filter system, not two competing ones.
+//
+// Kind/evidence classification lives on the real DOM (data-kind on each
+// .ref-entry, .ref-evidence--strong/moderate/emerging read off the
+// existing entries) — same principle the old refApplyFilter() already
+// followed (el.textContent, not a JS data array): nothing here duplicates
+// the translated content, so there's nothing to drift out of sync with
+// content.js.
+const REF_KINDS = ['indication', 'adjunctive', 'competency', 'contraindication', 'population', 'dosage', 'integration'];
+let refKind = 'all';
+
+function refSetKind(kind) {
+  refKind = kind;
+  refRenderFilters();
+  refApplyFilter();
+}
+
+function refRenderFilters() {
+  const wrap = document.getElementById('ref-filters');
+  if (!wrap) return;
+  const kinds = ['all'].concat(REF_KINDS);
+  wrap.innerHTML = kinds.map(function(k) {
+    const active = refKind === k;
+    return '<button type="button" class="ref-filter-chip" aria-pressed="' + active + '" onclick="refSetKind(\'' + k + '\')">' +
+      t('ref.filter.' + k) + '</button>';
+  }).join('');
+}
+
 function refApplyFilter() {
   const input = document.getElementById('reference-search-input');
   const q = (input && input.value || '').trim().toLowerCase();
-  const items = document.querySelectorAll('#reference-screen ' + REFERENCE_FILTER_SELECTOR);
-  let anyVisible = false;
-  items.forEach(el => {
-    const match = !q || el.textContent.toLowerCase().indexOf(q) !== -1;
-    el.style.display = match ? '' : 'none';
-    if (match) anyVisible = true;
+  const groups = document.querySelectorAll('#reference-screen .ref-group');
+  const total = document.querySelectorAll('#reference-screen .ref-entry').length;
+  let shown = 0;
+
+  groups.forEach(function(group) {
+    let groupVisible = false;
+    group.querySelectorAll('.ref-entry').forEach(function(entry) {
+      const kindMatch = refKind === 'all' || entry.getAttribute('data-kind') === refKind;
+      const textMatch = !q || entry.textContent.toLowerCase().indexOf(q) !== -1;
+      const match = kindMatch && textMatch;
+      entry.style.display = match ? '' : 'none';
+      if (match) { groupVisible = true; shown++; }
+    });
+    // Hide the whole group (including its tier-header) when nothing
+    // inside it matches — otherwise an orphaned "Tier 2 · Adjunctive"
+    // divider would sit above an empty gap.
+    group.style.display = groupVisible ? '' : 'none';
   });
+
   const empty = document.getElementById('reference-search-empty');
-  if (empty) empty.hidden = !q || anyVisible;
+  if (empty) empty.hidden = shown > 0;
+
+  const countEl = document.getElementById('ref-count');
+  if (countEl) {
+    countEl.textContent = refKind === 'all'
+      ? t('ref.count.summary').replace('{n}', String(shown)).replace('{total}', String(total))
+      : t('ref.count.summary.kind').replace('{n}', String(shown)).replace('{total}', String(total)).replace('{kind}', t('ref.filter.' + refKind));
+  }
+}
+
+// Toggles one entry's disclosure panel. Independent, not an exclusive
+// accordion — matching pbToggleActivity()'s reasoning in pocketbook.js,
+// comparing two reference entries side by side shouldn't require
+// re-opening one after the other closes it.
+function refToggleEntry(btn) {
+  const entry = btn.closest('.ref-entry');
+  const panel = document.getElementById(btn.getAttribute('aria-controls'));
+  const willOpen = btn.getAttribute('aria-expanded') !== 'true';
+  btn.setAttribute('aria-expanded', String(willOpen));
+  if (panel) panel.hidden = !willOpen;
+  if (entry) entry.classList.toggle('open', willOpen);
+}
+
+function refClearSearch() {
+  const input = document.getElementById('reference-search-input');
+  if (input) { input.value = ''; input.focus(); }
+  refApplyFilter();
 }
 
 // Open a module as its own "page" — focuses screen on that module only.
@@ -408,6 +478,8 @@ function setRole(role, fromRoleScreen) {
 // ─────────────────────────────────────────
 renderModuleHeaders();
 applyTranslations();
+refRenderFilters();
+refApplyFilter();
 
 // URL overrides for recoverability:
 //   ?reset  → clear any stored role (ensureRole() then re-defaults to
