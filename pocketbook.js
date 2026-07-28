@@ -233,6 +233,10 @@ function pbRenderBuilder() {
           <span class="pb-builder-row-group" style="background:${colors[a.group]}" title="Group ${a.group}: ${GROUPS[a.group-1].title}"></span>
           <span class="pb-builder-row-name">${a.name}</span>
           <span class="pb-builder-row-dur">${a.durMax ? a.durMax + 'm' : '—'}</span>
+          <span class="pb-builder-row-move">
+            <button class="pb-move-btn" onclick="pbMoveUp(${i})" ${i === 0 ? 'disabled' : ''} title="Move up" aria-label="Move ${a.name} up">▲</button>
+            <button class="pb-move-btn" onclick="pbMoveDown(${i})" ${i === pbSession.length - 1 ? 'disabled' : ''} title="Move down" aria-label="Move ${a.name} down">▼</button>
+          </span>
           <button class="pb-builder-row-remove" onclick="pbRemoveFromSession('${id}')" title="Remove">×</button>
         </div>`;
     }).join('');
@@ -260,6 +264,26 @@ function pbOnDrop(e) {
   pbRenderBuilder();
 }
 function pbOnDragEnd(e) { e.currentTarget.style.opacity = ''; pbDragSrcIdx = null; }
+
+// Touch/keyboard-friendly alternative to drag reordering: native HTML5
+// drag-and-drop doesn't fire on touch devices and has no keyboard path,
+// so these buttons give every input type a way to reorder. They run the
+// same splice + pbSaveSession + pbRenderBuilder pipeline as the drag
+// handlers above, so both input methods stay in sync by construction.
+function pbMoveUp(idx) {
+  if (idx <= 0 || idx >= pbSession.length) return;
+  const moved = pbSession.splice(idx, 1)[0];
+  pbSession.splice(idx - 1, 0, moved);
+  pbSaveSession();
+  pbRenderBuilder();
+}
+function pbMoveDown(idx) {
+  if (idx < 0 || idx >= pbSession.length - 1) return;
+  const moved = pbSession.splice(idx, 1)[0];
+  pbSession.splice(idx + 1, 0, moved);
+  pbSaveSession();
+  pbRenderBuilder();
+}
 
 // ───────── EXPORT ─────────
 function pbExportSession() {

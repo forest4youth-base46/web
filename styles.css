@@ -1815,6 +1815,28 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+.pb-builder-row-move {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.pb-move-btn {
+  width: 16px; height: 13px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  border-radius: 3px;
+}
+.pb-move-btn:hover:not(:disabled) { background: var(--forest-mist); color: var(--forest-deep); }
+.pb-move-btn:disabled { opacity: 0.25; cursor: default; }
+
 .pb-builder-row-remove {
   width: 18px; height: 18px;
   border-radius: 50%;
