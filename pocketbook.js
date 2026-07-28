@@ -960,7 +960,7 @@ function pbStartRunMode() {
   pbRunIndex = 0;
   pbRunLog = {};
   document.getElementById('pb-runMode').classList.add('active');
-  document.body.classList.add('pb-run-active');
+  document.body.classList.add('pb-run-active', 'no-scroll');
   pbRenderRunStep();
 }
 
@@ -975,7 +975,7 @@ function pbCloseRunMode() {
   const record = pbBuildSessionRecord();
   pbMaybeSaveSessionRecord(record);
   document.getElementById('pb-runMode').classList.remove('active');
-  document.body.classList.remove('pb-run-active');
+  document.body.classList.remove('pb-run-active', 'no-scroll');
   if (document.getElementById('pb-timerModal').classList.contains('active')) pbCloseTimer();
   pbRunTimerStop();
   pbRunLog = {};

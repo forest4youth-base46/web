@@ -280,6 +280,16 @@ input:focus-visible,
   transition: box-shadow 0.3s ease;
 }
 
+/* Locks the page's own scroll while a full-viewport fixed overlay (Run
+   Mode, the search dialog) is open, so scrolling inside the overlay can't
+   also move the page behind it — the overlay being position:fixed;inset:0
+   makes it LOOK like the only thing on screen, but without this the body
+   underneath was still scrollable, producing exactly the kind of
+   background/foreground double-scroll this class exists to prevent.
+   Toggled by pbStartRunMode()/pbCloseRunMode() in pocketbook.js and
+   openSearch()/closeSearch() in search.js. */
+body.no-scroll { overflow: hidden; }
+
 /* ─── SEARCH DIALOG (⌘K / Ctrl+K) ─── */
 .search-dialog-overlay {
   display: none;
@@ -2111,6 +2121,16 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 
 /* ─── SESSION BUILDER (right rail) ─── */
+/* No max-height/overflow-y here on desktop (unlike the mobile popover
+   version below, which genuinely needs its own scroll since it's a fixed
+   popup capped to a fraction of the viewport) — this rail sits in normal
+   page flow, so it grows with its content and scrolls with the page.
+   The previous fixed max-height forced a second, independent scrollbar
+   inside the sticky sidebar alongside the page's own scrollbar — two
+   scroll regions fighting for wheel/trackpad input on the same screen.
+   overflow:hidden is kept only so the dark header respects the
+   border-radius; it no longer clips any content since there's no height
+   cap to exceed. */
 .pb-builder {
   position: sticky;
   top: 24px;
@@ -2120,7 +2140,6 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   border-radius: var(--pb-r-lg);
   overflow: hidden;
   box-shadow: var(--shadow-md);
-  max-height: calc(var(--vh, 1vh) * 100 - 48px);
   display: flex;
   flex-direction: column;
 }
@@ -2264,7 +2283,6 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 
 .pb-builder-list {
   flex: 1;
-  overflow-y: auto;
   padding: 10px 12px 12px;
   min-height: 100px;
 }

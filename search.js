@@ -185,6 +185,7 @@ function openSearchDialog(trigger) {
   const input = document.getElementById('search-input');
   if (!overlay || !input) return;
   overlay.classList.add('active');
+  document.body.classList.add('no-scroll');
   input.value = '';
   renderSearchResults('');
   // rAF, not a plain synchronous focus() call, because the overlay just
@@ -199,6 +200,7 @@ function closeSearchDialog() {
   searchOpen = false;
   const overlay = document.getElementById('search-overlay');
   if (overlay) overlay.classList.remove('active');
+  document.body.classList.remove('no-scroll');
   const trigger = searchTriggerEl;
   searchTriggerEl = null;
   if (trigger && typeof trigger.focus === 'function') {
