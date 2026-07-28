@@ -1009,7 +1009,14 @@ body.module-focus .lang-bar { display: none; }
 .reflect-export-panel {
   margin-bottom: 28px;
 }
+.reflect-export-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 #reflect-export-btn, #reflect-export-btn-end { min-height: 44px; padding: 10px 20px; }
+#reflect-export-png-btn, #reflect-export-png-btn-end { min-height: 44px; min-width: 44px; }
 .reflect-export-hint {
   margin: 8px 0 0;
   font-size: 12px;
@@ -2745,7 +2752,7 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   font: 14px/1.5 'Open Sans', sans-serif;
   padding: 32px; box-sizing: border-box;
 }
-body.is-exporting-png #print-session { left: 0; }
+body.is-exporting-png #print-session, body.is-exporting-png #print-report { left: 0; }
 .print-header { border-bottom: 2px solid #2d4a3f; padding-bottom: 10px; margin-bottom: 16px; }
 .print-row {
   display: flex; gap: 12px; padding: 10px 0;

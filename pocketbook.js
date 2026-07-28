@@ -836,6 +836,44 @@ function exportSessionReportPDF() {
   setTimeout(() => { window.print(); }, 50);
 }
 
+// Same html2canvas approach as exportRunPNG() above, pointed at
+// #print-report (built by exportRenderPrintReport()) instead of
+// #print-session. Kept as a near-duplicate of exportRunPNG() rather than a
+// shared helper parameterized by target id, because the two already read
+// different gate conditions (plan non-empty vs. record+content) and a
+// shared helper would need to take the gate check as a parameter too,
+// which ends up harder to follow than two short functions.
+async function exportSessionReportPNG() {
+  if (!pbLoadSessionRecords().length) return;
+  if (!pbHasReflectionContent()) return;
+  if (typeof html2canvas === 'undefined') {
+    alert('Export library not loaded.');
+    return;
+  }
+  exportRenderPrintReport();
+  document.body.classList.add('is-exporting-png');
+  try {
+    const node = document.getElementById('print-report');
+    const canvas = await html2canvas(node, {
+      width: 794,
+      windowWidth: 794,
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+    });
+    const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    const link = document.createElement('a');
+    link.download = 'forest4youth-reflection-' + ts + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch (err) {
+    console.error('PNG export failed', err);
+    alert('PNG export failed. Try Print to PDF instead.');
+  } finally {
+    document.body.classList.remove('is-exporting-png');
+  }
+}
+
 // True once the practitioner has written *something* in the reflection UI —
 // at least one of the 4 self-reflection prompts, or at least one outcome
 // indicator ticked. Read straight from the live DOM (values already restored
@@ -865,9 +903,12 @@ function pbHasReflectionContent() {
 // Session history) for the natural end-of-flow action. Both read/write the
 // same underlying state, so keeping them in sync here (rather than two
 // separate gate functions) means they can never disagree.
-const PB_REFLECT_EXPORT_PAIRS = [
-  ['reflect-export-btn', 'reflect-export-hint'],
-  ['reflect-export-btn-end', 'reflect-export-hint-end'],
+// Each group is one panel's PDF button + PNG button + shared hint — both
+// buttons in a panel always move together (same content, just two file
+// formats), so there's one enabled/disabled state per panel, not per button.
+const PB_REFLECT_EXPORT_GROUPS = [
+  { btnIds: ['reflect-export-btn', 'reflect-export-png-btn'], hintId: 'reflect-export-hint' },
+  { btnIds: ['reflect-export-btn-end', 'reflect-export-png-btn-end'], hintId: 'reflect-export-hint-end' },
 ];
 function pbUpdateReflectExportGate() {
   const hasRecord = pbLoadSessionRecords().length > 0;
@@ -876,11 +917,13 @@ function pbUpdateReflectExportGate() {
   const hintText = !hasRecord ? t('pbui.reflect.export.norecord')
     : !hasContent ? t('pbui.reflect.export.needcontent')
     : t('pbui.reflect.export.hint');
-  PB_REFLECT_EXPORT_PAIRS.forEach(([btnId, hintId]) => {
-    const btn = document.getElementById(btnId);
-    if (!btn) return;
-    btn.disabled = !enabled;
-    btn.setAttribute('aria-disabled', String(!enabled));
+  PB_REFLECT_EXPORT_GROUPS.forEach(({ btnIds, hintId }) => {
+    btnIds.forEach(btnId => {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.disabled = !enabled;
+      btn.setAttribute('aria-disabled', String(!enabled));
+    });
     const hint = document.getElementById(hintId);
     if (hint) hint.textContent = hintText;
   });

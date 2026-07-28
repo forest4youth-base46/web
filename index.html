@@ -1338,9 +1338,21 @@
          indicator) — not just record existence, so an export can't be
          produced from an empty reflection. -->
     <section class="reflect-export-panel" id="reflect-export-panel">
-      <button type="button" class="pb-builder-btn primary" id="reflect-export-btn"
-              onclick="exportSessionReportPDF()" disabled aria-disabled="true"
-              data-i18n="pbui.reflect.export">Export session report</button>
+      <div class="reflect-export-actions">
+        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn"
+                onclick="exportSessionReportPDF()" disabled aria-disabled="true"
+                data-i18n="pbui.reflect.export">Export session report</button>
+        <button type="button" class="pb-builder-btn pb-builder-btn-icon" id="reflect-export-png-btn"
+                onclick="exportSessionReportPNG()" disabled aria-disabled="true"
+                aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <circle cx="8.5" cy="10.5" r="1.5"/>
+            <polyline points="21 16 16 11 5 19"/>
+          </svg>
+        </button>
+      </div>
       <p class="reflect-export-hint" id="reflect-export-hint" aria-live="polite"></p>
     </section>
 
@@ -1454,9 +1466,21 @@
          indicators are actually filled in, positioned right before Session
          history per the intended reading order. -->
     <section class="reflect-export-panel" id="reflect-export-panel-end">
-      <button type="button" class="pb-builder-btn primary" id="reflect-export-btn-end"
-              onclick="exportSessionReportPDF()" disabled aria-disabled="true"
-              data-i18n="pbui.reflect.export">Export session report</button>
+      <div class="reflect-export-actions">
+        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn-end"
+                onclick="exportSessionReportPDF()" disabled aria-disabled="true"
+                data-i18n="pbui.reflect.export">Export session report</button>
+        <button type="button" class="pb-builder-btn pb-builder-btn-icon" id="reflect-export-png-btn-end"
+                onclick="exportSessionReportPNG()" disabled aria-disabled="true"
+                aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <circle cx="8.5" cy="10.5" r="1.5"/>
+            <polyline points="21 16 16 11 5 19"/>
+          </svg>
+        </button>
+      </div>
       <p class="reflect-export-hint" id="reflect-export-hint-end" aria-live="polite"></p>
     </section>
 
