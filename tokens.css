@@ -1,0 +1,42 @@
+:root {
+  /* Forest palette */
+  --forest-ink:    #14302A;
+  --forest-deep:   #234A3E;
+  --forest-mid:    #3A6B5A;
+  --forest-soft:   #7FA396;
+  --forest-mist:   #C8D8D0;
+
+  /* Paper / surfaces */
+  --paper:         #F4F1EA;
+  --paper-card:    #FBF9F4;
+  --paper-pure:    #FFFFFF;
+
+  /* Earth + accent */
+  --bark:          #6B5240;
+  --ember:         #B8552E;
+  --ember-soft:    #D87B4F;
+
+  /* Text */
+  --ink:           #1B2A24;
+  --ink-soft:      #4D6359;
+  --ink-faint:     #7C8E85;
+
+  /* Legacy aliases (so existing rules keep working) */
+  --forest-dark:   #234A3E;
+  --forest-light:  #3A6B5A;
+  --forest-pale:   #7FA396;
+  --forest-bg:     #EFEAE0;
+  --forest-cream:  #FBF9F4;
+  --mist:          #C8D8D0;
+  --text:          #1B2A24;
+  --text-light:    #4D6359;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(20,48,42,0.04);
+  --shadow-md: 0 4px 16px rgba(20,48,42,0.06);
+  --shadow-lg: 0 12px 32px rgba(20,48,42,0.10);
+}

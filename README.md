@@ -17,7 +17,7 @@ The tool supports practitioners through three pathways:
 - What is this? / Is it for me? / Before your session — orientation screens tailored to participants.
 
 **Features**
-- Language toggle (EN / FR / ES)
+- Language toggle (EN / FR / DE)
 - Role-aware content (Practitioner / Participant)
 - Session Builder: drag-to-reorder activities, live arc-balance bar, localStorage persistence
 - Run Mode: full-screen guided walkthrough, per-activity inline timer (auto-starts at the upper duration threshold), keyboard navigation (← → Esc)
@@ -27,7 +27,7 @@ The tool supports practitioners through three pathways:
 
 ## Running locally
 
-No build step required. The app is a single self-contained HTML file.
+No build step required. Open `index.html` directly, or serve the folder with any static file server (e.g. `python3 -m http.server`).
 
 ---
 
@@ -35,11 +35,22 @@ No build step required. The app is a single self-contained HTML file.
 
 ```
 .
-├── index.html   # entire app — HTML, CSS, and JS in one file
-├── _headers     # Netlify headers (allows iframe embedding)
+├── index.html            # HTML shell: page structure, markup for every screen
+├── tokens.css            # design tokens (colors, spacing, radii, shadows)
+├── styles.css            # everything else: layout, components, responsive rules
+├── content.js            # translation dictionary (EN/FR/DE) + i18n helpers
+├── router.js             # hash-based routing, role selection, focus-mode navigation
+├── pocketbook-data.js    # activity/group/adaptation data for the Pocketbook
+├── pocketbook.js         # Pocketbook rendering, Session Builder, Run Mode, export
+├── ui-behaviors.js       # header scroll hide/show
+├── iframe-bridge.js      # reports document height to the parent page (iframe embed)
+├── vendor/               # vendored html2canvas + qrcodejs (no CDN at runtime)
+├── _headers              # Netlify headers (allows iframe embedding)
 ├── .gitignore
 └── README.md
 ```
+
+The app is still plain HTML/CSS/JS with no build step or bundler. It used to be a single 7,600-line `index.html`; the split above is purely organizational (classic `<script src>`/`<link>` tags, same load order as before), not a framework adoption, so it deploys exactly the same way.
 
 ---
 
