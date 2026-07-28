@@ -385,7 +385,6 @@ header {
 .module-card.open .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
-body.module-focus .lang-bar { display: none; }
 .screen.focus-mode .section-header,
 .screen.focus-mode > .back-btn { display: none; }
 .screen.focus-mode .modules-grid { display: block; grid-template-columns: 1fr; }
