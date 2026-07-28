@@ -18,6 +18,8 @@
 </head>
 <body>
 
+<a class="skip-link" href="#main-content" data-i18n="nav.skip">Skip to main content</a>
+
 <template id="__bundler_thumbnail" data-bg-color="#F4F1EA">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
     <rect width="1200" height="800" fill="#F4F1EA"/>
@@ -36,15 +38,54 @@
       <div class="header-text">
         <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
       </div>
-      <div class="lang-bar">
-        <button class="lang-btn active" onclick="setLang('en')">EN</button>
-        <button class="lang-btn" onclick="setLang('fr')">FR</button>
-        <button class="lang-btn" onclick="setLang('de')">DE</button>
+
+      <!-- Persistent, role-aware nav. Replaces the old full-screen role
+           gate as the primary way to jump around — always visible,
+           never blocks content underneath it. -->
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <div class="site-nav-group" data-role-only="practitioner">
+          <a class="site-nav-link" data-navkey="plan" href="#implement/mod-pocket" data-i18n="nav.plan">Plan</a>
+          <a class="site-nav-link" data-navkey="run" href="javascript:void(0)" onclick="navGoRun(); return false;" data-i18n="nav.run">Run</a>
+          <a class="site-nav-link" data-navkey="reflect" href="#reflect" data-i18n="nav.reflect">Reflect</a>
+          <a class="site-nav-link" data-navkey="reference" href="#reference" data-i18n="nav.reference">Reference</a>
+        </div>
+        <div class="site-nav-group" data-role-only="participant">
+          <a class="site-nav-link" data-navkey="pwhat" href="#pwhat" data-i18n="ppath.what.title">What is FBT?</a>
+          <a class="site-nav-link" data-navkey="psession" href="#psession" data-i18n="ppath.session.title">What happens in a session?</a>
+          <a class="site-nav-link" data-navkey="pforme" href="#pforme" data-i18n="ppath.forme.title">Is it for me?</a>
+          <a class="site-nav-link" data-navkey="pbefore" href="#pbefore" data-i18n="ppath.before.title">Before your first session</a>
+        </div>
+      </nav>
+
+      <div class="header-controls">
+        <button type="button" class="search-trigger" id="search-trigger" onclick="openSearchDialog(this)" aria-label="Search (Ctrl+K)" data-i18n-attr="aria-label:nav.search.aria">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg>
+          <span class="search-trigger-label" data-i18n="nav.search">Search</span>
+          <span class="search-trigger-kbd" aria-hidden="true">⌘K</span>
+        </button>
+
+        <div class="mode-switch" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label">
+          <button type="button" class="mode-btn" data-role="practitioner" aria-pressed="true" onclick="setRole('practitioner')" data-i18n="role.bar.practitioner">Practitioner</button>
+          <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant')" data-i18n="role.bar.participant">Exploring</button>
+        </div>
+
+        <div class="lang-bar">
+          <button class="lang-btn active" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" onclick="setLang('fr')">FR</button>
+          <button class="lang-btn" onclick="setLang('de')">DE</button>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- ROLE SELECTION SCREEN (true landing) -->
+  <main id="main-content" tabindex="-1">
+
+  <!-- ROLE SELECTION SCREEN — kept as an optional, explicitly-reachable
+       screen (via the footer "Change perspective" link, or #role) for
+       a fuller side-by-side comparison of the two modes. It is no
+       longer a blocking gate: applyRoute() never routes here
+       automatically, and currentRole always defaults to 'practitioner'
+       before any route is applied. See router.js ensureRole(). -->
   <div id="role-screen" class="screen">
     <div class="role-screen-inner">
       <div class="entry-label" data-i18n="role.label">Welcome</div>
@@ -1140,14 +1181,18 @@
       <div class="module-card is-door" id="mod-pocket" style="grid-column: 1 / -1;">
         <div class="module-body" id="pb-mount">
           <div class="pb-host">
-            <main class="pb-main">
+            <!-- Was a "main" landmark element; now that index.html has a
+                 page-level one (the skip-link target, wrapping every
+                 screen), nesting a second one here would be invalid.
+                 Same class, same layout — just a div, not its own landmark. -->
+            <div class="pb-main">
               <section class="pb-prose">
                 <h3 data-i18n="pbui.howto.title">How to use this section</h3>
                 <p data-i18n-html="pbui.howto.p1">Activities are grouped under five themes that map onto the therapeutic arc: <strong>Getting There</strong>; <strong>Waking Up Your Senses</strong>; <strong>Discovering Yourself</strong>; <strong>Connecting with Others</strong>; and <strong>Coming Back to Yourself</strong>. Within each group, activities range from lower to higher demand. Select based on where the group is on a given day, not on where the session plan says they should be.</p>
                 <p data-i18n-html="pbui.howto.p2">The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.</p>
               </section>
               <div id="pb-groups"></div>
-            </main>
+            </div>
             <aside class="pb-builder" id="pb-builder">
               <header class="pb-builder-header" onclick="pbToggleBuilderMobile()">
                 <div class="pb-builder-eyebrow" data-i18n="pbui.builder.eyebrow">Practitioner tool</div>
@@ -1355,11 +1400,28 @@
     </div>
   </div>
 
+  </main>
+
   <footer>
     <a href="javascript:void(0)" onclick="goToRoleScreen()" style="color: var(--forest-mid); text-decoration: none; border-bottom: 1px dotted var(--forest-soft); cursor: pointer;" data-i18n="footer.changerole">Change perspective</a>
     <span class="f4y-badge">forest4youth.nweurope.eu</span>
   </footer>
 
+</div>
+
+<!-- ─── SEARCH DIALOG (⌘K / Ctrl+K) ─── -->
+<div class="search-dialog-overlay" id="search-overlay" onclick="if(event.target===this) closeSearchDialog()">
+  <div class="search-dialog" id="search-dialog" role="dialog" aria-modal="true" aria-label="Search" data-i18n-attr="aria-label:nav.search">
+    <div class="search-dialog-head">
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg>
+      <input type="text" id="search-input" class="search-input" autocomplete="off" spellcheck="false"
+             placeholder="Search activities, indications, chapters…" aria-label="Search"
+             data-i18n-attr="placeholder,aria-label:search.placeholder">
+      <button type="button" class="search-close" id="search-close" onclick="closeSearchDialog()" aria-label="Close search" data-i18n-attr="aria-label:search.close">×</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+    <div id="search-live" class="sr-only" aria-live="polite"></div>
+  </div>
 </div>
 
 <!-- ─── POCKETBOOK OVERLAYS (Run Mode, Timer, Toast) ─── -->
@@ -1448,6 +1510,11 @@
 <script src="pocketbook-i18n.js"></script>
 <script src="pocketbook.js"></script>
 <script src="ui-behaviors.js"></script>
+
+<!-- Search dialog (⌘K / Ctrl+K). Loaded last so ACTIVITIES, pbT(), t(),
+     and the router's navigation helpers all already exist — it only
+     reads from them, live, at search time. -->
+<script src="search.js"></script>
 
 <!-- Mobile session-builder FAB. Direct child of <body> so no transformed
      ancestor (e.g. .screen with animation: fadeUp) creates a containing

@@ -13,23 +13,25 @@ function navigate(section) {
 }
 
 function applyRoute() {
+  // The app never blocks rendering on a role choice — default silently
+  // to practitioner if nothing is stored yet or the role was just
+  // cleared (e.g. via goToRoleScreen()), then always render a real
+  // screen. See ensureRole().
+  ensureRole();
+
   const hash = window.location.hash.replace('#', '');
   const parts = hash.split('/');
   const section = parts[0];   // e.g. 'implement' / 'reference' / 'pwhat'
   const moduleId = parts[1];  // e.g. 'mod-pocket'
   const activityId = parts[2]; // e.g. 'act-sitspot'
 
-  // If no role is set, force the role screen.
-  if (!currentRole) {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('role-screen').classList.add('active');
-    return;
-  }
-
-  // Explicit role-screen route (e.g. #role) reopens the landing.
+  // Explicit role-screen route (e.g. #role, or the footer's "Change
+  // perspective" link via goToRoleScreen()) — an optional side-by-side
+  // comparison screen now, not a gate. Nothing routes here automatically.
   if (section === 'role') {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('role-screen').classList.add('active');
+    updateHeaderChrome();
     return;
   }
 
@@ -37,6 +39,7 @@ function applyRoute() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   if (!section) {
     document.getElementById('entry-screen').classList.add('active');
+    updateHeaderChrome();
     return;
   }
   const target = document.getElementById(section + '-screen');
@@ -51,12 +54,14 @@ function applyRoute() {
         window.location.hash = '';
       }
       document.getElementById('entry-screen').classList.add('active');
+      updateHeaderChrome();
       return;
     }
     target.classList.add('active');
   } else {
     // Unknown route — fall back to entry.
     document.getElementById('entry-screen').classList.add('active');
+    updateHeaderChrome();
     return;
   }
 
@@ -85,9 +90,59 @@ function applyRoute() {
       }
     }, 150);
   }
+
+  updateHeaderChrome();
 }
 
 window.addEventListener('hashchange', applyRoute);
+
+// ─────────────────────────────────────────
+// HEADER CHROME (persistent nav + mode switch state)
+// ─────────────────────────────────────────
+// Keeps the mode-switch buttons and the persistent nav's
+// aria-current/.active in sync with currentRole and the current route.
+// Called at the end of every applyRoute() and setRole(). Run Mode
+// (#pb-runMode) is a fixed full-screen overlay that already covers the
+// header entirely while active, so there's no separate "Run" state to
+// track here — closing it reveals whatever the hash already says.
+function updateHeaderChrome() {
+  document.querySelectorAll('.mode-btn').forEach(function(b) {
+    const isActive = b.getAttribute('data-role') === currentRole;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+
+  const section = window.location.hash.replace('#', '').split('/')[0];
+  let navKey = null;
+  if (section === 'implement') navKey = 'plan';
+  else if (section === 'reflect') navKey = 'reflect';
+  else if (section === 'reference') navKey = 'reference';
+  else if (['pwhat', 'psession', 'pforme', 'pbefore'].indexOf(section) !== -1) navKey = section;
+
+  document.querySelectorAll('.site-nav-link').forEach(function(a) {
+    const match = navKey !== null && a.getAttribute('data-navkey') === navKey;
+    a.classList.toggle('active', match);
+    if (match) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
+}
+
+// Nav entry point for "Run". Run Mode itself is unchanged (still the
+// full-screen #pb-runMode overlay started by the Session Builder) — this
+// just gives it a coherent, always-visible entry point that never
+// dead-ends: if there's nothing in the plan yet, it sends the
+// practitioner to Plan instead of opening an empty Run Mode.
+function navGoRun() {
+  if (typeof pbSession !== 'undefined' && pbSession.length && typeof pbStartRunMode === 'function') {
+    pbStartRunMode();
+    return;
+  }
+  if (currentRole !== 'practitioner') setRole('practitioner');
+  window.location.hash = 'implement/mod-pocket';
+  if (typeof pbShowToast === 'function') {
+    setTimeout(function() { pbShowToast(t('nav.run.empty')); }, 350);
+  }
+}
 
 // ─────────────────────────────────────────
 // MODULE & ACTIVITY TOGGLES
@@ -107,7 +162,7 @@ function applyFocusMode(screenEl, modId) {
   document.querySelectorAll('.module-card.is-focused').forEach(m => m.classList.remove('is-focused'));
   // Also collapse any door module that was left .open from a previous focus
   document.querySelectorAll('.module-card.is-door.open').forEach(m => m.classList.remove('open'));
-  document.querySelectorAll('.module-back-link.injected').forEach(b => b.remove());
+  document.querySelectorAll('.injected').forEach(b => b.remove());
   document.body.classList.remove('module-focus');
   delete document.body.dataset.focused;
 
@@ -134,6 +189,24 @@ function applyFocusMode(screenEl, modId) {
   back.textContent = pathwayLabel || t('nav.back') || 'Back';
   back.onclick = () => { window.location.hash = screenHash; };
   mod.insertBefore(back, mod.firstChild);
+
+  // Plan is one screen: the Pocketbook already holds the activity picker
+  // and the live Session Builder side-by-side, but the Pre-Session
+  // Checklist (mod-pre) and the Session Structure Guide (mod-plan) are
+  // separate door modules. Rather than send Plan-nav users on a second
+  // trip through the header nav to reach them, surface them as one-click
+  // quick links right here. (A fuller merge of these into a single Plan
+  // panel is a separate, later task — this is the lightest change that
+  // keeps everything reachable without leaving the screen you landed on.)
+  if (modId === 'mod-pocket') {
+    const quick = document.createElement('div');
+    quick.className = 'plan-quicklinks injected';
+    quick.innerHTML =
+      '<a href="#implement/mod-pre">' + t('nav.plan.checklist') + '</a>' +
+      '<a href="#implement/mod-plan">' + t('nav.plan.structure') + '</a>';
+    mod.insertBefore(quick, back.nextSibling);
+  }
+
   window.scrollToViewTop();
 }
 
@@ -253,6 +326,19 @@ function toggleExp(id) {
 let currentRole = null;
 try { currentRole = sessionStorage.getItem('fbt.role'); } catch(e) { currentRole = null; }
 
+// Guarantees currentRole is always 'practitioner' or 'participant' before
+// a screen renders. The app used to force a blocking #role-screen instead
+// whenever currentRole was falsy; now it silently defaults to
+// practitioner so nothing ever blocks rendering. Called at the top of
+// every applyRoute() (covers first visit, and recovery after
+// goToRoleScreen() clears the role) and once at load.
+function ensureRole() {
+  if (currentRole === 'practitioner' || currentRole === 'participant') return;
+  currentRole = 'practitioner';
+  try { sessionStorage.setItem('fbt.role', currentRole); } catch(e) {}
+  document.body.setAttribute('data-role', currentRole);
+}
+
 function setRole(role, fromRoleScreen) {
   currentRole = role;
   try { sessionStorage.setItem('fbt.role', role); } catch(e) {}
@@ -295,8 +381,10 @@ renderModuleHeaders();
 applyTranslations();
 
 // URL overrides for recoverability:
-//   ?reset  → clear role, show role-screen
-//   ?role=participant / ?role=practitioner → set role without touching role-screen
+//   ?reset  → clear any stored role (ensureRole() then re-defaults to
+//             practitioner on the render below — this no longer opens
+//             the role-screen, it just resets which mode you land in)
+//   ?role=participant / ?role=practitioner → set the default landing role
 try {
   const usp = new URLSearchParams(window.location.search);
   if (usp.has('reset')) {
@@ -327,8 +415,11 @@ document.querySelectorAll('.role-card').forEach(card => {
   }, { capture: false });
 });
 
-// Always-accessible path back to the role-screen via hash.
-// Triggered by footer "Change perspective" link.
+// Optional path to the role-screen (side-by-side mode comparison),
+// e.g. the footer "Change perspective" link. Kept available per the
+// redesign — clearing the role here is safe because ensureRole() will
+// silently re-default to practitioner the moment any other route is
+// applied, so this can never strand the app without a role.
 function goToRoleScreen() {
   try { sessionStorage.removeItem('fbt.role'); } catch(e) {}
   currentRole = null;
@@ -340,16 +431,10 @@ function goToRoleScreen() {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('role-screen').classList.add('active');
+  updateHeaderChrome();
 }
 
-if (currentRole) {
-  // Returning visitor with a stored role — apply it and route normally.
-  document.body.setAttribute('data-role', currentRole);
-  document.querySelectorAll('.role-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.role === currentRole));
-  applyRoute();
-} else {
-  // First visit — show the role screen and hide the chrome.
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('role-screen').classList.add('active');
-}
+// First visit or returning — either way, render immediately. Nothing
+// blocks on a role choice: ensureRole() (called from inside applyRoute)
+// defaults to practitioner if no role is stored yet.
+applyRoute();

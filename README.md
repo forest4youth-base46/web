@@ -17,6 +17,8 @@ The tool supports practitioners through three pathways:
 - What is this? / Is it for me? / Before your session — orientation screens tailored to participants.
 
 **Features**
+- Persistent header nav (Plan / Run / Reflect / Reference for practitioners; the 4 orientation steps for participants) plus a Mode switch — nothing is gated behind a full-screen picker before you see content
+- ⌘K / Ctrl+K search dialog — jumps straight to a Pocketbook activity, a clinical-reference item, or a guide chapter
 - Language toggle (EN / FR / DE)
 - Role-aware content (Practitioner / Participant)
 - Session Builder: drag-to-reorder activities, live arc-balance bar, localStorage persistence
@@ -46,6 +48,7 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── pocketbook-i18n.js    # Pocketbook FR/DE translations, grouped by activity/group id
 ├── pocketbook.js         # Pocketbook rendering, Session Builder, Run Mode, export
 ├── ui-behaviors.js       # header scroll hide/show
+├── search.js             # ⌘K / Ctrl+K search dialog (activities, reference, guide chapters)
 ├── iframe-bridge.js      # iframe embed: reports document height, requests parent scroll
 ├── vendor/               # vendored html2canvas + qrcodejs (no CDN at runtime)
 ├── _headers              # Netlify headers (allows iframe embedding)
@@ -112,11 +115,16 @@ gracefully, it just won't realign the outer page.
 its own hash and query string on load, so the host page can link straight
 into a specific screen or role by setting the iframe's `src`:
 
-- `?role=participant` / `?role=practitioner` — pre-select a role, skipping
-  the role-picker screen.
-- `?reset` — clear any stored role and show the role-picker screen.
+- `?role=participant` / `?role=practitioner` — set the default landing role
+  for this load.
+- `?reset` — clear any stored role, so the app falls back to its
+  practitioner default. (The app never gates content behind a role
+  picker — there's an optional side-by-side "Who is this for?" screen
+  at `#role`, reachable from the footer's "Change perspective" link or
+  this hash, but nothing routes there automatically.)
 - `#section/module` — open a specific pathway/module, e.g.
-  `#implement/mod-pocket` for the Pocketbook. Combine with a hash and a
+  `#implement/mod-pocket` for the Pocketbook (also the target of the
+  persistent header's "Plan" nav item). Combine with a hash and a
   query string in the usual way, e.g. `index.html?role=practitioner#implement/mod-pocket`.
 
 **Older WebView note.** The production embed has been tested against an

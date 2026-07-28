@@ -17,6 +17,31 @@ const T = {
     "pathway.reflect.desc": "Post-session reflection prompts, outcome tracking, and practitioner self-assessment tools.",
     "pathway.reflect.cta": "Open →",
     "nav.back": "Back",
+
+    // New UI chrome for the persistent header (nav, mode switch, search).
+    // EN-only by design: t() already falls back to English for any
+    // language that has no entry, so FR/DE simply inherit these until
+    // translated on purpose.
+    "nav.skip": "Skip to main content",
+    "nav.plan": "Plan",
+    "nav.run": "Run",
+    "nav.reflect": "Reflect",
+    "nav.reference": "Reference",
+    "nav.run.empty": "Add activities to your plan before starting Run Mode.",
+    "nav.plan.checklist": "Pre-session checklist",
+    "nav.plan.structure": "Session structure guide",
+    "nav.mode.label": "Mode",
+    "nav.search": "Search",
+    "nav.search.aria": "Search (Ctrl+K)",
+    "search.placeholder": "Search activities, indications, chapters…",
+    "search.close": "Close search",
+    "search.empty": "No results.",
+    "search.count": "{n} results",
+    "search.count.zero": "No results",
+    "search.cat.activities": "Activities",
+    "search.cat.reference": "Clinical reference",
+    "search.cat.guide": "Companion guide",
+
     "learn.heading": "Understanding Forest-Based Therapy",
     "learn.sub": "A grounding in the theory, evidence base, and mechanisms behind FBT before entering practice.",
     "implement.heading": "Session Tools & Activity Guides",
