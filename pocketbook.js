@@ -672,7 +672,7 @@ function exportRenderPrintSession() {
   const items = pbSession.map(id => ACTIVITIES.find(a => a.id === id)).filter(Boolean);
   const totalMin = pbSession.reduce((s, id) => s + pbGetItemMins(id), 0);
   const date = new Date().toLocaleDateString(lang);
-  const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practice Guide';
+  const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practical Guide';
   const tQrLabel = (T[lang] && T[lang]['export.qr.label']) || 'Scan to reopen';
 
   root.innerHTML =
@@ -694,7 +694,7 @@ function exportRenderPrintSession() {
     ).join('') +
     '<div class="print-footer">' +
       '<div>' +
-        '<div>Forest4Youth Practice Guide</div>' +
+        '<div>Forest4Youth Practical Guide</div>' +
         '<div style="margin-top:4px;">' + tQrLabel + '</div>' +
       '</div>' +
       '<div id="print-qr-slot"></div>' +
@@ -769,7 +769,7 @@ function exportRenderPrintReport() {
   const records = pbLoadSessionRecords();
   if (!records.length) { root.innerHTML = ''; return; }
   const record = records[0];
-  const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practice Guide';
+  const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practical Guide';
 
   const itemsHTML = record.items.map((it, i) => {
     const a = ACTIVITIES.find(x => x.id === it.id);
@@ -807,6 +807,20 @@ function exportRenderPrintReport() {
     }
   ).join('');
 
+  // Optional — only rendered if at least one field was actually filled in
+  // (pbGetReflectMetaForReport() already filters to non-empty rows), so a
+  // report with none of this filled in doesn't show an empty section.
+  const metaRows = pbGetReflectMetaForReport();
+  const metaHTML = metaRows.length
+    ? '<div class="print-section-title">' + t('pbui.reflect.report.meta.title') + '</div>' +
+      metaRows.map(row =>
+        '<div class="print-row"><div style="flex:1;">' +
+          '<span style="font-weight:600;">' + pbEscapeHtml(row.label) + ':</span> ' +
+          pbEscapeHtml(row.value) +
+        '</div></div>'
+      ).join('')
+    : '';
+
   root.innerHTML =
     '<div class="print-header">' +
       '<div style="font-size:18px;font-weight:700;">' + tHead + '</div>' +
@@ -820,6 +834,7 @@ function exportRenderPrintReport() {
     (answersHTML || '—') +
     '<div class="print-section-title">' + t('pbui.reflect.report.indicators') + '</div>' +
     (indicatorsHTML || '—') +
+    metaHTML +
     '<div class="print-footer"><div>' + tHead + '</div></div>';
 }
 
@@ -903,13 +918,12 @@ function pbHasReflectionContent() {
 // Session history) for the natural end-of-flow action. Both read/write the
 // same underlying state, so keeping them in sync here (rather than two
 // separate gate functions) means they can never disagree.
-// Each group is one panel's PDF button + PNG button + shared hint — both
-// buttons in a panel always move together (same content, just two file
-// formats), so there's one enabled/disabled state per panel, not per button.
-const PB_REFLECT_EXPORT_GROUPS = [
-  { btnIds: ['reflect-export-btn', 'reflect-export-png-btn'], hintId: 'reflect-export-hint' },
-  { btnIds: ['reflect-export-btn-end', 'reflect-export-png-btn-end'], hintId: 'reflect-export-hint-end' },
-];
+// One export panel (PDF button + PNG button + shared hint) — there used to
+// be two (an early one under the recap, a second before Session history);
+// consolidated back to a single instance positioned after everything that
+// can feed the report, per product direction against having export UI
+// interrupt the page in more than one place.
+const PB_REFLECT_EXPORT_BTN_IDS = ['reflect-export-btn', 'reflect-export-png-btn'];
 function pbUpdateReflectExportGate() {
   const hasRecord = pbLoadSessionRecords().length > 0;
   const hasContent = pbHasReflectionContent();
@@ -917,16 +931,14 @@ function pbUpdateReflectExportGate() {
   const hintText = !hasRecord ? t('pbui.reflect.export.norecord')
     : !hasContent ? t('pbui.reflect.export.needcontent')
     : t('pbui.reflect.export.hint');
-  PB_REFLECT_EXPORT_GROUPS.forEach(({ btnIds, hintId }) => {
-    btnIds.forEach(btnId => {
-      const btn = document.getElementById(btnId);
-      if (!btn) return;
-      btn.disabled = !enabled;
-      btn.setAttribute('aria-disabled', String(!enabled));
-    });
-    const hint = document.getElementById(hintId);
-    if (hint) hint.textContent = hintText;
+  PB_REFLECT_EXPORT_BTN_IDS.forEach(btnId => {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.setAttribute('aria-disabled', String(!enabled));
   });
+  const hint = document.getElementById('reflect-export-hint');
+  if (hint) hint.textContent = hintText;
 }
 
 // ───────── KEY HANDLERS ─────────
@@ -1157,7 +1169,12 @@ function pbRenderRunStep() {
   document.getElementById('pb-runLabelClose').textContent = pbLabel('close');
   document.getElementById('pb-runClose').textContent = pbT(a, 'close') || '';
   document.getElementById('pb-runPrev').disabled = (pbRunIndex === 0);
-  document.getElementById('pb-runNext').textContent = (pbRunIndex === pbSession.length - 1) ? t('pbui.run.finish') : t('pbui.run.next');
+  // On the last step this button ends the run exactly like the persistent
+  // "Finish & reflect" button in the head row above (both call
+  // pbCloseRunMode()) — reusing that exact label here too, rather than the
+  // old standalone "Finish" wording, so it's visibly the same action/path
+  // rather than reading like a second, different kind of finish.
+  document.getElementById('pb-runNext').textContent = (pbRunIndex === pbSession.length - 1) ? t('pbui.run.finishreflect') : t('pbui.run.next');
 
   const notesEl = document.getElementById('pb-runNotes');
   if (notesEl) notesEl.value = (pbRunLog[pbRunIndex] && pbRunLog[pbRunIndex].note) || '';
@@ -1314,6 +1331,54 @@ function pbRestoreReflectState() {
       }
     });
   } catch (e) {}
+  pbRestoreReflectMeta();
+}
+
+// ───────── REFLECT: EXTRA REPORT METADATA ─────────
+// Free-form context (participant count, start time, place, institution,
+// other notes) that isn't reflection content itself but is meant to appear
+// in the exported report alongside it. Same persist-on-input /
+// restore-on-load pattern as the reflection answers above, own
+// localStorage key so it's independent of them.
+const PB_REFLECT_META_FIELDS = [
+  ['reflect-meta-participants', 'participants'],
+  ['reflect-meta-start', 'start'],
+  ['reflect-meta-place', 'place'],
+  ['reflect-meta-institution', 'institution'],
+  ['reflect-meta-other', 'other'],
+];
+function pbSaveReflectMeta() {
+  const meta = {};
+  PB_REFLECT_META_FIELDS.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el) meta[key] = el.value;
+  });
+  try { localStorage.setItem('f4y.reflect.meta', JSON.stringify(meta)); } catch (e) {}
+}
+function pbRestoreReflectMeta() {
+  let meta = {};
+  try { meta = JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) {}
+  PB_REFLECT_META_FIELDS.forEach(([id, key]) => {
+    const el = document.getElementById(id);
+    if (el && typeof meta[key] === 'string') el.value = meta[key];
+  });
+}
+// Only fields with something actually typed, in report order — used by
+// exportRenderPrintReport() so the "Session details" block is skipped
+// entirely when nothing was filled in, rather than printing empty rows.
+function pbGetReflectMetaForReport() {
+  let meta = {};
+  try { meta = JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) {}
+  const labels = {
+    participants: t('pbui.reflect.meta.participants'),
+    start: t('pbui.reflect.meta.start'),
+    place: t('pbui.reflect.meta.place'),
+    institution: t('pbui.reflect.meta.institution'),
+    other: t('pbui.reflect.meta.other'),
+  };
+  return PB_REFLECT_META_FIELDS
+    .map(([, key]) => ({ label: labels[key], value: (meta[key] || '').toString().trim() }))
+    .filter(row => row.value);
 }
 
 // (init invoked by pbInit() in main script)

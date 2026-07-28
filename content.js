@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────
 const T = {
   en: {
-    "header.title": "Forest4Youth Practice Guide",
+    "header.title": "Forest4Youth Practical Guide",
     "entry.label": "Welcome",
     "entry.title": "What brings you here today?",
     "entry.sub": "Select a pathway to access resources tailored to your current need.",
@@ -676,6 +676,15 @@ const T = {
     "pbui.reflect.export.hint": "Combines the session record, your reflection answers, and the outcome indicators into one printable document.",
     "pbui.reflect.export.norecord": "Run a session in Run mode to unlock a report export.",
     "pbui.reflect.export.needcontent": "Fill in at least one reflection field or tick an outcome indicator to export a report.",
+    "pbui.reflect.meta.title": "Extra information for the report",
+    "pbui.reflect.meta.sub": "Optional — included in the export if filled in.",
+    "pbui.reflect.meta.participants": "Number of participants",
+    "pbui.reflect.meta.start": "Start time",
+    "pbui.reflect.meta.start.placeholder": "e.g. 10:00",
+    "pbui.reflect.meta.place": "Place",
+    "pbui.reflect.meta.institution": "Institution",
+    "pbui.reflect.meta.other": "Other notes for the report",
+    "pbui.reflect.report.meta.title": "Session details",
     "pbui.export.disabled.hint": "Add at least one activity to your plan to enable this export.",
     "pbui.reflect.history.title": "Session history",
     "pbui.reflect.history.empty": "Runs will appear here once you finish a session in Run mode.",
@@ -686,7 +695,7 @@ const T = {
     "pbui.reflect.report.indicators": "Outcome indicators"
   },
   fr: {
-    "header.title": "Forest4Youth Guide de Pratique",
+    "header.title": "Forest4Youth Guide Pratique",
     "entry.label": "Bienvenue",
     "entry.title": "Qu'est-ce qui vous amène aujourd'hui ?",
     "entry.sub": "Sélectionnez un parcours pour accéder aux ressources adaptées à votre besoin actuel.",
@@ -1290,7 +1299,7 @@ const T = {
     "pbui.arc.empty": "Les cinq thèmes apparaîtront au fur et à mesure de vos ajouts."
   },
   de: {
-    "header.title": "Forest4Youth Praxisleitfaden",
+    "header.title": "Forest4Youth Praktischer Leitfaden",
     "entry.label": "Willkommen", "entry.title": "Was führt Sie heute hierher?",
     "entry.sub": "Wählen Sie einen Pfad, um auf Ressourcen zuzugreifen, die auf Ihren aktuellen Bedarf zugeschnitten sind.",
     "pathway.learn.title": "Mehr erfahren", "pathway.learn.desc": "Verstehen Sie die theoretische Grundlage der waldbasierten Therapie, die Evidenz und die wichtigsten Prinzipien.", "pathway.learn.cta": "Erkunden →",

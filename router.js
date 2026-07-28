@@ -66,7 +66,14 @@ function applyRoute() {
   }
 
   // Door modules: open the module as a focused page rather than inline
-  const DOOR_MODULES = ['mod-pre','mod-plan','mod-reflect-self','mod-indicators','mod-glossary','mod-pocket','mod-adapt'];
+  // mod-reflect-self/mod-indicators/mod-glossary used to be door modules
+  // too, but they were headerless cards with no toggle/entry-point ever
+  // wired to focus them — meaning their content was permanently invisible
+  // (module-body defaults to display:none; only .open or door-focus-mode
+  // reveals it, and neither ever applied to them). Reflect is now one
+  // continuous page instead, so they're plain always-visible cards — see
+  // the :not(.is-door) rule in styles.css.
+  const DOOR_MODULES = ['mod-pre','mod-plan','mod-pocket','mod-adapt'];
   if (moduleId && DOOR_MODULES.indexOf(moduleId) !== -1) {
     applyFocusMode(target, moduleId);
   } else {

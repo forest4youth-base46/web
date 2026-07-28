@@ -573,6 +573,14 @@ body.no-scroll { overflow: hidden; }
   margin-bottom: 16px;
   align-items: start;
 }
+/* Reference specifically reads better single-column — its cards
+   (indications/contraindications/populations/dosage/integration) are long
+   and text-dense, not the shorter, more scannable cards other screens
+   using .modules-grid have. Scoped to #reference-screen only so Learn,
+   Reflect, and the participant screens keep their multi-column layout. */
+#reference-screen .modules-grid {
+  grid-template-columns: 1fr;
+}
 
 .module-card {
   background: var(--paper-pure);
@@ -658,6 +666,18 @@ body.no-scroll { overflow: hidden; }
 
 .module-body { display: none; padding: 0 20px 20px; border-top: 1px solid var(--forest-mist); }
 .module-card.open .module-body { display: block; }
+/* Every .module-card in this codebase that ISN'T a genuine door module
+   (Reference's indications/contraindications/populations/dosage/
+   integration, Learn's what/evidence/contra, the participant screens'
+   cards, and — as of this branch — Reflect's self-reflection/indicators/
+   glossary) has no .module-header/toggle button at all, so nothing ever
+   adds .open to it and nothing ever focuses it via the door-navigation
+   system either. Confirmed this makes their content permanently
+   invisible as shipped, on main as well as this branch — not new
+   breakage, a pre-existing bug this rule fixes. True door modules
+   (mod-pocket/mod-plan/mod-pre/mod-adapt, still in DOOR_MODULES in
+   router.js) keep the hidden-until-focused default. */
+.module-card:not(.is-door) .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
 /* No language toggle inside a focused module — it carries whatever
@@ -1025,8 +1045,8 @@ body.module-focus .lang-bar { display: none; }
   gap: 10px;
   flex-wrap: wrap;
 }
-#reflect-export-btn, #reflect-export-btn-end { min-height: 44px; padding: 10px 20px; }
-#reflect-export-png-btn, #reflect-export-png-btn-end { min-height: 44px; min-width: 44px; }
+#reflect-export-btn { min-height: 44px; padding: 10px 20px; }
+#reflect-export-png-btn { min-height: 44px; min-width: 44px; }
 .reflect-export-hint {
   margin: 8px 0 0;
   font-size: 12px;
@@ -1034,6 +1054,58 @@ body.module-focus .lang-bar { display: none; }
   font-style: italic;
 }
 .reflect-export-hint:empty { display: none; }
+
+/* Extra report metadata — deliberately plain (no card border/shadow),
+   distinct from the boxed .module-card treatment used for self-reflection/
+   indicators/glossary above, since this is optional context rather than
+   reflection content. */
+.reflect-meta-block {
+  margin-bottom: 24px;
+}
+.reflect-meta-block h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--forest-ink);
+  margin: 0 0 4px;
+}
+.reflect-meta-sub {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin: 0 0 14px;
+}
+.reflect-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px 20px;
+}
+.reflect-meta-field-full { grid-column: 1 / -1; }
+.reflect-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.reflect-meta-field span {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.reflect-meta-field input,
+.reflect-meta-field textarea {
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-sm, 6px);
+  padding: 9px 11px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper-pure);
+  min-height: 40px;
+}
+.reflect-meta-field textarea { resize: vertical; min-height: 60px; }
+.reflect-meta-field input:focus,
+.reflect-meta-field textarea:focus { border-color: var(--forest-deep); outline: none; }
 
 .reflect-history {
   margin-top: 8px;

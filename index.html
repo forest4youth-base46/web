@@ -36,7 +36,7 @@
   <header id="site-header">
     <div class="header-inner">
       <div class="header-text">
-        <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
+        <h1 data-i18n="header.title">Forest4Youth Practical Guide</h1>
       </div>
 
       <!-- Persistent, role-aware nav. Replaces the old full-screen role
@@ -1328,38 +1328,10 @@
       <div class="reflect-session-recap-list" id="reflect-recap-list"></div>
     </section>
 
-    <!-- Export action — deliberately its own always-rendered section (never
-         [hidden], unlike the recap above): a disabled button with a reason
-         is more discoverable than one that's missing until conditions are
-         met. Gated live by pbUpdateReflectExportGate() in pocketbook.js on
-         two things together — a session record exists
-         (pbLoadSessionRecords().length > 0) AND at least one reflection
-         field has content (a self-reflection answer or a ticked outcome
-         indicator) — not just record existence, so an export can't be
-         produced from an empty reflection. -->
-    <section class="reflect-export-panel" id="reflect-export-panel">
-      <div class="reflect-export-actions">
-        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn"
-                onclick="exportSessionReportPDF()" disabled aria-disabled="true"
-                data-i18n="pbui.reflect.export">Export session report</button>
-        <button type="button" class="pb-builder-btn pb-builder-btn-icon" id="reflect-export-png-btn"
-                onclick="exportSessionReportPNG()" disabled aria-disabled="true"
-                aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="14" rx="2"/>
-            <circle cx="8.5" cy="10.5" r="1.5"/>
-            <polyline points="21 16 16 11 5 19"/>
-          </svg>
-        </button>
-      </div>
-      <p class="reflect-export-hint" id="reflect-export-hint" aria-live="polite"></p>
-    </section>
-
     <div class="modules-grid">
 
       <!-- Self-Reflection -->
-      <div class="module-card is-door" id="mod-reflect-self">
+      <div class="module-card" id="mod-reflect-self">
         <div class="module-body">
           <div class="reflect-prompts">
             <div class="reflect-prompt">
@@ -1403,7 +1375,7 @@
       </div>
 
       <!-- Outcome Indicators -->
-      <div class="module-card is-door" id="mod-indicators">
+      <div class="module-card" id="mod-indicators">
         <div class="module-body">
           <div class="check-list-v2">
             <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 0)" onkeydown="pbIndicatorKeydown(event, this, 0)">
@@ -1435,7 +1407,7 @@
       </div>
 
       <!-- Glossary -->
-      <div class="module-card is-door" id="mod-glossary">
+      <div class="module-card" id="mod-glossary">
         <div class="module-body">
           <div class="glossary-list">
             <div class="glossary-item">
@@ -1460,17 +1432,50 @@
 
     </div>
 
-    <!-- Second export action, same gate/behavior as reflect-export-panel
-         above (pbUpdateReflectExportGate() updates both together) — this
-         is the primary end-of-flow export, reached after the prompts and
-         indicators are actually filled in, positioned right before Session
-         history per the intended reading order. -->
-    <section class="reflect-export-panel" id="reflect-export-panel-end">
+    <!-- Extra context for the report — plain fields, deliberately not
+         boxed in a .module-card like the sections above (kept lightweight
+         since it's metadata, not reflection content). Persisted to
+         localStorage and read by exportRenderPrintReport() so it appears
+         in both the PDF and PNG export, not just on screen. -->
+    <section class="reflect-meta-block" id="reflect-meta-block">
+      <h3 data-i18n="pbui.reflect.meta.title">Extra information for the report</h3>
+      <p class="reflect-meta-sub" data-i18n="pbui.reflect.meta.sub">Optional — included in the export if filled in.</p>
+      <div class="reflect-meta-grid">
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.participants">Number of participants</span>
+          <input type="number" min="0" id="reflect-meta-participants" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.start">Start time</span>
+          <input type="text" id="reflect-meta-start" data-i18n-attr="placeholder:pbui.reflect.meta.start.placeholder" placeholder="e.g. 10:00" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.place">Place</span>
+          <input type="text" id="reflect-meta-place" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.institution">Institution</span>
+          <input type="text" id="reflect-meta-institution" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field reflect-meta-field-full">
+          <span data-i18n="pbui.reflect.meta.other">Other notes for the report</span>
+          <textarea rows="2" id="reflect-meta-other" oninput="pbSaveReflectMeta()"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <!-- Single export action, positioned after everything that can feed the
+         report (recap, self-reflection, indicators, the extra-info block
+         above) and before Session history, per the intended reading order.
+         Gated live by pbUpdateReflectExportGate() in pocketbook.js on a
+         session record existing AND at least one reflection field having
+         content, so an export can't be produced from an empty reflection. -->
+    <section class="reflect-export-panel" id="reflect-export-panel">
       <div class="reflect-export-actions">
-        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn-end"
+        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn"
                 onclick="exportSessionReportPDF()" disabled aria-disabled="true"
                 data-i18n="pbui.reflect.export">Export session report</button>
-        <button type="button" class="pb-builder-btn pb-builder-btn-icon" id="reflect-export-png-btn-end"
+        <button type="button" class="pb-builder-btn pb-builder-btn-icon" id="reflect-export-png-btn"
                 onclick="exportSessionReportPNG()" disabled aria-disabled="true"
                 aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
@@ -1481,7 +1486,7 @@
           </svg>
         </button>
       </div>
-      <p class="reflect-export-hint" id="reflect-export-hint-end" aria-live="polite"></p>
+      <p class="reflect-export-hint" id="reflect-export-hint" aria-live="polite"></p>
     </section>
 
     <!-- Session history — every recorded run (pbLoadSessionRecords()),
