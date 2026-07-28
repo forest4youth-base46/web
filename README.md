@@ -42,7 +42,8 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── modules-data.js       # header data (icon/title/tag/badge) for every module-card
 ├── render.js             # renders a module-card header from modules-data.js
 ├── router.js             # hash-based routing, role selection, focus-mode navigation
-├── pocketbook-data.js    # activity/group/adaptation data for the Pocketbook
+├── pocketbook-data.js    # activity/group/adaptation data for the Pocketbook (English)
+├── pocketbook-i18n.js    # Pocketbook FR/DE translations, grouped by activity/group id
 ├── pocketbook.js         # Pocketbook rendering, Session Builder, Run Mode, export
 ├── ui-behaviors.js       # header scroll hide/show
 ├── iframe-bridge.js      # iframe embed: reports document height, requests parent scroll
