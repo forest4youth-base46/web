@@ -873,6 +873,25 @@ body.module-focus .lang-bar { display: none; }
   letter-spacing: -0.005em;
 }
 .reflect-prompt-body p { font-size: 13px; color: var(--ink-soft); line-height: 1.65; font-weight: 300; }
+.reflect-answer-label {
+  font-size: 10px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-faint);
+  font-weight: 500; margin: 12px 0 6px;
+}
+.reflect-answer {
+  width: 100%;
+  min-height: 56px;
+  padding: 9px 11px;
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-sm);
+  background: var(--paper-pure);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  resize: vertical;
+}
+.reflect-answer:focus { border-color: var(--forest-deep); outline: none; }
 
 /* Indicators check-list style #2 */
 .check-list-v2 { display: flex; flex-direction: column; gap: 0; margin-top: 6px; }
@@ -935,6 +954,98 @@ body.module-focus .lang-bar { display: none; }
   letter-spacing: -0.003em;
 }
 .glossary-def { font-size: 13px; color: var(--ink-soft); line-height: 1.65; font-weight: 300; }
+
+/* ─── REFLECT: SESSION RECAP + HISTORY ─── */
+.reflect-session-recap {
+  background: var(--paper-card);
+  border: 1px solid var(--forest-mist);
+  border-left: 3px solid var(--forest-deep);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  margin-bottom: 28px;
+}
+.reflect-session-recap[hidden] { display: none; }
+.reflect-session-recap-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.reflect-session-recap-eyebrow {
+  font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--forest-deep);
+  font-weight: 600;
+}
+.reflect-session-recap-when { font-size: 12px; color: var(--ink-faint); }
+.reflect-session-recap-list { display: flex; flex-direction: column; gap: 10px; }
+.reflect-recap-row {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--forest-mist);
+}
+.reflect-recap-row:last-child { border-bottom: none; }
+.reflect-recap-name { font-size: 13.5px; font-weight: 500; color: var(--forest-ink); }
+.reflect-recap-time {
+  float: right;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+.reflect-recap-note {
+  clear: both;
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  font-style: italic;
+  white-space: pre-wrap;
+}
+.reflect-session-recap-actions { margin-top: 16px; }
+#reflect-export-btn { min-height: 44px; padding: 10px 20px; }
+
+.reflect-history {
+  margin-top: 8px;
+  padding-top: 24px;
+  border-top: 1px solid var(--forest-mist);
+}
+.reflect-history[hidden] { display: none; }
+.reflect-history h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--forest-ink);
+  margin-bottom: 14px;
+}
+.reflect-history-list { display: flex; flex-direction: column; gap: 8px; }
+.reflect-history-row {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: var(--paper-card);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-sm);
+}
+.reflect-history-when { font-size: 11.5px; color: var(--ink-soft); }
+.reflect-history-bar {
+  display: flex;
+  height: 7px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+}
+.reflect-history-seg { height: 100%; min-width: 0; }
+.reflect-history-meta {
+  font-size: 11px;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .reflect-history-row { grid-template-columns: 1fr; }
+  .reflect-history-when, .reflect-history-meta { white-space: normal; }
+}
 
 .learn-blocks { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
 
@@ -1630,6 +1741,85 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 .pb-prose p:last-child { margin-bottom: 0; }
 .pb-prose strong { font-weight: 500; color: var(--forest-ink); }
 
+/* ─── FILTERS (group + suitability/duration chips) ─── */
+.pb-filters { margin-bottom: 24px; }
+.pb-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pb-filter-row + .pb-filter-row { margin-top: 8px; }
+.pb-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  min-height: 44px;
+  border-radius: var(--pb-r-pill);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pb-filter-chip:hover { border-color: var(--forest-soft); }
+.pb-filter-chip[aria-pressed="true"] {
+  background: var(--forest-deep);
+  border-color: var(--forest-deep);
+  color: #fff;
+}
+.pb-filter-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pb-filter-chip-quick { font-weight: 600; }
+.pb-filter-toggle-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.pb-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 4px;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--forest-mid);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pb-filter-toggle:hover { color: var(--forest-deep); }
+.pb-filter-clear-btn {
+  padding: 6px 10px;
+  min-height: 44px;
+  border-radius: var(--pb-r-sm);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pb-filter-clear-btn:hover:not(:disabled) { border-color: var(--forest-soft); color: var(--forest-deep); }
+.pb-filter-clear-btn:disabled { opacity: 0.4; cursor: default; }
+.pb-filter-tags[hidden] { display: none; }
+.pb-filter-summary {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.pb-filter-empty {
+  padding: 32px 14px;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 13px;
+  border: 1px dashed var(--forest-mist);
+  border-radius: var(--pb-r-md);
+}
+
 /* ─── GROUPS ─── */
 .pb-group { margin-bottom: 36px; }
 .pb-group:last-of-type { margin-bottom: 16px; }
@@ -2017,6 +2207,39 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 .pb-arc-legend-item { display: flex; align-items: center; gap: 5px; }
 .pb-arc-dot { width: 7px; height: 7px; border-radius: 50%; }
 
+.pb-arc-advice {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-sm);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--forest-deep);
+}
+.pb-arc-advice:empty { display: none; }
+
+.pb-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--pb-r-sm);
+  border: 1px dashed var(--forest-soft);
+  background: transparent;
+  color: var(--forest-deep);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pb-suggest-btn:hover { background: var(--forest-mist); border-style: solid; }
+
 .pb-builder-list {
   flex: 1;
   overflow-y: auto;
@@ -2081,6 +2304,39 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   color: var(--ink-faint);
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
+}
+.pb-builder-row-dur-label { white-space: nowrap; }
+/* Per-item minute stepper. Small hit targets here are a deliberate match
+   to this row's pre-existing ▲▼ reorder buttons and × remove button
+   (16×13px / 18×18px respectively) — this dense list already trades hit
+   target size for density, so the stepper follows the same convention
+   rather than introducing a visually inconsistent oversized control next
+   to buttons half its size. Still real <button> elements either way. */
+.pb-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pb-stepper-btn {
+  width: 16px; height: 16px;
+  padding: 0;
+  border: 1px solid var(--forest-mist);
+  border-radius: 3px;
+  background: var(--paper-pure);
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  font-family: inherit;
+}
+.pb-stepper-btn:hover { background: var(--forest-mist); color: var(--forest-deep); }
+.pb-stepper-val {
+  min-width: 26px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .pb-builder-row-move {
   display: flex;
@@ -2225,6 +2481,26 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   background: var(--paper-card);
   border-radius: 0 var(--pb-r-sm) var(--pb-r-sm) 0;
 }
+.pb-run-notes-label {
+  font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--forest-deep);
+  margin-bottom: 6px; font-weight: 600;
+}
+.pb-run-notes {
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-sm);
+  background: var(--paper-pure);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.55;
+  resize: vertical;
+}
+.pb-run-notes:focus { border-color: var(--forest-deep); outline: none; }
+
 .pb-run-footer {
   display: flex; gap: 10px; align-items: center;
   padding: 16px 32px;
@@ -2286,8 +2562,11 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   transition: width 0.5s linear;
   border-radius: 999px;
 }
-.pb-run-timer.done .pb-run-timer-fill { background: var(--pb-ember); }
-.pb-run-timer.done .pb-run-timer-display { color: var(--pb-ember); }
+/* .over replaces the old stop-at-zero .done state: the run-mode timer now
+   keeps counting past zero instead of stopping, so this just re-colors
+   the display/fill once it's past target rather than marking "finished". */
+.pb-run-timer.over .pb-run-timer-fill { background: var(--pb-ember); }
+.pb-run-timer.over .pb-run-timer-display { color: var(--pb-ember); }
 .pb-run-timer.paused .pb-run-timer-fill { opacity: 0.55; }
 .pb-run-timer-meta {
   display: flex; align-items: center; justify-content: space-between;
@@ -2424,8 +2703,14 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 @keyframes pbFabBump      { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
 @keyframes pbFabCountBump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
 
-/* ─── PRINT TEMPLATE: off-screen on screen, on-screen for html2canvas, the only thing in print. ─── */
-#print-session {
+/* ─── PRINT TEMPLATES: off-screen on screen, on-screen for html2canvas,
+   the only thing in print. Two templates share this base — #print-session
+   (the session plan, from exportRenderPrintSession()) and #print-report
+   (the post-session report, from exportRenderPrintReport()) — and each
+   export path marks the one it wants visible with .print-active
+   (pbSetPrintTarget() in pocketbook.js) right before calling
+   window.print(), since only one may print at a time. ─── */
+#print-session, #print-report {
   position: absolute; left: -9999px; top: 0;
   width: 794px;   /* A4 @ 96dpi */
   background: #fff; color: #111;
@@ -2440,6 +2725,16 @@ body.is-exporting-png #print-session { left: 0; }
 }
 .print-row-name { font-weight: 600; }
 .print-row-meta { color: #555; font-size: 12px; margin-top: 2px; }
+.print-note { margin-top: 4px; font-size: 12px; color: #444; font-style: italic; white-space: pre-wrap; }
+.print-section-title {
+  font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: #2d4a3f; margin: 22px 0 8px; padding-top: 14px; border-top: 1px solid #ddd;
+}
+.print-section-title:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+.print-qa { padding: 8px 0; border-bottom: 1px solid #eee; page-break-inside: avoid; }
+.print-q { font-weight: 600; font-size: 12.5px; }
+.print-a { margin-top: 3px; font-size: 12.5px; color: #333; white-space: pre-wrap; }
+.print-indicator { padding: 4px 0; font-size: 12.5px; }
 .print-footer {
   margin-top: 24px; padding-top: 12px;
   border-top: 1px solid #2d4a3f;
@@ -2451,7 +2746,7 @@ body.is-exporting-png #print-session { left: 0; }
 @media print {
   @page { size: A4; margin: 16mm; }
   body > * { display: none !important; }
-  #print-session {
+  .print-active {
     position: static !important; left: auto !important;
     display: block !important; padding: 0 !important; width: auto !important;
   }

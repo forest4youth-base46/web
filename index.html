@@ -1191,6 +1191,15 @@
                 <p data-i18n-html="pbui.howto.p1">Activities are grouped under five themes that map onto the therapeutic arc: <strong>Getting There</strong>; <strong>Waking Up Your Senses</strong>; <strong>Discovering Yourself</strong>; <strong>Connecting with Others</strong>; and <strong>Coming Back to Yourself</strong>. Within each group, activities range from lower to higher demand. Select based on where the group is on a given day, not on where the session plan says they should be.</p>
                 <p data-i18n-html="pbui.howto.p2">The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.</p>
               </section>
+              <div class="pb-filters">
+                <div class="pb-filter-row" id="pb-filter-groups" aria-label="Filter by group" data-i18n-attr="aria-label:pbui.filter.groups.label"></div>
+                <div class="pb-filter-toggle-row">
+                  <button type="button" class="pb-filter-toggle" id="pb-filter-toggle" aria-expanded="false" aria-controls="pb-filter-tags" onclick="pbToggleFilterPanel()" data-i18n="pbui.filter.toggle">More filters</button>
+                  <button type="button" class="pb-filter-clear-btn" id="pb-filter-clear" onclick="pbClearFilters()" disabled data-i18n="pbui.filter.clear">Clear filters</button>
+                </div>
+                <div class="pb-filter-row pb-filter-tags" id="pb-filter-tags" hidden></div>
+                <div class="pb-filter-summary" id="pb-filter-summary" aria-live="polite"></div>
+              </div>
               <div id="pb-groups"></div>
             </div>
             <aside class="pb-builder" id="pb-builder">
@@ -1213,6 +1222,8 @@
                 <div class="pb-arc-label" data-i18n="pbui.builder.arcbalance">Arc balance</div>
                 <div class="pb-arc-bar" id="pb-arc-bar"></div>
                 <div class="pb-arc-legend" id="pb-arc-legend"></div>
+                <div class="pb-arc-advice" id="pb-arc-advice" aria-live="polite"></div>
+                <button type="button" class="pb-suggest-btn" onclick="pbSuggestArc()" data-i18n="pbui.arc.suggest">Suggest an arc</button>
               </div>
               <div class="pb-builder-list" id="pb-builder-list">
                 <div class="pb-builder-empty">
@@ -1303,6 +1314,22 @@
       <h2 data-i18n="reflect.heading">Post-Session Reflection</h2>
       <p data-i18n="reflect.sub">Prompts and indicators to support practitioner reflection after each session.</p>
     </div>
+
+    <!-- "Session just run" recap — only shown once a Run Mode record
+         exists (pbRenderReflectSummary() in pocketbook.js toggles [hidden]).
+         Sits above the prompts/indicators grid so the loop from Plan → Run
+         is visible before anything else on this screen. -->
+    <section class="reflect-session-recap" id="reflect-session-recap" hidden>
+      <div class="reflect-session-recap-head">
+        <span class="reflect-session-recap-eyebrow" data-i18n="pbui.reflect.recap.eyebrow">Session just run</span>
+        <span class="reflect-session-recap-when" id="reflect-recap-when"></span>
+      </div>
+      <div class="reflect-session-recap-list" id="reflect-recap-list"></div>
+      <div class="reflect-session-recap-actions">
+        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn" onclick="exportSessionReportPDF()" disabled data-i18n="pbui.reflect.export">Export session report</button>
+      </div>
+    </section>
+
     <div class="modules-grid">
 
       <!-- Self-Reflection -->
@@ -1314,6 +1341,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b1.h">What did you notice in yourself?</h4>
                 <p data-i18n="mod.reflectself.b1.p">Were there moments you felt drawn to redirect, speed up, or fill silence? What does that tell you about your own relationship to the material or the environment?</p>
+                <label class="reflect-answer-label" for="reflect-answer-0" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-0" rows="2" oninput="pbSaveReflectAnswer(0, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
             <div class="reflect-prompt">
@@ -1321,6 +1350,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b2.h">What did the environment do?</h4>
                 <p data-i18n="mod.reflectself.b2.p">Did anything in the natural space shift the session unexpectedly — weather, an animal, a sound? How did you and the participant respond? Was that response worked with or avoided?</p>
+                <label class="reflect-answer-label" for="reflect-answer-1" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-1" rows="2" oninput="pbSaveReflectAnswer(1, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
             <div class="reflect-prompt">
@@ -1328,6 +1359,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b3.h">What would you do differently?</h4>
                 <p data-i18n="mod.reflectself.b3.p">Was the activity well-matched to the participant's state? Was the timing right? Where did the frame hold and where did it need flexibility?</p>
+                <label class="reflect-answer-label" for="reflect-answer-2" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-2" rows="2" oninput="pbSaveReflectAnswer(2, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
             <div class="reflect-prompt">
@@ -1335,6 +1368,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b4.h">What needs to be brought to supervision?</h4>
                 <p data-i18n="mod.reflectself.b4.p">Note any countertransference, boundary moments, clinical concerns, or powerful projective material that emerged. FBT supervision should include the environmental dimension explicitly.</p>
+                <label class="reflect-answer-label" for="reflect-answer-3" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-3" rows="2" oninput="pbSaveReflectAnswer(3, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
           </div>
@@ -1345,27 +1380,27 @@
       <div class="module-card is-door" id="mod-indicators">
         <div class="module-body">
           <div class="check-list-v2">
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 0)" onkeydown="pbIndicatorKeydown(event, this, 0)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.1">Participant appeared more physically relaxed at end than at start</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 1)" onkeydown="pbIndicatorKeydown(event, this, 1)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.2">Spontaneous engagement with the environment (not only prompted)</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 2)" onkeydown="pbIndicatorKeydown(event, this, 2)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.3">Use of metaphor or narrative language unprompted</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 3)" onkeydown="pbIndicatorKeydown(event, this, 3)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.4">Expressed reluctance to leave the space</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 4)" onkeydown="pbIndicatorKeydown(event, this, 4)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.5">Connected current session to personal context without prompting</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 5)" onkeydown="pbIndicatorKeydown(event, this, 5)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.6">Visible emotional response (tears, laughter, stillness)</label>
             </div>
@@ -1398,6 +1433,15 @@
       </div>
 
     </div>
+
+    <!-- Session history — every recorded run (pbLoadSessionRecords()),
+         most recent first, each with its own mini arc-balance bar reusing
+         the same per-group colors as the Session Builder. -->
+    <section class="reflect-history" id="reflect-history" hidden>
+      <h3 data-i18n="pbui.reflect.history.title">Session history</h3>
+      <div class="reflect-history-list" id="reflect-history-list"></div>
+    </section>
+
   </div>
 
   </main>
@@ -1470,6 +1514,11 @@
       <div class="pb-run-label" id="pb-runLabelClose">How to close</div>
       <div class="pb-run-text" id="pb-runClose"></div>
     </div>
+    <div class="pb-run-section">
+      <label class="pb-run-notes-label" for="pb-runNotes" data-i18n="pbui.run.notes.label">Notes</label>
+      <textarea class="pb-run-notes" id="pb-runNotes" rows="2" oninput="pbRunNoteInput(event)"
+                placeholder="What happened, what you noticed…" data-i18n-attr="placeholder:pbui.run.notes.placeholder"></textarea>
+    </div>
     <div class="pb-run-timer" id="pb-runTimer">
       <div class="pb-run-timer-head">
         <div class="pb-run-timer-eyebrow" data-i18n="pbui.runtimer.eyebrow">Session timer</div>
@@ -1481,8 +1530,9 @@
       <div class="pb-run-timer-meta">
         <span id="pb-runTimerHint" data-i18n="pbui.runtimer.hint.counting">Counting down · advance when ready.</span>
         <div class="pb-run-timer-actions">
-          <button class="pb-run-timer-btn" id="pb-runTimerReset" onclick="pbRunTimerReset()" data-i18n="pbui.runtimer.reset">Reset</button>
-          <button class="pb-run-timer-btn" id="pb-runTimerPause" onclick="pbRunTimerPause()" data-i18n="pbui.timer.pause">Pause</button>
+          <button type="button" class="pb-run-timer-btn" id="pb-runTimerReset" onclick="pbRunTimerReset()" data-i18n="pbui.runtimer.reset">Reset</button>
+          <button type="button" class="pb-run-timer-btn" id="pb-runTimerPause" onclick="pbRunTimerPause()" data-i18n="pbui.timer.pause">Pause</button>
+          <button type="button" class="pb-run-timer-btn" id="pb-runTimerPlus5" onclick="pbRunTimerPlus5()" data-i18n="pbui.runtimer.plus5">+5 min</button>
         </div>
       </div>
     </div>
@@ -1531,6 +1581,13 @@
      Off-screen in normal use; the only thing visible in @media print
      and the html2canvas target for PNG export. -->
 <section id="print-session" aria-hidden="true"></section>
+
+<!-- Populated by exportRenderPrintReport() just before the Reflect
+     screen's "Export session report" prints — the session record,
+     self-reflection answers, and outcome indicators combined. Shares the
+     #print-session base styles and the print-only visibility toggle
+     (.print-active, set by pbSetPrintTarget() in pocketbook.js). -->
+<section id="print-report" aria-hidden="true"></section>
 
 <!-- ─── INLINED LIBRARIES (no CDN at runtime) ─── -->
 <!-- html2canvas + qrcodejs are vendored here as <script> blocks. -->

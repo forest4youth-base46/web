@@ -36,10 +36,119 @@ const PB_LABELS_EN = {
   close: 'How to close', suitable: 'Suitable for',
 };
 
+// Shared group → color map (matches the swatches already used by the arc
+// balance bar / builder rows). Kept as one constant so the Reflect screen's
+// mini history bars can reuse exactly the same palette without redefining
+// it. Uses the root-scoped tokens (--bark/--ember), not the .pb-host-scoped
+// --pb-bark/--pb-ember aliases, so it also resolves outside .pb-host.
+const PB_GROUP_COLORS = {
+  1: 'var(--forest-soft)', 2: 'var(--forest-mid)', 3: 'var(--forest-deep)',
+  4: 'var(--bark)', 5: 'var(--ember)',
+};
+
+function pbEscapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ───────── FILTERS (group + suitability/duration tags) ─────────
+// Group filter and tag filter are independent multi-select sets (AND
+// between the two facets, OR within each). The ≤15 min quick filter is a
+// third, simpler facet. All three narrow pbRenderGroups() together.
+let pbFilterGroups = new Set();
+let pbFilterTags = new Set();
+let pbFilterShort = false;
+
+function pbAllTags() {
+  const set = new Set();
+  ACTIVITIES.forEach(a => (a.tags || []).forEach(tag => set.add(tag)));
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+
+function pbActivityMatchesFilters(a) {
+  if (pbFilterGroups.size && !pbFilterGroups.has(a.group)) return false;
+  if (pbFilterTags.size && !(a.tags || []).some(tag => pbFilterTags.has(tag))) return false;
+  if (pbFilterShort && !(a.durMax && a.durMax <= 15)) return false;
+  return true;
+}
+
+function pbFiltersActive() {
+  return pbFilterGroups.size > 0 || pbFilterTags.size > 0 || pbFilterShort;
+}
+
+function pbRenderFilters() {
+  const groupWrap = document.getElementById('pb-filter-groups');
+  if (groupWrap) {
+    groupWrap.innerHTML = GROUPS.map(g => {
+      const active = pbFilterGroups.has(g.id);
+      return `<button type="button" class="pb-filter-chip" aria-pressed="${active}" onclick="pbToggleFilterGroup(${g.id})">
+        <span class="pb-filter-dot" style="background:${PB_GROUP_COLORS[g.id]}"></span>${pbGroupT(g, 'title')}
+      </button>`;
+    }).join('');
+  }
+
+  const tagWrap = document.getElementById('pb-filter-tags');
+  if (tagWrap) {
+    const shortActive = pbFilterShort;
+    tagWrap.innerHTML =
+      `<button type="button" class="pb-filter-chip pb-filter-chip-quick" aria-pressed="${shortActive}" onclick="pbToggleFilterShort()">${pbEscapeHtml(t('pbui.filter.short'))}</button>` +
+      pbAllTags().map(tag => {
+        const active = pbFilterTags.has(tag);
+        // Single-quoted like every other inline handler in this file (see
+        // pbToggleActivity('${a.id}') etc.) — safe because none of the
+        // tags in pocketbook-data.js contain an apostrophe; JSON.stringify
+        // would have double-quoted the value and broken out of this
+        // double-quoted onclick="..." attribute.
+        return `<button type="button" class="pb-filter-chip" aria-pressed="${active}" onclick="pbToggleFilterTag('${tag}')">${pbEscapeHtml(pbTagT(tag))}</button>`;
+      }).join('');
+  }
+
+  const clearBtn = document.getElementById('pb-filter-clear');
+  if (clearBtn) clearBtn.disabled = !pbFiltersActive();
+}
+
+function pbToggleFilterGroup(g) {
+  if (pbFilterGroups.has(g)) pbFilterGroups.delete(g); else pbFilterGroups.add(g);
+  pbRenderFilters();
+  pbRenderGroups();
+}
+function pbToggleFilterTag(tag) {
+  if (pbFilterTags.has(tag)) pbFilterTags.delete(tag); else pbFilterTags.add(tag);
+  pbRenderFilters();
+  pbRenderGroups();
+}
+function pbToggleFilterShort() {
+  pbFilterShort = !pbFilterShort;
+  pbRenderFilters();
+  pbRenderGroups();
+}
+function pbClearFilters() {
+  pbFilterGroups.clear();
+  pbFilterTags.clear();
+  pbFilterShort = false;
+  pbRenderFilters();
+  pbRenderGroups();
+}
+function pbToggleFilterPanel() {
+  const panel = document.getElementById('pb-filter-tags');
+  const btn = document.getElementById('pb-filter-toggle');
+  if (!panel || !btn) return;
+  const willOpen = panel.hasAttribute('hidden');
+  if (willOpen) panel.removeAttribute('hidden'); else panel.setAttribute('hidden', '');
+  btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  btn.textContent = willOpen ? t('pbui.filter.toggle.close') : t('pbui.filter.toggle');
+}
+
 function pbRenderGroups() {
   const root = document.getElementById('pb-groups');
+  let shown = 0;
   const html = GROUPS.map(g => {
-    const items = ACTIVITIES.filter(a => a.group === g.id);
+    const items = ACTIVITIES.filter(a => a.group === g.id && pbActivityMatchesFilters(a));
+    shown += items.length;
+    if (!items.length) return '';
     return `
       <section class="pb-group">
         <header class="pb-group-header">
@@ -55,29 +164,38 @@ function pbRenderGroups() {
       </section>
     `;
   }).join('');
-  root.innerHTML = html;
+  root.innerHTML = html || `<div class="pb-filter-empty">${pbEscapeHtml(t('pbui.filter.empty'))}</div>`;
+
+  const summary = document.getElementById('pb-filter-summary');
+  if (summary) {
+    summary.textContent = pbFiltersActive()
+      ? t('pbui.filter.summary').replace('{n}', String(shown)).replace('{total}', String(ACTIVITIES.length))
+      : '';
+  }
 }
 
 function pbRenderActivity(a) {
   const dur = pbFmtDuration(a);
   const showTimer = a.durAvg > 0;
+  const detailId = 'pb-detail-' + a.id;
   return `
     <article class="pb-activity-item" id="pb-act-${a.id}" data-group="${a.group}">
-      <div class="pb-activity-trigger" onclick="pbToggleActivity('${a.id}')">
+      <div class="pb-activity-trigger" role="button" tabindex="0" aria-expanded="false" aria-controls="${detailId}"
+           onclick="pbToggleActivity('${a.id}')" onkeydown="pbActivityTriggerKeydown(event, '${a.id}')">
         <div class="pb-activity-glyph">${GLYPH[a.glyph] || ''}</div>
         <div class="pb-activity-name">${pbT(a, 'name')}</div>
         <div class="pb-activity-meta">
           <span class="pb-activity-duration">${dur}</span>
-          ${showTimer ? `<button class="pb-timer-icon" title="${t('pbui.activity.starttimer')}" onclick="event.stopPropagation(); pbStartTimer('${a.id}')">
+          ${showTimer ? `<button type="button" class="pb-timer-icon" title="${t('pbui.activity.starttimer')}" onclick="event.stopPropagation(); pbStartTimer('${a.id}')">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
               <circle cx="8" cy="9" r="5.5"/><path d="M8 9V6"/><path d="M6 2h4"/><path d="M8 2v1.5"/>
             </svg>
           </button>` : ''}
-          <button class="pb-add-icon" title="${t('pbui.export.addtitle')}" onclick="event.stopPropagation(); pbToggleInSession('${a.id}')" data-add="${a.id}">+</button>
+          <button type="button" class="pb-add-icon" title="${t('pbui.export.addtitle')}" onclick="event.stopPropagation(); pbToggleInSession('${a.id}')" data-add="${a.id}">+</button>
           <svg class="pb-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5l4 4 4-4"/></svg>
         </div>
       </div>
-      <div class="pb-activity-detail">
+      <div class="pb-activity-detail" id="${detailId}">
         <div class="pb-activity-visual" data-visual="${a.visual || ''}">
           <div class="pb-visual-caption">${pbT(a, 'caption')}</div>
         </div>
@@ -91,7 +209,7 @@ function pbRenderActivity(a) {
           <div class="pb-detail-label">${pbLabel('close')}</div>
           <div class="pb-detail-text">${pbT(a, 'close') || ''}</div>
           <div class="pb-detail-label">${pbLabel('suitable')}</div>
-          <div class="pb-detail-text"><div class="pb-detail-tags">${a.tags.map(t => `<span class="pb-detail-tag">${pbTagT(t)}</span>`).join('')}</div></div>
+          <div class="pb-detail-text"><div class="pb-detail-tags">${a.tags.map(tag => `<span class="pb-detail-tag">${pbTagT(tag)}</span>`).join('')}</div></div>
         </div>
       </div>
     </article>
@@ -107,13 +225,18 @@ function pbRenderAdaptations() {
   `).join('');
 }
 
-// ───────── ACCORDION ─────────
+// ───────── ACTIVITY DETAIL DISCLOSURE ─────────
+// Multiple activities can be expanded at once (not an exclusive accordion)
+// so comparing two activities side by side doesn't require re-opening one
+// after the other closes it.
 function pbToggleActivity(id) {
   const item = document.getElementById('pb-act-' + id);
+  if (!item) return;
   const wasOpen = item.classList.contains('open');
-  document.querySelectorAll('.pb-activity-item').forEach(a => a.classList.remove('open'));
+  item.classList.toggle('open', !wasOpen);
+  const trigger = item.querySelector('.pb-activity-trigger');
+  if (trigger) trigger.setAttribute('aria-expanded', String(!wasOpen));
   if (!wasOpen) {
-    item.classList.add('open');
     // Re-inject SVG fresh so SMIL animations start from zero on each open
     const visualEl = item.querySelector('.pb-activity-visual[data-visual]');
     if (visualEl) {
@@ -125,8 +248,39 @@ function pbToggleActivity(id) {
   }
 }
 
+// Keyboard equivalent for the trigger's role="button" (a plain div, not a
+// <button>, because it also hosts two nested real <button> elements —
+// the timer and add-to-session actions — and <button> cannot contain
+// <button>). Enter/Space activate it exactly like a native button would.
+function pbActivityTriggerKeydown(e, id) {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    pbToggleActivity(id);
+  }
+}
+
 // ───────── SESSION BUILDER ─────────
 let pbSession = []; // array of activity ids in chosen order
+
+// Per-item planned-minute overrides, keyed by activity id. An item not
+// present here just uses the activity's own default (durMax, falling back
+// to durAvg, falling back to 5 — matching the pre-existing fallback used
+// for zero-duration "Throughout session"/"Multi-session" activities in the
+// arc balance calculation below). Saved to localStorage like pb_session,
+// but — matching pb_session's own documented choice — deliberately never
+// auto-loaded, so a returning visitor always starts from a clean plan.
+let pbSessionMins = {};
+function pbGetItemMins(id) {
+  if (typeof pbSessionMins[id] === 'number') return pbSessionMins[id];
+  const a = ACTIVITIES.find(x => x.id === id);
+  return a ? (a.durMax || a.durAvg || 5) : 5;
+}
+function pbAdjustItemMins(id, delta) {
+  const next = Math.max(5, Math.min(120, pbGetItemMins(id) + delta));
+  pbSessionMins[id] = next;
+  try { localStorage.setItem('pb_session_mins', JSON.stringify(pbSessionMins)); } catch (e) {}
+  pbRenderBuilder();
+}
 
 function pbToggleInSession(id) {
   const idx = pbSession.indexOf(id);
@@ -174,10 +328,7 @@ function pbLoadSession() {
 
 function pbRenderBuilder() {
   const list = document.getElementById('pb-builder-list');
-  const totalMin = pbSession.reduce((sum, id) => {
-    const a = ACTIVITIES.find(x => x.id === id);
-    return sum + (a ? a.durMax : 0);
-  }, 0);
+  const totalMin = pbSession.reduce((sum, id) => sum + pbGetItemMins(id), 0);
 
   document.getElementById('pb-stat-count').textContent = pbSession.length;
   document.getElementById('pb-stat-time').textContent = totalMin;
@@ -212,7 +363,7 @@ function pbRenderBuilder() {
   const groupTime = [0, 0, 0, 0, 0, 0]; // index 0 unused
   pbSession.forEach(id => {
     const a = ACTIVITIES.find(x => x.id === id);
-    if (a) groupTime[a.group] += a.durMax || 5; // roles/project as 5 for visualization
+    if (a) groupTime[a.group] += pbGetItemMins(id);
   });
   const sumTime = groupTime.reduce((s, x) => s + x, 0) || 1;
   const bar = document.getElementById('pb-arc-bar');
@@ -233,9 +384,11 @@ function pbRenderBuilder() {
     ? `<span style="opacity:0.5">${t('pbui.arc.empty')}</span>`
     : legendEntries.map(g => {
         const grp = GROUPS.find(x => x.id === g);
-        const colors = { 1:'var(--forest-soft)', 2:'var(--forest-mid)', 3:'var(--forest-deep)', 4:'var(--bark)', 5:'var(--ember)' };
-        return `<span class="pb-arc-legend-item"><span class="pb-arc-dot" style="background:${colors[g]}"></span>${pbGroupT(grp, 'title')}</span>`;
+        return `<span class="pb-arc-legend-item"><span class="pb-arc-dot" style="background:${PB_GROUP_COLORS[g]}"></span>${pbGroupT(grp, 'title')}</span>`;
       }).join('');
+
+  const adviceEl = document.getElementById('pb-arc-advice');
+  if (adviceEl) adviceEl.textContent = pbComputeArcAdvice(groupTime, sumTime, pbSession.length);
 
   // List
   if (pbSession.length === 0) {
@@ -249,29 +402,84 @@ function pbRenderBuilder() {
         <div>${t('pbui.builder.empty')}</div>
       </div>`;
   } else {
-    const colors = { 1:'var(--forest-soft)', 2:'var(--forest-mid)', 3:'var(--forest-deep)', 4:'var(--bark)', 5:'var(--ember)' };
     list.innerHTML = pbSession.map((id, i) => {
       const a = ACTIVITIES.find(x => x.id === id);
       if (!a) return '';
+      const mins = pbGetItemMins(id);
+      const durHTML = a.durMax
+        ? `<span class="pb-stepper">
+             <button type="button" class="pb-stepper-btn" onclick="pbAdjustItemMins('${id}',-5)" aria-label="${t('pbui.stepper.minus')}" title="${t('pbui.stepper.minus')}">−</button>
+             <span class="pb-stepper-val">${mins}m</span>
+             <button type="button" class="pb-stepper-btn" onclick="pbAdjustItemMins('${id}',5)" aria-label="${t('pbui.stepper.plus')}" title="${t('pbui.stepper.plus')}">+</button>
+           </span>`
+        : `<span class="pb-builder-row-dur-label">${a.durLabel ? pbT(a, 'durLabel') : '—'}</span>`;
       return `
         <div class="pb-builder-row" draggable="true" data-id="${id}" data-idx="${i}"
              ondragstart="pbOnDragStart(event)" ondragover="pbOnDragOver(event)"
              ondrop="pbOnDrop(event)" ondragend="pbOnDragEnd(event)">
           <span class="pb-builder-row-handle">⋮⋮</span>
-          <span class="pb-builder-row-group" style="background:${colors[a.group]}" title="Group ${a.group}: ${pbGroupT(GROUPS[a.group-1], 'title')}"></span>
+          <span class="pb-builder-row-group" style="background:${PB_GROUP_COLORS[a.group]}" title="Group ${a.group}: ${pbGroupT(GROUPS[a.group-1], 'title')}"></span>
           <span class="pb-builder-row-name">${pbT(a, 'name')}</span>
-          <span class="pb-builder-row-dur">${a.durMax ? a.durMax + 'm' : '—'}</span>
+          <span class="pb-builder-row-dur">${durHTML}</span>
           <span class="pb-builder-row-move">
-            <button class="pb-move-btn" onclick="pbMoveUp(${i})" ${i === 0 ? 'disabled' : ''} title="Move up" aria-label="Move ${pbT(a, 'name')} up">▲</button>
-            <button class="pb-move-btn" onclick="pbMoveDown(${i})" ${i === pbSession.length - 1 ? 'disabled' : ''} title="Move down" aria-label="Move ${pbT(a, 'name')} down">▼</button>
+            <button type="button" class="pb-move-btn" onclick="pbMoveUp(${i})" ${i === 0 ? 'disabled' : ''} title="Move up" aria-label="Move ${pbT(a, 'name')} up">▲</button>
+            <button type="button" class="pb-move-btn" onclick="pbMoveDown(${i})" ${i === pbSession.length - 1 ? 'disabled' : ''} title="Move down" aria-label="Move ${pbT(a, 'name')} down">▼</button>
           </span>
-          <button class="pb-builder-row-remove" onclick="pbRemoveFromSession('${id}')" title="Remove">×</button>
+          <button type="button" class="pb-builder-row-remove" onclick="pbRemoveFromSession('${id}')" title="Remove">×</button>
         </div>`;
     }).join('');
   }
 
   document.getElementById('pb-btn-clear').disabled = pbSession.length === 0;
   document.getElementById('pb-btn-export').disabled = pbSession.length === 0;
+}
+
+// ───────── ARC ADVICE ─────────
+// A round-number reference point, not a clinical rule: the Session
+// Structure guide (mod-plan) sketches Opening 10–15 + Core 30–45 +
+// Integration 10–15 + Transition 5–10, whose midpoint lands near an hour.
+const PB_ARC_TARGET_MIN = 60;
+
+function pbComputeArcAdvice(groupTime, sumTime, count) {
+  if (!count) return '';
+  if (groupTime[1] === 0) return t('pbui.arc.advice.noarrival');
+  if (groupTime[5] === 0) return t('pbui.arc.advice.noclosing');
+  if (sumTime < PB_ARC_TARGET_MIN * 0.6) return t('pbui.arc.advice.under');
+  if (sumTime > PB_ARC_TARGET_MIN * 1.4) return t('pbui.arc.advice.over');
+  if ([2, 3, 4].some(g => groupTime[g] === 0)) return t('pbui.arc.advice.gap');
+  return t('pbui.arc.advice.balanced');
+}
+
+// ───────── SUGGEST AN ARC ─────────
+// Fills in any group that has nothing in the plan yet with that group's
+// shortest-average-duration activity that still matches the active
+// filters (if any) — a starting point, not a wizard: everything it adds
+// is a normal session-builder row afterward, reorderable/removable/
+// re-timed like anything added by hand.
+function pbSuggestArc() {
+  let added = 0;
+  for (let g = 1; g <= 5; g++) {
+    const covered = pbSession.some(id => {
+      const a = ACTIVITIES.find(x => x.id === id);
+      return a && a.group === g;
+    });
+    if (covered) continue;
+    const candidates = ACTIVITIES
+      .filter(a => a.group === g && a.durAvg > 0 && pbActivityMatchesFilters(a))
+      .sort((a, b) => a.durAvg - b.durAvg);
+    if (candidates.length) {
+      pbSession.push(candidates[0].id);
+      added++;
+    }
+  }
+  if (added) {
+    pbSaveSession();
+    pbRenderBuilder();
+    pbRefreshAddButtons();
+    pbShowToast(t('pbui.arc.suggest.added').replace('{n}', String(added)));
+  } else {
+    pbShowToast(t('pbui.arc.suggest.none'));
+  }
 }
 
 // ───────── DRAG REORDER ─────────
@@ -448,7 +656,7 @@ function exportRenderPrintSession() {
   if (!root) return;
   const lang = typeof currentLang === 'string' ? currentLang : 'en';
   const items = pbSession.map(id => ACTIVITIES.find(a => a.id === id)).filter(Boolean);
-  const totalMin = items.reduce((s, a) => s + (a.durAvg || 0), 0);
+  const totalMin = pbSession.reduce((s, id) => s + pbGetItemMins(id), 0);
   const date = new Date().toLocaleDateString(lang);
   const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practice Guide';
   const tQrLabel = (T[lang] && T[lang]['export.qr.label']) || 'Scan to reopen';
@@ -483,9 +691,23 @@ function exportRenderPrintSession() {
   if (qrNode && slot) slot.appendChild(qrNode);
 }
 
+// Both #print-session (the plan export, above) and #print-report (the
+// post-session report, below) are direct children of <body> and hidden
+// off-screen by default; @media print hides everything except whichever
+// one currently carries .print-active (see styles.css). Only one of the
+// two ever prints at a time, so each export path claims the class for
+// itself and releases the other's.
+function pbSetPrintTarget(id) {
+  const session = document.getElementById('print-session');
+  const report = document.getElementById('print-report');
+  if (session) session.classList.toggle('print-active', id === 'print-session');
+  if (report) report.classList.toggle('print-active', id === 'print-report');
+}
+
 function exportRunPDF() {
   if (!pbSession.length) return;
   exportRenderPrintSession();
+  pbSetPrintTarget('print-session');
   // Brief defer so any pending re-renders settle before the print dialog blocks.
   setTimeout(() => { window.print(); }, 50);
 }
@@ -520,14 +742,95 @@ async function exportRunPNG() {
   }
 }
 
+// ───────── EXPORT: POST-SESSION REPORT ─────────
+// Same pattern as exportRenderPrintSession()/exportRunPDF() above — build
+// a print-ready DOM section, then reuse the same window.print() call path
+// — just pointed at #print-report (the most recent run's record, the
+// self-reflection answers, and the outcome indicators) instead of
+// #print-session (the session plan).
+function exportRenderPrintReport() {
+  const root = document.getElementById('print-report');
+  if (!root) return;
+  const lang = typeof currentLang === 'string' ? currentLang : 'en';
+  const records = pbLoadSessionRecords();
+  if (!records.length) { root.innerHTML = ''; return; }
+  const record = records[0];
+  const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practice Guide';
+
+  const itemsHTML = record.items.map((it, i) => {
+    const a = ACTIVITIES.find(x => x.id === it.id);
+    const name = a ? pbT(a, 'name') : it.id;
+    const actual = it.actualSecs != null ? pbFmtMinSec(it.actualSecs) : '—';
+    const noteHTML = it.note ? '<div class="print-note">' + pbEscapeHtml(it.note) + '</div>' : '';
+    return '<div class="print-row">' +
+      '<div style="width:28px;font-weight:700;color:#666;">' + (i + 1) + '.</div>' +
+      '<div style="flex:1;">' +
+        '<div class="print-row-name">' + pbEscapeHtml(name) + '</div>' +
+        '<div class="print-row-meta">' + t('pbui.reflect.planned') + ' ' + it.plannedMins + 'm · ' +
+          t('pbui.reflect.actual') + ' ' + actual + '</div>' +
+        noteHTML +
+      '</div></div>';
+  }).join('');
+
+  const answersHTML = Array.prototype.map.call(
+    document.querySelectorAll('#mod-reflect-self .reflect-prompt'), p => {
+      const qEl = p.querySelector('h4');
+      const q = qEl ? qEl.textContent : '';
+      const ta = p.querySelector('.reflect-answer');
+      const val = ta ? ta.value.trim() : '';
+      const ans = val ? pbEscapeHtml(val) : '—';
+      return '<div class="print-qa"><div class="print-q">' + pbEscapeHtml(q) + '</div>' +
+        '<div class="print-a">' + ans + '</div></div>';
+    }
+  ).join('');
+
+  const indicatorsHTML = Array.prototype.map.call(
+    document.querySelectorAll('#mod-indicators .check-item-v2'), el => {
+      const labelEl = el.querySelector('label');
+      const label = labelEl ? labelEl.textContent : '';
+      const on = el.classList.contains('checked');
+      return '<div class="print-indicator">' + (on ? '☑' : '☐') + ' ' + pbEscapeHtml(label) + '</div>';
+    }
+  ).join('');
+
+  root.innerHTML =
+    '<div class="print-header">' +
+      '<div style="font-size:18px;font-weight:700;">' + tHead + '</div>' +
+      '<div style="font-size:13px;color:#555;margin-top:4px;">' +
+        t('pbui.reflect.report.title') + ' · ' + pbFormatWhen(record.when) +
+      '</div>' +
+    '</div>' +
+    '<div class="print-section-title">' + t('pbui.reflect.report.session') + '</div>' +
+    itemsHTML +
+    '<div class="print-section-title">' + t('pbui.reflect.report.selfreflection') + '</div>' +
+    (answersHTML || '—') +
+    '<div class="print-section-title">' + t('pbui.reflect.report.indicators') + '</div>' +
+    (indicatorsHTML || '—') +
+    '<div class="print-footer"><div>' + tHead + '</div></div>';
+}
+
+function exportSessionReportPDF() {
+  if (!pbLoadSessionRecords().length) return;
+  exportRenderPrintReport();
+  pbSetPrintTarget('print-report');
+  setTimeout(() => { window.print(); }, 50);
+}
+
 // ───────── KEY HANDLERS ─────────
 document.addEventListener('keydown', e => {
+  const runActive = document.getElementById('pb-runMode').classList.contains('active');
+  // Run Mode's own notes field is a <textarea> inside the same overlay —
+  // ← / → need to move the text cursor there like anywhere else, and Esc
+  // shouldn't end the run out from under someone mid-sentence. Guarded to
+  // input/textarea/select generally in case a future field needs the same
+  // treatment.
+  const inField = e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
   if (e.key === 'Escape') {
     const modal = document.getElementById('pb-timerModal');
     if (modal.classList.contains('active')) pbCloseTimer();
-    else if (document.getElementById('pb-runMode').classList.contains('active')) pbCloseRunMode();
+    else if (runActive && !inField) pbCloseRunMode();
   }
-  if (document.getElementById('pb-runMode').classList.contains('active')) {
+  if (runActive && !inField) {
     if (e.key === 'ArrowLeft') pbRunPrev();
     else if (e.key === 'ArrowRight') pbRunNext();
   }
@@ -535,65 +838,155 @@ document.addEventListener('keydown', e => {
 
 // ───────── RUN MODE ─────────
 let pbRunIndex = 0;
+// Per-step note + actual elapsed seconds, keyed by index into pbSession
+// at the moment the run started. Reset each time a run finishes/closes.
+let pbRunLog = {};
+
 function pbStartRunMode() {
   if (!pbSession.length) return;
   pbRunIndex = 0;
+  pbRunLog = {};
   document.getElementById('pb-runMode').classList.add('active');
   document.body.classList.add('pb-run-active');
   pbRenderRunStep();
 }
+
+// Closing Run Mode — by the × button, Esc, or Next past the last activity
+// (pbRunNext below) — always captures and saves whatever was recorded so
+// far. Earlier versions of Run Mode discarded everything on close; this is
+// the one behaviour change that actually closes the loop the rest of this
+// task is built around, so an early close now keeps a partial record
+// rather than silently losing it.
 function pbCloseRunMode() {
+  pbRunCaptureStep();
+  const record = pbBuildSessionRecord();
+  pbMaybeSaveSessionRecord(record);
   document.getElementById('pb-runMode').classList.remove('active');
   document.body.classList.remove('pb-run-active');
   if (document.getElementById('pb-timerModal').classList.contains('active')) pbCloseTimer();
   pbRunTimerStop();
+  pbRunLog = {};
+  pbRenderReflectSummary();
 }
-function pbRunPrev() { if (pbRunIndex > 0) { pbRunIndex--; pbRenderRunStep(); } }
+function pbRunPrev() { if (pbRunIndex > 0) { pbRunCaptureStep(); pbRunIndex--; pbRenderRunStep(); } }
 function pbRunNext() {
-  if (pbRunIndex < pbSession.length - 1) { pbRunIndex++; pbRenderRunStep(); }
+  if (pbRunIndex < pbSession.length - 1) { pbRunCaptureStep(); pbRunIndex++; pbRenderRunStep(); }
   else pbCloseRunMode();
 }
 
-// ── Inline run-mode timer (continuous, top-threshold) ──
+// Saves the step currently on screen into pbRunLog before it's replaced —
+// called on every navigation away from a step (Prev/Next) and once more
+// from pbCloseRunMode() for whichever step is showing when the run ends.
+function pbRunCaptureStep() {
+  const notesEl = document.getElementById('pb-runNotes');
+  pbRunLog[pbRunIndex] = pbRunLog[pbRunIndex] || {};
+  if (notesEl) pbRunLog[pbRunIndex].note = notesEl.value;
+  // Untimed activities (roles/project — "Throughout session"/"Multi-session")
+  // never start pbRunElapsedSecs ticking, so recording 0 here would read as
+  // "ran for zero seconds" instead of "no timer applies" — leave actualSecs
+  // unset for them; pbBuildSessionRecord()'s null default then still shows
+  // correctly in the recap/report even though the step was visited.
+  const id = pbSession[pbRunIndex];
+  const a = ACTIVITIES.find(x => x.id === id);
+  if (a && (a.durMax || a.durAvg)) pbRunLog[pbRunIndex].actualSecs = pbRunElapsedSecs;
+}
+
+function pbRunNoteInput(e) {
+  pbRunLog[pbRunIndex] = pbRunLog[pbRunIndex] || {};
+  pbRunLog[pbRunIndex].note = e.target.value;
+}
+
+// Builds {when, target, items:[{id, plannedMins, actualSecs, note}]} from
+// the plan as it stood when Run Mode was opened plus whatever pbRunLog
+// picked up along the way. Items never reached keep actualSecs: null.
+function pbBuildSessionRecord() {
+  const items = pbSession.map((id, i) => {
+    const log = pbRunLog[i] || {};
+    return {
+      id: id,
+      plannedMins: pbGetItemMins(id),
+      actualSecs: typeof log.actualSecs === 'number' ? log.actualSecs : null,
+      note: (log.note || '').trim(),
+    };
+  });
+  const target = items.reduce((s, it) => s + (it.plannedMins || 0), 0);
+  return { when: new Date().toISOString(), target: target, items: items };
+}
+
+const PB_SESSIONS_KEY = 'f4y.sessions';
+const PB_SESSIONS_MAX = 12;
+
+function pbLoadSessionRecords() {
+  try {
+    const v = JSON.parse(localStorage.getItem(PB_SESSIONS_KEY) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+
+// Skips writing a record if nothing actually happened (opened Run Mode
+// and immediately closed it again) so a stray tap doesn't leave junk in
+// the session history.
+function pbMaybeSaveSessionRecord(record) {
+  const meaningful = record.items.some(it => (it.actualSecs && it.actualSecs > 0) || it.note);
+  if (!meaningful) return;
+  try {
+    const list = pbLoadSessionRecords();
+    list.unshift(record);
+    localStorage.setItem(PB_SESSIONS_KEY, JSON.stringify(list.slice(0, PB_SESSIONS_MAX)));
+  } catch (e) {}
+}
+
+// ── Inline run-mode timer (continuous — counts past zero instead of
+// stopping, so it never blocks or nags mid-activity) ──
 let pbRunTimerInterval = null;
 let pbRunTimerTotal = 0;
 let pbRunTimerSeconds = 0;
 let pbRunTimerPaused = false;
+// True elapsed seconds for the step currently showing (excludes paused
+// time). Tracked separately from pbRunTimerSeconds so +5/pause/over don't
+// distort what actually gets recorded.
+let pbRunElapsedSecs = 0;
 
 function pbRunTimerStart(minutes) {
   pbRunTimerStop();
   pbRunTimerTotal = minutes * 60;
   pbRunTimerSeconds = pbRunTimerTotal;
   pbRunTimerPaused = false;
+  pbRunElapsedSecs = 0;
   const wrap = document.getElementById('pb-runTimer');
-  wrap.classList.remove('done','paused');
+  wrap.classList.remove('over','paused');
   document.getElementById('pb-runTimerPause').textContent = t('pbui.timer.pause');
-  pbRunTimerRender();
+  pbRunTimerRender(); // also sets the initial "counting down N min" hint
   pbRunTimerInterval = setInterval(() => {
     if (pbRunTimerPaused) return;
     pbRunTimerSeconds--;
+    pbRunElapsedSecs++;
     pbRunTimerRender();
-    if (pbRunTimerSeconds <= 0) {
-      clearInterval(pbRunTimerInterval);
-      pbRunTimerInterval = null;
-      document.getElementById('pb-runTimer').classList.add('done');
-      document.getElementById('pb-runTimerHint').textContent = t('pbui.runtimer.hint.done');
-    }
   }, 1000);
 }
 function pbRunTimerStop() {
   if (pbRunTimerInterval) { clearInterval(pbRunTimerInterval); pbRunTimerInterval = null; }
 }
 function pbRunTimerRender() {
-  const s = Math.max(0, pbRunTimerSeconds);
-  const mm = String(Math.floor(s / 60)).padStart(2,'0');
-  const ss = String(s % 60).padStart(2,'0');
-  document.getElementById('pb-runTimerDisplay').textContent = `${mm}:${ss}`;
-  const pct = pbRunTimerTotal > 0 ? (s / pbRunTimerTotal) * 100 : 0;
+  const s = pbRunTimerSeconds;
+  const over = s < 0;
+  const abs = Math.abs(s);
+  const mm = String(Math.floor(abs / 60)).padStart(2, '0');
+  const ss = String(abs % 60).padStart(2, '0');
+  document.getElementById('pb-runTimerDisplay').textContent = (over ? '+' : '') + mm + ':' + ss;
+  const pct = pbRunTimerTotal > 0 ? Math.min(100, Math.max(0, (s / pbRunTimerTotal) * 100)) : 0;
   document.getElementById('pb-runTimerFill').style.width = pct + '%';
+  const wrap = document.getElementById('pb-runTimer');
+  wrap.classList.toggle('over', over);
+  // Recomputed every render (not just on the over/under transition) so
+  // pressing +5 min while already over correctly reverts this back to the
+  // counting-down phrasing instead of leaving a stale "over by" message.
+  document.getElementById('pb-runTimerHint').textContent = over
+    ? t('pbui.runtimer.hint.over').replace('{mmss}', mm + ':' + ss)
+    : t('pbui.runtimer.hint.mins').replace('{mins}', String(Math.ceil(pbRunTimerTotal / 60)));
 }
 function pbRunTimerPause() {
-  if (!pbRunTimerInterval && pbRunTimerSeconds <= 0) return;
+  if (!pbRunTimerInterval) return;
   pbRunTimerPaused = !pbRunTimerPaused;
   document.getElementById('pb-runTimerPause').textContent = pbRunTimerPaused ? t('pbui.timer.resume') : t('pbui.timer.pause');
   document.getElementById('pb-runTimer').classList.toggle('paused', pbRunTimerPaused);
@@ -601,10 +994,18 @@ function pbRunTimerPause() {
 function pbRunTimerReset() {
   const id = pbSession[pbRunIndex];
   const a = ACTIVITIES.find(x => x.id === id);
-  if (!a) return;
-  const mins = a.durMax || a.durAvg;
-  if (!mins) return;
-  pbRunTimerStart(mins);
+  if (!a || !(a.durMax || a.durAvg)) return; // untimed activity — nothing to reset
+  pbRunTimerStart(pbGetItemMins(id));
+}
+// Extends both the remaining time and the original target together, so
+// "actual elapsed" (tracked independently via pbRunElapsedSecs, not
+// derived from this countdown) stays accurate regardless of how many
+// times this gets pressed.
+function pbRunTimerPlus5() {
+  if (!pbRunTimerInterval) return; // no active countdown on this (untimed) step
+  pbRunTimerSeconds += 300;
+  pbRunTimerTotal += 300;
+  pbRunTimerRender();
 }
 
 function pbRenderRunStep() {
@@ -626,29 +1027,175 @@ function pbRenderRunStep() {
   document.getElementById('pb-runClose').textContent = pbT(a, 'close') || '';
   document.getElementById('pb-runPrev').disabled = (pbRunIndex === 0);
   document.getElementById('pb-runNext').textContent = (pbRunIndex === pbSession.length - 1) ? t('pbui.run.finish') : t('pbui.run.next');
-  // Auto-start the inline timer for this step using the top duration threshold
+
+  const notesEl = document.getElementById('pb-runNotes');
+  if (notesEl) notesEl.value = (pbRunLog[pbRunIndex] && pbRunLog[pbRunIndex].note) || '';
+
+  // Auto-start the inline timer for this step using the planned minutes
+  // (the session-builder stepper's override, if any, else the top duration
+  // threshold). Whether the activity is timed at all is decided from its
+  // own data (durMax/durAvg), not pbGetItemMins() — that helper's 5-minute
+  // fallback for zero-duration activities ("Throughout session"/
+  // "Multi-session" — roles/project) exists only so they still contribute
+  // something visible to the arc balance bar, not to make Run Mode try to
+  // put a countdown on them.
   const timerWrap = document.getElementById('pb-runTimer');
-  const mins = a.durMax || a.durAvg;
-  if (mins && mins > 0) {
+  const isTimed = !!(a.durMax || a.durAvg);
+  if (isTimed) {
     timerWrap.classList.remove('untimed');
-    document.getElementById('pb-runTimerHint').textContent = t('pbui.runtimer.hint.mins').replace('{mins}', mins);
-    pbRunTimerStart(mins);
+    pbRunTimerStart(pbGetItemMins(id));
   } else {
     timerWrap.classList.add('untimed');
     pbRunTimerStop();
+    pbRunElapsedSecs = 0;
   }
+}
+
+// ───────── REFLECT: SESSION RECAP + HISTORY ─────────
+function pbFmtMinSec(secs) {
+  const s = Math.max(0, secs || 0);
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return mm + ':' + ss;
+}
+function pbFormatWhen(iso) {
+  try {
+    const lang = typeof currentLang === 'string' ? currentLang : 'en';
+    return new Date(iso).toLocaleString(lang);
+  } catch (e) { return iso; }
+}
+function pbFmtActualVsPlanned(plannedMins, actualSecs) {
+  if (actualSecs == null) return t('pbui.reflect.notrun');
+  const str = pbFmtMinSec(actualSecs);
+  const overSecs = actualSecs - plannedMins * 60;
+  if (overSecs > 30) return str + ' (' + t('pbui.reflect.over').replace('{m}', String(Math.round(overSecs / 60))) + ')';
+  return str;
+}
+
+function pbRenderReflectRecapRow(it) {
+  const a = ACTIVITIES.find(x => x.id === it.id);
+  const name = a ? pbT(a, 'name') : it.id;
+  const noteHTML = it.note ? `<div class="reflect-recap-note">${pbEscapeHtml(it.note)}</div>` : '';
+  return `<div class="reflect-recap-row">
+    <span class="reflect-recap-name">${pbEscapeHtml(name)}</span>
+    <span class="reflect-recap-time">${it.plannedMins}m ${pbEscapeHtml(t('pbui.reflect.planned.vs'))} ${pbFmtActualVsPlanned(it.plannedMins, it.actualSecs)}</span>
+    ${noteHTML}
+  </div>`;
+}
+
+function pbRenderReflectHistoryRow(record) {
+  const groupTime = [0, 0, 0, 0, 0, 0];
+  record.items.forEach(it => {
+    const a = ACTIVITIES.find(x => x.id === it.id);
+    if (a) groupTime[a.group] += it.plannedMins || 0;
+  });
+  const sum = groupTime.reduce((s, x) => s + x, 0) || 1;
+  const bar = [1, 2, 3, 4, 5].filter(g => groupTime[g] > 0).map(g =>
+    `<span class="reflect-history-seg" style="flex:${groupTime[g] / sum};background:${PB_GROUP_COLORS[g]}"></span>`
+  ).join('');
+  const ranCount = record.items.filter(it => it.actualSecs != null).length;
+  return `<div class="reflect-history-row">
+    <div class="reflect-history-when">${pbEscapeHtml(pbFormatWhen(record.when))}</div>
+    <div class="reflect-history-bar" role="img" aria-label="${pbEscapeHtml(t('pbui.builder.arcbalance'))}">${bar}</div>
+    <div class="reflect-history-meta">${ranCount}/${record.items.length} · ${record.target}m ${pbEscapeHtml(t('pbui.reflect.planned'))}</div>
+  </div>`;
+}
+
+// Re-renders the Reflect screen's "session just run" recap and session
+// history regardless of which screen is currently visible — the same
+// always-render-into-hidden-DOM approach pbRenderBuilder() already uses
+// for the Pocketbook. Called from pbInit() (first load) and from the end
+// of pbCloseRunMode() (a run just finished), so the Reflect screen is
+// always current whenever it's actually navigated to.
+function pbRenderReflectSummary() {
+  const recap = document.getElementById('reflect-session-recap');
+  const history = document.getElementById('reflect-history');
+  if (!recap || !history) return;
+
+  const records = pbLoadSessionRecords();
+  if (!records.length) {
+    recap.hidden = true;
+    history.hidden = true;
+    return;
+  }
+
+  const latest = records[0];
+  recap.hidden = false;
+  document.getElementById('reflect-recap-when').textContent = pbFormatWhen(latest.when);
+  document.getElementById('reflect-recap-list').innerHTML = latest.items.map(pbRenderReflectRecapRow).join('');
+  const exportBtn = document.getElementById('reflect-export-btn');
+  if (exportBtn) exportBtn.disabled = false;
+
+  history.hidden = false;
+  document.getElementById('reflect-history-list').innerHTML = records.map(pbRenderReflectHistoryRow).join('');
+}
+
+// ───────── REFLECT: SELF-REFLECTION ANSWERS + INDICATORS ─────────
+// Both persist to localStorage so they (a) survive reload and (b) can be
+// read straight out of the DOM by exportRenderPrintReport() at export
+// time. Deliberately restored on load (pbRestoreReflectState(), called
+// from pbInit()) — unlike pb_session/pb_session_mins, which intentionally
+// never reload, these represent reflection already written down, not an
+// in-progress plan, so losing them on refresh would be a regression.
+function pbSaveReflectAnswer(idx, value) {
+  try {
+    const answers = JSON.parse(localStorage.getItem('f4y.reflect.answers') || '[]');
+    answers[idx] = value;
+    localStorage.setItem('f4y.reflect.answers', JSON.stringify(answers));
+  } catch (e) {}
+}
+// Keyboard equivalent for the indicator rows' role="checkbox" (plain divs,
+// same reasoning as pbActivityTriggerKeydown() above — no nested
+// interactive elements here, but they weren't focusable or operable by
+// keyboard at all before this pass, since toggleCheckV2() in router.js
+// only ever wired a click handler).
+function pbIndicatorKeydown(e, el, idx) {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    pbToggleIndicator(el, idx);
+  }
+}
+function pbToggleIndicator(el, idx) {
+  const on = el.classList.toggle('checked');
+  el.setAttribute('aria-checked', String(on));
+  try {
+    const flags = JSON.parse(localStorage.getItem('f4y.reflect.indicators') || '[]');
+    flags[idx] = on;
+    localStorage.setItem('f4y.reflect.indicators', JSON.stringify(flags));
+  } catch (e) {}
+}
+function pbRestoreReflectState() {
+  try {
+    const answers = JSON.parse(localStorage.getItem('f4y.reflect.answers') || '[]');
+    document.querySelectorAll('.reflect-answer').forEach((ta, i) => {
+      if (typeof answers[i] === 'string') ta.value = answers[i];
+    });
+  } catch (e) {}
+  try {
+    const flags = JSON.parse(localStorage.getItem('f4y.reflect.indicators') || '[]');
+    document.querySelectorAll('#mod-indicators .check-item-v2').forEach((el, i) => {
+      if (flags[i]) {
+        el.classList.add('checked');
+        el.setAttribute('aria-checked', 'true');
+      }
+    });
+  } catch (e) {}
 }
 
 // (init invoked by pbInit() in main script)
 function pbInit() {
   if (window.__pbInited) return;
   window.__pbInited = true;
-  // pbLoadSession() intentionally NOT called: count always starts at 0
-  // on page load so a returning user is never shown a stale count.
+  // pbLoadSession()/pbSessionMins intentionally NOT loaded from
+  // localStorage: count always starts at 0 on page load so a returning
+  // user is never shown a stale plan.
   pbRenderGroups();
+  pbRenderFilters();
   pbRenderAdaptations();
   pbRenderBuilder();
   pbRefreshAddButtons();
+  pbRestoreReflectState();
+  pbRenderReflectSummary();
 }
 
 
