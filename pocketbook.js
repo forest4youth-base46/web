@@ -1121,12 +1121,30 @@ function pbRunTimerPlus5() {
   pbRunTimerRender();
 }
 
+// One <li> per activity in the session, colored by state (done / current /
+// upcoming) rather than by group — this is a progress indicator, not the
+// group-color legend used elsewhere. A visually-hidden label per dot keeps
+// it meaningful to screen readers, since the color coding alone isn't.
+function pbRenderRunDots() {
+  const wrap = document.getElementById('pb-runDots');
+  if (!wrap) return;
+  wrap.innerHTML = pbSession.map((id, i) => {
+    const a = ACTIVITIES.find(x => x.id === id);
+    const name = a ? pbT(a, 'name') : id;
+    const state = i < pbRunIndex ? 'done' : i === pbRunIndex ? 'current' : '';
+    const stateLabel = i < pbRunIndex ? t('pbui.run.dot.done') : i === pbRunIndex ? t('pbui.run.dot.current') : t('pbui.run.dot.upcoming');
+    return `<li class="${state}"><span class="sr-only">${(i + 1) + '. ' + pbEscapeHtml(name) + ' — ' + stateLabel}</span></li>`;
+  }).join('');
+}
+
 function pbRenderRunStep() {
   const id = pbSession[pbRunIndex];
   const a = ACTIVITIES.find(x => x.id === id);
   if (!a) return;
   const grp = GROUPS[a.group - 1];
-  document.getElementById('pb-runStep').textContent = `${pbRunIndex+1} / ${pbSession.length}`;
+  document.getElementById('pb-runStep').textContent =
+    t('pbui.run.step').replace('{n}', String(pbRunIndex + 1)).replace('{total}', String(pbSession.length));
+  pbRenderRunDots();
   document.getElementById('pb-runGroup').textContent = grp ? pbGroupT(grp, 'title') : '';
   document.getElementById('pb-runName').textContent = pbT(a, 'name');
   document.getElementById('pb-runDuration').textContent = pbFmtDuration(a);

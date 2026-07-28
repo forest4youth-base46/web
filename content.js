@@ -620,6 +620,12 @@ const T = {
     "pbui.run.prev": "← Previous",
     "pbui.run.next": "Next →",
     "pbui.run.finish": "Finish",
+    "pbui.run.crumb": "Run session",
+    "pbui.run.step": "Step {n} of {total}",
+    "pbui.run.finishreflect": "Finish & reflect →",
+    "pbui.run.dot.done": "done",
+    "pbui.run.dot.current": "current",
+    "pbui.run.dot.upcoming": "to come",
     "pbui.export.copied": "Session plan copied to clipboard",
     "pbui.export.downloaded": "Session plan downloaded",
     "pbui.export.clearconfirm": "Clear all activities from the session?",
@@ -655,6 +661,8 @@ const T = {
 
     "pbui.run.notes.label": "Notes",
     "pbui.run.notes.placeholder": "What happened, what you noticed…",
+    "pbui.run.notes.hint": "Anything you want to bring to reflection or supervision. Saved with this session.",
+    "pbui.run.kbdhint": "Keyboard: ← → to move, Esc to finish",
     "pbui.runtimer.plus5": "+5 min",
     "pbui.runtimer.hint.over": "Over by {mmss} · no rush.",
 
