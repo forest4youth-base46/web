@@ -134,7 +134,7 @@ function applyFocusMode(screenEl, modId) {
   back.textContent = pathwayLabel || t('nav.back') || 'Back';
   back.onclick = () => { window.location.hash = screenHash; };
   mod.insertBefore(back, mod.firstChild);
-  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  window.scrollToViewTop();
 }
 
 function toggleActivity(id) {

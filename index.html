@@ -1433,16 +1433,20 @@
 </div>
 
 <script src="content.js"></script>
+
+<!-- iframe height reporter + scroll bridge: reports document height to
+     the parent page and exposes window.scrollToViewTop() for router.js,
+     since a plain window.scrollTo() does nothing useful once embedded.
+     Loaded before router.js because its init can call scrollToViewTop()
+     synchronously on a returning visitor's first paint. -->
+<script src="iframe-bridge.js"></script>
+
 <script src="modules-data.js"></script>
 <script src="render.js"></script>
 <script src="router.js"></script>
 <script src="pocketbook-data.js"></script>
 <script src="pocketbook.js"></script>
 <script src="ui-behaviors.js"></script>
-
-<!-- iframe height reporter: tells parent page the current document height
-     so an auto-sizing iframe embed doesn't need a fixed height. -->
-<script src="iframe-bridge.js"></script>
 
 <!-- Mobile session-builder FAB. Direct child of <body> so no transformed
      ancestor (e.g. .screen with animation: fadeUp) creates a containing
