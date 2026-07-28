@@ -39,6 +39,8 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── tokens.css            # design tokens (colors, spacing, radii, shadows)
 ├── styles.css            # everything else: layout, components, responsive rules
 ├── content.js            # translation dictionary (EN/FR/DE) + i18n helpers
+├── modules-data.js       # header data (icon/title/tag/badge) for every module-card
+├── render.js             # renders a module-card header from modules-data.js
 ├── router.js             # hash-based routing, role selection, focus-mode navigation
 ├── pocketbook-data.js    # activity/group/adaptation data for the Pocketbook
 ├── pocketbook.js         # Pocketbook rendering, Session Builder, Run Mode, export

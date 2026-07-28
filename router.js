@@ -286,6 +286,7 @@ function setRole(role, fromRoleScreen) {
 // ─────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────
+renderModuleHeaders();
 applyTranslations();
 
 // URL overrides for recoverability:
