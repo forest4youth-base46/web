@@ -121,12 +121,17 @@ function applyFocusMode(screenEl, modId) {
   // which works on every WebView including the Odoo embed test path.
   document.body.dataset.focused = modId;
 
-  // Inject a back link at the top of the focused module
+  // Inject a back link at the top of the focused module. Labeled with
+  // the pathway it returns to (e.g. "Implement in Practice") rather than
+  // a generic "Back", since the section header showing that context is
+  // hidden while a module has focus.
   const back = document.createElement('button');
   back.className = 'module-back-link injected';
   back.type = 'button';
   const screenHash = screenEl.id.replace('-screen','');
-  back.textContent = t('nav.back') || 'Back';
+  const pathwayBadge = screenEl.querySelector('.section-header .badge');
+  const pathwayLabel = pathwayBadge && pathwayBadge.textContent.trim();
+  back.textContent = pathwayLabel || t('nav.back') || 'Back';
   back.onclick = () => { window.location.hash = screenHash; };
   mod.insertBefore(back, mod.firstChild);
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
