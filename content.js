@@ -569,7 +569,43 @@ const T = {
     "ref.rr.int_act": "Guide ch. 6, pp. 45–58",
     "export.pdf": "Export to PDF",
     "export.png": "Export to PNG",
-    "export.qr.label": "Scan to reopen"
+    "export.qr.label": "Scan to reopen",
+
+    "pbui.howto.title": "How to use this section",
+    "pbui.howto.p1": "Activities are grouped under five themes that map onto the therapeutic arc: <strong>Getting There</strong>; <strong>Waking Up Your Senses</strong>; <strong>Discovering Yourself</strong>; <strong>Connecting with Others</strong>; and <strong>Coming Back to Yourself</strong>. Within each group, activities range from lower to higher demand. Select based on where the group is on a given day, not on where the session plan says they should be.",
+    "pbui.howto.p2": "The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.",
+    "pbui.builder.eyebrow": "Practitioner tool",
+    "pbui.builder.title": "Session Builder",
+    "pbui.builder.tagline": "Compose a session by adding activities. Sequence reflects the therapeutic arc.",
+    "pbui.builder.stat.activities": "Activities",
+    "pbui.builder.stat.time": "Total time",
+    "pbui.builder.arcbalance": "Arc balance",
+    "pbui.builder.empty": "No activities yet.<br>Tap <strong>+</strong> next to any activity to begin.",
+    "pbui.builder.clear": "Clear",
+    "pbui.builder.runmode": "Run mode →",
+    "pbui.timer.eyebrow": "Sustained presence",
+    "pbui.timer.pause": "Pause",
+    "pbui.timer.resume": "Resume",
+    "pbui.timer.close": "Close",
+    "pbui.run.close": "Close run mode",
+    "pbui.runtimer.eyebrow": "Session timer",
+    "pbui.runtimer.hint.counting": "Counting down · advance when ready.",
+    "pbui.runtimer.hint.done": "Time complete · move when ready.",
+    "pbui.runtimer.reset": "Reset",
+    "pbui.run.prev": "← Previous",
+    "pbui.run.next": "Next →",
+    "pbui.run.finish": "Finish",
+    "pbui.export.copied": "Session plan copied to clipboard",
+    "pbui.export.downloaded": "Session plan downloaded",
+    "pbui.export.clearconfirm": "Clear all activities from the session?",
+    "pbui.export.addtitle": "Add to session",
+    "pbui.export.removetitle": "Remove from session",
+    "pbui.export.sessionplan": "SESSION PLAN",
+    "pbui.export.total": "Total",
+    "pbui.export.activitiesword": "activities",
+    "pbui.activity.starttimer": "Start timer",
+    "pbui.runtimer.hint.mins": "Counts down {mins} min · advance when ready.",
+    "pbui.arc.empty": "All five themes will appear as you add."
   },
   fr: {
     "header.title": "Forest4Youth Guide de Pratique",
@@ -1137,7 +1173,43 @@ const T = {
     "ref.rr.int_act": "Guide ch. 6, pp. 45–58",
     "export.pdf": "Exporter en PDF",
     "export.png": "Exporter en PNG",
-    "export.qr.label": "Scannez pour rouvrir"
+    "export.qr.label": "Scannez pour rouvrir",
+
+    "pbui.howto.title": "Comment utiliser cette section",
+    "pbui.howto.p1": "Les activités sont regroupées en cinq thèmes qui correspondent à l'arc thérapeutique : <strong>Arriver</strong> ; <strong>Réveiller ses sens</strong> ; <strong>Se découvrir</strong> ; <strong>Se relier aux autres</strong> ; et <strong>Revenir à soi</strong>. Au sein de chaque groupe, les activités vont d'une exigence faible à plus élevée. Choisissez en fonction de l'état du groupe ce jour-là, non de ce que prévoit le plan de séance.",
+    "pbui.howto.p2": "Le principe d'<em>invitation plutôt que d'obligation</em> s'applique tout au long. Aucune activité n'est obligatoire, et un jeune qui observe plutôt qu'il ne participe activement participe tout de même.",
+    "pbui.builder.eyebrow": "Outil du praticien",
+    "pbui.builder.title": "Créateur de séance",
+    "pbui.builder.tagline": "Composez une séance en ajoutant des activités. L'ordre reflète l'arc thérapeutique.",
+    "pbui.builder.stat.activities": "Activités",
+    "pbui.builder.stat.time": "Durée totale",
+    "pbui.builder.arcbalance": "Équilibre de l'arc",
+    "pbui.builder.empty": "Aucune activité pour l'instant.<br>Appuyez sur <strong>+</strong> à côté d'une activité pour commencer.",
+    "pbui.builder.clear": "Effacer",
+    "pbui.builder.runmode": "Mode session →",
+    "pbui.timer.eyebrow": "Présence prolongée",
+    "pbui.timer.pause": "Pause",
+    "pbui.timer.resume": "Reprendre",
+    "pbui.timer.close": "Fermer",
+    "pbui.run.close": "Fermer le mode session",
+    "pbui.runtimer.eyebrow": "Minuteur de séance",
+    "pbui.runtimer.hint.counting": "Décompte en cours · avancez quand vous êtes prêt.",
+    "pbui.runtimer.hint.done": "Temps écoulé · avancez quand vous êtes prêt.",
+    "pbui.runtimer.reset": "Réinitialiser",
+    "pbui.run.prev": "← Précédent",
+    "pbui.run.next": "Suivant →",
+    "pbui.run.finish": "Terminer",
+    "pbui.export.copied": "Plan de séance copié dans le presse-papiers",
+    "pbui.export.downloaded": "Plan de séance téléchargé",
+    "pbui.export.clearconfirm": "Effacer toutes les activités de la séance ?",
+    "pbui.export.addtitle": "Ajouter à la séance",
+    "pbui.export.removetitle": "Retirer de la séance",
+    "pbui.export.sessionplan": "PLAN DE SÉANCE",
+    "pbui.export.total": "Total",
+    "pbui.export.activitiesword": "activités",
+    "pbui.activity.starttimer": "Démarrer le minuteur",
+    "pbui.runtimer.hint.mins": "Décompte de {mins} min · avancez quand vous êtes prêt.",
+    "pbui.arc.empty": "Les cinq thèmes apparaîtront au fur et à mesure de vos ajouts."
   },
   de: {
     "header.title": "Forest4Youth Praxisleitfaden",
@@ -1630,7 +1702,43 @@ const T = {
     "ref.rr.int_act": "Handbuch Kap. 6, S. 45–58",
     "export.pdf": "Als PDF exportieren",
     "export.png": "Als PNG exportieren",
-    "export.qr.label": "Zum erneuten Öffnen scannen"
+    "export.qr.label": "Zum erneuten Öffnen scannen",
+
+    "pbui.howto.title": "So verwenden Sie diesen Abschnitt",
+    "pbui.howto.p1": "Die Aktivitäten sind in fünf Themen gegliedert, die dem therapeutischen Verlauf entsprechen: <strong>Ankommen</strong>; <strong>Die Sinne wecken</strong>; <strong>Sich selbst entdecken</strong>; <strong>Sich mit anderen verbinden</strong>; und <strong>Zu sich zurückkehren</strong>. Innerhalb jeder Gruppe reichen die Aktivitäten von geringerer zu höherer Anforderung. Wählen Sie danach, wo die Gruppe an diesem Tag steht, nicht danach, was der Sitzungsplan vorsieht.",
+    "pbui.howto.p2": "Der Grundsatz der <em>Einladung statt Aufgabe</em> gilt durchgehend. Keine Aktivität ist verpflichtend, und ein Jugendlicher, der zuschaut statt teilzunehmen, nimmt dennoch teil.",
+    "pbui.builder.eyebrow": "Werkzeug für Fachkräfte",
+    "pbui.builder.title": "Sitzungsersteller",
+    "pbui.builder.tagline": "Stellen Sie eine Sitzung durch Hinzufügen von Aktivitäten zusammen. Die Reihenfolge spiegelt den therapeutischen Verlauf wider.",
+    "pbui.builder.stat.activities": "Aktivitäten",
+    "pbui.builder.stat.time": "Gesamtdauer",
+    "pbui.builder.arcbalance": "Verlaufsbalance",
+    "pbui.builder.empty": "Noch keine Aktivitäten.<br>Tippen Sie auf <strong>+</strong> neben einer Aktivität, um zu beginnen.",
+    "pbui.builder.clear": "Leeren",
+    "pbui.builder.runmode": "Ablaufmodus →",
+    "pbui.timer.eyebrow": "Anhaltende Präsenz",
+    "pbui.timer.pause": "Pause",
+    "pbui.timer.resume": "Fortsetzen",
+    "pbui.timer.close": "Schließen",
+    "pbui.run.close": "Ablaufmodus schließen",
+    "pbui.runtimer.eyebrow": "Sitzungstimer",
+    "pbui.runtimer.hint.counting": "Countdown läuft · gehen Sie weiter, wenn Sie bereit sind.",
+    "pbui.runtimer.hint.done": "Zeit abgelaufen · gehen Sie weiter, wenn Sie bereit sind.",
+    "pbui.runtimer.reset": "Zurücksetzen",
+    "pbui.run.prev": "← Zurück",
+    "pbui.run.next": "Weiter →",
+    "pbui.run.finish": "Beenden",
+    "pbui.export.copied": "Sitzungsplan in die Zwischenablage kopiert",
+    "pbui.export.downloaded": "Sitzungsplan heruntergeladen",
+    "pbui.export.clearconfirm": "Alle Aktivitäten aus der Sitzung entfernen?",
+    "pbui.export.addtitle": "Zur Sitzung hinzufügen",
+    "pbui.export.removetitle": "Aus der Sitzung entfernen",
+    "pbui.export.sessionplan": "SITZUNGSPLAN",
+    "pbui.export.total": "Gesamt",
+    "pbui.export.activitiesword": "Aktivitäten",
+    "pbui.activity.starttimer": "Timer starten",
+    "pbui.runtimer.hint.mins": "Zählt {mins} Min. herunter · gehen Sie weiter, wenn Sie bereit sind.",
+    "pbui.arc.empty": "Alle fünf Themen erscheinen, sobald Sie Aktivitäten hinzufügen."
   }
 };
 
@@ -1650,6 +1758,22 @@ function applyTranslations() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     el.textContent = t(key);
+  });
+  // Same idea as [data-i18n], but for the handful of strings that need
+  // embedded markup (e.g. a <strong> around one word) — sets innerHTML
+  // instead of textContent. Used sparingly and only where formatting
+  // would otherwise be lost.
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    el.innerHTML = t(key);
+  });
+  // For translating an attribute (title, aria-label, ...) instead of the
+  // element's own text. Format: "attr1,attr2:key", e.g.
+  // data-i18n-attr="title,aria-label:pbui.export.pdf".
+  document.querySelectorAll('[data-i18n-attr]').forEach(el => {
+    const [attrs, key] = el.getAttribute('data-i18n-attr').split(':');
+    const value = t(key);
+    attrs.split(',').forEach(attr => el.setAttribute(attr, value));
   });
   document.documentElement.lang = currentLang;
 }

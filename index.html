@@ -1142,30 +1142,30 @@
           <div class="pb-host">
             <main class="pb-main">
               <section class="pb-prose">
-                <h3>How to use this section</h3>
-                <p>Activities are grouped under five themes that map onto the therapeutic arc: <strong>Getting There</strong>; <strong>Waking Up Your Senses</strong>; <strong>Discovering Yourself</strong>; <strong>Connecting with Others</strong>; and <strong>Coming Back to Yourself</strong>. Within each group, activities range from lower to higher demand. Select based on where the group is on a given day, not on where the session plan says they should be.</p>
-                <p>The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.</p>
+                <h3 data-i18n="pbui.howto.title">How to use this section</h3>
+                <p data-i18n-html="pbui.howto.p1">Activities are grouped under five themes that map onto the therapeutic arc: <strong>Getting There</strong>; <strong>Waking Up Your Senses</strong>; <strong>Discovering Yourself</strong>; <strong>Connecting with Others</strong>; and <strong>Coming Back to Yourself</strong>. Within each group, activities range from lower to higher demand. Select based on where the group is on a given day, not on where the session plan says they should be.</p>
+                <p data-i18n-html="pbui.howto.p2">The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.</p>
               </section>
               <div id="pb-groups"></div>
             </main>
             <aside class="pb-builder" id="pb-builder">
               <header class="pb-builder-header" onclick="pbToggleBuilderMobile()">
-                <div class="pb-builder-eyebrow">Practitioner tool</div>
-                <div class="pb-builder-title">Session Builder</div>
-                <div class="pb-builder-tagline">Compose a session by adding activities. Sequence reflects the therapeutic arc.</div>
+                <div class="pb-builder-eyebrow" data-i18n="pbui.builder.eyebrow">Practitioner tool</div>
+                <div class="pb-builder-title" data-i18n="pbui.builder.title">Session Builder</div>
+                <div class="pb-builder-tagline" data-i18n="pbui.builder.tagline">Compose a session by adding activities. Sequence reflects the therapeutic arc.</div>
               </header>
               <div class="pb-builder-stats">
                 <div class="pb-stat">
-                  <div class="pb-stat-label">Activities</div>
+                  <div class="pb-stat-label" data-i18n="pbui.builder.stat.activities">Activities</div>
                   <div class="pb-stat-value" id="pb-stat-count">0</div>
                 </div>
                 <div class="pb-stat">
-                  <div class="pb-stat-label">Total time</div>
+                  <div class="pb-stat-label" data-i18n="pbui.builder.stat.time">Total time</div>
                   <div class="pb-stat-value"><span id="pb-stat-time">0</span><span class="unit">min</span></div>
                 </div>
               </div>
               <div class="pb-arc-balance">
-                <div class="pb-arc-label">Arc balance</div>
+                <div class="pb-arc-label" data-i18n="pbui.builder.arcbalance">Arc balance</div>
                 <div class="pb-arc-bar" id="pb-arc-bar"></div>
                 <div class="pb-arc-legend" id="pb-arc-legend"></div>
               </div>
@@ -1176,14 +1176,14 @@
                     <circle cx="28" cy="26" r="4"></circle>
                     <path d="M28 24v4M26 26h4"></path>
                   </svg>
-                  <div>No activities yet.<br>Tap <strong>+</strong> next to any activity to begin.</div>
+                  <div data-i18n-html="pbui.builder.empty">No activities yet.<br>Tap <strong>+</strong> next to any activity to begin.</div>
                 </div>
               </div>
               <div class="pb-builder-actions">
-                <button class="pb-builder-btn" id="pb-btn-clear" onclick="pbClearSession()" disabled="">Clear</button>
+                <button class="pb-builder-btn" id="pb-btn-clear" onclick="pbClearSession()" disabled="" data-i18n="pbui.builder.clear">Clear</button>
                 <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-pdf" type="button"
                         onclick="exportRunPDF()" disabled=""
-                        aria-label="Export to PDF" title="Export to PDF">
+                        aria-label="Export to PDF" title="Export to PDF" data-i18n-attr="aria-label,title:export.pdf">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/>
@@ -1194,7 +1194,7 @@
                 </button>
                 <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-png" type="button"
                         onclick="exportRunPNG()" disabled=""
-                        aria-label="Export to PNG" title="Export to PNG">
+                        aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <rect x="3" y="5" width="18" height="14" rx="2"/>
@@ -1202,7 +1202,7 @@
                     <polyline points="21 16 16 11 5 19"/>
                   </svg>
                 </button>
-                <button class="pb-builder-btn primary" id="pb-btn-export" onclick="pbStartRunMode()" disabled="">Run mode →</button>
+                <button class="pb-builder-btn primary" id="pb-btn-export" onclick="pbStartRunMode()" disabled="" data-i18n="pbui.builder.runmode">Run mode →</button>
               </div>
             </aside>
           </div>
@@ -1365,7 +1365,7 @@
 <!-- ─── POCKETBOOK OVERLAYS (Run Mode, Timer, Toast) ─── -->
 <div class="pb-timer-modal" id="pb-timerModal" onclick="if(event.target===this) pbCloseTimer()">
   <div class="pb-timer-modal-content">
-    <div class="pb-timer-eyebrow">Sustained presence</div>
+    <div class="pb-timer-eyebrow" data-i18n="pbui.timer.eyebrow">Sustained presence</div>
     <div class="pb-timer-activity-name" id="pb-timerActivityName">—</div>
     <div class="pb-timer-ring-wrap">
       <svg class="pb-timer-ring" width="180" height="180" viewBox="0 0 180 180">
@@ -1375,8 +1375,8 @@
       <div class="pb-timer-display" id="pb-timerDisplay">00:00</div>
     </div>
     <div class="pb-timer-controls">
-      <button class="pb-timer-btn" id="pb-pauseBtn" onclick="pbPauseTimer()">Pause</button>
-      <button class="pb-timer-btn primary" onclick="pbCloseTimer()">Close</button>
+      <button class="pb-timer-btn" id="pb-pauseBtn" onclick="pbPauseTimer()" data-i18n="pbui.timer.pause">Pause</button>
+      <button class="pb-timer-btn primary" onclick="pbCloseTimer()" data-i18n="pbui.timer.close">Close</button>
     </div>
   </div>
 </div>
@@ -1386,49 +1386,49 @@
 <div class="pb-run-mode" id="pb-runMode" role="dialog" aria-modal="true">
   <div class="pb-run-header">
     <div class="pb-run-step" id="pb-runStep">1 / 1</div>
-    <button class="pb-run-close" onclick="pbCloseRunMode()" aria-label="Close run mode">×</button>
+    <button class="pb-run-close" onclick="pbCloseRunMode()" aria-label="Close run mode" data-i18n-attr="aria-label:pbui.run.close">×</button>
   </div>
   <div class="pb-run-body">
     <div class="pb-run-group-tag" id="pb-runGroup"></div>
     <h2 class="pb-run-name" id="pb-runName"></h2>
     <div class="pb-run-duration" id="pb-runDuration"></div>
     <div class="pb-run-section">
-      <div class="pb-run-label">Purpose</div>
+      <div class="pb-run-label" id="pb-runLabelPurpose">Purpose</div>
       <div class="pb-run-text" id="pb-runPurpose"></div>
     </div>
     <div class="pb-run-section">
-      <div class="pb-run-label">How to introduce</div>
+      <div class="pb-run-label" id="pb-runLabelIntro">How to introduce</div>
       <div class="pb-run-intro" id="pb-runIntro"></div>
     </div>
     <div class="pb-run-section">
-      <div class="pb-run-label">Materials</div>
+      <div class="pb-run-label" id="pb-runLabelMaterials">Materials</div>
       <div class="pb-run-text" id="pb-runMaterials"></div>
     </div>
     <div class="pb-run-section">
-      <div class="pb-run-label">How to close</div>
+      <div class="pb-run-label" id="pb-runLabelClose">How to close</div>
       <div class="pb-run-text" id="pb-runClose"></div>
     </div>
     <div class="pb-run-timer" id="pb-runTimer">
       <div class="pb-run-timer-head">
-        <div class="pb-run-timer-eyebrow">Session timer</div>
+        <div class="pb-run-timer-eyebrow" data-i18n="pbui.runtimer.eyebrow">Session timer</div>
         <div class="pb-run-timer-display" id="pb-runTimerDisplay">00:00</div>
       </div>
       <div class="pb-run-timer-track">
         <div class="pb-run-timer-fill" id="pb-runTimerFill"></div>
       </div>
       <div class="pb-run-timer-meta">
-        <span id="pb-runTimerHint">Counting down · advance when ready.</span>
+        <span id="pb-runTimerHint" data-i18n="pbui.runtimer.hint.counting">Counting down · advance when ready.</span>
         <div class="pb-run-timer-actions">
-          <button class="pb-run-timer-btn" id="pb-runTimerReset" onclick="pbRunTimerReset()">Reset</button>
-          <button class="pb-run-timer-btn" id="pb-runTimerPause" onclick="pbRunTimerPause()">Pause</button>
+          <button class="pb-run-timer-btn" id="pb-runTimerReset" onclick="pbRunTimerReset()" data-i18n="pbui.runtimer.reset">Reset</button>
+          <button class="pb-run-timer-btn" id="pb-runTimerPause" onclick="pbRunTimerPause()" data-i18n="pbui.timer.pause">Pause</button>
         </div>
       </div>
     </div>
   </div>
   <div class="pb-run-footer">
-    <button class="pb-run-btn" id="pb-runPrev" onclick="pbRunPrev()">← Previous</button>
+    <button class="pb-run-btn" id="pb-runPrev" onclick="pbRunPrev()" data-i18n="pbui.run.prev">← Previous</button>
     <div class="spacer"></div>
-    <button class="pb-run-btn primary" id="pb-runNext" onclick="pbRunNext()">Next →</button>
+    <button class="pb-run-btn primary" id="pb-runNext" onclick="pbRunNext()" data-i18n="pbui.run.next">Next →</button>
   </div>
 </div>
 
