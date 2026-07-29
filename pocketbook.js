@@ -1067,6 +1067,7 @@ function exportRenderPrintSession() {
 // own header + footer at the same margins as page 1.
 const PEXPORT_PAGE_HEIGHT_CSS_PX = 297 * 96 / 25.4; // A4 height at 96dpi
 const PEXPORT_PAGE_PAD_CSS_PX = 64; // #print-session/#print-report's own 32px top + 32px bottom padding
+const PEXPORT_PAGE_INNER_HEIGHT_CSS_PX = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX;
 const PEXPORT_PAGE_GAP_CSS_PX = 12; // safety margin between measurement (DOM layout) and rasterization (html2canvas)
 
 function pbMeasureHeight(root, innerHTML) {
@@ -1079,10 +1080,22 @@ function pbMeasureHeight(root, innerHTML) {
 // item" pair glued together by the caller so a header never sits alone at
 // the bottom of a page). Returns an array of pages, each an array of the
 // original block strings that landed on that page.
-function pbPackBlocks(root, blocks, firstPageBudget, restPageBudget) {
+//
+// measureWrapPrefix/measureWrapSuffix (optional): the session-plan export
+// needs its rows measured *inside* the same narrower .pexport-timeline
+// column they actually render in on page 1 (which shares width with the
+// 240px sidebar) — measuring them at the full page width instead
+// understates how many lines the intro-quote text wraps to, which is
+// exactly the gap that let content silently overflow past the fixed page
+// height before this existed. Continuation pages have no sidebar (rows
+// really are full-width there), so this measurement is conservative for
+// them — a few bytes of unused space per continuation page, never
+// overflow — rather than exact.
+function pbPackBlocks(root, blocks, firstPageBudget, restPageBudget, measureWrapPrefix, measureWrapSuffix) {
   if (!blocks.length) return [[]];
-  root.innerHTML = '<div class="pexport">' + blocks.map(h => '<div class="pexport-unit">' + h + '</div>').join('') + '</div>';
-  const container = root.querySelector('.pexport');
+  const unitsHTML = blocks.map(h => '<div class="pexport-unit">' + h + '</div>').join('');
+  root.innerHTML = '<div class="pexport">' + (measureWrapPrefix || '') + unitsHTML + (measureWrapSuffix || '') + '</div>';
+  const container = root.querySelector('.pexport-unit').parentElement;
   const children = Array.from(container.children);
   const tops = children.map(el => el.offsetTop);
   const total = container.scrollHeight;
@@ -1147,15 +1160,25 @@ async function pbBuildSessionPaginatedCanvases(root) {
 
   const firstPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - page1ChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
   const restPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - restChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
-  const pages = pbPackBlocks(root, blocks, firstPageBudget, restPageBudget);
+  const pages = pbPackBlocks(
+    root, blocks, firstPageBudget, restPageBudget,
+    '<div class="pexport-body"><div class="pexport-timeline">',
+    '</div>' + d.sidebarHTML + '</div>'
+  );
 
   const canvases = [];
   for (let i = 0; i < pages.length; i++) {
     const isFirst = i === 0;
+    // A page holding only the trailing banner+checklist block (no real
+    // rows) doesn't need the CLOCK/ACTIVITY column headers above it.
+    const hasRows = pages[i].some(b => b !== d.tailBlockHTML);
+    const colHeaders = hasRows ? d.colHeadersHTML : '';
     const bodyHTML = isFirst
-      ? '<div class="pexport-body"><div class="pexport-timeline">' + d.colHeadersHTML + pages[i].join('') + '</div>' + d.sidebarHTML + '</div>'
-      : '<div class="pexport-body"><div class="pexport-timeline">' + d.colHeadersHTML + pages[i].join('') + '</div></div>';
-    root.innerHTML = '<div class="pexport">' + d.headerHTML + (isFirst ? d.titleHTML : '') + bodyHTML + d.footerBottomHTML + '</div>';
+      ? '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + pages[i].join('') + '</div>' + d.sidebarHTML + '</div>'
+      : '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + pages[i].join('') + '</div></div>';
+    root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
+      d.headerHTML + (isFirst ? d.titleHTML : '') + bodyHTML + d.footerBottomHTML +
+    '</div>';
     if (isFirst) {
       const qrNode = exportGenerateSessionQRNode();
       const slot = root.querySelector('#print-qr-slot');
@@ -1375,7 +1398,9 @@ async function pbBuildReportPaginatedCanvases(root) {
   const canvases = [];
   for (let i = 0; i < pages.length; i++) {
     const isFirst = i === 0;
-    const pageHTML = '<div class="pexport">' + d.headerHTML + (isFirst ? d.titleHTML : '') + pages[i].join('') + d.footerBottomHTML + '</div>';
+    const pageHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
+      d.headerHTML + (isFirst ? d.titleHTML : '') + pages[i].join('') + d.footerBottomHTML +
+    '</div>';
     canvases.push(await pbRasterizePage(root, pageHTML));
   }
   return canvases;

@@ -3193,7 +3193,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   overflow-wrap: break-word; word-break: break-word;
 }
 .pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-.pexport-logo-img { height: 110px; width: auto; display: block; }
+.pexport-logo-img { height: 170px; width: auto; display: block; }
 
 .pexport-title-block { margin-bottom: 8px; }
 .pexport-title {
@@ -3279,9 +3279,19 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 }
 .pexport-footer-bottom {
   display: flex; justify-content: space-between; gap: 12px;
-  padding-top: 10px; border-top: 1px solid #234A3E;
+  padding-top: 40px; border-top: 1px solid #234A3E; /* ~2 lines of clear space above the rule */
   font-size: 9.5px; color: #7C8E85;
 }
+
+/* Paginated PDF pages only (see pbBuildSessionPaginatedCanvases()/
+   pbBuildReportPaginatedCanvases() in pocketbook.js) — the continuous
+   on-screen/PNG render doesn't use this, since it isn't broken into fixed-
+   height pages. Each page gets a fixed height (one full A4 content area)
+   and the footer is pinned to the true bottom via the auto margin, instead
+   of trailing right after wherever that page's content happens to end. */
+.pexport--paged { display: flex; flex-direction: column; }
+.pexport--paged > * { flex-shrink: 0; } /* flex items default to shrinkable — without this, content silently compresses/clips to fit the fixed page height instead of the packer's page break ever kicking in */
+.pexport--paged > .pexport-footer-bottom { margin-top: auto; }
 
 /* ─── POST-SESSION REPORT (same .pexport visual language, single-column —
    no chart sidebar, since the point here is giving notes/free-text room
