@@ -1041,12 +1041,66 @@ function pbSetPrintTarget(id) {
   if (report) report.classList.toggle('print-active', id === 'print-report');
 }
 
-function exportRunPDF() {
+// Rasterizes the plan export with the same html2canvas call exportRunPNG()
+// uses, then embeds that image into a real PDF file (jsPDF) instead of
+// going through window.print() — the two-column layout with charts and
+// logos needs to look exactly like the on-screen/PNG version, which
+// print-CSS fidelity across different browsers' print-to-PDF drivers can't
+// reliably guarantee. Slices the canvas across multiple A4 pages if the
+// plan is long enough not to fit on one (e.g. many activities).
+async function exportRunPDF() {
   if (!pbSession.length) return;
+  if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+    alert('Export library not loaded.');
+    return;
+  }
   exportRenderPrintSession();
-  pbSetPrintTarget('print-session');
-  // Brief defer so any pending re-renders settle before the print dialog blocks.
-  setTimeout(() => { window.print(); }, 50);
+  document.body.classList.add('is-exporting-png'); // same off-screen-reveal toggle as PNG export
+  try {
+    const node = document.getElementById('print-session');
+    const canvas = await html2canvas(node, {
+      width: 794,
+      windowWidth: 794,
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+    });
+    const { jsPDF } = jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidthMm = pdf.internal.pageSize.getWidth();
+    const pageHeightMm = pdf.internal.pageSize.getHeight();
+    const pxPerMm = canvas.width / pageWidthMm;
+    const pageHeightPx = pageHeightMm * pxPerMm;
+
+    let renderedPx = 0;
+    let pageIndex = 0;
+    while (renderedPx < canvas.height) {
+      const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = sliceHeightPx;
+      sliceCanvas.getContext('2d').drawImage(
+        canvas, 0, renderedPx, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx
+      );
+      if (pageIndex > 0) pdf.addPage();
+      // JPEG, not PNG: this is a mostly-text/solid-fill document (not a
+      // photo), but embedding it as an uncompressed PNG at 2x scale made a
+      // typical one-page plan ~10MB — a real problem for practitioners
+      // emailing/sharing it. High-quality JPEG (0.92) is visually
+      // indistinguishable at any normal zoom level and ~20x smaller.
+      pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageWidthMm, sliceHeightPx / pxPerMm);
+      renderedPx += sliceHeightPx;
+      pageIndex++;
+    }
+
+    const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    pdf.save('forest4youth-session-' + ts + '.pdf');
+  } catch (err) {
+    console.error('PDF export failed', err);
+    alert('PDF export failed. Try Export to PNG instead.');
+  } finally {
+    document.body.classList.remove('is-exporting-png');
+  }
 }
 
 async function exportRunPNG() {

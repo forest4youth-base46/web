@@ -3202,8 +3202,8 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 
 .pexport-topbar {
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 16px; padding-bottom: 14px; border-bottom: 1px solid #C8D8D0;
-  margin-bottom: 18px;
+  gap: 16px; padding-bottom: 10px; border-bottom: 1px solid #C8D8D0;
+  margin-bottom: 14px;
 }
 .pexport-topbar-fields { display: flex; gap: 26px; flex-wrap: wrap; }
 .pexport-meta-block { min-width: 70px; }
@@ -3219,7 +3219,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   padding: 5px 9px; white-space: nowrap;
 }
 
-.pexport-title-block { margin-bottom: 20px; }
+.pexport-title-block { margin-bottom: 14px; }
 .pexport-title {
   font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 600;
   color: #14302A; margin: 0 0 4px; letter-spacing: -0.01em;
@@ -3238,7 +3238,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 .pexport-col-headers span:first-child { width: 56px; flex-shrink: 0; }
 
 .pexport-row {
-  display: flex; gap: 12px; padding: 9px 0;
+  display: flex; gap: 12px; padding: 6px 0;
   border-bottom: 1px solid #eee; page-break-inside: avoid;
 }
 .pexport-row-clock { width: 56px; flex-shrink: 0; }
@@ -3281,17 +3281,17 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 .pexport-qr-caption { font-size: 9px; color: #7C8E85; line-height: 1.4; }
 
 .pexport-banner {
-  margin: 22px 0; padding: 10px 0; text-align: center;
+  margin: 14px 0; padding: 8px 0; text-align: center;
   border-top: 1px solid #C8D8D0; border-bottom: 1px solid #C8D8D0;
   font-size: 10.5px; letter-spacing: 0.04em; color: #234A3E; font-weight: 600;
 }
 
 .pexport-footer-title {
   font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: #7C8E85; margin-bottom: 8px;
+  color: #7C8E85; margin-bottom: 6px;
 }
 .pexport-checklist {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; margin-bottom: 14px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; margin-bottom: 10px;
 }
 .pexport-check-item {
   display: flex; align-items: flex-start; gap: 6px;
