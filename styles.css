@@ -2304,6 +2304,21 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
 }
 .pb-host .pb-activity-visual svg { display: block; width: 100%; height: auto; }
 
+/* Run Mode's own visual — same illustrations as the Pocketbook detail
+   view, replayed in a loop (see pbSetRunVisual in pocketbook.js) since
+   a step can stay on screen far longer than the ~2-6s the SMIL
+   animation takes to settle, and a single freeze-frame would read as
+   inert for most of that time. */
+.pb-run-visual {
+  margin: 4px 0 20px;
+  border-radius: var(--pb-r-md, 10px);
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+}
+.pb-run-visual svg { display: block; width: 100%; height: auto; }
+.pb-run-visual:empty { display: none; }
+
 .pb-host .pb-visual-caption {
   font-size: 11px;
   color: var(--ink-faint);

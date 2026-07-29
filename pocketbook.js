@@ -49,6 +49,50 @@ function pbLocalizeVisual(svg, activityId) {
     return replacement === undefined ? match : open + replacement + close;
   });
 }
+
+// ───────── RUN MODE VISUAL (looping) ─────────
+// Each illustration's SMIL <animate> elements are one-shot and freeze on
+// their last frame (see the Pocketbook detail view, which re-injects the
+// same markup on every open just to restart them from zero). A Run Mode
+// step can stay on screen for many minutes, so a single ~2-6s playthrough
+// would sit frozen for almost all of that time. This re-injects the same
+// markup on a timer instead, so the illustration keeps gently replaying
+// for as long as the step is showing.
+let pbRunVisualTimer = null;
+function pbClearRunVisual() {
+  if (pbRunVisualTimer) { clearTimeout(pbRunVisualTimer); pbRunVisualTimer = null; }
+  const el = document.getElementById('pb-runVisual');
+  if (el) el.innerHTML = '';
+}
+function pbSetRunVisual(svg) {
+  const el = document.getElementById('pb-runVisual');
+  if (pbRunVisualTimer) { clearTimeout(pbRunVisualTimer); pbRunVisualTimer = null; }
+  if (!el) return;
+  el.innerHTML = svg || '';
+  if (!svg) return;
+  // Longest (begin + dur) across every <animate>, in document order or
+  // not — order doesn't matter, only the latest finish time does — plus
+  // a short pause so the settled illustration reads as "arrived"
+  // before looping back to its start.
+  let latestEnd = 0;
+  const re = /<animate\b[^>]*>/g;
+  let m;
+  while ((m = re.exec(svg))) {
+    const tag = m[0];
+    const beginMatch = tag.match(/begin="([\d.]+)s"/);
+    const durMatch = tag.match(/dur="([\d.]+)s"/);
+    if (!beginMatch || !durMatch) continue;
+    const end = parseFloat(beginMatch[1]) + parseFloat(durMatch[1]);
+    if (end > latestEnd) latestEnd = end;
+  }
+  if (latestEnd <= 0) return; // static illustration — nothing to loop
+  const cycleMs = (latestEnd + 1.8) * 1000;
+  pbRunVisualTimer = setTimeout(function loop() {
+    el.innerHTML = svg;
+    pbRunVisualTimer = setTimeout(loop, cycleMs);
+  }, cycleMs);
+}
+
 const PB_LABELS_EN = {
   purpose: 'Purpose', materials: 'Materials', introduce: 'How to introduce',
   close: 'How to close', suitable: 'Suitable for',
@@ -1010,6 +1054,7 @@ function pbCloseRunMode() {
   document.body.classList.remove('pb-run-active', 'no-scroll');
   if (document.getElementById('pb-timerModal').classList.contains('active')) pbCloseTimer();
   pbRunTimerStop();
+  pbClearRunVisual();
   pbRunLog = {};
   pbRenderReflectSummary();
   // The whole point of "Finish & reflect" is to land on the Reflect screen
@@ -1186,6 +1231,7 @@ function pbRenderRunStep() {
   document.getElementById('pb-runGroup').textContent = grp ? pbGroupT(grp, 'title') : '';
   document.getElementById('pb-runName').textContent = pbT(a, 'name');
   document.getElementById('pb-runDuration').textContent = pbFmtDuration(a);
+  pbSetRunVisual(pbLocalizeVisual(VISUAL[a.visual] || '', a.visual));
   document.getElementById('pb-runLabelPurpose').textContent = pbLabel('purpose');
   document.getElementById('pb-runPurpose').textContent = pbT(a, 'purpose') || '';
   document.getElementById('pb-runLabelIntro').textContent = pbLabel('introduce');
