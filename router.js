@@ -460,9 +460,16 @@ try { currentRole = sessionStorage.getItem('fbt.role'); } catch(e) { currentRole
 // every applyRoute() (covers first visit, and recovery after
 // goToRoleScreen() clears the role) and once at load.
 function ensureRole() {
-  if (currentRole === 'practitioner' || currentRole === 'participant') return;
-  currentRole = 'practitioner';
-  try { sessionStorage.setItem('fbt.role', currentRole); } catch(e) {}
+  if (currentRole !== 'practitioner' && currentRole !== 'participant') {
+    currentRole = 'practitioner';
+    try { sessionStorage.setItem('fbt.role', currentRole); } catch(e) {}
+  }
+  // Always (re)apply — currentRole can already be resolved from
+  // sessionStorage before this runs (e.g. on a refresh), but the body
+  // attribute lives on the DOM, which doesn't survive a reload the way
+  // sessionStorage does. Skipping this on the "already resolved" path
+  // left data-role unset after every refresh past the first page load,
+  // silently hiding every [data-role-only] element (nav, entry tiles).
   document.body.setAttribute('data-role', currentRole);
 }
 

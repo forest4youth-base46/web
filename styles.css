@@ -591,13 +591,15 @@ body.no-scroll { overflow: hidden; }
   margin-bottom: 16px;
   align-items: start;
 }
-/* "What is FBT?", "Before your first session", and "Learn More" are all
-   accordion-style card stacks (see toggleModule() in router.js) — force
-   single-column at every viewport width instead of the auto-fit default
-   above, which would otherwise sit cards side by side on wider screens. */
+/* "What is FBT?", "Before your first session", "Learn More", and Implement
+   in Practice's tool cards all stack single-column at every viewport width
+   instead of the auto-fit default above, which would otherwise sit cards
+   side by side on wider screens (only naturally collapsing to one column
+   on narrow/mobile widths, where auto-fit runs out of room anyway). */
 #pwhat-screen .modules-grid,
 #pbefore-screen .modules-grid,
-#learn-screen .modules-grid {
+#learn-screen .modules-grid,
+#implement-screen .modules-grid {
   grid-template-columns: 1fr;
 }
 /* Reflect's remaining module-cards (self-reflection, indicators — glossary
