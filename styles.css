@@ -3206,12 +3206,15 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   margin-bottom: 14px;
 }
 .pexport-topbar-fields { display: flex; gap: 26px; flex-wrap: wrap; }
-.pexport-meta-block { min-width: 70px; }
+.pexport-meta-block { min-width: 70px; max-width: 150px; }
 .pexport-label {
   font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
   color: #7C8E85; margin-bottom: 3px;
 }
-.pexport-value { font-size: 13px; font-weight: 600; color: #14302A; }
+.pexport-value {
+  font-size: 13px; font-weight: 600; color: #14302A;
+  overflow-wrap: break-word; word-break: break-word;
+}
 .pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
 .pexport-logo-placeholder {
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em;
