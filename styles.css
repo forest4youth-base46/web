@@ -3199,11 +3199,14 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
     transition: opacity 0.22s ease, visibility 0s linear 0s;
   }
 
-  /* Circular FAB. Just a number on a forest-ink disc. No icon. */
+  /* Circular FAB. Just a number on a forest-ink disc. No icon.
+     env(safe-area-inset-*) keeps it clear of a phone's gesture-nav bar
+     / rounded corners (the inset is 0 on devices without one, so this
+     is never less than the plain 16px). */
   .pb-fab {
     position: fixed;
-    right: 16px;
-    bottom: 16px;
+    right: max(16px, calc(16px + env(safe-area-inset-right)));
+    bottom: max(16px, calc(16px + env(safe-area-inset-bottom)));
     z-index: 60;                /* above .pb-builder (50), below run-mode (200) */
     width: 64px;
     height: 64px;
@@ -3274,6 +3277,18 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   .header-controls { margin-left: 0; }
   .search-trigger-label { display: none; }
   .search-trigger-kbd { display: none; }
+
+  /* Belt-and-suspenders against horizontal scroll. body already had
+     overflow-x: hidden, which is enough in a standalone tab, but this
+     app is normally viewed inside a host page's <iframe> — an iframe is
+     its own scroll container, and doesn't reliably inherit/propagate a
+     same-origin-looking-but-actually-separate document's root-scroller
+     behavior the exact same way every mobile engine does. Repeating the
+     clamp on html and on .container directly means there's no path left
+     for a stray wide element to force a scrollbar the host page has to
+     render around. */
+  html, body { overflow-x: hidden; max-width: 100%; }
+  .container { overflow-x: hidden; max-width: 100%; }
 
   /* Run Mode's illustration as the visual centerpiece of the step. Bleeds
      out to the card's full outer edge (cancelling .pb-run-card's own
