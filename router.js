@@ -240,7 +240,7 @@ function refApplyFilter() {
 }
 
 // Toggles one entry's disclosure panel. Independent, not an exclusive
-// accordion — matching pbToggleActivity()'s reasoning in pocketbook.js,
+// accordion — matching pbToggleActivity()'s reasoning in pocketbook-activities.js,
 // comparing two reference entries side by side shouldn't require
 // re-opening one after the other closes it.
 function refToggleEntry(btn) {

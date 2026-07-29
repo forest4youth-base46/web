@@ -304,7 +304,7 @@ input:focus-visible,
    makes it LOOK like the only thing on screen, but without this the body
    underneath was still scrollable, producing exactly the kind of
    background/foreground double-scroll this class exists to prevent.
-   Toggled by pbStartRunMode()/pbCloseRunMode() in pocketbook.js and
+   Toggled by pbStartRunMode()/pbCloseRunMode() in pocketbook-run.js and
    openSearch()/closeSearch() in search.js. */
 body.no-scroll { overflow: hidden; }
 
@@ -1170,7 +1170,7 @@ body.no-scroll { overflow: hidden; }
 
 /* Export action panel — always rendered (never [hidden]) unlike the recap
    section above it, so the button is disabled-with-a-reason rather than
-   missing whenever the gate (pbUpdateReflectExportGate() in pocketbook.js)
+   missing whenever the gate (pbUpdateReflectExportGate() in pocketbook-export.js)
    isn't satisfied yet. */
 .reflect-export-panel {
   margin-bottom: 28px;
@@ -2278,7 +2278,7 @@ body.no-scroll { overflow: hidden; }
 .pb-host .pb-activity-visual svg { display: block; width: 100%; height: auto; }
 
 /* Run Mode's own visual — same illustrations as the Pocketbook detail
-   view, replayed in a loop (see pbSetRunVisual in pocketbook.js) since
+   view, replayed in a loop (see pbSetRunVisual in pocketbook-activities.js) since
    a step can stay on screen far longer than the ~2-6s the SMIL
    animation takes to settle, and a single freeze-frame would read as
    inert for most of that time. */
@@ -3149,7 +3149,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 
 /* ─── SESSION-PLAN EXPORT (redesigned template) ───
    Shared by both #print-session and #print-report — see the comment above
-   exportRenderPrintReport() in pocketbook.js for which classes below are
+   exportRenderPrintReport() in pocketbook-export.js for which classes below are
    common vs. report-only. */
 .pexport { font-family: 'Open Sans', sans-serif; color: #1B2A24; }
 
@@ -3268,7 +3268,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 }
 
 /* Paginated PDF pages only (see pbBuildSessionPaginatedCanvases()/
-   pbBuildReportPaginatedCanvases() in pocketbook.js) — the continuous
+   pbBuildReportPaginatedCanvases() in pocketbook-export.js) — the continuous
    on-screen/PNG render doesn't use this, since it isn't broken into fixed-
    height pages. Each page gets a fixed height (one full A4 content area)
    and the footer is pinned to the true bottom via the auto margin, instead

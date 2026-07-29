@@ -49,18 +49,26 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── router.js             # hash-based routing, role selection, focus-mode navigation
 ├── pocketbook-data.js    # activity/group/adaptation data for the Pocketbook (English)
 ├── pocketbook-i18n.js    # Pocketbook FR/DE translations, grouped by activity/group id
-├── pocketbook.js         # Pocketbook rendering, Session Builder, Run Mode, export
+├── pocketbook-activities.js # activity library: rendering, filters, i18n lookups, disclosure
+├── pocketbook-builder.js    # Session Builder: pbSession/pbSessionMins state, arc charts
+├── pocketbook-export.js     # PDF/PNG/QR export pipeline, standalone timer modal
+├── pocketbook-run.js        # Run Mode state machine, its keyboard handling and timer
+├── pocketbook-reflect.js    # post-session recap/history, self-reflection, indicators
+├── pocketbook-init.js       # QR/link session restore + pbInit() — loads last, wires it together
 ├── ui-behaviors.js       # header scroll hide/show
 ├── search.js             # ⌘K / Ctrl+K search dialog (activities, reference, guide chapters)
 ├── iframe-bridge.js      # iframe embed: reports document height, requests parent scroll
 ├── vendor/               # vendored html2canvas + qrcodejs + jsPDF (no CDN at runtime)
 ├── assets/               # brand assets used in exports (Interreg NWE / Forest4Youth logo)
+├── scripts/check-i18n-sync.js # dev tooling: verifies the three i18n packs stay in sync
+├── test/smoke.js         # dev tooling: end-to-end regression checks (see package.json)
+├── package.json          # test/dev tooling only (Playwright) — the deployed app has no build step
 ├── _headers              # Netlify headers (allows iframe embedding)
 ├── .gitignore
 └── README.md
 ```
 
-The app is still plain HTML/CSS/JS with no build step or bundler. It used to be a single 7,600-line `index.html`; the split above is purely organizational (classic `<script src>`/`<link>` tags, same load order as before), not a framework adoption, so it deploys exactly the same way.
+The app is still plain HTML/CSS/JS with no build step or bundler. It used to be a single 7,600-line `index.html`; the split above (including the further pocketbook.js → pocketbook-*.js split) is purely organizational (classic `<script src>`/`<link>` tags, same shared-global-scope load order as before), not a framework adoption, so it deploys exactly the same way. `package.json`/`scripts/`/`test/` are dev-only tooling (`npm test`, `npm run check:i18n`) — they don't run in production and don't add a build step.
 
 ---
 

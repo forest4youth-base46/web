@@ -234,7 +234,7 @@ function closeSearchDialog() {
     ).filter(function(el) { return el.offsetParent !== null; });
   }
 
-  // Global ⌘K / Ctrl+K toggle — router.js/pocketbook.js don't bind this
+  // Global ⌘K / Ctrl+K toggle — router.js/the pocketbook-*.js files don't bind this
   // combination anywhere, so nothing to conflict with.
   document.addEventListener('keydown', function(e) {
     const isK = e.key === 'k' || e.key === 'K';

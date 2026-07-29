@@ -808,7 +808,7 @@
     </label>
 
     <!-- Built by refRenderFilters() in router.js (mirrors pbRenderFilters()
-         in pocketbook.js) — chip labels come from t(), never hardcoded
+         in pocketbook-activities.js) — chip labels come from t(), never hardcoded
          here. -->
     <div class="ref-filters" id="ref-filters" role="group" aria-label="Filter by type"></div>
     <p class="ref-count" id="ref-count" aria-live="polite"></p>
@@ -1615,7 +1615,7 @@
     </div>
 
     <!-- "Session just run" recap — only shown once a Run Mode record
-         exists (pbRenderReflectSummary() in pocketbook.js toggles [hidden]).
+         exists (pbRenderReflectSummary() in pocketbook-reflect.js toggles [hidden]).
          Sits above the prompts/indicators grid so the loop from Plan → Run
          is visible before anything else on this screen. -->
     <section class="reflect-session-recap" id="reflect-session-recap" hidden>
@@ -1741,7 +1741,7 @@
     <!-- Single export action, positioned after everything that can feed the
          report (recap, self-reflection, indicators, the extra-info block
          above) and before Session history, per the intended reading order.
-         Gated live by pbUpdateReflectExportGate() in pocketbook.js on a
+         Gated live by pbUpdateReflectExportGate() in pocketbook-export.js on a
          session record existing AND at least one reflection field having
          content, so an export can't be produced from an empty reflection. -->
     <section class="reflect-export-panel" id="reflect-export-panel">
@@ -1912,7 +1912,18 @@
 <script src="router.js"></script>
 <script src="pocketbook-data.js"></script>
 <script src="pocketbook-i18n.js"></script>
-<script src="pocketbook.js"></script>
+<!-- pocketbook.js split into six concern-based files (still plain classic
+     scripts sharing one global scope, same as before — this is a size/
+     organization split, not a module system). Order matters: each later
+     file calls functions defined in earlier ones, and pocketbook-init.js's
+     pbInit() ties all of them together on DOMContentLoaded, so it loads
+     last. -->
+<script src="pocketbook-activities.js"></script>
+<script src="pocketbook-builder.js"></script>
+<script src="pocketbook-export.js"></script>
+<script src="pocketbook-run.js"></script>
+<script src="pocketbook-reflect.js"></script>
+<script src="pocketbook-init.js"></script>
 <script src="ui-behaviors.js"></script>
 
 <!-- Search dialog (⌘K / Ctrl+K). Loaded last so ACTIVITIES, pbT(), t(),

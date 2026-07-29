@@ -1,7 +1,7 @@
 // Pocketbook of Activities — FR/DE translations.
 //
 // English text lives in pocketbook-data.js itself and is always the
-// fallback (see pbT/pbGroupT/pbAdaptT/pbTagT in pocketbook.js), so there's
+// fallback (see pbT/pbGroupT/pbAdaptT/pbTagT in pocketbook-activities.js), so there's
 // no "en" section here — only what needs translating.
 //
 // To change one piece of text: find the activity by its id (matches the
@@ -205,7 +205,7 @@ const PB_I18N = {
     },
     // Ordered replacements for the <text> labels baked into each
     // activity's illustration in pocketbook-data.js's VISUAL object —
-    // see pbLocalizeVisual() in pocketbook.js. Order must match the
+    // see pbLocalizeVisual() in pocketbook-activities.js. Order must match the
     // English SVG's <text> elements exactly; scientific (Latin) names
     // and bare digits are repeated unchanged rather than translated.
     visuals: {
