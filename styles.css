@@ -2011,6 +2011,7 @@ footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-
   position: relative;
 }
 .pb-main { min-width: 0; }
+.pb-builder-backdrop { display: none; }
 
 /* Intro prose (pocketbook-style) */
 .pb-prose {
@@ -3149,6 +3150,25 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   }
   .pb-builder-header { cursor: pointer; }
 
+  /* Dims and separates the page content behind the popup so it reads as
+     a modal rather than a box floating on top of the activity list. */
+  .pb-builder-backdrop {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(20,48,42,0.45);
+    z-index: 45;               /* below .pb-builder (50), above page content */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+  }
+  .pb-builder-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.22s ease, visibility 0s linear 0s;
+  }
+
   /* Circular FAB. Just a number on a forest-ink disc. No icon. */
   .pb-fab {
     position: fixed;
@@ -3187,10 +3207,16 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
      older WebView used by the Odoo embed test path. */
   body[data-focused="mod-pocket"] .pb-fab { display: inline-flex; }
   body.pb-run-active .pb-fab,
-  body.pb-run-active .pb-builder { display: none !important; }
+  body.pb-run-active .pb-builder,
+  body.pb-run-active .pb-builder-backdrop { display: none !important; }
   /* Hard guard: builder cannot be expanded outside the pocketbook. */
   body:not([data-focused="mod-pocket"]) .pb-builder {
     transform: scale(0.05) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  body:not([data-focused="mod-pocket"]) .pb-builder-backdrop {
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;

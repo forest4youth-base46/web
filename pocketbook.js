@@ -638,8 +638,10 @@ function pbToggleBuilderMobile() {
   if (window.innerWidth > 1100) return;          // align with CSS breakpoint
   const builder = document.getElementById('pb-builder');
   const fab = document.getElementById('pb-fab');
+  const backdrop = document.getElementById('pb-builder-backdrop');
   const isOpen = builder.classList.toggle('expanded');
   if (fab) fab.classList.toggle('open', isOpen);
+  if (backdrop) backdrop.classList.toggle('active', isOpen);
 }
 
 // ───────── EXPORT (PDF / PNG with QR) ─────────
