@@ -337,6 +337,56 @@ function pbGetItemMins(id) {
   const a = ACTIVITIES.find(x => x.id === id);
   return a ? (a.durMax || a.durAvg || 5) : 5;
 }
+// Planned minutes per arc group (index 0 unused, groups are 1-5) for a given
+// session — shared by the on-screen arc-balance bar (pbRenderBuilder) and the
+// session-plan export's arc-distribution chart, so both read the same totals
+// rather than each keeping its own copy of this reduce.
+function pbComputeGroupTime(session) {
+  const groupTime = [0, 0, 0, 0, 0, 0];
+  session.forEach(id => {
+    const a = ACTIVITIES.find(x => x.id === id);
+    if (a) groupTime[a.group] += pbGetItemMins(id);
+  });
+  return groupTime;
+}
+
+// Each row's clock time in the session-plan export, walking the session in
+// order from an optional start time ("HH:MM") and accumulating
+// pbGetItemMins(id). Start time is entirely optional (see pbSessionMeta) —
+// without one, every entry is null and the export simply omits that column
+// rather than guessing or blocking.
+function pbComputeClockTimes(startTime, session) {
+  if (!startTime || !/^\d{1,2}:\d{2}$/.test(startTime)) return session.map(() => null);
+  const [h, m] = startTime.split(':').map(Number);
+  let mins = h * 60 + m;
+  return session.map(id => {
+    const hh = Math.floor((mins % 1440) / 60);
+    const mm = mins % 60;
+    mins += pbGetItemMins(id);
+    return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  });
+}
+
+// One bullet per activity's `materials` field for the session-plan export's
+// "Materials & Site" list — skipping "nothing needed" placeholders (an
+// activity that genuinely requires no materials says so in free text, e.g.
+// "None — the forest provides.") and de-duplicating identical text.
+// Materials are free-text prose per activity, not structured tags, so this
+// lists distinct entries rather than trying to merge overlapping phrasing.
+function pbAggregateMaterials(session) {
+  const NONE_RE = /^(none|nothing|rien|nichts)\b/i;
+  const seen = new Set();
+  const out = [];
+  session.forEach(id => {
+    const a = ACTIVITIES.find(x => x.id === id);
+    if (!a) return;
+    const m = (pbT(a, 'materials') || '').trim();
+    if (!m || NONE_RE.test(m) || seen.has(m)) return;
+    seen.add(m);
+    out.push(m);
+  });
+  return out;
+}
 function pbAdjustItemMins(id, delta) {
   const next = Math.max(5, Math.min(120, pbGetItemMins(id) + delta));
   pbSessionMins[id] = next;
@@ -434,11 +484,7 @@ function pbRenderBuilder() {
   if (builderHint) builderHint.textContent = empty ? t('pbui.export.disabled.hint') : '';
 
   // Arc balance bar
-  const groupTime = [0, 0, 0, 0, 0, 0]; // index 0 unused
-  pbSession.forEach(id => {
-    const a = ACTIVITIES.find(x => x.id === id);
-    if (a) groupTime[a.group] += pbGetItemMins(id);
-  });
+  const groupTime = pbComputeGroupTime(pbSession);
   const sumTime = groupTime.reduce((s, x) => s + x, 0) || 1;
   const bar = document.getElementById('pb-arc-bar');
   bar.innerHTML = '';
