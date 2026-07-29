@@ -40,7 +40,10 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── index.html            # HTML shell: page structure, markup for every screen
 ├── tokens.css            # design tokens (colors, spacing, radii, shadows)
 ├── styles.css            # everything else: layout, components, responsive rules
-├── content.js            # translation dictionary (EN/FR/DE) + i18n helpers
+├── content.js            # assembles T from the packs below + i18n helpers (t(), setLang())
+├── i18n-en.js            # English language pack (source strings)
+├── i18n-fr.js            # French language pack
+├── i18n-de.js            # German language pack
 ├── modules-data.js       # header data (icon/title/tag/badge) for every module-card
 ├── render.js             # renders a module-card header from modules-data.js
 ├── router.js             # hash-based routing, role selection, focus-mode navigation
