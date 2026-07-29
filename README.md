@@ -54,6 +54,7 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── search.js             # ⌘K / Ctrl+K search dialog (activities, reference, guide chapters)
 ├── iframe-bridge.js      # iframe embed: reports document height, requests parent scroll
 ├── vendor/               # vendored html2canvas + qrcodejs + jsPDF (no CDN at runtime)
+├── assets/               # brand assets used in exports (Interreg NWE / Forest4Youth logo)
 ├── _headers              # Netlify headers (allows iframe embedding)
 ├── .gitignore
 └── README.md

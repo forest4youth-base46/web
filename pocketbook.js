@@ -894,10 +894,11 @@ function exportGenerateSessionQRNode() {
 
 // Builds the session-plan export — a two-column A4 page (activity timeline
 // on the left, arc/shape charts + materials + QR in a sidebar on the
-// right), matching the Canva-designed template. Every "pexport-*" class
-// below is scoped to this template alone (not reused by #print-report's
-// own classes — see the comment on pbSetPrintTarget below) so this rewrite
-// can't affect the separate post-session report export.
+// right), matching the Canva-designed template. The post-session report
+// (exportRenderPrintReport() below) reuses these same "pexport-*" classes
+// for its shared visual language (colors, type, row/section styling) —
+// only its own content-specific classes (.pexport-notes-card,
+// .pexport-qa-*, .pexport-indicator-item) are report-only.
 function exportRenderPrintSession() {
   const root = document.getElementById('print-session');
   if (!root) return;
@@ -968,11 +969,8 @@ function exportRenderPrintSession() {
           '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.groupsite')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.site || '—') + '</div></div>' +
           '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.practitioner')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.practitioner || '—') + '</div></div>' +
         '</div>' +
-        // Logo slot: text placeholder until real Interreg NWE / Forest4Youth
-        // brand files are supplied — swap the two spans below for <img>s.
         '<div class="pexport-logos">' +
-          '<span class="pexport-logo-placeholder">Interreg North-West Europe</span>' +
-          '<span class="pexport-logo-placeholder">Forest4Youth</span>' +
+          '<img class="pexport-logo-img" src="assets/logo-interreg-forest4youth.png" alt="Interreg North-West Europe · Forest4Youth">' +
         '</div>' +
       '</div>' +
 
@@ -1026,19 +1024,6 @@ function exportRenderPrintSession() {
   const qrNode = exportGenerateSessionQRNode();
   const slot = root.querySelector('#print-qr-slot');
   if (qrNode && slot) slot.appendChild(qrNode);
-}
-
-// Both #print-session (the plan export, above) and #print-report (the
-// post-session report, below) are direct children of <body> and hidden
-// off-screen by default; @media print hides everything except whichever
-// one currently carries .print-active (see styles.css). Only one of the
-// two ever prints at a time, so each export path claims the class for
-// itself and releases the other's.
-function pbSetPrintTarget(id) {
-  const session = document.getElementById('print-session');
-  const report = document.getElementById('print-report');
-  if (session) session.classList.toggle('print-active', id === 'print-session');
-  if (report) report.classList.toggle('print-active', id === 'print-report');
 }
 
 // Rasterizes the plan export with the same html2canvas call exportRunPNG()
@@ -1127,18 +1112,20 @@ async function exportRunPNG() {
     link.click();
   } catch (err) {
     console.error('PNG export failed', err);
-    alert('PNG export failed. Try Print to PDF instead.');
+    alert('PNG export failed. Try Export to PDF instead.');
   } finally {
     document.body.classList.remove('is-exporting-png');
   }
 }
 
 // ───────── EXPORT: POST-SESSION REPORT ─────────
-// Same pattern as exportRenderPrintSession()/exportRunPDF() above — build
-// a print-ready DOM section, then reuse the same window.print() call path
-// — just pointed at #print-report (the most recent run's record, the
+// Builds from #print-report (the most recent run's record, the
 // self-reflection answers, and the outcome indicators) instead of
 // #print-session (the session plan).
+// Same .pexport visual language as exportRenderPrintSession() (colors,
+// type, .pexport-row/-section-label/-footer-bottom etc.) but single-column
+// — no chart sidebar, since the report's job is giving session notes and
+// free-text reflection room to breathe, not at-a-glance stats.
 function exportRenderPrintReport() {
   const root = document.getElementById('print-report');
   if (!root) return;
@@ -1146,21 +1133,39 @@ function exportRenderPrintReport() {
   const records = pbLoadSessionRecords();
   if (!records.length) { root.innerHTML = ''; return; }
   const record = records[0];
-  const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practical Guide';
+  const meta = pbLoadReflectMeta();
+  const date = pbFormatWhen(record.when);
 
-  const itemsHTML = record.items.map((it, i) => {
+  const groupIds = new Set();
+  let actualMinsTotal = 0, anyActual = false;
+  record.items.forEach(it => {
+    const a = ACTIVITIES.find(x => x.id === it.id);
+    if (a) groupIds.add(a.group);
+    if (it.actualSecs != null) { anyActual = true; actualMinsTotal += it.actualSecs / 60; }
+  });
+  const totalMins = Math.round(anyActual ? actualMinsTotal : (record.target || 0));
+
+  const rowsHTML = record.items.map((it, i) => {
     const a = ACTIVITIES.find(x => x.id === it.id);
     const name = a ? pbT(a, 'name') : it.id;
     const actual = it.actualSecs != null ? pbFmtMinSec(it.actualSecs) : '—';
-    const noteHTML = it.note ? '<div class="print-note">' + pbEscapeHtml(it.note) + '</div>' : '';
-    return '<div class="print-row">' +
-      '<div style="width:28px;font-weight:700;color:#666;">' + (i + 1) + '.</div>' +
-      '<div style="flex:1;">' +
-        '<div class="print-row-name">' + pbEscapeHtml(name) + '</div>' +
-        '<div class="print-row-meta">' + t('pbui.reflect.planned') + ' ' + it.plannedMins + 'm · ' +
-          t('pbui.reflect.actual') + ' ' + actual + '</div>' +
+    const groupHTML = a ?
+      '<div class="pexport-row-group">' +
+        '<span class="pexport-row-dot" style="background:' + PB_GROUP_COLORS[a.group] + '"></span>' +
+        pbEscapeHtml(pbGroupT(GROUPS[a.group - 1], 'title')) +
+      '</div>' : '';
+    const noteHTML = it.note ? '<div class="pexport-row-quote">' + pbEscapeHtml(it.note) + '</div>' : '';
+    return '<div class="pexport-row">' +
+      '<div class="pexport-row-clock">' +
+        '<div class="pexport-row-clock-time">' + pbEscapeHtml(actual) + '</div>' +
+        '<div class="pexport-row-clock-dur">' + it.plannedMins + ' min ' + pbEscapeHtml(t('pbui.reflect.planned')) + '</div>' +
+      '</div>' +
+      '<div class="pexport-row-main">' +
+        '<div class="pexport-row-heading"><span class="pexport-row-num">' + String(i + 1).padStart(2, '0') + '</span> ' + pbEscapeHtml(name) + '</div>' +
+        groupHTML +
         noteHTML +
-      '</div></div>';
+      '</div>' +
+    '</div>';
   }).join('');
 
   const answersHTML = Array.prototype.map.call(
@@ -1170,8 +1175,8 @@ function exportRenderPrintReport() {
       const ta = p.querySelector('.reflect-answer');
       const val = ta ? ta.value.trim() : '';
       const ans = val ? pbEscapeHtml(val) : '—';
-      return '<div class="print-qa"><div class="print-q">' + pbEscapeHtml(q) + '</div>' +
-        '<div class="print-a">' + ans + '</div></div>';
+      return '<div class="pexport-qa-card"><div class="pexport-qa-q">' + pbEscapeHtml(q) + '</div>' +
+        '<div class="pexport-qa-a">' + ans + '</div></div>';
     }
   ).join('');
 
@@ -1180,39 +1185,61 @@ function exportRenderPrintReport() {
       const labelEl = el.querySelector('label');
       const label = labelEl ? labelEl.textContent : '';
       const on = el.classList.contains('checked');
-      return '<div class="print-indicator">' + (on ? '☑' : '☐') + ' ' + pbEscapeHtml(label) + '</div>';
+      return '<div class="pexport-indicator-item' + (on ? ' is-checked' : '') + '">' + (on ? '☑' : '☐') + ' ' + pbEscapeHtml(label) + '</div>';
     }
   ).join('');
 
-  // Optional — only rendered if at least one field was actually filled in
-  // (pbGetReflectMetaForReport() already filters to non-empty rows), so a
-  // report with none of this filled in doesn't show an empty section.
-  const metaRows = pbGetReflectMetaForReport();
-  const metaHTML = metaRows.length
-    ? '<div class="print-section-title">' + t('pbui.reflect.report.meta.title') + '</div>' +
-      metaRows.map(row =>
-        '<div class="print-row"><div style="flex:1;">' +
-          '<span style="font-weight:600;">' + pbEscapeHtml(row.label) + ':</span> ' +
-          pbEscapeHtml(row.value) +
-        '</div></div>'
-      ).join('')
+  // The free-text "other notes" field is the one thing worth its own
+  // highlighted card — everything else in pbLoadReflectMeta() moves up
+  // into the header fields below. Omitted entirely if never filled in.
+  const notesHTML = (meta.other || '').trim()
+    ? '<div class="pexport-notes-card">' +
+        '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.reflect.meta.title')) + '</div>' +
+        '<div class="pexport-notes-text">' + pbEscapeHtml(meta.other.trim()) + '</div>' +
+      '</div>'
     : '';
 
+  const placeInst = [meta.place, meta.institution].filter(v => (v || '').trim()).join(' · ');
+  const subtitle = t('pbui.reflect.report.subtitle')
+    .replace('{groups}', String(groupIds.size))
+    .replace('{n}', String(record.items.length))
+    .replace('{mins}', String(totalMins));
+
   root.innerHTML =
-    '<div class="print-header">' +
-      '<div style="font-size:18px;font-weight:700;">' + tHead + '</div>' +
-      '<div style="font-size:13px;color:#555;margin-top:4px;">' +
-        t('pbui.reflect.report.title') + ' · ' + pbFormatWhen(record.when) +
+    '<div class="pexport">' +
+      '<div class="pexport-topbar">' +
+        '<div class="pexport-topbar-fields">' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.date')) + '</div><div class="pexport-value">' + pbEscapeHtml(date) + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.meta.start')) + '</div><div class="pexport-value">' + pbEscapeHtml(meta.start || '—') + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.report.label.participants')) + '</div><div class="pexport-value">' + pbEscapeHtml(meta.participants || '—') + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.report.label.placeinst')) + '</div><div class="pexport-value">' + pbEscapeHtml(placeInst || '—') + '</div></div>' +
+        '</div>' +
+        '<div class="pexport-logos">' +
+          '<img class="pexport-logo-img" src="assets/logo-interreg-forest4youth.png" alt="Interreg North-West Europe · Forest4Youth">' +
+        '</div>' +
       '</div>' +
-    '</div>' +
-    '<div class="print-section-title">' + t('pbui.reflect.report.session') + '</div>' +
-    itemsHTML +
-    '<div class="print-section-title">' + t('pbui.reflect.report.selfreflection') + '</div>' +
-    (answersHTML || '—') +
-    '<div class="print-section-title">' + t('pbui.reflect.report.indicators') + '</div>' +
-    (indicatorsHTML || '—') +
-    metaHTML +
-    '<div class="print-footer"><div>' + tHead + '</div></div>';
+
+      '<div class="pexport-title-block">' +
+        '<h1 class="pexport-title">' + pbEscapeHtml(t('pbui.reflect.report.title')) + '</h1>' +
+        '<div class="pexport-subtitle">' + pbEscapeHtml(subtitle) + '</div>' +
+      '</div>' +
+
+      notesHTML +
+
+      '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.reflect.report.session')) + '</div>' +
+      rowsHTML +
+
+      '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.reflect.report.selfreflection')) + '</div>' +
+      (answersHTML || '—') +
+
+      '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.reflect.report.indicators')) + '</div>' +
+      (indicatorsHTML || '—') +
+
+      '<div class="pexport-footer-bottom">' +
+        '<span>Forest4Youth · Interreg North-West Europe</span>' +
+        '<span>' + pbEscapeHtml(t('pbui.planexport.footer.generated').replace('{date}', new Date().toLocaleDateString(lang))) + '</span>' +
+      '</div>' +
+    '</div>';
 }
 
 // Belt-and-suspenders alongside the button's own disabled state: same two
@@ -1220,12 +1247,60 @@ function exportRenderPrintReport() {
 // checked again here so a somehow-triggered click (e.g. programmatically,
 // or before the gate has re-rendered) still can't produce a report with
 // nothing in it.
-function exportSessionReportPDF() {
+//
+// Same html2canvas+jsPDF pipeline as exportRunPDF() (the plan export) —
+// once the report picked up the same .pexport visual language, it needed
+// the same rendering guarantee: the PDF has to match the on-screen/PNG
+// version pixel-for-pixel, which print-CSS fidelity can't promise.
+async function exportSessionReportPDF() {
   if (!pbLoadSessionRecords().length) return;
   if (!pbHasReflectionContent()) return;
+  if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+    alert('Export library not loaded.');
+    return;
+  }
   exportRenderPrintReport();
-  pbSetPrintTarget('print-report');
-  setTimeout(() => { window.print(); }, 50);
+  document.body.classList.add('is-exporting-png');
+  try {
+    const node = document.getElementById('print-report');
+    const canvas = await html2canvas(node, {
+      width: 794,
+      windowWidth: 794,
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+    });
+    const { jsPDF } = jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+    const pageWidthMm = pdf.internal.pageSize.getWidth();
+    const pageHeightMm = pdf.internal.pageSize.getHeight();
+    const pxPerMm = canvas.width / pageWidthMm;
+    const pageHeightPx = pageHeightMm * pxPerMm;
+
+    let renderedPx = 0;
+    let pageIndex = 0;
+    while (renderedPx < canvas.height) {
+      const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+      const sliceCanvas = document.createElement('canvas');
+      sliceCanvas.width = canvas.width;
+      sliceCanvas.height = sliceHeightPx;
+      sliceCanvas.getContext('2d').drawImage(
+        canvas, 0, renderedPx, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx
+      );
+      if (pageIndex > 0) pdf.addPage();
+      pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, pageWidthMm, sliceHeightPx / pxPerMm);
+      renderedPx += sliceHeightPx;
+      pageIndex++;
+    }
+
+    const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    pdf.save('forest4youth-reflection-' + ts + '.pdf');
+  } catch (err) {
+    console.error('PDF export failed', err);
+    alert('PDF export failed. Try Export to PNG instead.');
+  } finally {
+    document.body.classList.remove('is-exporting-png');
+  }
 }
 
 // Same html2canvas approach as exportRunPNG() above, pointed at
@@ -1260,7 +1335,7 @@ async function exportSessionReportPNG() {
     link.click();
   } catch (err) {
     console.error('PNG export failed', err);
-    alert('PNG export failed. Try Print to PDF instead.');
+    alert('PNG export failed. Try Export to PDF instead.');
   } finally {
     document.body.classList.remove('is-exporting-png');
   }
@@ -1751,19 +1826,8 @@ function pbRestoreReflectMeta() {
 // Only fields with something actually typed, in report order — used by
 // exportRenderPrintReport() so the "Session details" block is skipped
 // entirely when nothing was filled in, rather than printing empty rows.
-function pbGetReflectMetaForReport() {
-  let meta = {};
-  try { meta = JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) {}
-  const labels = {
-    participants: t('pbui.reflect.meta.participants'),
-    start: t('pbui.reflect.meta.start'),
-    place: t('pbui.reflect.meta.place'),
-    institution: t('pbui.reflect.meta.institution'),
-    other: t('pbui.reflect.meta.other'),
-  };
-  return PB_REFLECT_META_FIELDS
-    .map(([, key]) => ({ label: labels[key], value: (meta[key] || '').toString().trim() }))
-    .filter(row => row.value);
+function pbLoadReflectMeta() {
+  try { return JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) { return {}; }
 }
 
 // (init invoked by pbInit() in main script)

@@ -1935,17 +1935,16 @@
   <span class="pb-fab-count" id="pb-fab-count">0</span>
 </button>
 
-<!-- ─── HIDDEN PRINT TEMPLATE ─── -->
-<!-- Populated by exportRenderPrintSession() just before print/PNG.
-     Off-screen in normal use; the only thing visible in @media print
-     and the html2canvas target for PNG export. -->
+<!-- ─── HIDDEN EXPORT TEMPLATES ─── -->
+<!-- Populated by exportRenderPrintSession() just before PDF/PNG export.
+     Off-screen in normal use; revealed (body.is-exporting-png) only as
+     the html2canvas rasterization target. -->
 <section id="print-session" aria-hidden="true"></section>
 
 <!-- Populated by exportRenderPrintReport() just before the Reflect
-     screen's "Export session report" prints — the session record,
-     self-reflection answers, and outcome indicators combined. Shares the
-     #print-session base styles and the print-only visibility toggle
-     (.print-active, set by pbSetPrintTarget() in pocketbook.js). -->
+     screen's "Export session report" PDF/PNG buttons run — the session
+     record, self-reflection answers, and outcome indicators combined.
+     Shares the #print-session base styles and reveal mechanism. -->
 <section id="print-report" aria-hidden="true"></section>
 
 <!-- ─── INLINED LIBRARIES (no CDN at runtime) ─── -->
