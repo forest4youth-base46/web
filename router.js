@@ -337,21 +337,9 @@ function refreshFocusModeLabels() {
   }
 }
 
-function toggleActivity(id) {
-  const item = document.getElementById(id);
-  item.closest('.activities-list').querySelectorAll('.activity-item').forEach(a => {
-    if (a !== item) a.classList.remove('open');
-  });
-  item.classList.toggle('open');
-}
-
 function toggleCheck(el) {
   const cb = el.querySelector('input[type="checkbox"]');
   cb.checked = !cb.checked;
-}
-
-function toggleCheckV2(el) {
-  el.classList.toggle('checked');
 }
 
 // ─────────────────────────────────────────
@@ -440,11 +428,15 @@ function swapVisual(visualId, src, altText) {
 // ─────────────────────────────────────────
 // PARTICIPANT-SCREEN TOGGLES
 // ─────────────────────────────────────────
-function toggleTimeline(id) {
-  document.getElementById(id).classList.toggle('open');
-}
+// toggleTimeline/toggleExp were identical copies of the same plain
+// open/close toggle (one implementation each, kept in sync by hand) —
+// now one shared implementation under both call-site names, so the two
+// screens that use them (#psession-screen, #pforme-screen) can't drift.
 function toggleExp(id) {
   document.getElementById(id).classList.toggle('open');
+}
+function toggleTimeline(id) {
+  toggleExp(id);
 }
 
 // ─────────────────────────────────────────

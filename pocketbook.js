@@ -1952,8 +1952,8 @@ function pbSaveReflectAnswer(idx, value) {
 // Keyboard equivalent for the indicator rows' role="checkbox" (plain divs,
 // same reasoning as pbActivityTriggerKeydown() above — no nested
 // interactive elements here, but they weren't focusable or operable by
-// keyboard at all before this pass, since toggleCheckV2() in router.js
-// only ever wired a click handler).
+// keyboard at all before this pass, since the toggle only ever wired a
+// click handler).
 function pbIndicatorKeydown(e, el, idx) {
   if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
     e.preventDefault();
