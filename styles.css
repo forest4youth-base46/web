@@ -3193,7 +3193,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   overflow-wrap: break-word; word-break: break-word;
 }
 .pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-.pexport-logo-img { height: 170px; width: auto; display: block; }
+.pexport-logo-img { height: 125px; width: auto; display: block; }
 
 .pexport-title-block { margin-bottom: 8px; }
 .pexport-title {
