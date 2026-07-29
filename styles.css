@@ -3179,8 +3179,8 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 
 .pexport-topbar {
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 16px; padding-bottom: 10px; border-bottom: 1px solid #C8D8D0;
-  margin-bottom: 10px;
+  gap: 16px; padding-bottom: 8px; border-bottom: 1px solid #C8D8D0;
+  margin-bottom: 8px;
 }
 .pexport-topbar-fields { display: flex; gap: 26px; flex-wrap: wrap; }
 .pexport-meta-block { min-width: 70px; max-width: 150px; }
@@ -3193,9 +3193,9 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   overflow-wrap: break-word; word-break: break-word;
 }
 .pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-.pexport-logo-img { height: 80px; width: auto; display: block; }
+.pexport-logo-img { height: 110px; width: auto; display: block; }
 
-.pexport-title-block { margin-bottom: 10px; }
+.pexport-title-block { margin-bottom: 8px; }
 .pexport-title {
   font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 600;
   color: #14302A; margin: 0 0 4px; letter-spacing: -0.01em;
@@ -3214,7 +3214,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 .pexport-col-headers span:first-child { width: 56px; flex-shrink: 0; }
 
 .pexport-row {
-  display: flex; gap: 12px; padding: 4px 0;
+  display: flex; gap: 12px; padding: 3px 0;
   border-bottom: 1px solid #eee; page-break-inside: avoid;
 }
 .pexport-row-clock { width: 56px; flex-shrink: 0; }
@@ -3257,7 +3257,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 .pexport-qr-caption { font-size: 9px; color: #7C8E85; line-height: 1.4; }
 
 .pexport-banner {
-  margin: 8px 0; padding: 8px 0; text-align: center;
+  margin: 6px 0; padding: 6px 0; text-align: center;
   border-top: 1px solid #C8D8D0; border-bottom: 1px solid #C8D8D0;
   font-size: 10.5px; letter-spacing: 0.04em; color: #234A3E; font-weight: 600;
 }
