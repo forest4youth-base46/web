@@ -203,6 +203,30 @@ const PB_I18N = {
       close: `Comment clôturer`,
       suitable: `Convient pour`,
     },
+    // Ordered replacements for the <text> labels baked into each
+    // activity's illustration in pocketbook-data.js's VISUAL object —
+    // see pbLocalizeVisual() in pocketbook.js. Order must match the
+    // English SVG's <text> elements exactly; scientific (Latin) names
+    // and bare digits are repeated unchanged rather than translated.
+    visuals: {
+      introduce: [`un prénom en bâtons, feuilles, pierres`],
+      tinyworld: [`un monde imaginaire à partir de ce qu'on trouve au sol`],
+      soundscape: [`chant d'oiseau`, `vent`, `ruisseau`, `voix lointaines`],
+      naming: [`Chêne`, `Quercus robur`, `Bouleau`, `Betula pendula`, `Pin`, `P. sylvestris`],
+      hammock: [`installez-vous. rien d'autre n'est requis.`],
+      barefoot: [`herbe`, `terre`, `écorce`, `mousse`, `pierre`, `CHAUSSURES RETIRÉES · MARCHEZ LENTEMENT · REMARQUEZ LE CHANGEMENT`],
+      palette: [`mousse`, `lichen`, `écorce`, `trouvez-en un pour chaque couleur`],
+      senses: [`5`, `4`, `3`, `2`, `1`, `voir`, `toucher`, `entendre`, `sentir`, `goûter`, `NOMMEZ CE QUI EST LÀ · DANS L'ORDRE`],
+      sofa: [`un lieu que le groupe a construit — ensemble`],
+      fire: [`amadou`, `sec, duveteux`, `petit bois`, `petites branches`, `tipi`, `structure`, `allumer`, `flamme`, `une séquence apprise en la faisant`],
+      bivouac: [`faîtière`, `piquet`],
+      sitspot: [`près du ruisseau`, `sur le tronc`, `dans le creux`, `sous le pin`, `un endroit où revenir, semaine après semaine`],
+      roles: [`eau`, `porteur`, `feu`, `gardien`, `temps`, `responsable`, `de petits rôles fonctionnels, répartis`],
+      project: [`sem. 1`, `esquisse`, `sem. 3`, `plan`, `sem. 5`, `construction`, `sem. 8`, `finition`, `une œuvre unique, reprise séance après séance`],
+      object: [`solide`, `libre`, `potentiel`, `force`, `choisissez-en un. un mot pour ce qu'il porte.`],
+      checkin: [`comment est-ce que je repars aujourd'hui ?`, `bien mieux`, `un peu mieux`, `à peu près pareil`, `un peu moins bien`, `privé. recueilli discrètement.`],
+      campfire: [`un cercle. une immobilité partagée. puis le départ.`],
+    },
   },
 
   de: {
@@ -397,6 +421,25 @@ const PB_I18N = {
       introduce: `Wie einführen`,
       close: `Wie abschließen`,
       suitable: `Geeignet für`,
+    },
+    visuals: {
+      introduce: [`ein Name aus Stöcken, Blättern, Steinen`],
+      tinyworld: [`eine erdachte Welt aus dem, was unter den Füßen liegt`],
+      soundscape: [`Vogelgesang`, `Wind`, `Bach`, `ferne Stimmen`],
+      naming: [`Eiche`, `Quercus robur`, `Birke`, `Betula pendula`, `Kiefer`, `P. sylvestris`],
+      hammock: [`ankommen. mehr ist nicht nötig.`],
+      barefoot: [`Gras`, `Erde`, `Rinde`, `Moos`, `Stein`, `SCHUHE AUS · LANGSAM GEHEN · DEN WECHSEL BEMERKEN`],
+      palette: [`Moos`, `Flechte`, `Rinde`, `für jede Farbe eins finden`],
+      senses: [`5`, `4`, `3`, `2`, `1`, `sehen`, `fühlen`, `hören`, `riechen`, `schmecken`, `BENENNEN, WAS HIER IST · DER REIHE NACH`],
+      sofa: [`ein Ort, den die Gruppe gebaut hat — gemeinsam`],
+      fire: [`Zunder`, `trocken, flaumig`, `Anzündholz`, `kleine Zweige`, `Tipi`, `Aufbau`, `entzünden`, `Flamme`, `eine Abfolge, die man durch Tun lernt`],
+      bivouac: [`Firststange`, `Hering`],
+      sitspot: [`am Bach`, `auf dem Stamm`, `in der Mulde`, `unter der Kiefer`, `ein Ort, zu dem man Woche für Woche zurückkehrt`],
+      roles: [`Wasser`, `Träger`, `Feuer`, `Hüter`, `Zeit`, `Wächter`, `kleine funktionale Rollen, verteilt`],
+      project: [`Wo. 1`, `Skizze`, `Wo. 3`, `Plan`, `Wo. 5`, `Bau`, `Wo. 8`, `Fertigstellung`, `ein einziges Werk, das über mehrere Sitzungen entsteht`],
+      object: [`fest`, `frei`, `Potenzial`, `Kraft`, `wählen Sie eines. ein Wort für das, was es trägt.`],
+      checkin: [`wie gehe ich heute?`, `viel besser`, `etwas besser`, `etwa gleich`, `etwas schlechter`, `privat. still eingesammelt.`],
+      campfire: [`ein Kreis. gemeinsame Stille. dann der Aufbruch.`],
     },
   },
 };

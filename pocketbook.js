@@ -31,6 +31,24 @@ function pbLabel(key) {
   const dict = PB_I18N[currentLang] && PB_I18N[currentLang].labels;
   return (dict && dict[key]) || PB_LABELS_EN[key];
 }
+// The larger in-detail illustrations (VISUAL in pocketbook-data.js) bake
+// their word/phrase labels directly into <text> elements rather than
+// exposing them as data, since each one is a bespoke hand-built SVG. To
+// avoid duplicating every illustration per language, this replaces each
+// non-empty <text> node's content in document order with the matching
+// entry from PB_I18N[lang].visuals[activityId] (see pocketbook-i18n.js).
+// Falls back to the original (English) text past the end of that list,
+// or if there's no translated list at all for this activity/language.
+function pbLocalizeVisual(svg, activityId) {
+  const strings = PB_I18N[currentLang] && PB_I18N[currentLang].visuals && PB_I18N[currentLang].visuals[activityId];
+  if (!strings || !svg) return svg;
+  let i = 0;
+  return svg.replace(/(<text[^>]*>(?:<animate[^>]*\/>)?)([^<]*)(<\/text>)/g, (match, open, text, close) => {
+    if (!text.trim()) return match;
+    const replacement = strings[i++];
+    return replacement === undefined ? match : open + replacement + close;
+  });
+}
 const PB_LABELS_EN = {
   purpose: 'Purpose', materials: 'Materials', introduce: 'How to introduce',
   close: 'How to close', suitable: 'Suitable for',
@@ -243,7 +261,7 @@ function pbToggleActivity(id) {
       const key = visualEl.dataset.visual;
       const captionEl = visualEl.querySelector('.pb-visual-caption');
       const captionHTML = captionEl ? captionEl.outerHTML : '';
-      visualEl.innerHTML = (VISUAL[key] || '') + captionHTML;
+      visualEl.innerHTML = pbLocalizeVisual(VISUAL[key] || '', key) + captionHTML;
     }
   }
 }
