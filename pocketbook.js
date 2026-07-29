@@ -324,6 +324,14 @@ function pbActivityTriggerKeydown(e, id) {
 // ───────── SESSION BUILDER ─────────
 let pbSession = []; // array of activity ids in chosen order
 
+// Optional session-level info for the plan export (start time, group/site,
+// practitioner) — entirely additive, never required. Not persisted, same as
+// pbSession itself: a returning visitor always starts from a clean plan.
+let pbSessionMeta = { startTime: '', site: '', practitioner: '' };
+function pbUpdateSessionMeta(field, value) {
+  pbSessionMeta[field] = value;
+}
+
 // Per-item planned-minute overrides, keyed by activity id. An item not
 // present here just uses the activity's own default (durMax, falling back
 // to durAvg, falling back to 5 — matching the pre-existing fallback used

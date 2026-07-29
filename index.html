@@ -1509,6 +1509,30 @@
                   <div data-i18n-html="pbui.builder.empty">No activities yet.<br>Tap <strong>+</strong> next to any activity to begin.</div>
                 </div>
               </div>
+              <!-- Optional session-level info for the plan export (start
+                   time / group-site / practitioner). Purely additive: export
+                   works identically whether this is filled in or left
+                   untouched — see pbComputeClockTimes(), which returns blank
+                   clock times rather than blocking anything when no start
+                   time is set. Collapsed by default (native <details>, no
+                   extra JS needed for the toggle) since it's the "extra",
+                   not the primary flow through this panel. -->
+              <details class="pb-session-meta" id="pb-session-meta">
+                <summary class="pb-session-meta-summary" data-i18n="pbui.planexport.meta.title">Session details</summary>
+                <p class="pb-session-meta-sub" data-i18n="pbui.planexport.meta.sub">Optional — included in the export if filled in.</p>
+                <div class="pb-session-meta-field">
+                  <label for="pb-meta-starttime" data-i18n="pbui.planexport.meta.starttime">Start time</label>
+                  <input type="time" id="pb-meta-starttime" oninput="pbUpdateSessionMeta('startTime', this.value)">
+                </div>
+                <div class="pb-session-meta-field">
+                  <label for="pb-meta-site" data-i18n="pbui.planexport.meta.site">Group / Site</label>
+                  <input type="text" id="pb-meta-site" oninput="pbUpdateSessionMeta('site', this.value)">
+                </div>
+                <div class="pb-session-meta-field">
+                  <label for="pb-meta-practitioner" data-i18n="pbui.planexport.meta.practitioner">Practitioner</label>
+                  <input type="text" id="pb-meta-practitioner" oninput="pbUpdateSessionMeta('practitioner', this.value)">
+                </div>
+              </details>
               <div class="pb-builder-actions">
                 <button class="pb-builder-btn" id="pb-btn-clear" onclick="pbClearSession()" disabled="" data-i18n="pbui.builder.clear">Clear</button>
                 <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-pdf" type="button"
