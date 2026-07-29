@@ -283,9 +283,6 @@ function applyFocusMode(screenEl, modId) {
   back.className = 'module-back-link injected';
   back.type = 'button';
   const screenHash = screenEl.id.replace('-screen','');
-  const pathwayBadge = screenEl.querySelector('.section-header .badge');
-  const pathwayLabel = pathwayBadge && pathwayBadge.textContent.trim();
-  back.textContent = pathwayLabel || t('nav.back') || 'Back';
   back.onclick = () => { window.location.hash = screenHash; };
   mod.insertBefore(back, mod.firstChild);
 
@@ -300,13 +297,36 @@ function applyFocusMode(screenEl, modId) {
   if (modId === 'mod-pocket') {
     const quick = document.createElement('div');
     quick.className = 'plan-quicklinks injected';
-    quick.innerHTML =
-      '<a href="#implement/mod-pre">' + t('nav.plan.checklist') + '</a>' +
-      '<a href="#implement/mod-plan">' + t('nav.plan.structure') + '</a>';
     mod.insertBefore(quick, back.nextSibling);
   }
 
+  refreshFocusModeLabels();
   window.scrollToViewTop();
+}
+
+// Fills in (or, on a later language switch, refreshes) the text of the
+// injected back-link and quick-links above — pulled out of applyFocusMode()
+// so setLang() can re-run just this part in place. Without this, switching
+// language while a door module is focused left both stuck in whatever
+// language was active when the module was opened, since they're built once
+// from t()/the badge's text rather than via [data-i18n].
+function refreshFocusModeLabels() {
+  const modId = document.body.dataset.focused;
+  if (!modId) return;
+  const screenEl = document.querySelector('.screen.focus-mode');
+  if (!screenEl) return;
+  const back = screenEl.querySelector('.module-back-link.injected');
+  if (back) {
+    const pathwayBadge = screenEl.querySelector('.section-header .badge');
+    const pathwayLabel = pathwayBadge && pathwayBadge.textContent.trim();
+    back.textContent = pathwayLabel || t('nav.back') || 'Back';
+  }
+  const quick = screenEl.querySelector('.plan-quicklinks.injected');
+  if (quick) {
+    quick.innerHTML =
+      '<a href="#implement/mod-pre">' + t('nav.plan.checklist') + '</a>' +
+      '<a href="#implement/mod-plan">' + t('nav.plan.structure') + '</a>';
+  }
 }
 
 function toggleActivity(id) {

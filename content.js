@@ -55,9 +55,17 @@ function setLang(lang) {
   // next reload.
   if (window.__pbInited) {
     pbRenderGroups();
+    pbRenderFilters();
     pbRenderAdaptations();
     pbRenderBuilder();
+    pbRenderReflectSummary();
   }
+  // The focused-module back-link and Plan quick-links (Pre-Session
+  // Checklist / Session Structure Guide) are injected once from t() when
+  // a door module opens, not via [data-i18n] — refresh them in place if a
+  // module is currently focused so they don't stay stuck in whatever
+  // language was active when it was opened.
+  if (typeof refreshFocusModeLabels === 'function') refreshFocusModeLabels();
   // Same idea for the Reference screen's type-filter chips + result count
   // — built via innerHTML/textContent from router.js, not [data-i18n], so
   // they need an explicit re-render too.
