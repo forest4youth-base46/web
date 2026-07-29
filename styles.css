@@ -3182,7 +3182,8 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   gap: 16px; padding-bottom: 8px; border-bottom: 1px solid #C8D8D0;
   margin-bottom: 8px;
 }
-.pexport-topbar-fields { display: flex; gap: 26px; flex-wrap: wrap; }
+.pexport-topbar-fields { display: flex; flex-direction: column; gap: 10px; }
+.pexport-meta-row { display: flex; gap: 26px; flex-wrap: wrap; }
 .pexport-meta-block { min-width: 70px; max-width: 150px; }
 .pexport-label {
   font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
@@ -3193,7 +3194,7 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   overflow-wrap: break-word; word-break: break-word;
 }
 .pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-.pexport-logo-img { height: 125px; width: auto; display: block; }
+.pexport-logo-img { height: 115px; width: auto; display: block; } /* 125px - 8% */
 
 .pexport-title-block { margin-bottom: 8px; }
 .pexport-title {
@@ -3292,6 +3293,12 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 .pexport--paged { display: flex; flex-direction: column; }
 .pexport--paged > * { flex-shrink: 0; } /* flex items default to shrinkable — without this, content silently compresses/clips to fit the fixed page height instead of the packer's page break ever kicking in */
 .pexport--paged > .pexport-footer-bottom { margin-top: auto; }
+/* Session-plan pages only: when the trailing banner+checklist lands on a
+   page, it travels together with the footer-bottom line as one connected
+   unit pushed to the bottom — not the footer-bottom line alone, which
+   would leave a large disconnected gap between the checklist and the
+   thin footer rule below it. */
+.pexport--paged > .pexport-tail-anchor { margin-top: auto; }
 
 /* ─── POST-SESSION REPORT (same .pexport visual language, single-column —
    no chart sidebar, since the point here is giving notes/free-text room

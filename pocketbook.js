@@ -959,10 +959,14 @@ function pbBuildSessionExportData() {
   const headerHTML =
     '<div class="pexport-topbar">' +
       '<div class="pexport-topbar-fields">' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.date')) + '</div><div class="pexport-value">' + pbEscapeHtml(date) + '</div></div>' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.time')) + '</div><div class="pexport-value">' + (hasClock ? pbEscapeHtml(clockTimes[0] + ' – ' + endTime) : '—') + '</div></div>' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.groupsite')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.site || '—') + '</div></div>' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.practitioner')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.practitioner || '—') + '</div></div>' +
+        '<div class="pexport-meta-row">' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.date')) + '</div><div class="pexport-value">' + pbEscapeHtml(date) + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.time')) + '</div><div class="pexport-value">' + (hasClock ? pbEscapeHtml(clockTimes[0] + ' – ' + endTime) : '—') + '</div></div>' +
+        '</div>' +
+        '<div class="pexport-meta-row">' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.groupsite')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.site || '—') + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.practitioner')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.practitioner || '—') + '</div></div>' +
+        '</div>' +
       '</div>' +
       '<div class="pexport-logos">' +
         '<img class="pexport-logo-img" src="assets/logo-interreg-forest4youth.png" alt="Interreg North-West Europe · Forest4Youth">' +
@@ -1150,40 +1154,71 @@ function pbSavePDFFromCanvases(canvases, filenamePrefix) {
 // enough to spill onto more than one page always has far more row content
 // than the sidebar is tall, so the sidebar never competes for page-2+
 // space). Every page shares the same repeating footer.
+//
+// The trailing banner+checklist (tailBlockHTML) always renders full-width,
+// as a sibling of .pexport-body — never squeezed into the narrower row
+// column — and travels down to the bottom of the page together with the
+// footer-bottom line as one connected .pexport-tail-anchor unit, rather
+// than the footer-bottom line alone drifting away from it with a large
+// gap in between.
 async function pbBuildSessionPaginatedCanvases(root) {
   const d = pbBuildSessionExportData();
-  const blocks = d.rowBlocks.concat([d.tailBlockHTML]);
 
   const page1ChromeHeight = pbMeasureHeight(root, d.headerHTML + d.titleHTML + d.colHeadersHTML);
   const restChromeHeight = pbMeasureHeight(root, d.headerHTML + d.colHeadersHTML);
   const footerHeight = pbMeasureHeight(root, d.footerBottomHTML);
+  const tailHeight = pbMeasureHeight(root, d.tailBlockHTML);
 
   const firstPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - page1ChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
   const restPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - restChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
-  const pages = pbPackBlocks(
-    root, blocks, firstPageBudget, restPageBudget,
+  const rowPages = pbPackBlocks(
+    root, d.rowBlocks, firstPageBudget, restPageBudget,
     '<div class="pexport-body"><div class="pexport-timeline">',
     '</div>' + d.sidebarHTML + '</div>'
   );
 
+  // Does the tail block fit under whatever rows landed on the last page?
+  // Measured at its real full-page width, not the narrower per-row
+  // measurement context, since it renders as a full-width sibling.
+  const lastIdx = rowPages.length - 1;
+  const lastIsFirst = lastIdx === 0;
+  const lastBudget = lastIsFirst ? firstPageBudget : restPageBudget;
+  const lastRowsHeight = rowPages[lastIdx].length
+    ? pbMeasureHeight(
+        root,
+        (lastIsFirst ? '<div class="pexport-body"><div class="pexport-timeline">' : '') +
+        rowPages[lastIdx].join('') +
+        (lastIsFirst ? ('</div>' + d.sidebarHTML + '</div>') : '')
+      )
+    : 0;
+  const tailFitsOnLastPage = (lastRowsHeight + tailHeight) <= lastBudget;
+
   const canvases = [];
-  for (let i = 0; i < pages.length; i++) {
+  for (let i = 0; i < rowPages.length; i++) {
     const isFirst = i === 0;
-    // A page holding only the trailing banner+checklist block (no real
-    // rows) doesn't need the CLOCK/ACTIVITY column headers above it.
-    const hasRows = pages[i].some(b => b !== d.tailBlockHTML);
+    const isLast = i === lastIdx;
+    const hasRows = rowPages[i].length > 0;
     const colHeaders = hasRows ? d.colHeadersHTML : '';
     const bodyHTML = isFirst
-      ? '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + pages[i].join('') + '</div>' + d.sidebarHTML + '</div>'
-      : '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + pages[i].join('') + '</div></div>';
+      ? '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + rowPages[i].join('') + '</div>' + d.sidebarHTML + '</div>'
+      : '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + rowPages[i].join('') + '</div></div>';
+    const tailAnchorHTML = '<div class="pexport-tail-anchor">' + (isLast && tailFitsOnLastPage ? d.tailBlockHTML : '') + d.footerBottomHTML + '</div>';
     root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
-      d.headerHTML + (isFirst ? d.titleHTML : '') + bodyHTML + d.footerBottomHTML +
+      d.headerHTML + (isFirst ? d.titleHTML : '') + bodyHTML + tailAnchorHTML +
     '</div>';
     if (isFirst) {
       const qrNode = exportGenerateSessionQRNode();
       const slot = root.querySelector('#print-qr-slot');
       if (qrNode && slot) slot.appendChild(qrNode);
     }
+    canvases.push(await html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true }));
+  }
+
+  if (!tailFitsOnLastPage) {
+    root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
+      d.headerHTML +
+      '<div class="pexport-tail-anchor">' + d.tailBlockHTML + d.footerBottomHTML + '</div>' +
+    '</div>';
     canvases.push(await html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true }));
   }
   return canvases;
@@ -1331,10 +1366,14 @@ function pbBuildReportExportData() {
   const headerHTML =
     '<div class="pexport-topbar">' +
       '<div class="pexport-topbar-fields">' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.date')) + '</div><div class="pexport-value">' + pbEscapeHtml(date) + '</div></div>' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.meta.start')) + '</div><div class="pexport-value">' + pbEscapeHtml(meta.start || '—') + '</div></div>' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.report.label.participants')) + '</div><div class="pexport-value">' + pbEscapeHtml(meta.participants || '—') + '</div></div>' +
-        '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.report.label.placeinst')) + '</div><div class="pexport-value">' + pbEscapeHtml(placeInst || '—') + '</div></div>' +
+        '<div class="pexport-meta-row">' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.date')) + '</div><div class="pexport-value">' + pbEscapeHtml(date) + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.meta.start')) + '</div><div class="pexport-value">' + pbEscapeHtml(meta.start || '—') + '</div></div>' +
+        '</div>' +
+        '<div class="pexport-meta-row">' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.report.label.participants')) + '</div><div class="pexport-value">' + pbEscapeHtml(meta.participants || '—') + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.report.label.placeinst')) + '</div><div class="pexport-value">' + pbEscapeHtml(placeInst || '—') + '</div></div>' +
+        '</div>' +
       '</div>' +
       '<div class="pexport-logos">' +
         '<img class="pexport-logo-img" src="assets/logo-interreg-forest4youth.png" alt="Interreg North-West Europe · Forest4Youth">' +
