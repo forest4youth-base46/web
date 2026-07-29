@@ -3194,6 +3194,119 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
 }
 #print-qr-slot canvas, #print-qr-slot img { display: block; }
 
+/* ─── SESSION-PLAN EXPORT (redesigned template) ───
+   Everything here is scoped under .pexport, entirely separate from the
+   .print-* classes above (which #print-report still uses) — this template
+   can change freely without touching the post-session report's layout. */
+.pexport { font-family: 'Open Sans', sans-serif; color: #1B2A24; }
+
+.pexport-topbar {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; padding-bottom: 14px; border-bottom: 1px solid #C8D8D0;
+  margin-bottom: 18px;
+}
+.pexport-topbar-fields { display: flex; gap: 26px; flex-wrap: wrap; }
+.pexport-meta-block { min-width: 70px; }
+.pexport-label {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #7C8E85; margin-bottom: 3px;
+}
+.pexport-value { font-size: 13px; font-weight: 600; color: #14302A; }
+.pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
+.pexport-logo-placeholder {
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em;
+  color: #234A3E; border: 1px solid #C8D8D0; border-radius: 4px;
+  padding: 5px 9px; white-space: nowrap;
+}
+
+.pexport-title-block { margin-bottom: 20px; }
+.pexport-title {
+  font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 600;
+  color: #14302A; margin: 0 0 4px; letter-spacing: -0.01em;
+}
+.pexport-subtitle { font-size: 12.5px; color: #4D6359; }
+
+.pexport-body { display: flex; gap: 24px; align-items: flex-start; }
+.pexport-timeline { flex: 1; min-width: 0; }
+.pexport-sidebar { width: 240px; flex-shrink: 0; }
+
+.pexport-col-headers {
+  display: flex; gap: 12px; padding-bottom: 6px; margin-bottom: 4px;
+  border-bottom: 1px solid #C8D8D0;
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #7C8E85;
+}
+.pexport-col-headers span:first-child { width: 56px; flex-shrink: 0; }
+
+.pexport-row {
+  display: flex; gap: 12px; padding: 9px 0;
+  border-bottom: 1px solid #eee; page-break-inside: avoid;
+}
+.pexport-row-clock { width: 56px; flex-shrink: 0; }
+.pexport-row-clock-time { font-size: 13px; font-weight: 700; color: #14302A; }
+.pexport-row-clock-dur { font-size: 10px; color: #7C8E85; margin-top: 1px; }
+.pexport-row-main { flex: 1; min-width: 0; }
+.pexport-row-heading { font-size: 13px; font-weight: 600; color: #14302A; }
+.pexport-row-num { color: #7C8E85; font-weight: 600; margin-right: 2px; }
+.pexport-row-group {
+  font-size: 10.5px; font-style: italic; color: #4D6359;
+  margin: 2px 0 3px; display: flex; align-items: center; gap: 5px;
+}
+.pexport-row-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.pexport-row-quote { font-size: 11px; color: #555; line-height: 1.4; }
+
+.pexport-stats-eyebrow {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #7C8E85; margin-bottom: 10px;
+}
+.pexport-arc-block, .pexport-shape-block, .pexport-materials-block { margin-bottom: 16px; }
+.pexport-arc-row { display: flex; align-items: center; gap: 10px; }
+.pexport-arc-donut { flex-shrink: 0; width: 72px; height: 72px; }
+.pexport-arc-donut svg { width: 100%; height: 100%; display: block; }
+.pexport-arc-legend { flex: 1; min-width: 0; }
+.pexport-legend-row { display: flex; align-items: center; gap: 5px; font-size: 9.5px; color: #4D6359; margin-bottom: 3px; }
+.pexport-legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.pexport-legend-label { flex: 1; min-width: 0; }
+.pexport-legend-pct { font-weight: 600; color: #14302A; }
+.pexport-section-label {
+  font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #7C8E85; margin-top: 8px;
+}
+.pexport-shape-block svg { width: 100%; height: auto; display: block; margin-top: 6px; }
+.pexport-materials-list { margin: 6px 0 0; font-size: 10.5px; color: #333; line-height: 1.5; }
+.pexport-materials-row { display: flex; gap: 6px; margin-bottom: 4px; }
+.pexport-bullet { color: #7FA396; flex-shrink: 0; }
+
+.pexport-qr-block { display: flex; gap: 10px; align-items: center; }
+.pexport-qr-block #print-qr-slot { flex-shrink: 0; }
+.pexport-qr-caption { font-size: 9px; color: #7C8E85; line-height: 1.4; }
+
+.pexport-banner {
+  margin: 22px 0; padding: 10px 0; text-align: center;
+  border-top: 1px solid #C8D8D0; border-bottom: 1px solid #C8D8D0;
+  font-size: 10.5px; letter-spacing: 0.04em; color: #234A3E; font-weight: 600;
+}
+
+.pexport-footer-title {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #7C8E85; margin-bottom: 8px;
+}
+.pexport-checklist {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; margin-bottom: 14px;
+}
+.pexport-check-item {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 10px; color: #333; line-height: 1.35;
+}
+.pexport-checkbox {
+  width: 9px; height: 9px; border: 1px solid #999; border-radius: 2px;
+  flex-shrink: 0; margin-top: 2px;
+}
+.pexport-footer-bottom {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding-top: 10px; border-top: 1px solid #234A3E;
+  font-size: 9.5px; color: #7C8E85;
+}
+
 @media print {
   @page { size: A4; margin: 16mm; }
   body > * { display: none !important; }

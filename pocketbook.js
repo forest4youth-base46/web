@@ -382,7 +382,7 @@ function pbComputeClockTimes(startTime, session) {
 // Materials are free-text prose per activity, not structured tags, so this
 // lists distinct entries rather than trying to merge overlapping phrasing.
 function pbAggregateMaterials(session) {
-  const NONE_RE = /^(none|nothing|rien|nichts)\b/i;
+  const NONE_RE = /^(none|nothing|rien|aucun\w*|nichts|keins?)\b/i;
   const seen = new Set();
   const out = [];
   session.forEach(id => {
@@ -892,39 +892,135 @@ function exportGenerateSessionQRNode() {
   return wrap.querySelector('canvas') || wrap.querySelector('img');
 }
 
+// Builds the session-plan export — a two-column A4 page (activity timeline
+// on the left, arc/shape charts + materials + QR in a sidebar on the
+// right), matching the Canva-designed template. Every "pexport-*" class
+// below is scoped to this template alone (not reused by #print-report's
+// own classes — see the comment on pbSetPrintTarget below) so this rewrite
+// can't affect the separate post-session report export.
 function exportRenderPrintSession() {
   const root = document.getElementById('print-session');
   if (!root) return;
   const lang = typeof currentLang === 'string' ? currentLang : 'en';
   const items = pbSession.map(id => ACTIVITIES.find(a => a.id === id)).filter(Boolean);
   const totalMin = pbSession.reduce((s, id) => s + pbGetItemMins(id), 0);
+  const groupsUsed = new Set(items.map(a => a.group)).size;
   const date = new Date().toLocaleDateString(lang);
-  const tHead = (T[lang] && T[lang]['header.title']) || 'Forest4Youth Practical Guide';
-  const tQrLabel = (T[lang] && T[lang]['export.qr.label']) || 'Scan to reopen';
 
-  root.innerHTML =
-    '<div class="print-header">' +
-      '<div style="font-size:18px;font-weight:700;">' + tHead + '</div>' +
-      '<div style="font-size:13px;color:#555;margin-top:4px;">' +
-        date + ' · ' + items.length + ' ' + t('pbui.export.activitiesword') + ' · ~' + totalMin + ' min' +
-      '</div>' +
-    '</div>' +
-    items.map((a, i) =>
-      '<div class="print-row">' +
-        '<div style="width:28px;font-weight:700;color:#666;">' + (i + 1) + '.</div>' +
-        '<div style="flex:1;">' +
-          '<div class="print-row-name">' + pbT(a, 'name') + '</div>' +
-          '<div class="print-row-meta">Group ' + a.group + ' · ' +
-            a.durMin + '–' + a.durMax + ' min · ' + pbT(a, 'caption') + '</div>' +
+  const clockTimes = pbComputeClockTimes(pbSessionMeta.startTime, pbSession);
+  const hasClock = clockTimes.some(c => c != null);
+  const endTime = hasClock ? (() => {
+    const [h, m] = clockTimes[clockTimes.length - 1].split(':').map(Number);
+    const total = h * 60 + m + pbGetItemMins(pbSession[pbSession.length - 1]);
+    return String(Math.floor((total % 1440) / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+  })() : '';
+
+  const groupTime = pbComputeGroupTime(pbSession);
+
+  const rowsHTML = items.map((a, i) => {
+    const durText = a.durMax ? pbGetItemMins(a.id) + ' min' : (pbT(a, 'durLabel') || pbFmtDuration(a));
+    const clock = clockTimes[i];
+    return (
+      '<div class="pexport-row">' +
+        '<div class="pexport-row-clock">' +
+          (clock ? '<div class="pexport-row-clock-time">' + clock + '</div>' : '') +
+          '<div class="pexport-row-clock-dur">' + pbEscapeHtml(durText) + '</div>' +
+        '</div>' +
+        '<div class="pexport-row-main">' +
+          '<div class="pexport-row-heading">' +
+            '<span class="pexport-row-num">' + String(i + 1).padStart(2, '0') + '</span> ' +
+            pbEscapeHtml(pbT(a, 'name')) +
+          '</div>' +
+          '<div class="pexport-row-group">' +
+            '<span class="pexport-row-dot" style="background:' + PB_GROUP_COLORS[a.group] + '"></span>' +
+            pbEscapeHtml(pbGroupT(GROUPS[a.group - 1], 'title')) +
+          '</div>' +
+          '<div class="pexport-row-quote">' + pbEscapeHtml(pbT(a, 'intro')) + '</div>' +
         '</div>' +
       '</div>'
-    ).join('') +
-    '<div class="print-footer">' +
-      '<div>' +
-        '<div>Forest4Youth Practical Guide</div>' +
-        '<div style="margin-top:4px;">' + tQrLabel + '</div>' +
+    );
+  }).join('');
+
+  // Manual bullet markup, not <ul>/<li> — html2canvas doesn't reliably
+  // render native list markers (missing/misaligned bullet glyphs), so this
+  // avoids that entirely rather than fighting it with CSS.
+  const materialsHTML = pbAggregateMaterials(pbSession)
+    .map(m => '<div class="pexport-materials-row"><span class="pexport-bullet">•</span>' + pbEscapeHtml(m) + '</div>').join('');
+
+  const checklistHTML = [1, 2, 3, 4, 5, 6].map(i =>
+    '<div class="pexport-check-item"><span class="pexport-checkbox"></span>' +
+      pbEscapeHtml(t('check.pre.' + i)) +
+    '</div>'
+  ).join('');
+
+  const subtitle = t('pbui.planexport.subtitle')
+    .replace('{groups}', String(groupsUsed))
+    .replace('{n}', String(items.length))
+    .replace('{mins}', String(totalMin));
+  const generated = t('pbui.planexport.footer.generated').replace('{date}', date);
+
+  root.innerHTML =
+    '<div class="pexport">' +
+      '<div class="pexport-topbar">' +
+        '<div class="pexport-topbar-fields">' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.date')) + '</div><div class="pexport-value">' + pbEscapeHtml(date) + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.time')) + '</div><div class="pexport-value">' + (hasClock ? pbEscapeHtml(clockTimes[0] + ' – ' + endTime) : '—') + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.groupsite')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.site || '—') + '</div></div>' +
+          '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.practitioner')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.practitioner || '—') + '</div></div>' +
+        '</div>' +
+        // Logo slot: text placeholder until real Interreg NWE / Forest4Youth
+        // brand files are supplied — swap the two spans below for <img>s.
+        '<div class="pexport-logos">' +
+          '<span class="pexport-logo-placeholder">Interreg North-West Europe</span>' +
+          '<span class="pexport-logo-placeholder">Forest4Youth</span>' +
+        '</div>' +
       '</div>' +
-      '<div id="print-qr-slot"></div>' +
+
+      '<div class="pexport-title-block">' +
+        '<h1 class="pexport-title">' + pbEscapeHtml(t('pbui.planexport.title')) + '</h1>' +
+        '<div class="pexport-subtitle">' + pbEscapeHtml(subtitle) + '</div>' +
+      '</div>' +
+
+      '<div class="pexport-body">' +
+        '<div class="pexport-timeline">' +
+          '<div class="pexport-col-headers"><span>' + pbEscapeHtml(t('pbui.planexport.col.clock')) + '</span><span>' + pbEscapeHtml(t('pbui.planexport.col.activity')) + '</span></div>' +
+          rowsHTML +
+        '</div>' +
+        '<div class="pexport-sidebar">' +
+          '<div class="pexport-stats-eyebrow">' + pbEscapeHtml(t('pbui.planexport.stats.eyebrow')) + '</div>' +
+          '<div class="pexport-arc-block">' +
+            '<div class="pexport-arc-row">' +
+              '<div class="pexport-arc-donut">' + pbBuildArcDonutSVG(groupTime, items.length) + '</div>' +
+              '<div class="pexport-arc-legend">' + pbBuildArcLegendHTML(groupTime) + '</div>' +
+            '</div>' +
+            '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.arc.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.arc.sub')) + '</div>' +
+          '</div>' +
+          '<div class="pexport-shape-block">' +
+            '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.shape.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.shape.sub')) + '</div>' +
+            pbBuildSessionShapeSVG(pbSession, clockTimes) +
+          '</div>' +
+          '<div class="pexport-materials-block">' +
+            '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.materials.title')) + '</div>' +
+            '<div class="pexport-materials-list">' + materialsHTML + '</div>' +
+          '</div>' +
+          '<div class="pexport-qr-block">' +
+            '<div id="print-qr-slot"></div>' +
+            '<div class="pexport-qr-caption">' + pbEscapeHtml(t('pbui.planexport.qr.caption')) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="pexport-banner">' + pbEscapeHtml(t('pbui.planexport.banner')) + '</div>' +
+
+      '<div class="pexport-footer">' +
+        '<div class="pexport-footer-title">' + pbEscapeHtml(t('pbui.planexport.beforeyougo')) + '</div>' +
+        '<div class="pexport-checklist">' + checklistHTML + '</div>' +
+        '<div class="pexport-footer-bottom">' +
+          '<span>Forest4Youth · Interreg North-West Europe</span>' +
+          '<span>' + pbEscapeHtml(t('pbui.planexport.footer.disclaimer')) + '</span>' +
+          '<span>' + pbEscapeHtml(generated) + '</span>' +
+        '</div>' +
+      '</div>' +
     '</div>';
 
   const qrNode = exportGenerateSessionQRNode();
