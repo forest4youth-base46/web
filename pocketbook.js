@@ -870,23 +870,34 @@ function pbToggleBuilderMobile() {
 }
 
 // ───────── EXPORT (PDF / PNG with QR) ─────────
+// Encodes activities by their index into ACTIVITIES rather than by id
+// string, and uses a plain delimited query string instead of a base64 JSON
+// blob — a full 17-activity session (the entire library, the practical
+// ceiling) stays well under 200 characters this way instead of ~500+, so
+// the printed QR (see exportGenerateSessionQRNode below) never needs more
+// modules than a small, reliably scannable canvas can render crisply.
 function exportBuildSessionURL() {
-  const state = {
-    s: pbSession,
-    m: pbSessionMins,
-    l: typeof currentLang === 'string' ? currentLang : 'en',
-    d: new Date().toISOString().slice(0, 10),
-  };
-  const json = JSON.stringify(state);
-  const b64 = btoa(unescape(encodeURIComponent(json)));
-  return window.location.origin + window.location.pathname + '?s=' + b64 + '#implement/mod-pocket';
+  const idIndex = id => ACTIVITIES.findIndex(a => a.id === id);
+  const order = pbSession.map(idIndex).filter(i => i !== -1);
+  const mins = Object.keys(pbSessionMins)
+    .map(id => [idIndex(id), pbSessionMins[id]])
+    .filter(pair => pair[0] !== -1 && typeof pair[1] === 'number');
+  const params = new URLSearchParams();
+  params.set('s', order.join('.'));
+  if (mins.length) params.set('m', mins.map(pair => pair[0] + ':' + pair[1]).join('.'));
+  params.set('l', typeof currentLang === 'string' ? currentLang : 'en');
+  return window.location.origin + window.location.pathname + '?' + params.toString() + '#implement/mod-pocket';
 }
 function exportGenerateSessionQRNode() {
   if (typeof QRCode === 'undefined') return null;
   const wrap = document.createElement('div');
   new QRCode(wrap, {
     text: exportBuildSessionURL(),
-    width: 52, height: 52,
+    // 2x the old 52px raster — at the worst case (all 17 activities, still
+    // well under version 9/53 modules thanks to the compact encoding above)
+    // this keeps comfortably above 1.5px per module; real sessions (a
+    // handful of activities) land closer to 4-6px per module.
+    width: 104, height: 104,
     colorDark: '#3d5a3e', colorLight: '#ffffff',
     correctLevel: QRCode.CorrectLevel.M,
   });
@@ -2014,36 +2025,35 @@ function pbLoadReflectMeta() {
   try { return JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) { return {}; }
 }
 
-// Restores a session shared via the plan-export QR code / link (the ?s=
-// param built by exportBuildSessionURL()) — order, per-item timing
-// overrides, and language. Distinct from pbLoadSession()'s localStorage
-// path above: this only ever runs when a share link was explicitly opened,
-// so it doesn't conflict with "a returning visitor always starts clean".
+// Restores a session shared via the plan-export QR code / link (the ?s=/
+// ?m=/?l= params built by exportBuildSessionURL()) — order, per-item
+// timing overrides, and language. Distinct from pbLoadSession()'s
+// localStorage path above: this only ever runs when a share link was
+// explicitly opened, so it doesn't conflict with "a returning visitor
+// always starts clean". Deliberately does NOT strip the params afterward —
+// the whole point of the link is that it stays live, so reopening it or
+// simply refreshing the page reproduces the same session every time.
 function pbRestoreSharedSession() {
   try {
     const usp = new URLSearchParams(window.location.search);
     if (!usp.has('s')) return;
-    const json = decodeURIComponent(escape(atob(usp.get('s'))));
-    const state = JSON.parse(json);
-    if (Array.isArray(state.s)) {
-      pbSession = state.s.filter(id => ACTIVITIES.find(a => a.id === id));
-    }
-    if (state.m && typeof state.m === 'object') {
-      const mins = {};
-      Object.keys(state.m).forEach(id => {
-        if (pbSession.indexOf(id) !== -1 && typeof state.m[id] === 'number') {
-          mins[id] = state.m[id];
+    const order = usp.get('s').split('.').filter(Boolean).map(Number);
+    pbSession = order.map(i => ACTIVITIES[i] && ACTIVITIES[i].id).filter(Boolean);
+    const mins = {};
+    const minsParam = usp.get('m');
+    if (minsParam) {
+      minsParam.split('.').filter(Boolean).forEach(pair => {
+        const [iStr, mStr] = pair.split(':');
+        const activity = ACTIVITIES[Number(iStr)];
+        const m = Number(mStr);
+        if (activity && pbSession.indexOf(activity.id) !== -1 && Number.isFinite(m)) {
+          mins[activity.id] = m;
         }
       });
-      pbSessionMins = mins;
     }
-    if (typeof state.l === 'string' && T[state.l]) {
-      setLang(state.l);
-    }
-  } catch (e) {}
-  // Strip ?s= so it isn't re-applied or re-shared on refresh/navigation.
-  try {
-    history.replaceState(null, '', window.location.pathname + window.location.hash);
+    pbSessionMins = mins;
+    const lang = usp.get('l');
+    if (lang && T[lang]) setLang(lang);
   } catch (e) {}
 }
 
