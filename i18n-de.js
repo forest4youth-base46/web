@@ -434,7 +434,6 @@ const T_DE = {
     "ref.int.nar.h": "Narrative Therapie — Externalisierung und Umschreiben",
     "ref.int.nar.p": "Der Schwellengang ist eine Umschreibungsstruktur in physischer Form — von einer Version der Geschichte zu einer anderen durch eine markierte Mitte. Baumrat externalisiert Stimmen und Positionen. Der Wald bietet räumliches Gerüst für narrative Züge, die sonst imaginiert würden.",
     "ref.int.nar.pair": "Passt zu: Schwellengang, Baumrat, sensorische Kartierung.",
-    "footer.changerole": "Perspektive wechseln",
     "pathway.guide.title": "Begleithandbuch",
     "pathway.guide.desc": "Das vollständige Praktiker-Handbuch von Forest4Youth. Theorie, Praxis, klinische Anwendung und professioneller Kontext in 14 Kapiteln.",
     "pathway.guide.cta": "Kapitel durchsuchen →",

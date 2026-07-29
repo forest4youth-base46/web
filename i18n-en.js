@@ -555,7 +555,6 @@ const T_EN = {
     "ref.int.nar.h": "Narrative therapy — externalisation and re-authoring",
     "ref.int.nar.p": "The threshold walk is a re-authoring structure in physical form — moving from one version of the story to another through a marked middle. Tree council externalises voices and positions. The forest provides spatial scaffolding for narrative moves that would otherwise be imagined.",
     "ref.int.nar.pair": "Pairs with: threshold walk, tree council, sensory mapping.",
-    "footer.changerole": "Change perspective",
     "pathway.guide.title": "Companion Guide",
     "pathway.guide.desc": "The full Forest4Youth practitioner handbook. Theory, practice, clinical application, and professional context across 14 chapters.",
     "pathway.guide.cta": "Browse chapters →",

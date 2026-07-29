@@ -155,7 +155,15 @@ function navGoRun() {
 // MODULE & ACTIVITY TOGGLES
 // ─────────────────────────────────────────
 function toggleModule(id) {
-  document.getElementById(id).classList.toggle('open');
+  const card = document.getElementById(id);
+  if (!card) return;
+  const grid = card.closest('.modules-grid');
+  if (grid) {
+    grid.querySelectorAll('.module-card').forEach(c => {
+      if (c !== card) c.classList.remove('open');
+    });
+  }
+  card.classList.toggle('open');
 }
 
 // ─────────────────────────────────────────
