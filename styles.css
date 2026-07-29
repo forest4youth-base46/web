@@ -77,6 +77,24 @@ body::before {
 body[data-role="participant"] [data-role-only="practitioner"] { display: none !important; }
 body[data-role="practitioner"] [data-role-only="participant"] { display: none !important; }
 
+/* The rules above only hide the *wrong* role's content once JS has set
+   data-role on <body> — safe for every [data-role-only] that lives inside
+   a .screen, since .screen defaults to display:none until .active is
+   added by JS regardless. But the persistent nav groups and #entry-screen
+   (which is marked .active directly in the markup, not by JS) have no
+   such default-hidden ancestor, so both variants render together for as
+   long as the page takes to parse and run the scripts that set data-role
+   — briefly showing Plan/Run/Reflect/Reference stacked with the
+   participant nav links, and both entry-screen pathway lists stacked on
+   the main screen. Default these two spots to hidden and opt back in
+   per role, so there's never a frame where both show. */
+.site-nav-group[data-role-only],
+#entry-screen > [data-role-only] { display: none; }
+body[data-role="practitioner"] .site-nav-group[data-role-only="practitioner"] { display: flex; }
+body[data-role="participant"] .site-nav-group[data-role-only="participant"] { display: flex; }
+body[data-role="practitioner"] #entry-screen > [data-role-only="practitioner"],
+body[data-role="participant"] #entry-screen > [data-role-only="participant"] { display: block; }
+
 /* ── HEADER ── */
 header {
   padding: 28px 0 20px;
