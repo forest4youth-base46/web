@@ -820,9 +820,6 @@ body.no-scroll { overflow: hidden; }
 .module-card:not(.is-door) .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
-/* No language toggle inside a focused module — it carries whatever
-   language was active on the screen you opened it from. */
-body.module-focus .lang-bar { display: none; }
 .screen.focus-mode .section-header,
 .screen.focus-mode > .back-btn { display: none; }
 .screen.focus-mode .modules-grid { display: block; grid-template-columns: 1fr; }
