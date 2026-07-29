@@ -3274,6 +3274,26 @@ body.is-exporting-png #print-session, body.is-exporting-png #print-report { left
   .header-controls { margin-left: 0; }
   .search-trigger-label { display: none; }
   .search-trigger-kbd { display: none; }
+
+  /* Run Mode's illustration as the visual centerpiece of the step. Bleeds
+     out to the card's full outer edge (cancelling .pb-run-card's own
+     side padding) rather than sitting narrower inside it, so it renders
+     at its biggest — a fixed min-height would just leave empty space
+     above/below instead, since the illustration's own aspect ratio is
+     wide and short. */
+  .pb-run-card { padding-left: 0; padding-right: 0; }
+  .pb-run-card > *:not(.pb-run-visual) { padding-left: 34px; padding-right: 34px; }
+  .pb-run-visual { border-radius: 0; border-left: none; border-right: none; margin: 4px 0 24px; }
+
+  /* Phone-only density pass. `zoom` (not `transform`) is used deliberately:
+     it triggers a real re-layout at the reduced scale rather than a
+     post-layout visual transform, so it shrinks type, spacing, and total
+     scroll height together in one step — instead of hunting down every
+     hardcoded font-size in this file individually, which is most of them.
+     Support: Chromium/Android WebView, Safari 16.4+, Firefox 126+ — i.e.
+     effectively every mobile browser this size range targets. Scoped to
+     this existing ≤768px breakpoint only, so nothing above it changes. */
+  body { zoom: 0.75; }
 }
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
