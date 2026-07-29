@@ -387,6 +387,115 @@ function pbAggregateMaterials(session) {
   });
   return out;
 }
+
+// ───────── SESSION-PLAN EXPORT: CHARTS ─────────
+// Hand-rolled SVG (no chart library) — consistent with the rest of this
+// codebase's SVG illustrations, and keeps these self-contained for
+// html2canvas to rasterize regardless of where they're injected (they end
+// up in #print-session, outside .pb-host — see the PB_GROUP_COLORS comment
+// above on why the color values still resolve correctly there).
+
+// Arc-distribution donut: one stroke-dasharray segment per non-empty group,
+// colored with PB_GROUP_COLORS, rotated so the first segment starts at 12
+// o'clock. Center text shows the total minutes + activity count.
+function pbBuildArcDonutSVG(groupTime, activityCount) {
+  const sumTime = groupTime.reduce((s, x) => s + x, 0) || 1;
+  const cx = 100, cy = 100, r = 72, strokeWidth = 26;
+  const circumference = 2 * Math.PI * r;
+  let cumulative = 0;
+  const segments = [];
+  for (let g = 1; g <= 5; g++) {
+    if (!groupTime[g]) continue;
+    const frac = groupTime[g] / sumTime;
+    const dash = frac * circumference;
+    segments.push(
+      `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PB_GROUP_COLORS[g]}" ` +
+      `stroke-width="${strokeWidth}" stroke-dasharray="${dash} ${circumference - dash}" ` +
+      `stroke-dashoffset="${-cumulative}"/>`
+    );
+    cumulative += dash;
+  }
+  return (
+    `<svg viewBox="0 0 200 200" width="200" height="200" xmlns="http://www.w3.org/2000/svg">` +
+      `<g transform="rotate(-90 ${cx} ${cy})">${segments.join('')}</g>` +
+      `<text x="${cx}" y="${cy - 6}" text-anchor="middle" font-family="'Montserrat', sans-serif" ` +
+        `font-size="34" font-weight="600" fill="#14302A">${sumTime}</text>` +
+      `<text x="${cx}" y="${cy + 18}" text-anchor="middle" font-family="'Open Sans', sans-serif" ` +
+        `font-size="12" fill="#4D6359">${pbEscapeHtml(t('pbui.export.activitiesword').replace(/^/, activityCount + ' '))}</text>` +
+    `</svg>`
+  );
+}
+
+// Legend rows for the donut — one per non-empty group, colored dot + group
+// title + share of total minutes as a percentage. Plain HTML (not SVG),
+// meant to sit beside pbBuildArcDonutSVG's output.
+function pbBuildArcLegendHTML(groupTime) {
+  const sumTime = groupTime.reduce((s, x) => s + x, 0) || 1;
+  const rows = [];
+  for (let g = 1; g <= 5; g++) {
+    if (!groupTime[g]) continue;
+    const pct = Math.round((groupTime[g] / sumTime) * 100);
+    const title = pbGroupT(GROUPS[g - 1], 'title');
+    rows.push(
+      `<div class="pexport-legend-row">` +
+        `<span class="pexport-legend-dot" style="background:${PB_GROUP_COLORS[g]}"></span>` +
+        `<span class="pexport-legend-label">${pbEscapeHtml(title)}</span>` +
+        `<span class="pexport-legend-pct">${pct}%</span>` +
+      `</div>`
+    );
+  }
+  return rows.join('');
+}
+
+// Session-shape chart: each session activity's group-intensity value
+// (GROUPS[].intensity, see pocketbook-data.js) plotted in session order, an
+// area+line chart. X positions use real elapsed time when clockTimes has
+// values (see pbComputeClockTimes), falling back to even spacing across the
+// session when there's no start time — the chart works either way.
+function pbBuildSessionShapeSVG(session, clockTimes) {
+  const w = 460, h = 130, padX = 8, padY = 14;
+  const activities = session.map(id => ACTIVITIES.find(a => a.id === id)).filter(Boolean);
+  if (!activities.length) return '';
+
+  const hasClock = clockTimes.every(c => c != null);
+  let xPositions;
+  if (hasClock) {
+    const toMins = (hhmm) => { const [h2, m2] = hhmm.split(':').map(Number); return h2 * 60 + m2; };
+    const starts = clockTimes.map(toMins);
+    const ends = activities.map((a, i) => starts[i] + pbGetItemMins(a.id));
+    const totalSpan = Math.max(1, ends[ends.length - 1] - starts[0]);
+    xPositions = starts.map(s => padX + ((s - starts[0]) / totalSpan) * (w - padX * 2));
+  } else {
+    xPositions = activities.map((_, i) =>
+      activities.length === 1 ? w / 2 : padX + (i / (activities.length - 1)) * (w - padX * 2)
+    );
+  }
+
+  const yFor = (intensity) => padY + (1 - intensity) * (h - padY * 2);
+  const points = activities.map((a, i) => {
+    const grp = GROUPS[a.group - 1];
+    return { x: xPositions[i], y: yFor(grp ? grp.intensity : 0.5) };
+  });
+
+  const linePath = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+  const areaPath =
+    'M' + points[0].x.toFixed(1) + ',' + (h - padY).toFixed(1) + ' ' +
+    points.map(p => 'L' + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ') +
+    ' L' + points[points.length - 1].x.toFixed(1) + ',' + (h - padY).toFixed(1) + ' Z';
+
+  const dots = points.map(p =>
+    `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="#234A3E"/>`
+  ).join('');
+
+  return (
+    `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">` +
+      `<path d="${areaPath}" fill="#7FA396" fill-opacity="0.25" stroke="none"/>` +
+      `<path d="${linePath}" fill="none" stroke="#234A3E" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>` +
+      dots +
+    `</svg>`
+  );
+}
+
 function pbAdjustItemMins(id, delta) {
   const next = Math.max(5, Math.min(120, pbGetItemMins(id) + delta));
   pbSessionMins[id] = next;
