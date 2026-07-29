@@ -873,12 +873,13 @@ function pbToggleBuilderMobile() {
 function exportBuildSessionURL() {
   const state = {
     s: pbSession,
+    m: pbSessionMins,
     l: typeof currentLang === 'string' ? currentLang : 'en',
     d: new Date().toISOString().slice(0, 10),
   };
   const json = JSON.stringify(state);
   const b64 = btoa(unescape(encodeURIComponent(json)));
-  return window.location.origin + window.location.pathname + '?s=' + b64;
+  return window.location.origin + window.location.pathname + '?s=' + b64 + '#implement/mod-pocket';
 }
 function exportGenerateSessionQRNode() {
   if (typeof QRCode === 'undefined') return null;
@@ -1965,13 +1966,48 @@ function pbLoadReflectMeta() {
   try { return JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) { return {}; }
 }
 
+// Restores a session shared via the plan-export QR code / link (the ?s=
+// param built by exportBuildSessionURL()) — order, per-item timing
+// overrides, and language. Distinct from pbLoadSession()'s localStorage
+// path above: this only ever runs when a share link was explicitly opened,
+// so it doesn't conflict with "a returning visitor always starts clean".
+function pbRestoreSharedSession() {
+  try {
+    const usp = new URLSearchParams(window.location.search);
+    if (!usp.has('s')) return;
+    const json = decodeURIComponent(escape(atob(usp.get('s'))));
+    const state = JSON.parse(json);
+    if (Array.isArray(state.s)) {
+      pbSession = state.s.filter(id => ACTIVITIES.find(a => a.id === id));
+    }
+    if (state.m && typeof state.m === 'object') {
+      const mins = {};
+      Object.keys(state.m).forEach(id => {
+        if (pbSession.indexOf(id) !== -1 && typeof state.m[id] === 'number') {
+          mins[id] = state.m[id];
+        }
+      });
+      pbSessionMins = mins;
+    }
+    if (typeof state.l === 'string' && T[state.l]) {
+      setLang(state.l);
+    }
+  } catch (e) {}
+  // Strip ?s= so it isn't re-applied or re-shared on refresh/navigation.
+  try {
+    history.replaceState(null, '', window.location.pathname + window.location.hash);
+  } catch (e) {}
+}
+
 // (init invoked by pbInit() in main script)
 function pbInit() {
   if (window.__pbInited) return;
   window.__pbInited = true;
   // pbLoadSession()/pbSessionMins intentionally NOT loaded from
   // localStorage: count always starts at 0 on page load so a returning
-  // user is never shown a stale plan.
+  // user is never shown a stale plan. A shared session (?s= from a QR/
+  // export link) is a separate, explicit path — restore that instead.
+  pbRestoreSharedSession();
   pbRenderGroups();
   pbRenderFilters();
   pbRenderAdaptations();

@@ -591,6 +591,15 @@ body.no-scroll { overflow: hidden; }
   margin-bottom: 16px;
   align-items: start;
 }
+/* "What is FBT?", "Before your first session", and "Learn More" are all
+   accordion-style card stacks (see toggleModule() in router.js) — force
+   single-column at every viewport width instead of the auto-fit default
+   above, which would otherwise sit cards side by side on wider screens. */
+#pwhat-screen .modules-grid,
+#pbefore-screen .modules-grid,
+#learn-screen .modules-grid {
+  grid-template-columns: 1fr;
+}
 /* Reflect's remaining module-cards (self-reflection, indicators — glossary
    was removed) stack single-column too, and drop the boxed card look
    entirely: no border/background/radius, just open content separated by a
@@ -806,18 +815,6 @@ body.no-scroll { overflow: hidden; }
 
 .module-body { display: none; padding: 0 20px 20px; border-top: 1px solid var(--forest-mist); }
 .module-card.open .module-body { display: block; }
-/* Every .module-card in this codebase that ISN'T a genuine door module
-   (Reference's indications/contraindications/populations/dosage/
-   integration, Learn's what/evidence/contra, the participant screens'
-   cards, and — as of this branch — Reflect's self-reflection/indicators/
-   glossary) has no .module-header/toggle button at all, so nothing ever
-   adds .open to it and nothing ever focuses it via the door-navigation
-   system either. Confirmed this makes their content permanently
-   invisible as shipped, on main as well as this branch — not new
-   breakage, a pre-existing bug this rule fixes. True door modules
-   (mod-pocket/mod-plan/mod-pre/mod-adapt, still in DOOR_MODULES in
-   router.js) keep the hidden-until-focused default. */
-.module-card:not(.is-door) .module-body { display: block; }
 
 /* ── MODULE-AS-PAGE (door mode) ── */
 .screen.focus-mode .section-header,
@@ -1355,29 +1352,6 @@ body.no-scroll { overflow: hidden; }
 .check-item input[type="checkbox"] { margin-top: 2px; accent-color: var(--forest-deep); width: 15px; height: 15px; flex-shrink: 0; }
 .check-item label { font-size: 13px; color: var(--ink); line-height: 1.55; cursor: pointer; font-weight: 300; }
 .checklist-note { font-size: 11.5px; color: var(--ink-faint); margin-top: 12px; font-style: italic; }
-
-/* ── FOOTER ── */
-footer {
-  margin-top: 80px;
-  padding: 28px 0 36px;
-  border-top: 1px solid var(--forest-mist);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-footer p { font-size: 11.5px; color: var(--ink-faint); font-weight: 400; letter-spacing: 0.04em; }
-.f4y-badge {
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--forest-deep);
-  border: 1px solid var(--forest-mist);
-  padding: 4px 12px;
-  border-radius: var(--r-pill);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 
 /* ── ANIMATION ── */
 @keyframes fadeUp {

@@ -509,7 +509,6 @@ const T_FR = {
     "ref.int.nar.h": "Thérapie narrative — externalisation et ré-écriture",
     "ref.int.nar.p": "La marche du seuil est une structure de ré-écriture en forme physique — passer d'une version de l'histoire à une autre à travers un milieu marqué. Le conseil des arbres externalise voix et positions. La forêt fournit un échafaudage spatial pour des mouvements narratifs qui seraient autrement imaginés.",
     "ref.int.nar.pair": "S'associe avec : marche du seuil, conseil des arbres, cartographie sensorielle.",
-    "footer.changerole": "Changer de perspective",
     "pathway.guide.title": "Guide d'accompagnement",
     "pathway.guide.desc": "Le manuel complet du praticien Forest4Youth. Théorie, pratique, application clinique et contexte professionnel en 14 chapitres.",
     "pathway.guide.cta": "Parcourir les chapitres →",
