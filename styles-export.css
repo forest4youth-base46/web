@@ -1,0 +1,159 @@
+/* ─── styles-export.css: the off-screen PDF/PNG export templates
+   (#print-session / #print-report), rasterized by html2canvas — not
+   seen in normal app use. ─── */
+
+/* ─── SESSION-PLAN EXPORT (redesigned template) ───
+   Shared by both #print-session and #print-report — see the comment above
+   exportRenderPrintReport() in pocketbook-export.js for which classes below are
+   common vs. report-only. */
+.pexport { font-family: 'Open Sans', sans-serif; color: #1B2A24; }
+
+.pexport-topbar {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; padding-bottom: 8px; border-bottom: 1px solid #C8D8D0;
+  margin-bottom: 8px;
+}
+.pexport-topbar-fields { display: flex; flex-direction: column; gap: 10px; }
+.pexport-meta-row { display: flex; gap: 26px; flex-wrap: wrap; }
+.pexport-meta-block { min-width: 70px; max-width: 150px; }
+.pexport-label {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #7C8E85; margin-bottom: 3px;
+}
+.pexport-value {
+  font-size: 13px; font-weight: 600; color: #14302A;
+  overflow-wrap: break-word; word-break: break-word;
+}
+.pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
+.pexport-logo-img { height: 115px; width: auto; display: block; } /* 125px - 8% */
+
+.pexport-title-block { margin-bottom: 8px; }
+.pexport-title {
+  font-family: 'Playfair Display', Georgia, serif; font-size: 30px; font-weight: 600;
+  color: #14302A; margin: 0 0 4px; letter-spacing: -0.01em;
+}
+.pexport-subtitle { font-size: 12.5px; color: #4D6359; }
+
+.pexport-body { display: flex; gap: 24px; align-items: flex-start; }
+.pexport-timeline { flex: 1; min-width: 0; }
+.pexport-sidebar { width: 240px; flex-shrink: 0; }
+
+.pexport-col-headers {
+  display: flex; gap: 12px; padding-bottom: 6px; margin-bottom: 4px;
+  border-bottom: 1px solid #C8D8D0;
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: #7C8E85;
+}
+.pexport-col-headers span:first-child { width: 56px; flex-shrink: 0; }
+
+.pexport-row {
+  display: flex; gap: 10px; padding: 3px 0;
+  border-bottom: 1px solid #eee; page-break-inside: avoid;
+}
+.pexport-row-clock { width: 56px; flex-shrink: 0; }
+.pexport-row-clock-time { font-size: 13px; font-weight: 700; color: #14302A; }
+.pexport-row-clock-dur { font-size: 10px; color: #7C8E85; margin-top: 1px; }
+.pexport-row-bar { width: 3px; border-radius: 2px; align-self: stretch; flex-shrink: 0; }
+.pexport-row-main { flex: 1; min-width: 0; }
+.pexport-row-heading { font-size: 13px; font-weight: 600; color: #14302A; }
+.pexport-row-num { color: #7C8E85; font-weight: 600; margin-right: 2px; }
+.pexport-row-group { font-size: 10.5px; font-style: italic; color: #4D6359; margin: 2px 0 3px; }
+.pexport-row-purpose { font-size: 11px; color: #333; line-height: 1.4; margin-bottom: 3px; }
+.pexport-row-quote {
+  font-family: 'Caveat', cursive; font-size: 16px; font-weight: 600;
+  color: #3A4F47; line-height: 1.25;
+  border-left: 2px solid #ddd; padding-left: 8px;
+}
+.pexport-row-note {
+  font-size: 11px; font-style: italic; color: #555; line-height: 1.4;
+  border-left: 2px solid #ddd; padding-left: 8px;
+}
+
+.pexport-stats-eyebrow {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #7C8E85; margin-bottom: 10px;
+}
+.pexport-arc-block, .pexport-shape-block, .pexport-materials-block { margin-bottom: 16px; }
+.pexport-arc-row { display: flex; align-items: center; gap: 10px; }
+.pexport-arc-donut { flex-shrink: 0; width: 72px; height: 72px; }
+.pexport-arc-donut svg { width: 100%; height: 100%; display: block; }
+.pexport-arc-legend { flex: 1; min-width: 0; }
+.pexport-legend-row { display: flex; align-items: center; gap: 5px; font-size: 9.5px; color: #4D6359; margin-bottom: 3px; }
+.pexport-legend-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.pexport-legend-label { flex: 1; min-width: 0; }
+.pexport-legend-pct { font-weight: 600; color: #14302A; }
+.pexport-section-label {
+  font-size: 9px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #7C8E85; margin-top: 8px; margin-bottom: 6px;
+}
+.pexport-shape-block svg { width: 100%; height: auto; display: block; margin-top: 6px; }
+.pexport-materials-list { margin: 6px 0 0; font-size: 10.5px; color: #333; line-height: 1.4; }
+.pexport-materials-row { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; }
+.pexport-materials-row .pexport-checkbox { margin-top: 2px; }
+
+.pexport-qr-block { display: flex; gap: 10px; align-items: center; }
+.pexport-qr-block #print-qr-slot { flex-shrink: 0; }
+.pexport-qr-caption { font-size: 9px; color: #7C8E85; line-height: 1.4; }
+
+.pexport-banner {
+  margin: 6px 0; padding: 6px 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  border-top: 1px solid #C8D8D0; border-bottom: 1px solid #C8D8D0;
+  font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #234A3E; font-weight: 600;
+}
+.pexport-banner-total { font-size: 11px; text-transform: none; letter-spacing: normal; }
+
+.pexport-footer-title {
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #7C8E85; margin-bottom: 6px;
+}
+.pexport-checklist {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; margin-bottom: 10px;
+}
+.pexport-check-item {
+  display: flex; align-items: flex-start; gap: 6px;
+  font-size: 10px; color: #333; line-height: 1.35;
+}
+.pexport-checkbox {
+  width: 9px; height: 9px; border: 1px solid #999; border-radius: 2px;
+  flex-shrink: 0; margin-top: 2px;
+}
+.pexport-footer-bottom {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding-top: 40px; border-top: 1px solid #234A3E; /* ~2 lines of clear space above the rule */
+  font-size: 9.5px; color: #7C8E85;
+}
+
+/* Paginated PDF pages only (see pbBuildSessionPaginatedCanvases()/
+   pbBuildReportPaginatedCanvases() in pocketbook-export.js) — the continuous
+   on-screen/PNG render doesn't use this, since it isn't broken into fixed-
+   height pages. Each page gets a fixed height (one full A4 content area)
+   and the footer is pinned to the true bottom via the auto margin, instead
+   of trailing right after wherever that page's content happens to end. */
+.pexport--paged { display: flex; flex-direction: column; }
+.pexport--paged > * { flex-shrink: 0; } /* flex items default to shrinkable — without this, content silently compresses/clips to fit the fixed page height instead of the packer's page break ever kicking in */
+.pexport--paged > .pexport-footer-bottom { margin-top: auto; }
+/* Session-plan pages only: when the trailing banner+checklist lands on a
+   page, it travels together with the footer-bottom line as one connected
+   unit pushed to the bottom — not the footer-bottom line alone, which
+   would leave a large disconnected gap between the checklist and the
+   thin footer rule below it. */
+.pexport--paged > .pexport-tail-anchor { margin-top: auto; }
+
+/* ─── POST-SESSION REPORT (same .pexport visual language, single-column —
+   no chart sidebar, since the point here is giving notes/free-text room
+   rather than at-a-glance stats). Reuses .pexport-row/-section-label/
+   -footer-bottom etc. above as-is; these are the report-only additions. */
+.pexport-notes-card {
+  margin: 4px 0 18px; padding: 12px 14px;
+  background: #F4F8F6; border: 1px solid #C8D8D0; border-left: 3px solid #7FA396;
+  border-radius: 4px;
+}
+.pexport-notes-text {
+  margin-top: 4px; font-size: 12px; color: #333; line-height: 1.55;
+  white-space: pre-wrap;
+}
+.pexport-qa-card { padding: 9px 0; border-bottom: 1px solid #eee; page-break-inside: avoid; }
+.pexport-qa-q { font-size: 12.5px; font-weight: 600; color: #14302A; }
+.pexport-qa-a { margin-top: 3px; font-size: 12px; color: #333; line-height: 1.5; white-space: pre-wrap; }
+.pexport-indicator-item { padding: 3px 0; font-size: 11px; color: #666; }
+.pexport-indicator-item.is-checked { color: #14302A; font-weight: 600; }
+

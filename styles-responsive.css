@@ -1,0 +1,180 @@
+/* ─── styles-responsive.css: every media query, covering selectors defined
+   in all four files above. MUST load last — several rules here rely on
+   normal cascade order (later rule wins at equal specificity), not just
+   the !important ones, to override the base (desktop) rules. ─── */
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1100px) {
+  .pb-host { grid-template-columns: 1fr; padding-bottom: 88px; }
+
+  /* Builder on mobile: popup that grows OUT of the FAB. Ironclad hide
+     when not .expanded — visibility:hidden + opacity:0 + scale near 0 +
+     pointer-events:none. The visibility transition is delayed so the
+     element only becomes hittable AFTER it has finished animating in. */
+  .pb-builder {
+    position: fixed !important;
+    bottom: 96px !important;          /* clears the 64px circular FAB */
+    left: 16px !important;
+    right: 16px !important;
+    top: auto !important;
+    max-height: calc(var(--vh, 1vh) * 70);
+    overflow-y: auto;
+    border-radius: var(--pb-r-lg);
+    transform-origin: bottom right;
+    transform: scale(0.05);
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0.22s;
+    z-index: 50;
+    pointer-events: none;
+    box-shadow: var(--shadow-lg);
+  }
+  .pb-builder.expanded {
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0s;
+    pointer-events: auto;
+  }
+  .pb-builder-header { cursor: pointer; }
+
+  /* Dims and separates the page content behind the popup so it reads as
+     a modal rather than a box floating on top of the activity list. */
+  .pb-builder-backdrop {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(20,48,42,0.45);
+    z-index: 45;               /* below .pb-builder (50), above page content */
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+  }
+  .pb-builder-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.22s ease, visibility 0s linear 0s;
+  }
+
+  /* Circular FAB. Just a number on a forest-ink disc. No icon.
+     env(safe-area-inset-*) keeps it clear of a phone's gesture-nav bar
+     / rounded corners (the inset is 0 on devices without one, so this
+     is never less than the plain 16px). */
+  .pb-fab {
+    position: fixed;
+    right: max(16px, calc(16px + env(safe-area-inset-right)));
+    bottom: max(16px, calc(16px + env(safe-area-inset-bottom)));
+    z-index: 60;                /* above .pb-builder (50), below run-mode (200) */
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--forest-ink);
+    color: white;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .pb-fab.bump { animation: pbFabBump 0.32s ease; }
+  .pb-fab.open { transform: scale(0.92); opacity: 0.9; }
+  .pb-fab-count {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    transform-origin: center;
+    display: inline-block;
+  }
+  .pb-fab-count.bump { animation: pbFabCountBump 0.34s ease; }
+
+  /* Visibility gates — FAB only renders while the pocketbook module is
+     the focused module. Run-mode hides both FAB and builder.
+     Class/attribute selectors (not :has()) for compatibility with the
+     older WebView used by the Odoo embed test path. */
+  body[data-focused="mod-pocket"] .pb-fab { display: inline-flex; }
+  body.pb-run-active .pb-fab,
+  body.pb-run-active .pb-builder,
+  body.pb-run-active .pb-builder-backdrop { display: none !important; }
+  /* Hard guard: builder cannot be expanded outside the pocketbook. */
+  body:not([data-focused="mod-pocket"]) .pb-builder {
+    transform: scale(0.05) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  body:not([data-focused="mod-pocket"]) .pb-builder-backdrop {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+@media (max-width: 768px) {
+  #site-header {
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    will-change: transform;
+  }
+  #site-header.header-hidden {
+    transform: translateY(-110%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
+  .lang-bar {
+    position: static;
+    margin-left: auto;
+    top: auto; right: auto;
+  }
+  /* Nav and controls each take the full row on narrow screens, stacked
+     under the title, rather than fighting it for horizontal space. */
+  .site-nav, .header-controls { flex-basis: 100%; }
+  .header-controls { margin-left: 0; }
+  .search-trigger-label { display: none; }
+  .search-trigger-kbd { display: none; }
+
+  /* Belt-and-suspenders against horizontal scroll. body already had
+     overflow-x: hidden, which is enough in a standalone tab, but this
+     app is normally viewed inside a host page's <iframe> — an iframe is
+     its own scroll container, and doesn't reliably inherit/propagate a
+     same-origin-looking-but-actually-separate document's root-scroller
+     behavior the exact same way every mobile engine does. Repeating the
+     clamp on html and on .container directly means there's no path left
+     for a stray wide element to force a scrollbar the host page has to
+     render around. */
+  html, body { overflow-x: hidden; max-width: 100%; }
+  .container { overflow-x: hidden; max-width: 100%; }
+
+  /* Run Mode's illustration as the visual centerpiece of the step. Bleeds
+     out to the card's full outer edge (cancelling .pb-run-card's own
+     side padding) rather than sitting narrower inside it, so it renders
+     at its biggest — a fixed min-height would just leave empty space
+     above/below instead, since the illustration's own aspect ratio is
+     wide and short. */
+  .pb-run-card { padding-left: 0; padding-right: 0; }
+  .pb-run-card > *:not(.pb-run-visual) { padding-left: 34px; padding-right: 34px; }
+  .pb-run-visual { border-radius: 0; border-left: none; border-right: none; margin: 4px 0 24px; }
+
+  /* Phone-only density pass. `zoom` (not `transform`) is used deliberately:
+     it triggers a real re-layout at the reduced scale rather than a
+     post-layout visual transform, so it shrinks type, spacing, and total
+     scroll height together in one step — instead of hunting down every
+     hardcoded font-size in this file individually, which is most of them.
+     Support: Chromium/Android WebView, Safari 16.4+, Firefox 126+ — i.e.
+     effectively every mobile browser this size range targets. Scoped to
+     this existing ≤768px breakpoint only, so nothing above it changes. */
+  body { zoom: 0.75; }
+}
+@media (max-width: 640px) {
+  .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
+  .pb-detail-grid { grid-template-columns: 1fr; gap: 4px 0; }
+  .pb-detail-label { padding-top: 12px; }
+  .pb-detail-grid > div:first-child { padding-top: 0; }
+  .pb-adapt-row { grid-template-columns: 1fr; gap: 8px; padding: 16px 18px; }
+  .pb-group-title { font-size: 18px; }
+  .pb-group-num { font-size: 22px; }
+}
+

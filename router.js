@@ -71,8 +71,9 @@ function applyRoute() {
   // wired to focus them — meaning their content was permanently invisible
   // (module-body defaults to display:none; only .open or door-focus-mode
   // reveals it, and neither ever applied to them). Reflect is now one
-  // continuous page instead, so they're plain always-visible cards — see
-  // the :not(.is-door) rule in styles.css.
+  // continuous page instead, so they're plain always-visible cards, styled
+  // directly in styles-screens.css (#reflect-screen .module-card) rather
+  // than relying on the door-focus mechanism.
   const DOOR_MODULES = ['mod-pre','mod-plan','mod-pocket','mod-adapt'];
   if (moduleId && DOOR_MODULES.indexOf(moduleId) !== -1) {
     applyFocusMode(target, moduleId);

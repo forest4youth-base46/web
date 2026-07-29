@@ -39,7 +39,11 @@ No build step required. Open `index.html` directly, or serve the folder with any
 .
 ├── index.html            # HTML shell: page structure, markup for every screen
 ├── tokens.css            # design tokens (colors, spacing, radii, shadows)
-├── styles.css            # everything else: layout, components, responsive rules
+├── styles-base.css       # resets, site chrome — header, nav, search dialog
+├── styles-screens.css    # entry/reference/participant/reflect screens
+├── styles-pocketbook.css # the Pocketbook module: filters, Session Builder, Run Mode
+├── styles-export.css     # off-screen PDF/PNG export templates
+├── styles-responsive.css # every media query — loads last, order matters
 ├── content.js            # assembles T from the packs below + i18n helpers (t(), setLang())
 ├── i18n-en.js            # English language pack (source strings)
 ├── i18n-fr.js            # French language pack
@@ -140,9 +144,9 @@ into a specific screen or role by setting the iframe's `src`:
   query string in the usual way, e.g. `index.html?role=practitioner#implement/mod-pocket`.
 
 **Older WebView note.** The production embed has been tested against an
-older/non-evergreen WebView (see the comments in `styles.css` and
-`router.js` around `data-focused`), so avoid relying on very recent CSS/JS
-features (e.g. `:has()`) anywhere in this app without checking that
+older/non-evergreen WebView (see the comments in `styles-responsive.css`
+and `router.js` around `data-focused`), so avoid relying on very recent
+CSS/JS features (e.g. `:has()`) anywhere in this app without checking that
 context first.
 
 ---

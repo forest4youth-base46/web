@@ -1,0 +1,1123 @@
+/* ─── styles-pocketbook.css: the Pocketbook module itself — activity
+   filters/groups/detail, the Session Builder, Run Mode, and their
+   supporting modals (timer, toast). See styles-export.css for the
+   PDF/PNG export template's own styling. ─── */
+
+/* ─── FILTERS (group + suitability/duration chips) ─── */
+.pb-filters { margin-bottom: 24px; }
+.pb-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.pb-filter-row + .pb-filter-row { margin-top: 8px; }
+.pb-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  min-height: 44px;
+  border-radius: var(--pb-r-pill);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pb-filter-chip:hover { border-color: var(--forest-soft); }
+.pb-filter-chip[aria-pressed="true"] {
+  background: var(--forest-deep);
+  border-color: var(--forest-deep);
+  color: #fff;
+}
+.pb-filter-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.pb-filter-chip-quick { font-weight: 600; }
+.pb-filter-toggle-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.pb-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 4px;
+  min-height: 44px;
+  border: none;
+  background: transparent;
+  color: var(--forest-mid);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pb-filter-toggle:hover { color: var(--forest-deep); }
+.pb-filter-clear-btn {
+  padding: 6px 10px;
+  min-height: 44px;
+  border-radius: var(--pb-r-sm);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--ink-soft);
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.pb-filter-clear-btn:hover:not(:disabled) { border-color: var(--forest-soft); color: var(--forest-deep); }
+.pb-filter-clear-btn:disabled { opacity: 0.4; cursor: default; }
+.pb-filter-tags[hidden] { display: none; }
+.pb-filter-summary {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ink-faint);
+}
+.pb-filter-empty {
+  padding: 32px 14px;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 13px;
+  border: 1px dashed var(--forest-mist);
+  border-radius: var(--pb-r-md);
+}
+
+/* ─── GROUPS ─── */
+.pb-group { margin-bottom: 36px; }
+.pb-group:last-of-type { margin-bottom: 16px; }
+
+.pb-group-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--forest-mist);
+}
+.pb-group-headline { display: flex; align-items: baseline; gap: 12px; }
+.pb-group-num {
+  font-family: 'Caveat', cursive;
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--forest-soft);
+  line-height: 1;
+}
+.pb-group-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  letter-spacing: -0.005em;
+}
+.pb-group-meta {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+
+/* ─── ACTIVITY ITEMS (pocketbook variant — overrides existing in .pb-host) ─── */
+.pb-host .pb-activity-list { display: flex; flex-direction: column; gap: 8px; }
+
+.pb-host .pb-activity-item {
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-md);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.pb-host .pb-activity-item:hover { border-color: var(--forest-soft); box-shadow: var(--shadow-sm); }
+.pb-host .pb-activity-item.open { border-color: var(--forest-mid); box-shadow: var(--shadow-md); }
+
+.pb-host .pb-activity-trigger {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  background: transparent;
+  justify-content: flex-start;
+}
+.pb-host .pb-activity-item.open .pb-activity-trigger { background: var(--paper-card); border-bottom: 1px solid var(--forest-mist); }
+
+.pb-activity-glyph {
+  width: 30px; height: 30px;
+  flex-shrink: 0;
+  color: var(--forest-mid);
+  display: flex; align-items: center; justify-content: center;
+}
+.pb-activity-glyph svg { width: 100%; height: 100%; }
+
+.pb-host .pb-activity-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  flex: 1;
+  letter-spacing: -0.005em;
+}
+
+.pb-activity-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+}
+
+.pb-host .pb-activity-duration {
+  font-size: 11px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pb-timer-icon {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  color: var(--forest-mid);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.pb-timer-icon:hover {
+  background: var(--pb-ember);
+  border-color: var(--pb-ember);
+  color: white;
+  transform: scale(1.06);
+}
+.pb-timer-icon svg { width: 14px; height: 14px; }
+
+.pb-add-icon {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  color: var(--forest-mid);
+  cursor: pointer;
+  transition: all 0.18s;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 400;
+}
+.pb-add-icon:hover {
+  background: var(--forest-deep);
+  border-color: var(--forest-deep);
+  color: white;
+  transform: scale(1.06);
+}
+.pb-add-icon.in-session {
+  background: var(--forest-deep);
+  border-color: var(--forest-deep);
+  color: white;
+}
+
+.pb-chevron {
+  width: 14px; height: 14px;
+  color: var(--ink-faint);
+  transition: transform 0.25s ease;
+}
+.pb-host .pb-activity-item.open .pb-chevron { transform: rotate(180deg); color: var(--forest-deep); }
+
+/* ─── ACTIVITY DETAIL ─── */
+.pb-host .pb-activity-detail {
+  display: none;
+  padding: 4px 22px 22px 60px;
+  background: var(--paper-pure);
+}
+.pb-host .pb-activity-item.open .pb-activity-detail {
+  display: block;
+  animation: pbSlideDown 0.28s ease;
+}
+@keyframes pbSlideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pb-host .pb-activity-visual {
+  margin: 4px 0 16px;
+  border-radius: var(--pb-r-sm);
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+}
+.pb-host .pb-activity-visual svg { display: block; width: 100%; height: auto; }
+
+/* Run Mode's own visual — same illustrations as the Pocketbook detail
+   view, replayed in a loop (see pbSetRunVisual in pocketbook-activities.js) since
+   a step can stay on screen far longer than the ~2-6s the SMIL
+   animation takes to settle, and a single freeze-frame would read as
+   inert for most of that time. */
+.pb-run-visual {
+  margin: 4px 0 20px;
+  border-radius: var(--pb-r-md, 10px);
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+}
+.pb-run-visual svg { display: block; width: 100%; height: auto; }
+.pb-run-visual:empty { display: none; }
+
+.pb-host .pb-visual-caption {
+  font-size: 11px;
+  color: var(--ink-faint);
+  text-align: center;
+  padding: 7px 14px;
+  font-style: italic;
+  border-top: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  line-height: 1.5;
+}
+
+.pb-detail-grid {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 12px 18px;
+  align-items: start;
+}
+.pb-detail-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--forest-soft);
+  padding-top: 2px;
+}
+.pb-detail-text {
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.65;
+  font-weight: 300;
+}
+.pb-detail-text-example {
+  font-family: 'Caveat', cursive;
+  font-size: 17px;
+  line-height: 1.4;
+  color: var(--forest-deep);
+  font-weight: 500;
+  padding: 10px 14px;
+  background: var(--paper);
+  border-left: 2px solid var(--forest-soft);
+  border-radius: 0 var(--pb-r-sm) var(--pb-r-sm) 0;
+}
+.pb-detail-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.pb-detail-tag {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: var(--pb-r-pill);
+  background: var(--paper);
+  color: var(--forest-deep);
+  border: 1px solid var(--forest-mist);
+  font-weight: 400;
+}
+
+/* ─── ADAPTATIONS TABLE ─── */
+.pb-adaptations {
+  margin-top: 44px;
+  padding-top: 32px;
+  border-top: 1px solid var(--forest-mist);
+}
+.pb-adaptations h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+.pb-adaptations-sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 22px;
+  max-width: 580px;
+}
+.pb-adaptations-table {
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-md);
+  overflow: hidden;
+}
+.pb-adapt-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 22px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--forest-mist);
+}
+.pb-adapt-row:last-child { border-bottom: none; }
+.pb-adapt-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--forest-deep);
+  letter-spacing: -0.005em;
+}
+.pb-adapt-text {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+/* ─── SESSION BUILDER (right rail) ─── */
+/* No max-height/overflow-y here on desktop (unlike the mobile popover
+   version below, which genuinely needs its own scroll since it's a fixed
+   popup capped to a fraction of the viewport) — this rail sits in normal
+   page flow, so it grows with its content and scrolls with the page.
+   The previous fixed max-height forced a second, independent scrollbar
+   inside the sticky sidebar alongside the page's own scrollbar — two
+   scroll regions fighting for wheel/trackpad input on the same screen.
+   overflow:hidden is kept only so the dark header respects the
+   border-radius; it no longer clips any content since there's no height
+   cap to exceed. */
+.pb-builder {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+}
+.pb-builder-header {
+  padding: 18px 20px 16px;
+  background: var(--forest-ink);
+  color: white;
+}
+.pb-builder-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--forest-soft);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.pb-builder-title {
+  font-family: 'Caveat', cursive;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  letter-spacing: 0;
+  line-height: 1;
+}
+.pb-builder-tagline {
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.5;
+}
+
+.pb-builder-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--forest-mist);
+  border-bottom: 1px solid var(--forest-mist);
+}
+.pb-stat {
+  background: var(--paper-card);
+  padding: 12px 16px;
+}
+.pb-stat-label {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.pb-stat-value {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.pb-stat-value .unit {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-weight: 400;
+  margin-left: 2px;
+}
+
+.pb-arc-balance {
+  padding: 12px 20px 14px;
+  background: var(--paper-card);
+  border-bottom: 1px solid var(--forest-mist);
+}
+.pb-arc-label {
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.pb-arc-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+}
+.pb-arc-segment {
+  height: 100%;
+  transition: flex 0.4s ease;
+  min-width: 0;
+}
+.pb-arc-segment[data-group="1"] { background: var(--forest-soft); }
+.pb-arc-segment[data-group="2"] { background: var(--forest-mid); }
+.pb-arc-segment[data-group="3"] { background: var(--forest-deep); }
+.pb-arc-segment[data-group="4"] { background: var(--pb-bark); }
+.pb-arc-segment[data-group="5"] { background: var(--pb-ember); }
+
+.pb-arc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 8px;
+  font-size: 10px;
+  color: var(--ink-faint);
+}
+.pb-arc-legend-item { display: flex; align-items: center; gap: 5px; }
+.pb-arc-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+.pb-arc-advice {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-sm);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--forest-deep);
+}
+.pb-arc-advice:empty { display: none; }
+
+.pb-suggest-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: var(--pb-r-sm);
+  border: 1px dashed var(--forest-soft);
+  background: transparent;
+  color: var(--forest-deep);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.pb-suggest-btn:hover { background: var(--forest-mist); border-style: solid; }
+
+.pb-builder-list {
+  flex: 1;
+  padding: 10px 12px 12px;
+  min-height: 100px;
+}
+.pb-builder-empty {
+  padding: 28px 14px;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.pb-builder-empty-icon {
+  width: 34px; height: 34px;
+  margin: 0 auto 10px;
+  color: var(--forest-soft);
+  opacity: 0.6;
+}
+
+.pb-builder-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  margin-bottom: 6px;
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-sm);
+  transition: all 0.18s;
+  animation: pbSlideIn 0.25s ease;
+}
+.pb-builder-row:hover { border-color: var(--forest-soft); }
+@keyframes pbSlideIn {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.pb-builder-row-handle {
+  color: var(--ink-faint);
+  cursor: grab;
+  flex-shrink: 0;
+  line-height: 1;
+  font-size: 14px;
+  letter-spacing: -2px;
+}
+.pb-builder-row-handle:active { cursor: grabbing; }
+.pb-builder-row-group {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pb-builder-row-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--forest-ink);
+  font-weight: 400;
+  line-height: 1.3;
+  min-width: 0;
+}
+.pb-builder-row-dur {
+  font-size: 10px;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.pb-builder-row-dur-label { white-space: nowrap; }
+/* Per-item minute stepper. Small hit targets here are a deliberate match
+   to this row's pre-existing ▲▼ reorder buttons and × remove button
+   (16×13px / 18×18px respectively) — this dense list already trades hit
+   target size for density, so the stepper follows the same convention
+   rather than introducing a visually inconsistent oversized control next
+   to buttons half its size. Still real <button> elements either way. */
+.pb-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pb-stepper-btn {
+  width: 16px; height: 16px;
+  padding: 0;
+  border: 1px solid var(--forest-mist);
+  border-radius: 3px;
+  background: var(--paper-pure);
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  line-height: 1;
+  font-family: inherit;
+}
+.pb-stepper-btn:hover { background: var(--forest-mist); color: var(--forest-deep); }
+.pb-stepper-val {
+  min-width: 26px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.pb-builder-row-move {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.pb-move-btn {
+  width: 16px; height: 13px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  line-height: 1;
+  border-radius: 3px;
+}
+.pb-move-btn:hover:not(:disabled) { background: var(--forest-mist); color: var(--forest-deep); }
+.pb-move-btn:disabled { opacity: 0.25; cursor: default; }
+
+.pb-builder-row-remove {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: var(--ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.pb-builder-row-remove:hover { background: var(--pb-ember); color: white; }
+
+/* Optional session-details section (start time / group-site /
+   practitioner) feeding the plan export — collapsed by default via native
+   <details>, styled to match the rest of the builder panel. */
+.pb-session-meta {
+  padding: 10px 20px 14px;
+  border-top: 1px solid var(--forest-mist);
+  background: var(--paper-card);
+}
+.pb-session-meta-summary {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--forest-deep);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pb-session-meta-summary::-webkit-details-marker { display: none; }
+.pb-session-meta-summary::before {
+  content: '▸';
+  font-size: 9px;
+  transition: transform 0.15s ease;
+}
+.pb-session-meta[open] .pb-session-meta-summary::before { transform: rotate(90deg); }
+.pb-session-meta-sub {
+  font-size: 11px;
+  color: var(--ink-faint);
+  margin: 6px 0 10px;
+}
+.pb-session-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.pb-session-meta-field:last-child { margin-bottom: 0; }
+.pb-session-meta-field label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+.pb-session-meta-field input {
+  padding: 7px 10px;
+  border-radius: var(--pb-r-sm);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  font-family: inherit;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.pb-session-meta-field input:focus {
+  outline: none;
+  border-color: var(--forest-mid);
+}
+
+.pb-builder-actions {
+  padding: 12px 16px 14px;
+  border-top: 1px solid var(--forest-mist);
+  display: flex;
+  gap: 8px;
+  background: var(--paper-card);
+}
+.pb-builder-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: var(--pb-r-sm);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--forest-deep);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  transition: all 0.18s;
+}
+.pb-builder-btn:hover:not(:disabled) { border-color: var(--forest-mid); color: var(--forest-ink); }
+.pb-builder-btn.primary {
+  background: var(--forest-deep);
+  border-color: var(--forest-deep);
+  color: white;
+}
+.pb-builder-btn.primary:hover:not(:disabled) { background: var(--forest-ink); border-color: var(--forest-ink); }
+.pb-builder-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pb-builder-btn-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* Explanatory reason for the disabled PDF/PNG/Run-mode buttons above —
+   kept always in the DOM (empty string when the plan isn't empty) rather
+   than toggled with [hidden], matching pb-arc-advice's :empty pattern, so
+   a screen reader tracking this aria-live region isn't announced into and
+   back out of existence on every render. */
+.pb-builder-hint {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-style: italic;
+  padding: 0 16px 12px;
+  margin: -4px 0 0;
+}
+.pb-builder-hint:empty { display: none; }
+
+/* ─── RUN MODE (full-screen overlay) ─── */
+.pb-run-mode {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 200;
+  background: var(--paper);
+  flex-direction: column;
+  animation: pbFadeIn 0.25s ease;
+}
+.pb-run-mode.active { display: flex; }
+@keyframes pbFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Breadcrumb strip — same visual weight as a plain header row; see the
+   HTML comment above .pb-run-topbar for why this isn't the actual shared
+   site header (yet). */
+.pb-run-topbar {
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  flex-shrink: 0;
+}
+.pb-run-crumb {
+  font-size: 13px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pb-run-crumb span:last-child { color: var(--ink); font-weight: 600; }
+
+.pb-run-body {
+  flex: 1; overflow-y: auto;
+  padding: 26px 32px 40px;
+}
+.pb-run-headrow {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 14px; flex-wrap: wrap;
+  max-width: 760px; margin: 0 auto 12px;
+}
+.pb-run-step {
+  font-size: 12px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--ink-faint);
+  font-weight: 600;
+}
+.pb-run-dots {
+  list-style: none; margin: 0 auto 22px; padding: 0;
+  max-width: 760px;
+  display: flex; gap: 5px;
+}
+.pb-run-dots li {
+  flex: 1; height: 7px;
+  border-radius: 999px;
+  background: var(--forest-mist);
+}
+.pb-run-dots li.done { background: var(--forest-deep); }
+.pb-run-dots li.current { background: var(--pb-ember); }
+
+.pb-run-card {
+  max-width: 760px; margin: 0 auto;
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-lg, 14px);
+  box-shadow: var(--shadow-md);
+  padding: 30px 34px 26px;
+}
+.pb-run-group-tag {
+  font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--forest-deep);
+  margin-bottom: 14px; font-weight: 600;
+}
+.pb-run-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500; font-size: 34px;
+  color: var(--forest-ink);
+  margin-bottom: 6px; line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.pb-run-duration {
+  font-size: 13px; color: var(--ink-faint);
+  margin-bottom: 26px;
+}
+.pb-run-section { margin-bottom: 22px; }
+.pb-run-section-full { grid-column: 1 / -1; }
+.pb-run-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 4px 26px;
+}
+.pb-run-label {
+  font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--forest-deep);
+  margin-bottom: 6px; font-weight: 600;
+}
+.pb-run-text { font-size: 14.5px; line-height: 1.65; color: var(--ink); }
+.pb-run-intro {
+  font-family: 'Caveat', cursive;
+  font-size: 19px; line-height: 1.4;
+  color: var(--forest-deep);
+  font-weight: 500;
+  padding: 14px 18px;
+  border-left: 3px solid var(--forest-deep);
+  background: var(--paper-card);
+  border-radius: 0 var(--pb-r-sm) var(--pb-r-sm) 0;
+}
+.pb-run-notes-block { margin-top: 24px; }
+.pb-run-notes-label {
+  font-size: 10.5px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--pb-ember, var(--ember));
+  margin-bottom: 6px; font-weight: 600;
+  display: block;
+}
+.pb-run-notes-hint {
+  font-size: 13px; color: var(--ink-faint);
+  margin: 0 0 8px;
+}
+.pb-run-notes {
+  width: 100%;
+  min-height: 84px;
+  padding: 12px 14px;
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-sm);
+  background: var(--paper-pure);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.55;
+  resize: vertical;
+}
+.pb-run-notes:focus { border-color: var(--forest-deep); outline: none; }
+
+.pb-run-footer {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--forest-mist);
+}
+.pb-run-btn {
+  padding: 10px 18px;
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure); color: var(--ink);
+  border-radius: var(--pb-r-sm);
+  font-family: inherit; font-weight: 500;
+  cursor: pointer; font-size: 13px;
+  transition: all 0.18s;
+}
+.pb-run-btn:hover:not(:disabled) { border-color: var(--forest-deep); }
+.pb-run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pb-run-btn.primary { background: var(--forest-ink); color: var(--paper); border-color: var(--forest-ink); flex: 1; min-width: 160px; }
+.pb-run-btn.primary:hover { background: var(--forest-deep); border-color: var(--forest-deep); }
+.pb-run-btn.timer { background: var(--pb-ember); color: white; border-color: var(--pb-ember); }
+.pb-run-kbd-hint { font-size: 12.5px; color: var(--ink-faint); }
+#pb-runFinishReflect { font-weight: 600; }
+
+/* ─── INLINE RUN-MODE TIMER ─── */
+.pb-run-timer {
+  margin-top: 36px;
+  padding: 22px 24px 20px;
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-md, 10px);
+  box-shadow: var(--shadow-sm);
+}
+.pb-run-timer-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 16px; margin-bottom: 14px;
+}
+.pb-run-timer-eyebrow {
+  font-size: 10.5px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--forest-deep);
+  font-weight: 600;
+}
+.pb-run-timer-display {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500; font-size: 38px;
+  color: var(--forest-ink);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.pb-run-timer-track {
+  height: 6px; width: 100%;
+  background: var(--forest-mist);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.pb-run-timer-fill {
+  height: 100%;
+  background: var(--forest-deep);
+  width: 100%;
+  transition: width 0.5s linear;
+  border-radius: 999px;
+}
+/* .over replaces the old stop-at-zero .done state: the run-mode timer now
+   keeps counting past zero instead of stopping, so this just re-colors
+   the display/fill once it's past target rather than marking "finished". */
+.pb-run-timer.over .pb-run-timer-fill { background: var(--pb-ember); }
+.pb-run-timer.over .pb-run-timer-display { color: var(--pb-ember); }
+.pb-run-timer.paused .pb-run-timer-fill { opacity: 0.55; }
+.pb-run-timer-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-top: 12px;
+  font-size: 12px; color: var(--ink-faint);
+}
+.pb-run-timer-actions { display: flex; gap: 8px; }
+.pb-run-timer-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-sm, 6px);
+  color: var(--ink-soft);
+  font-family: inherit; font-size: 12px;
+  cursor: pointer; transition: all 0.18s;
+}
+.pb-run-timer-btn:hover { border-color: var(--forest-deep); color: var(--forest-deep); }
+.pb-run-timer.untimed { display: none; }
+
+/* ─── TIMER MODAL ─── */
+.pb-timer-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(20,48,42,0.45);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  animation: pbFadeIn 0.25s ease;
+}
+.pb-timer-modal.active { display: flex; }
+.pb-timer-modal-content {
+  background: var(--paper-pure);
+  border-radius: var(--pb-r-lg);
+  padding: 32px 36px;
+  box-shadow: var(--shadow-lg);
+  max-width: 380px;
+  width: calc(100% - 32px);
+  text-align: center;
+  animation: pbSlideUp 0.3s ease;
+}
+@keyframes pbSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.pb-timer-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--forest-soft);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.pb-timer-activity-name {
+  font-family: 'Caveat', cursive;
+  font-size: 22px;
+  color: var(--forest-ink);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.pb-timer-ring-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: 12px auto 16px;
+}
+.pb-timer-ring { transform: rotate(-90deg); }
+.pb-timer-ring circle { fill: none; stroke-width: 4; }
+.pb-timer-ring .track { stroke: var(--forest-mist); }
+.pb-timer-ring .progress {
+  stroke: var(--forest-deep);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.95s linear;
+}
+.pb-timer-display {
+  position: absolute;
+  inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 42px;
+  color: var(--forest-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.pb-timer-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.pb-timer-btn {
+  padding: 10px 20px;
+  border-radius: var(--pb-r-sm);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper);
+  color: var(--forest-deep);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s;
+}
+.pb-timer-btn:hover { background: var(--forest-deep); color: white; border-color: var(--forest-deep); }
+.pb-timer-btn.primary { background: var(--forest-deep); color: white; border-color: var(--forest-deep); }
+.pb-timer-btn.primary:hover { background: var(--forest-ink); border-color: var(--forest-ink); }
+
+/* ─── TOAST ─── */
+.pb-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--forest-ink);
+  color: white;
+  padding: 12px 20px;
+  border-radius: var(--pb-r-pill);
+  font-size: 12.5px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 2000;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+.pb-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ─── MOBILE FAB (visible only on ≤1100px via media query below) ─── */
+.pb-fab { display: none; }
+@keyframes pbFabBump      { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+@keyframes pbFabCountBump { 0% { transform: scale(1); } 40% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
+/* ─── PRINT TEMPLATES: off-screen on screen, revealed (left:0) only while
+   body.is-exporting-png is set, so html2canvas can rasterize them — never
+   actually printed via the browser's print dialog. Two templates share
+   this base — #print-session (the session plan, from
+   exportRenderPrintSession()) and #print-report (the post-session report,
+   from exportRenderPrintReport()) — both built with the shared .pexport
+   visual language below. ─── */
+#print-session, #print-report {
+  position: absolute; left: -9999px; top: 0;
+  width: 794px;   /* A4 @ 96dpi */
+  background: #fff; color: #111;
+  font: 14px/1.5 'Open Sans', sans-serif;
+  padding: 32px; box-sizing: border-box;
+}
+body.is-exporting-png #print-session, body.is-exporting-png #print-report { left: 0; }
+#print-qr-slot canvas, #print-qr-slot img { display: block; }
+

@@ -1,0 +1,411 @@
+/* ==========================================================
+   FOREST-BASED THERAPY — TOOL · v0.5
+   Restyled to match the Pocketbook design system.
+   Palette: warm cream paper, low-chroma forest greens, ember accent.
+   Type: Montserrat (display), Open Sans (body), Playfair (occasional serif).
+   ========================================================== */
+
+/* ─── styles-base.css: resets, site chrome — header, nav, search dialog,
+   role-aware visibility. One of five files split out of the original
+   monolithic styles.css, in the same order they used to appear in that
+   one file (see index.html's <link> order — cascade order must match).
+   ─── */
+
+
+html { height: 100%; background: transparent; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Open Sans', -apple-system, sans-serif;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  min-height: calc(var(--vh, 1vh) * 100);
+  overflow-x: hidden;
+  letter-spacing: 0.005em;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── LANGUAGE TOGGLE ── */
+.lang-bar {
+  position: fixed;
+  top: 16px;
+  right: 24px;
+  display: flex;
+  gap: 4px;
+  z-index: 100;
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-pill);
+  padding: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.lang-btn {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  transition: all 0.18s;
+}
+
+.lang-btn.active {
+  background: var(--forest-ink);
+  color: var(--paper-pure);
+}
+
+
+
+/* ── ROLE-AWARE VISIBILITY ── */
+body[data-role="participant"] [data-role-only="practitioner"] { display: none !important; }
+body[data-role="practitioner"] [data-role-only="participant"] { display: none !important; }
+
+/* The rules above only hide the *wrong* role's content once JS has set
+   data-role on <body> — safe for every [data-role-only] that lives inside
+   a .screen, since .screen defaults to display:none until .active is
+   added by JS regardless. But the persistent nav groups and #entry-screen
+   (which is marked .active directly in the markup, not by JS) have no
+   such default-hidden ancestor, so both variants render together for as
+   long as the page takes to parse and run the scripts that set data-role
+   — briefly showing Plan/Run/Reflect/Reference stacked with the
+   participant nav links, and both entry-screen pathway lists stacked on
+   the main screen. Default these two spots to hidden and opt back in
+   per role, so there's never a frame where both show. */
+.site-nav-group[data-role-only],
+#entry-screen > [data-role-only] { display: none; }
+body[data-role="practitioner"] .site-nav-group[data-role-only="practitioner"] { display: flex; }
+body[data-role="participant"] .site-nav-group[data-role-only="participant"] { display: flex; }
+body[data-role="practitioner"] #entry-screen > [data-role-only="practitioner"],
+body[data-role="participant"] #entry-screen > [data-role-only="participant"] { display: block; }
+
+/* ── HEADER ── */
+header {
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--forest-mist);
+  margin-bottom: 28px;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 14px;
+  gap: 16px;
+}
+
+.tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
+
+.header-text h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.header-text p {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 6px;
+}
+
+/* ── HEADER NAV & SEARCH ── */
+/* Skip link (WCAG 2.4.1) — visually hidden until it receives focus,
+   which makes it the very first tab stop on the page. */
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 8px;
+  z-index: 3000;
+  background: var(--forest-ink);
+  color: var(--paper-pure);
+  padding: 10px 18px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: top 0.15s ease;
+}
+.skip-link:focus { top: 8px; }
+
+/* Visually-hidden utility (aria-live regions, etc.) — kept distinct from
+   .skip-link, which needs to become visible on focus. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Global keyboard-focus indicator. Nothing in this file provided one
+   before this section, so this doesn't override or duplicate anything —
+   it's the first one. :focus-visible degrades harmlessly (simply
+   unmatched, not an error) on anything old enough not to support it. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--forest-deep);
+  outline-offset: 2px;
+}
+
+/* Persistent, role-aware nav. Practitioner mode shows Plan/Run/Reflect/
+   Reference; participant mode shows the 4 orientation steps. Only the
+   group matching data-role-only is visible (existing rule, reused
+   as-is: body[data-role="…"] […] { display:none }). */
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.site-nav-group { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.site-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+.site-nav-link:hover { color: var(--forest-deep); background: var(--paper-card); }
+.site-nav-link.active {
+  color: var(--forest-deep);
+  background: var(--paper-pure);
+  border-color: var(--forest-mist);
+  font-weight: 600;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.search-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--forest-mist);
+  background: var(--paper-pure);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.18s;
+}
+.search-trigger:hover { border-color: var(--forest-soft); color: var(--forest-deep); }
+.search-trigger-kbd {
+  font-size: 10px;
+  color: var(--ink-faint);
+  border: 1px solid var(--forest-mist);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: 'Open Sans', sans-serif;
+}
+
+/* Mode switch — same pill/segmented-control language as .lang-bar/.lang-btn,
+   just sized up to the 44px minimum hit target since (unlike the
+   pre-existing language toggle) this is a new control. */
+.mode-switch {
+  display: flex;
+  gap: 4px;
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-pill);
+  padding: 3px;
+  box-shadow: var(--shadow-sm);
+}
+.mode-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  border: none;
+  background: transparent;
+  color: var(--ink-faint);
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: all 0.18s;
+}
+.mode-btn.active { background: var(--forest-ink); color: var(--paper-pure); }
+
+/* Quick links injected into the focused Pocketbook (Plan) screen so the
+   Pre-Session Checklist and Session Structure Guide are one click away
+   without a trip back through the header nav. */
+.plan-quicklinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: -8px 0 22px;
+}
+.plan-quicklinks a {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--forest-mid);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--forest-soft);
+}
+.plan-quicklinks a:hover { color: var(--forest-deep); }
+
+/* Generic "found via search" highlight, reused across screens (reference
+   tiers, guide chapters). Distinct from .activity-item.highlight, which
+   is specific to the Pocketbook accordion styling. */
+.search-highlight {
+  box-shadow: 0 0 0 3px rgba(127,163,150,0.35);
+  border-radius: var(--r-md);
+  transition: box-shadow 0.3s ease;
+}
+
+/* Locks the page's own scroll while a full-viewport fixed overlay (Run
+   Mode, the search dialog) is open, so scrolling inside the overlay can't
+   also move the page behind it — the overlay being position:fixed;inset:0
+   makes it LOOK like the only thing on screen, but without this the body
+   underneath was still scrollable, producing exactly the kind of
+   background/foreground double-scroll this class exists to prevent.
+   Toggled by pbStartRunMode()/pbCloseRunMode() in pocketbook-run.js and
+   openSearch()/closeSearch() in search.js. */
+body.no-scroll { overflow: hidden; }
+
+/* ─── SEARCH DIALOG (⌘K / Ctrl+K) ─── */
+.search-dialog-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(20,48,42,0.45);
+  backdrop-filter: blur(6px);
+  z-index: 2500;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  animation: pbFadeIn 0.2s ease;
+}
+.search-dialog-overlay.active { display: flex; }
+.search-dialog {
+  background: var(--paper-pure);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: pbSlideUp 0.22s ease;
+}
+.search-dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 16px;
+  border-bottom: 1px solid var(--forest-mist);
+}
+.search-dialog-head svg { color: var(--ink-faint); flex-shrink: 0; }
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 15px;
+  color: var(--ink);
+  min-height: 44px;
+}
+.search-input::placeholder { color: var(--ink-faint); }
+.search-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--ink-faint);
+  line-height: 1;
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+}
+.search-close:hover { color: var(--ink); background: var(--paper-card); }
+.search-results { overflow-y: auto; padding: 8px; flex: 1; }
+.search-group { margin-bottom: 4px; }
+.search-group-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--forest-soft);
+  padding: 10px 10px 4px;
+}
+.search-result {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  min-height: 44px;
+  font-family: 'Open Sans', sans-serif;
+}
+.search-result:hover, .search-result:focus-visible { background: var(--paper-card); }
+.search-result-title { font-size: 13.5px; font-weight: 500; color: var(--forest-ink); }
+.search-result-sub {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-empty { padding: 28px 10px; text-align: center; color: var(--ink-faint); font-size: 13px; }
+
