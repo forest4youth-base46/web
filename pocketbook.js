@@ -918,32 +918,32 @@ function pbBuildSessionExportData() {
   const rowBlocks = items.map((a, i) => {
     const durText = a.durMax ? pbGetItemMins(a.id) + ' min' : (pbT(a, 'durLabel') || pbFmtDuration(a));
     const clock = clockTimes[i];
+    const grp = GROUPS[a.group - 1];
     return (
       '<div class="pexport-row">' +
         '<div class="pexport-row-clock">' +
           (clock ? '<div class="pexport-row-clock-time">' + clock + '</div>' : '') +
           '<div class="pexport-row-clock-dur">' + pbEscapeHtml(durText) + '</div>' +
         '</div>' +
+        '<div class="pexport-row-bar" style="background:' + PB_GROUP_COLORS[a.group] + '"></div>' +
         '<div class="pexport-row-main">' +
           '<div class="pexport-row-heading">' +
             '<span class="pexport-row-num">' + String(i + 1).padStart(2, '0') + '</span> ' +
             pbEscapeHtml(pbT(a, 'name')) +
           '</div>' +
-          '<div class="pexport-row-group">' +
-            '<span class="pexport-row-dot" style="background:' + PB_GROUP_COLORS[a.group] + '"></span>' +
-            pbEscapeHtml(pbGroupT(GROUPS[a.group - 1], 'title')) +
-          '</div>' +
+          '<div class="pexport-row-group">' + pbEscapeHtml(grp.num) + ' · ' + pbEscapeHtml(pbGroupT(grp, 'title')) + '</div>' +
+          '<div class="pexport-row-purpose">' + pbEscapeHtml(pbT(a, 'purpose')) + '</div>' +
           '<div class="pexport-row-quote">' + pbEscapeHtml(pbT(a, 'intro')) + '</div>' +
         '</div>' +
       '</div>'
     );
   });
 
-  // Manual bullet markup, not <ul>/<li> — html2canvas doesn't reliably
-  // render native list markers (missing/misaligned bullet glyphs), so this
-  // avoids that entirely rather than fighting it with CSS.
+  // Checkbox markup, not <ul>/<li> — html2canvas doesn't reliably render
+  // native list markers (missing/misaligned bullet glyphs), so this avoids
+  // that entirely; also matches the Canva concept's checklist treatment.
   const materialsHTML = pbAggregateMaterials(pbSession)
-    .map(m => '<div class="pexport-materials-row"><span class="pexport-bullet">•</span>' + pbEscapeHtml(m) + '</div>').join('');
+    .map(m => '<div class="pexport-materials-row"><span class="pexport-checkbox"></span>' + pbEscapeHtml(m) + '</div>').join('');
 
   const checklistHTML = [1, 2, 3, 4, 5, 6].map(i =>
     '<div class="pexport-check-item"><span class="pexport-checkbox"></span>' +
@@ -987,11 +987,11 @@ function pbBuildSessionExportData() {
     '<div class="pexport-sidebar">' +
       '<div class="pexport-stats-eyebrow">' + pbEscapeHtml(t('pbui.planexport.stats.eyebrow')) + '</div>' +
       '<div class="pexport-arc-block">' +
+        '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.arc.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.arc.sub')) + '</div>' +
         '<div class="pexport-arc-row">' +
           '<div class="pexport-arc-donut">' + pbBuildArcDonutSVG(groupTime, items.length) + '</div>' +
           '<div class="pexport-arc-legend">' + pbBuildArcLegendHTML(groupTime) + '</div>' +
         '</div>' +
-        '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.arc.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.arc.sub')) + '</div>' +
       '</div>' +
       '<div class="pexport-shape-block">' +
         '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.shape.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.shape.sub')) + '</div>' +
@@ -1007,8 +1007,12 @@ function pbBuildSessionExportData() {
       '</div>' +
     '</div>';
 
+  const totalLine = t('pbui.planexport.total').replace('{mins}', String(totalMin)).replace('{n}', String(items.length));
   const tailBlockHTML =
-    '<div class="pexport-banner">' + pbEscapeHtml(t('pbui.planexport.banner')) + '</div>' +
+    '<div class="pexport-banner">' +
+      '<span>' + pbEscapeHtml(t('pbui.planexport.banner')) + '</span>' +
+      '<span class="pexport-banner-total">' + pbEscapeHtml(totalLine) + '</span>' +
+    '</div>' +
     '<div class="pexport-footer">' +
       '<div class="pexport-footer-title">' + pbEscapeHtml(t('pbui.planexport.beforeyougo')) + '</div>' +
       '<div class="pexport-checklist">' + checklistHTML + '</div>' +
@@ -1018,11 +1022,15 @@ function pbBuildSessionExportData() {
   // identically whether nested inside .pexport-footer (continuous version,
   // right after the checklist) or standalone, repeating on its own at the
   // bottom of every page (paginated version).
+  // __PEXPORT_PAGE__ is a placeholder: the paginated PDF path fills it in
+  // with "current/total" once the real page count is known (only after
+  // packing); the continuous on-screen/PNG render has no page concept, so
+  // it strips the " · __PEXPORT_PAGE__" chunk entirely.
   const footerBottomHTML =
     '<div class="pexport-footer-bottom">' +
       '<span>Forest4Youth · Interreg North-West Europe</span>' +
       '<span>' + pbEscapeHtml(t('pbui.planexport.footer.disclaimer')) + '</span>' +
-      '<span>' + pbEscapeHtml(generated) + '</span>' +
+      '<span>' + pbEscapeHtml(generated) + ' · ' + lang.toUpperCase() + ' · __PEXPORT_PAGE__</span>' +
     '</div>';
 
   return { headerHTML, titleHTML, colHeadersHTML, rowBlocks, sidebarHTML, tailBlockHTML, footerBottomHTML };
@@ -1052,7 +1060,7 @@ function exportRenderPrintSession() {
         d.sidebarHTML +
       '</div>' +
       d.tailBlockHTML +
-      d.footerBottomHTML +
+      d.footerBottomHTML.replace(' · __PEXPORT_PAGE__', '') +
     '</div>';
 
   const qrNode = exportGenerateSessionQRNode();
@@ -1193,6 +1201,8 @@ async function pbBuildSessionPaginatedCanvases(root) {
       )
     : 0;
   const tailFitsOnLastPage = (lastRowsHeight + tailHeight) <= lastBudget;
+  const totalPages = rowPages.length + (tailFitsOnLastPage ? 0 : 1);
+  const footerForPage = pageNum => d.footerBottomHTML.replace('__PEXPORT_PAGE__', pageNum + '/' + totalPages);
 
   const canvases = [];
   for (let i = 0; i < rowPages.length; i++) {
@@ -1203,7 +1213,7 @@ async function pbBuildSessionPaginatedCanvases(root) {
     const bodyHTML = isFirst
       ? '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + rowPages[i].join('') + '</div>' + d.sidebarHTML + '</div>'
       : '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + rowPages[i].join('') + '</div></div>';
-    const tailAnchorHTML = '<div class="pexport-tail-anchor">' + (isLast && tailFitsOnLastPage ? d.tailBlockHTML : '') + d.footerBottomHTML + '</div>';
+    const tailAnchorHTML = '<div class="pexport-tail-anchor">' + (isLast && tailFitsOnLastPage ? d.tailBlockHTML : '') + footerForPage(i + 1) + '</div>';
     root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
       d.headerHTML + (isFirst ? d.titleHTML : '') + bodyHTML + tailAnchorHTML +
     '</div>';
@@ -1218,7 +1228,7 @@ async function pbBuildSessionPaginatedCanvases(root) {
   if (!tailFitsOnLastPage) {
     root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
       d.headerHTML +
-      '<div class="pexport-tail-anchor">' + d.tailBlockHTML + d.footerBottomHTML + '</div>' +
+      '<div class="pexport-tail-anchor">' + d.tailBlockHTML + footerForPage(totalPages) + '</div>' +
     '</div>';
     canvases.push(await html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true }));
   }
@@ -1308,17 +1318,15 @@ function pbBuildReportExportData() {
     const a = ACTIVITIES.find(x => x.id === it.id);
     const name = a ? pbT(a, 'name') : it.id;
     const actual = it.actualSecs != null ? pbFmtMinSec(it.actualSecs) : '—';
-    const groupHTML = a ?
-      '<div class="pexport-row-group">' +
-        '<span class="pexport-row-dot" style="background:' + PB_GROUP_COLORS[a.group] + '"></span>' +
-        pbEscapeHtml(pbGroupT(GROUPS[a.group - 1], 'title')) +
-      '</div>' : '';
-    const noteHTML = it.note ? '<div class="pexport-row-quote">' + pbEscapeHtml(it.note) + '</div>' : '';
+    const grp = a ? GROUPS[a.group - 1] : null;
+    const groupHTML = grp ? '<div class="pexport-row-group">' + pbEscapeHtml(grp.num) + ' · ' + pbEscapeHtml(pbGroupT(grp, 'title')) + '</div>' : '';
+    const noteHTML = it.note ? '<div class="pexport-row-note">' + pbEscapeHtml(it.note) + '</div>' : '';
     return '<div class="pexport-row">' +
       '<div class="pexport-row-clock">' +
         '<div class="pexport-row-clock-time">' + pbEscapeHtml(actual) + '</div>' +
         '<div class="pexport-row-clock-dur">' + it.plannedMins + ' min ' + pbEscapeHtml(t('pbui.reflect.planned')) + '</div>' +
       '</div>' +
+      '<div class="pexport-row-bar" style="background:' + (a ? PB_GROUP_COLORS[a.group] : '#ccc') + '"></div>' +
       '<div class="pexport-row-main">' +
         '<div class="pexport-row-heading"><span class="pexport-row-num">' + String(i + 1).padStart(2, '0') + '</span> ' + pbEscapeHtml(name) + '</div>' +
         groupHTML +
@@ -1390,7 +1398,7 @@ function pbBuildReportExportData() {
   const footerBottomHTML =
     '<div class="pexport-footer-bottom">' +
       '<span>Forest4Youth · Interreg North-West Europe</span>' +
-      '<span>' + pbEscapeHtml(t('pbui.planexport.footer.generated').replace('{date}', new Date().toLocaleDateString(lang))) + '</span>' +
+      '<span>' + pbEscapeHtml(t('pbui.planexport.footer.generated').replace('{date}', new Date().toLocaleDateString(lang))) + ' · ' + lang.toUpperCase() + ' · __PEXPORT_PAGE__</span>' +
     '</div>';
 
   const sessionLabelHTML = '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.reflect.report.session')) + '</div>';
@@ -1417,7 +1425,7 @@ function exportRenderPrintReport() {
   if (!root) return;
   const d = pbBuildReportExportData();
   if (!d) { root.innerHTML = ''; return; }
-  root.innerHTML = '<div class="pexport">' + d.headerHTML + d.titleHTML + d.blocks.join('') + d.footerBottomHTML + '</div>';
+  root.innerHTML = '<div class="pexport">' + d.headerHTML + d.titleHTML + d.blocks.join('') + d.footerBottomHTML.replace(' · __PEXPORT_PAGE__', '') + '</div>';
 }
 
 // Report pages are single-column (no sidebar) — the topbar repeats on
@@ -1438,8 +1446,9 @@ async function pbBuildReportPaginatedCanvases(root) {
   const canvases = [];
   for (let i = 0; i < pages.length; i++) {
     const isFirst = i === 0;
+    const footer = d.footerBottomHTML.replace('__PEXPORT_PAGE__', (i + 1) + '/' + pages.length);
     const pageHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
-      d.headerHTML + (isFirst ? d.titleHTML : '') + pages[i].join('') + d.footerBottomHTML +
+      d.headerHTML + (isFirst ? d.titleHTML : '') + pages[i].join('') + footer +
     '</div>';
     canvases.push(await pbRasterizePage(root, pageHTML));
   }
