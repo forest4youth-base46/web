@@ -115,6 +115,9 @@
      Class/attribute selectors (not :has()) for compatibility with the
      older WebView used by the Odoo embed test path. */
   body[data-focused="mod-pocket"] .pb-fab { display: inline-flex; }
+  /* !important: Run Mode is a full-screen overlay — the FAB/builder/
+     backdrop must never show through it regardless of what other state
+     (data-focused, .expanded) says they should otherwise do. */
   body.pb-run-active .pb-fab,
   body.pb-run-active .pb-builder,
   body.pb-run-active .pb-builder-backdrop { display: none !important; }

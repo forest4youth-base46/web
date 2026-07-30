@@ -79,7 +79,13 @@ body::before {
 
 
 
-/* ── ROLE-AWARE VISIBILITY ── */
+/* ── ROLE-AWARE VISIBILITY ──
+   !important is deliberate here, not a specificity accident: this is the
+   one rule responsible for a wrong-role element never being visible, even
+   if some other, more specific selector added elsewhere (e.g. an ID-scoped
+   rule on a particular screen) would otherwise win the cascade. Verified
+   this session (see the CSS architecture audit in the redesign-redesigned
+   branch history) — kept intentionally, not something to "clean up". */
 body[data-role="participant"] [data-role-only="practitioner"] { display: none !important; }
 body[data-role="practitioner"] [data-role-only="participant"] { display: none !important; }
 

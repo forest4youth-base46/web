@@ -1573,13 +1573,21 @@
 }
 .related-reading a:hover { border-bottom-style: solid; color: var(--forest-ink); }
 
+/* Temporary highlight class added via JS (search results, deep links) to
+   an arbitrary target element whose own border/background is unknown in
+   advance — !important so the highlight is guaranteed visible regardless
+   of how specific that element's existing styling happens to be. */
 .guide-chapter-highlight {
   border-color: var(--forest-mid) !important;
   box-shadow: 0 0 0 3px rgba(127,163,150,0.18);
   background: var(--paper-card) !important;
 }
 
-/* ── ACTIVITY VISUAL — recolor stale forest-bg fills inside SVGs ── */
+/* ── ACTIVITY VISUAL — recolor stale forest-bg fills inside SVGs ──
+   !important because this overrides an inline SVG presentation attribute
+   (fill="#F0F4F1" baked into the illustration markup itself), not another
+   stylesheet rule — a plain declaration here would lose to the attribute
+   in some rendering contexts. */
 .activity-visual svg rect[fill="#F0F4F1"] { fill: var(--paper) !important; }
 
 /* ============================================================
