@@ -345,23 +345,6 @@ function toggleCheck(el) {
 }
 
 // ─────────────────────────────────────────
-// DEEP LINK COPY
-// ─────────────────────────────────────────
-function copyDeepLink(section, moduleId, activityId, btn) {
-  const url = window.location.href.split('#')[0] + '#' + [section, moduleId, activityId].join('/');
-  navigator.clipboard.writeText(url).then(() => {
-    btn.classList.add('copied');
-    const span = btn.querySelector('[data-i18n]');
-    const orig = span.textContent;
-    span.textContent = '✓ Copied';
-    setTimeout(() => {
-      btn.classList.remove('copied');
-      span.textContent = orig;
-    }, 2000);
-  });
-}
-
-// ─────────────────────────────────────────
 // GUIDE INTEGRATION
 // ─────────────────────────────────────────
 // When the PDF has a stable URL, set GUIDE_PDF_URL to it.

@@ -442,36 +442,6 @@ function pbMoveDown(idx) {
 }
 
 // ───────── EXPORT ─────────
-function pbExportSession() {
-  const lines = [t('pbui.export.sessionplan'), '='.repeat(40), ''];
-  let total = 0;
-  pbSession.forEach((id, i) => {
-    const a = ACTIVITIES.find(x => x.id === id);
-    if (!a) return;
-    const grp = GROUPS[a.group - 1];
-    lines.push(`${i+1}. ${pbT(a, 'name')}  (${pbFmtDuration(a)})`);
-    lines.push(`   ${pbGroupT(grp, 'title')}`);
-    lines.push(`   ${pbT(a, 'purpose')}`);
-    lines.push('');
-    total += a.durAvg || 0;
-  });
-  lines.push('-'.repeat(40));
-  lines.push(`${t('pbui.export.total')}: ${pbSession.length} ${t('pbui.export.activitiesword')} · ${total} min`);
-  const txt = lines.join('\n');
-
-  navigator.clipboard?.writeText(txt).then(() => {
-    pbShowToast(t('pbui.export.copied'));
-  }).catch(() => {
-    const blob = new Blob([txt], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'session-plan.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-    pbShowToast(t('pbui.export.downloaded'));
-  });
-}
-
 function pbShowToast(msg) {
   const t = document.getElementById('pb-toast');
   t.textContent = msg;
