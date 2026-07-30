@@ -2,6 +2,8 @@
 
 An interactive web tool for forest therapy practitioners — session planning, activity reference, and guided run mode. Built for the [Forest4Youth NWEurope](https://forest4youth.nweurope.eu) project.
 
+See `ARCHITECTURE.md` for the reasoning behind the zero-build-step setup, the file-splitting conventions, and how global state is meant to be handled.
+
 ---
 
 ## What the app does
