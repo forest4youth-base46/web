@@ -1,3 +1,10 @@
+// Foundational, loaded before everything else that depends on it (router.js,
+// every pocketbook-*.js file, search.js): the i18n lookup (t()/setLang()),
+// the versioned localStorage helpers (storageSave()/storageLoad()), and the
+// shared failure-logging helper (warnFailure()). Called from nearly every
+// other file in the app — see ARCHITECTURE.md's "Global state" table for
+// currentLang specifically.
+
 // ─────────────────────────────────────────
 // FAILURE LOGGING
 // ─────────────────────────────────────────

@@ -1,3 +1,8 @@
+// Small, self-contained UI behaviors that don't belong to any single
+// screen/module — currently just the mobile header hide-on-scroll-down /
+// show-on-scroll-up. Nothing here is called from other files (this whole
+// file is one self-invoking closure); add unrelated small behaviors here
+// rather than bolting them onto router.js or a pocketbook-*.js file.
 // ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
 (function () {
   const THRESHOLD = 50;

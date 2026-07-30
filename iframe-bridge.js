@@ -1,3 +1,10 @@
+// iframe embed support (see README.md/ARCHITECTURE.md for the standalone-
+// vs-embedded deployment split). Reports document height to the parent
+// page so an auto-sizing iframe embed needs no fixed height and no
+// scrollbar of its own, and exposes window.scrollToViewTop() for router.js
+// to call instead of a plain window.scrollTo(), which does nothing useful
+// once embedded. Loaded first among the app's own scripts, before
+// router.js needs scrollToViewTop() available.
 (function() {
   var inIframe = window.self !== window.top;
 

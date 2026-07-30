@@ -1,3 +1,12 @@
+// Hash-based routing, role state (Practitioner/Participant), the persistent
+// header nav, the Reference page's filter/search, and the door-module
+// "focus mode" navigation. Loaded after content.js/render.js, before every
+// pocketbook-*.js file — several of those call back into this file
+// (navigate(), setRole(), currentRole), and this file calls into them
+// (pbStartRunMode(), pbSession) via loose runtime checks rather than a
+// hard dependency, since they haven't loaded yet the first time this
+// file's own top-level code runs.
+
 // ─────────────────────────────────────────
 // HASH ROUTING
 // ─────────────────────────────────────────
