@@ -2,6 +2,8 @@
 
 An interactive web tool for forest therapy practitioners — session planning, activity reference, and guided run mode. Built for the [Forest4Youth NWEurope](https://forest4youth.nweurope.eu) project.
 
+See `ARCHITECTURE.md` for the reasoning behind the zero-build-step setup, the file-splitting conventions, and how global state is meant to be handled. See `CONTRIBUTING.md` for the practical clone-to-first-commit steps.
+
 ---
 
 ## What the app does
@@ -17,6 +19,8 @@ The tool supports practitioners through three pathways:
 - What is this? / Is it for me? / Before your session — orientation screens tailored to participants.
 
 **Features**
+- Persistent header nav (Plan / Run / Reflect / Reference for practitioners; the 4 orientation steps for participants) plus a Mode switch — nothing is gated behind a full-screen picker before you see content
+- ⌘K / Ctrl+K search dialog — jumps straight to a Pocketbook activity, a clinical-reference item, or a guide chapter
 - Language toggle (EN / FR / DE)
 - Role-aware content (Practitioner / Participant)
 - Session Builder: drag-to-reorder activities, live arc-balance bar, localStorage persistence
@@ -37,23 +41,42 @@ No build step required. Open `index.html` directly, or serve the folder with any
 .
 ├── index.html            # HTML shell: page structure, markup for every screen
 ├── tokens.css            # design tokens (colors, spacing, radii, shadows)
-├── styles.css            # everything else: layout, components, responsive rules
-├── content.js            # translation dictionary (EN/FR/DE) + i18n helpers
+├── styles-base.css       # resets, site chrome — header, nav, search dialog
+├── styles-screens-entry.css     # entry, section, modules, reference filters, activities
+├── styles-screens-reflect.css   # learn blocks, reflect screen, role screen, timeline
+├── styles-screens-reference.css # reference tiers/entries, participant cards, guide screen
+├── styles-pocketbook.css # the Pocketbook module: filters, Session Builder, Run Mode
+├── styles-export.css     # off-screen PDF/PNG export templates
+├── styles-responsive.css # every media query — loads last, order matters
+├── content.js            # assembles T from the packs below + i18n helpers (t(), setLang())
+├── i18n-en.js            # English language pack (source strings)
+├── i18n-fr.js            # French language pack
+├── i18n-de.js            # German language pack
 ├── modules-data.js       # header data (icon/title/tag/badge) for every module-card
 ├── render.js             # renders a module-card header from modules-data.js
 ├── router.js             # hash-based routing, role selection, focus-mode navigation
 ├── pocketbook-data.js    # activity/group/adaptation data for the Pocketbook (English)
 ├── pocketbook-i18n.js    # Pocketbook FR/DE translations, grouped by activity/group id
-├── pocketbook.js         # Pocketbook rendering, Session Builder, Run Mode, export
+├── pocketbook-activities.js # activity library: rendering, filters, i18n lookups, disclosure
+├── pocketbook-builder.js    # Session Builder: pbSession/pbSessionMins state, arc charts
+├── pocketbook-export.js     # PDF/PNG/QR export pipeline, standalone timer modal
+├── pocketbook-run.js        # Run Mode state machine, its keyboard handling and timer
+├── pocketbook-reflect.js    # post-session recap/history, self-reflection, indicators
+├── pocketbook-init.js       # QR/link session restore + pbInit() — loads last, wires it together
 ├── ui-behaviors.js       # header scroll hide/show
+├── search.js             # ⌘K / Ctrl+K search dialog (activities, reference, guide chapters)
 ├── iframe-bridge.js      # iframe embed: reports document height, requests parent scroll
-├── vendor/               # vendored html2canvas + qrcodejs (no CDN at runtime)
+├── vendor/               # vendored html2canvas + qrcodejs + jsPDF (no CDN at runtime)
+├── assets/               # brand assets used in exports (Interreg NWE / Forest4Youth logo)
+├── scripts/check-i18n-sync.js # dev tooling: verifies the three i18n packs stay in sync
+├── test/smoke.js         # dev tooling: end-to-end regression checks (see package.json)
+├── package.json          # test/dev tooling only (Playwright) — the deployed app has no build step
 ├── _headers              # Netlify headers (allows iframe embedding)
 ├── .gitignore
 └── README.md
 ```
 
-The app is still plain HTML/CSS/JS with no build step or bundler. It used to be a single 7,600-line `index.html`; the split above is purely organizational (classic `<script src>`/`<link>` tags, same load order as before), not a framework adoption, so it deploys exactly the same way.
+The app is still plain HTML/CSS/JS with no build step or bundler. It used to be a single 7,600-line `index.html`; the split above (including the further pocketbook.js → pocketbook-*.js split) is purely organizational (classic `<script src>`/`<link>` tags, same shared-global-scope load order as before), not a framework adoption, so it deploys exactly the same way. `package.json`/`scripts/`/`test/` are dev-only tooling (`npm test`, `npm run check:i18n`) — they don't run in production and don't add a build step.
 
 ---
 
@@ -112,17 +135,22 @@ gracefully, it just won't realign the outer page.
 its own hash and query string on load, so the host page can link straight
 into a specific screen or role by setting the iframe's `src`:
 
-- `?role=participant` / `?role=practitioner` — pre-select a role, skipping
-  the role-picker screen.
-- `?reset` — clear any stored role and show the role-picker screen.
+- `?role=participant` / `?role=practitioner` — set the default landing role
+  for this load.
+- `?reset` — clear any stored role, so the app falls back to its
+  practitioner default. (The app never gates content behind a role
+  picker — there's an optional side-by-side "Who is this for?" screen
+  at `#role`, reachable from the footer's "Change perspective" link or
+  this hash, but nothing routes there automatically.)
 - `#section/module` — open a specific pathway/module, e.g.
-  `#implement/mod-pocket` for the Pocketbook. Combine with a hash and a
+  `#implement/mod-pocket` for the Pocketbook (also the target of the
+  persistent header's "Plan" nav item). Combine with a hash and a
   query string in the usual way, e.g. `index.html?role=practitioner#implement/mod-pocket`.
 
 **Older WebView note.** The production embed has been tested against an
-older/non-evergreen WebView (see the comments in `styles.css` and
-`router.js` around `data-focused`), so avoid relying on very recent CSS/JS
-features (e.g. `:has()`) anywhere in this app without checking that
+older/non-evergreen WebView (see the comments in `styles-responsive.css`
+and `router.js` around `data-focused`), so avoid relying on very recent
+CSS/JS features (e.g. `:has()`) anywhere in this app without checking that
 context first.
 
 ---

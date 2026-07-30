@@ -1,0 +1,17 @@
+#!/bin/sh
+# Fast, local checks only — the i18n sync check and unit tests both run in
+# well under a second (no browser involved). The full Playwright smoke
+# suite deliberately isn't here: it's slow enough to be annoying on every
+# commit, and it already runs in CI on every push. This turns i18n drift
+# specifically from "detectable after the fact" into "can't be committed"
+# — see scripts/check-i18n-sync.js.
+#
+# One-time setup for a fresh clone: git config core.hooksPath .githooks
+
+set -e
+
+echo "pre-commit: i18n sync check..."
+node scripts/check-i18n-sync.js
+
+echo "pre-commit: unit tests..."
+node test/unit.js

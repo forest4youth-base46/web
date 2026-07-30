@@ -21,6 +21,11 @@
   --ink-soft:      #4D6359;
   --ink-faint:     #7C8E85;
 
+  /* Safety / observed states (contraindication warnings, outcome indicators) */
+  --safety-ink:    #8F3F1F;
+  --safety-bg:     #FBEDE6;
+  --observed-ink:  #2B5346;
+
   --r-sm: 6px;
   --r-md: 10px;
   --r-lg: 14px;

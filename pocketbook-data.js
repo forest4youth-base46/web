@@ -5,12 +5,19 @@
 // Pocketbook data: activities, groups, adaptations
 // Each activity has clean iconographic SVG glyph + visual
 
+// `intensity` (0–1) is a rough, group-level "demand" score for the session
+// plan export's "session shape" chart — every activity in a group shares its
+// group's value, matching the arc's existing narrative (low on arrival,
+// rising through the cooperative middle, low again on the way back). It's a
+// starting point for that chart, not a clinical measure — flagged for
+// practitioner sign-off before the export ships, since it's a judgment call
+// this data model never needed to make explicit before.
 const GROUPS = [
-  { id: 1, num: 'i',   title: 'Getting There',              meta: 'Lower demand → settle' },
-  { id: 2, num: 'ii',  title: 'Waking Up Your Senses',      meta: 'Ground attention' },
-  { id: 3, num: 'iii', title: 'Discovering Yourself',       meta: 'Cooperative tasks' },
-  { id: 4, num: 'iv',  title: 'Connecting with Others',     meta: 'Distribute agency' },
-  { id: 5, num: 'v',   title: 'Coming Back to Yourself',    meta: 'Carry it forward' },
+  { id: 1, num: 'i',   title: 'Getting There',              meta: 'Lower demand → settle',  intensity: 0.2 },
+  { id: 2, num: 'ii',  title: 'Waking Up Your Senses',      meta: 'Ground attention',        intensity: 0.5 },
+  { id: 3, num: 'iii', title: 'Discovering Yourself',       meta: 'Cooperative tasks',       intensity: 0.9 },
+  { id: 4, num: 'iv',  title: 'Connecting with Others',     meta: 'Distribute agency',       intensity: 0.65 },
+  { id: 5, num: 'v',   title: 'Coming Back to Yourself',    meta: 'Carry it forward',        intensity: 0.25 },
 ];
 
 // Reusable SVG glyphs (tiny, monoline, no filler) -------------------------

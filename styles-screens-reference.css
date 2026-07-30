@@ -1,0 +1,473 @@
+/* ─── styles-screens-reference.css: third of three files split from the
+   former styles-screens.css. This file: integration pairing, question list,
+   reference tiers, reference entries, participant experience cards, lead
+   paragraph, guide screen, related reading, activity visual (SVG recolor).
+   Loads after styles-screens-entry.css and styles-screens-reflect.css —
+   same rule order as the original file, so cascade/specificity-tie
+   outcomes are unchanged. ─── */
+
+/* ── INTEGRATION PAIRING (inside a .ref-panel, see REFERENCE ENTRIES below) ── */
+.int-pair {
+  font-size: 11.5px;
+  color: var(--forest-mid);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  margin-top: 6px;
+}
+
+/* ── QUESTION LIST ── */
+.q-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; padding: 0; }
+.q-list li {
+  background: var(--paper-card);
+  border: 1px solid var(--forest-mist);
+  border-left: 3px solid var(--forest-soft);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.55;
+  font-weight: 300;
+  list-style: none;
+}
+
+/* ── REFERENCE TIERS ── */
+.tier-header {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--forest-soft);
+  margin: 22px 0 10px;
+}
+.tier-header:first-child { margin-top: 0; }
+
+/* Two card flavours, shared by both the always-visible absolute
+   contraindications (plain h4+p, no accordion — see .ref-absolute above)
+   and the flat reference list's entries (.ref-entry, below). Keeping
+   these two classnames — rather than inventing new ones for the list —
+   is what keeps search.js's live #mod-indications/#mod-contraindications
+   .closest('.indication-block, .warn-block') lookup working unmodified
+   for every entry type it already indexed. */
+.indication-block, .warn-block {
+  background: var(--paper-card);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+  margin-bottom: 8px;
+}
+.warn-block {
+  background: var(--safety-bg);
+  border: 1px solid #E5C7B2;
+  border-left: 3px solid var(--ember);
+}
+.indication-block h4, .warn-block h4 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  margin-bottom: 4px;
+  letter-spacing: -0.005em;
+}
+.warn-block h4 { color: var(--safety-ink); }
+.indication-block p, .warn-block p { font-size: 12.5px; color: var(--ink-soft); line-height: 1.6; font-weight: 300; margin-bottom: 6px; }
+.warn-block p { color: var(--safety-ink); }
+.ind-meta { font-size: 11.5px; color: var(--forest-mid); line-height: 1.55; margin-top: 6px; }
+.ind-meta strong { font-weight: 500; color: var(--forest-deep); }
+
+/* ── REFERENCE ENTRIES: the flat, independently-expandable list ──
+   .ref-entry layers accordion behaviour onto .indication-block/
+   .warn-block: trigger row (kind badge, title, optional evidence
+   indicator, chevron) always visible; .ref-panel collapses via the
+   native [hidden] attribute, toggled by refToggleEntry() in router.js.
+   The trigger itself is a real <button>, absolutely positioned to cover
+   the whole row (transparent — nothing to see, just a full-row hit
+   target) so its accessible name can come from aria-labelledby pointing
+   at the entry's own <h4>, keeping that <h4> exactly as it always was
+   (plain data-i18n on the h4, or on its first-child span for the
+   evidence-bearing Tier-1 entries) rather than nesting it — invalidly —
+   inside the button. */
+.ref-entry { padding: 0; overflow: hidden; transition: border-color 0.15s, box-shadow 0.15s; }
+.ref-entry.open { border-color: var(--forest-mid); box-shadow: var(--shadow-sm); }
+.ref-entry .ref-panel { padding: 0 18px 16px; }
+.ref-entry .ref-panel > *:first-child { margin-top: 0; }
+.ref-entry .related-reading { margin-top: 12px; }
+
+.ref-trigger-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 12px 18px;
+  cursor: pointer;
+}
+.ref-trigger-row:hover { background: rgba(20,48,42,0.03); }
+.warn-block .ref-trigger-row:hover { background: rgba(143,63,31,0.05); }
+.ref-trigger {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.ref-trigger:focus-visible { outline: 2px solid var(--forest-deep); outline-offset: -2px; }
+
+.ref-kind-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--forest-deep);
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+}
+.warn-block .ref-kind-badge { color: var(--safety-ink); border-color: #E5C7B2; }
+
+.ref-trigger-row h4 {
+  flex: 1 1 auto;
+  min-width: 120px;
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  letter-spacing: -0.005em;
+  line-height: 1.4;
+}
+.warn-block .ref-trigger-row h4 { color: var(--safety-ink); }
+
+/* Evidence: bars + a text label together, never colour alone (WCAG
+   1.4.1) — the label already carries the same "Strong/Moderate/
+   Emerging" text this app's .evidence-pill has always shown, just
+   relocated out of the <h4> and into its own indicator here. Fill
+   pattern (strong=3 bars, moderate=2, emerging=1) is a static class per
+   entry, transcribed once from that same entry's original
+   evidence-pill--strong/moderate/emerging class — nothing computed or
+   duplicated at runtime. */
+.ref-evidence { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ref-ev-bars { display: flex; align-items: flex-end; gap: 2px; height: 16px; }
+.ref-ev-bar { width: 3px; border-radius: 1px; background: var(--forest-mist); }
+.ref-ev-bar:nth-child(1) { height: 8px; }
+.ref-ev-bar:nth-child(2) { height: 12px; }
+.ref-ev-bar:nth-child(3) { height: 16px; }
+.ref-evidence--strong .ref-ev-bar { background: var(--forest-ink); }
+.ref-evidence--moderate .ref-ev-bar:nth-child(1),
+.ref-evidence--moderate .ref-ev-bar:nth-child(2) { background: var(--forest-mid); }
+.ref-evidence--emerging .ref-ev-bar:nth-child(1) { background: var(--forest-soft); }
+.ref-ev-label { font-size: 10px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-faint); white-space: nowrap; }
+
+.ref-chevron { width: 14px; height: 14px; flex-shrink: 0; color: var(--ink-faint); transition: transform 0.2s; }
+.ref-entry.open .ref-chevron { transform: rotate(180deg); color: var(--forest-deep); }
+
+@media (max-width: 640px) {
+  .ref-trigger-row { flex-wrap: wrap; }
+  .ref-evidence { order: 3; margin-left: 32px; }
+}
+
+/* ── PARTICIPANT EXPERIENCE CARDS ── */
+.exp-card {
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  margin-bottom: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.exp-card:hover { border-color: var(--forest-soft); }
+.exp-card.open { border-color: var(--forest-mid); box-shadow: var(--shadow-sm); }
+.exp-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; cursor: pointer; user-select: none;
+}
+.exp-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.exp-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  flex: 1;
+  letter-spacing: -0.005em;
+}
+.exp-toggle {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--forest-mist);
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--ink-faint);
+  transition: all 0.2s;
+}
+.exp-card.open .exp-toggle {
+  background: var(--forest-deep); border-color: var(--forest-deep);
+  color: var(--paper-pure); transform: rotate(45deg);
+}
+.exp-body {
+  display: none;
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--forest-mist);
+}
+.exp-card.open .exp-body { display: block; padding-top: 14px; }
+.exp-body .sub-section { margin-top: 12px; }
+.exp-body .sub-label {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--forest-soft); margin-bottom: 5px;
+}
+.exp-body .sub-text { font-size: 13px; color: var(--ink); line-height: 1.65; font-weight: 300; }
+
+/* ── LEAD PARAGRAPH ── */
+.lead-p {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.7;
+  font-weight: 300;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  padding: 4px 0 4px 16px;
+  border-left: 2px solid var(--forest-soft);
+}
+
+/* ── GUIDE SCREEN ── */
+.guide-intro {
+  background: var(--paper-card);
+  border: 1px solid var(--forest-mist);
+  border-left: 3px solid var(--forest-deep);
+  border-radius: var(--r-md);
+  padding: 22px 24px;
+  margin-bottom: 28px;
+}
+.guide-intro h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 17px;
+  color: var(--forest-ink);
+  margin-bottom: 8px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.guide-intro p {
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  font-weight: 300;
+  margin-bottom: 10px;
+}
+.guide-intro p:last-child { margin-bottom: 0; }
+.guide-meta { font-size: 11.5px; color: var(--forest-mid); letter-spacing: 0.04em; }
+.guide-meta strong { color: var(--forest-deep); font-weight: 500; }
+.guide-pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--forest-deep);
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-sm);
+  padding: 8px 14px;
+  margin-top: 12px;
+  text-decoration: none;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: all 0.18s;
+}
+.guide-pdf-link:hover { background: var(--forest-deep); color: var(--paper-pure); border-color: var(--forest-deep); }
+.guide-pdf-link.placeholder { opacity: 0.6; cursor: not-allowed; font-style: italic; font-weight: 400; }
+.guide-pdf-link.placeholder:hover {
+  background: var(--paper-pure); color: var(--forest-deep); border-color: var(--forest-mist);
+}
+
+.guide-part { margin-bottom: 36px; }
+.guide-part-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--forest-mist);
+}
+.guide-part-roman {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  color: var(--forest-soft);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.guide-part-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 20px;
+  color: var(--forest-ink);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.guide-part-desc {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+  font-weight: 300;
+  margin: 0 0 16px 42px;
+}
+
+.guide-chapter {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--paper-pure);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: inherit;
+}
+.guide-chapter:hover {
+  border-color: var(--forest-soft);
+  background: var(--paper-card);
+  transform: translateX(2px);
+}
+.guide-chapter-num {
+  width: 34px; height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  border: 1px solid var(--forest-mist);
+  color: var(--forest-deep);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.guide-chapter:hover .guide-chapter-num {
+  background: var(--forest-deep);
+  color: var(--paper-pure);
+  border-color: var(--forest-deep);
+}
+.guide-chapter-body { flex: 1; min-width: 0; }
+.guide-chapter-title {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--forest-ink);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  letter-spacing: -0.005em;
+}
+.guide-chapter-pages {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+}
+.guide-chapter-desc {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+  font-weight: 300;
+}
+
+/* ── RELATED READING ── */
+.related-reading {
+  font-size: 11.5px;
+  color: var(--forest-mid);
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--forest-mist);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.related-reading::before { content: '→'; font-size: 11px; opacity: 0.7; }
+.related-reading a {
+  color: var(--forest-deep);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--forest-soft);
+  font-weight: 500;
+}
+.related-reading a:hover { border-bottom-style: solid; color: var(--forest-ink); }
+
+/* Temporary highlight class added via JS (search results, deep links) to
+   an arbitrary target element whose own border/background is unknown in
+   advance — !important so the highlight is guaranteed visible regardless
+   of how specific that element's existing styling happens to be. */
+.guide-chapter-highlight {
+  border-color: var(--forest-mid) !important;
+  box-shadow: 0 0 0 3px rgba(127,163,150,0.18);
+  background: var(--paper-card) !important;
+}
+
+/* ── ACTIVITY VISUAL — recolor stale forest-bg fills inside SVGs ──
+   !important because this overrides an inline SVG presentation attribute
+   (fill="#F0F4F1" baked into the illustration markup itself), not another
+   stylesheet rule — a plain declaration here would lose to the attribute
+   in some rendering contexts. */
+.activity-visual svg rect[fill="#F0F4F1"] { fill: var(--paper) !important; }
+
+/* ============================================================
+   POCKETBOOK — embedded inside Implement screen
+   Scoped under .pb-host. Inherits forest palette tokens.
+   ============================================================ */
+
+.pb-host {
+  --pb-r-sm: 6px;
+  --pb-r-md: 10px;
+  --pb-r-lg: 14px;
+  --pb-r-pill: 999px;
+  --pb-bark: #6B5240;
+  --pb-ember: #B8552E;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  align-items: start;
+  margin-top: 8px;
+  position: relative;
+}
+.pb-main { min-width: 0; }
+.pb-builder-backdrop { display: none; }
+
+/* Intro prose (pocketbook-style) */
+.pb-prose {
+  font-size: var(--fs-body);
+  line-height: 1.75;
+  color: var(--ink);
+  font-weight: 300;
+  margin: 0 0 36px;
+  padding: 22px 26px;
+  background: var(--paper-card);
+  border: 1px solid var(--forest-mist);
+  border-radius: var(--pb-r-md);
+  border-left: 3px solid var(--forest-soft);
+}
+.pb-prose h3 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  color: var(--forest-deep);
+  margin-bottom: 10px;
+  letter-spacing: -0.005em;
+}
+.pb-prose p { margin-bottom: 10px; color: var(--ink-soft); font-size: var(--fs-body); }
+.pb-prose p:last-child { margin-bottom: 0; }
+.pb-prose strong { font-weight: 500; color: var(--forest-ink); }
+

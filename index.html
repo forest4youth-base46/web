@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Forest-Based Therapy Practitioner Tool — interactive session planner, activity pocketbook, and guided run mode for forest therapy practitioners.">
 <meta name="theme-color" content="#234A3E">
 <meta property="og:title" content="Forest-Based Therapy · Practitioner Tool">
@@ -14,9 +14,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="tokens.css">
-<link rel="stylesheet" href="styles.css">
+<!-- styles.css split into five concern-based files, in the same order
+     they used to appear in that one file — cascade order must match,
+     since CSS resolves equal-specificity conflicts by source order.
+     styles-responsive.css (media queries) loads last on purpose. -->
+<link rel="stylesheet" href="styles-base.css">
+<link rel="stylesheet" href="styles-screens-entry.css">
+<link rel="stylesheet" href="styles-screens-reflect.css">
+<link rel="stylesheet" href="styles-screens-reference.css">
+<link rel="stylesheet" href="styles-pocketbook.css">
+<link rel="stylesheet" href="styles-export.css">
+<link rel="stylesheet" href="styles-responsive.css">
 </head>
 <body>
+
+<a class="skip-link" href="#main-content" data-i18n="nav.skip">Skip to main content</a>
 
 <template id="__bundler_thumbnail" data-bg-color="#F4F1EA">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
@@ -34,17 +46,56 @@
   <header id="site-header">
     <div class="header-inner">
       <div class="header-text">
-        <h1 data-i18n="header.title">Forest4Youth Practice Guide</h1>
+        <h1 data-i18n="header.title">Forest4Youth Practical Guide</h1>
       </div>
-      <div class="lang-bar">
-        <button class="lang-btn active" onclick="setLang('en')">EN</button>
-        <button class="lang-btn" onclick="setLang('fr')">FR</button>
-        <button class="lang-btn" onclick="setLang('de')">DE</button>
+
+      <!-- Persistent, role-aware nav. Replaces the old full-screen role
+           gate as the primary way to jump around — always visible,
+           never blocks content underneath it. -->
+      <nav class="site-nav" id="site-nav" aria-label="Main">
+        <div class="site-nav-group" data-role-only="practitioner">
+          <a class="site-nav-link" data-navkey="plan" href="#implement/mod-pocket" data-i18n="nav.plan">Plan</a>
+          <a class="site-nav-link" data-navkey="run" href="javascript:void(0)" onclick="navGoRun(); return false;" data-i18n="nav.run">Run</a>
+          <a class="site-nav-link" data-navkey="reflect" href="#reflect" data-i18n="nav.reflect">Reflect</a>
+          <a class="site-nav-link" data-navkey="reference" href="#reference" data-i18n="nav.reference">Reference</a>
+        </div>
+        <div class="site-nav-group" data-role-only="participant">
+          <a class="site-nav-link" data-navkey="pwhat" href="#pwhat" data-i18n="ppath.what.title">What is FBT?</a>
+          <a class="site-nav-link" data-navkey="psession" href="#psession" data-i18n="ppath.session.title">What happens in a session?</a>
+          <a class="site-nav-link" data-navkey="pforme" href="#pforme" data-i18n="ppath.forme.title">Is it for me?</a>
+          <a class="site-nav-link" data-navkey="pbefore" href="#pbefore" data-i18n="ppath.before.title">Before your first session</a>
+        </div>
+      </nav>
+
+      <div class="header-controls">
+        <button type="button" class="search-trigger" id="search-trigger" onclick="openSearchDialog(this)" aria-label="Search (Ctrl+K)" data-i18n-attr="aria-label:nav.search.aria">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg>
+          <span class="search-trigger-label" data-i18n="nav.search">Search</span>
+          <span class="search-trigger-kbd" aria-hidden="true">⌘K</span>
+        </button>
+
+        <div class="mode-switch" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label">
+          <button type="button" class="mode-btn" data-role="practitioner" aria-pressed="true" onclick="setRole('practitioner')" data-i18n="role.bar.practitioner">Practitioner</button>
+          <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant')" data-i18n="role.bar.participant">Exploring</button>
+        </div>
+
+        <div class="lang-bar">
+          <button class="lang-btn active" onclick="setLang('en')">EN</button>
+          <button class="lang-btn" onclick="setLang('fr')">FR</button>
+          <button class="lang-btn" onclick="setLang('de')">DE</button>
+        </div>
       </div>
     </div>
   </header>
 
-  <!-- ROLE SELECTION SCREEN (true landing) -->
+  <main id="main-content" tabindex="-1">
+
+  <!-- ROLE SELECTION SCREEN — kept as an optional, explicitly-reachable
+       screen (via the footer "Change perspective" link, or #role) for
+       a fuller side-by-side comparison of the two modes. It is no
+       longer a blocking gate: applyRoute() never routes here
+       automatically, and currentRole always defaults to 'practitioner'
+       before any route is applied. See router.js ensureRole(). -->
   <div id="role-screen" class="screen">
     <div class="role-screen-inner">
       <div class="entry-label" data-i18n="role.label">Welcome</div>
@@ -752,218 +803,457 @@
       <p class="section-sub" data-i18n="ref.sub">Indications, contraindications, population-specific guidance, dosage framing, and integration with other modalities. Evidence-informed starting points — not protocols. Clinical judgement governs all applications.</p>
     </div>
 
-    <div class="modules-grid">
+    <!-- Reference screen: one search box + one row of type chips, both
+         narrowing the same flat list together (refApplyFilter() in
+         router.js) — one combined filter system, not two. Absolute
+         contraindications (.ref-absolute below) sit outside this
+         entirely: always visible, never collapsible, never filtered —
+         safety information the practitioner should never have to hunt
+         for or accidentally filter away. -->
+    <label class="reference-search">
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg>
+      <span class="sr-only" data-i18n="ref.search.label">Search this page</span>
+      <input type="search" id="reference-search-input" oninput="refApplyFilter()"
+             data-i18n-attr="placeholder:ref.search.placeholder" placeholder="Search indications, contraindications, dosage…">
+    </label>
 
-      <!-- Module 1: Clinical Indications -->
-      <div class="module-card" id="mod-indications">
-        <div class="module-body">
+    <!-- Built by refRenderFilters() in router.js (mirrors pbRenderFilters()
+         in pocketbook-activities.js) — chip labels come from t(), never hardcoded
+         here. -->
+    <div class="ref-filters" id="ref-filters" role="group" aria-label="Filter by type"></div>
+    <p class="ref-count" id="ref-count" aria-live="polite"></p>
 
-          <div class="tier-header" data-i18n="ref.ind.tier1">Tier 1 · Primary indications — FBT may be first-line</div>
+    <div id="mod-contraindications">
 
-          <div class="indication-block">
-            <h4><span data-i18n="ref.ind.gad.name">Generalised anxiety and chronic stress</span> <span class="evidence-pill evidence-pill--strong" data-i18n="ref.ev.strong">Strong</span></h4>
+      <!-- Absolute contraindications: always visible, never collapsible,
+           never touched by refApplyFilter() — it only ever queries
+           .ref-group/.ref-entry, and this section is neither. -->
+      <section class="ref-absolute" aria-labelledby="ref-absolute-heading">
+        <div class="ref-absolute-head">
+          <h3 id="ref-absolute-heading" data-i18n="ref.con.abs">Absolute — do not proceed without specialist consultation</h3>
+          <span class="ref-absolute-badge" data-i18n="ref.abs.badge">Never collapsed</span>
+        </div>
+        <div class="warn-block">
+          <h4 data-i18n="ref.con.a1.h">Acute or recent psychosis</h4>
+          <p data-i18n="ref.con.a1.p">Active psychotic symptoms or psychosis within a period too recent for stability (judgement of treating team). Perceptual ambiguity of forest environments can compound symptoms. Specialist psychiatric consultation required before any consideration.</p>
+        </div>
+        <div class="warn-block">
+          <h4 data-i18n="ref.con.a2.h">Active suicidal crisis without stabilisation</h4>
+          <p data-i18n="ref.con.a2.p">Current plan, intent, or recent attempt without adequate safety planning and clinical stabilisation. Outdoor setting complicates crisis response time and may introduce means. Crisis care takes precedence.</p>
+        </div>
+        <div class="warn-block">
+          <h4 data-i18n="ref.con.a3.h">Severe untreated agoraphobia or specific nature-related phobia</h4>
+          <p data-i18n="ref.con.a3.p">Where the forest setting itself would constitute an untreated phobic exposure without gradient and without specific therapeutic framing. Phobia treatment with graded exposure must precede or be the explicit frame of the work.</p>
+        </div>
+        <div class="warn-block">
+          <h4 data-i18n="ref.con.a4.h">Conditions requiring continuous clinical monitoring</h4>
+          <p data-i18n="ref.con.a4.p">Acute eating disorder below safe weight, brittle diabetes, unstable epilepsy, severe cardiac conditions, or any condition where the distance from emergency response exceeds safe intervention time.</p>
+        </div>
+      </section>
+
+      <div class="ref-group" data-group="con-relative">
+        <div class="tier-header" data-i18n="ref.con.rel">Relative — protocol adaptation required</div>
+
+        <article class="indication-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r1" aria-labelledby="ref-title-con-r1" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-r1" data-i18n="ref.con.r1.h">PTSD with possible nature triggers</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-r1" hidden>
+            <p data-i18n="ref.con.r1.p">Assess history before proceeding. Specific sensory modalities (certain sounds, light conditions, smells, enclosure/exposure) may trigger. Co-design the session with explicit trigger map and exit protocol.</p>
+          </div>
+        </article>
+
+        <article class="indication-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r2" aria-labelledby="ref-title-con-r2" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-r2" data-i18n="ref.con.r2.h">Significant mobility impairment</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-r2" hidden>
+            <p data-i18n="ref.con.r2.p">Adapt site and activity selection. Accessible trails, reduced distance, stationary activities. Not a contraindication — an activity selection constraint. Consult with the participant on capability and preference.</p>
+          </div>
+        </article>
+
+        <article class="indication-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r3" aria-labelledby="ref-title-con-r3" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-r3" data-i18n="ref.con.r3.h">Severe pollen or insect allergy</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-r3" hidden>
+            <p data-i18n="ref.con.r3.p">Seasonal scheduling, pharmacological management (antihistamines, epinephrine auto-injector accessible), site selection (avoid known allergen concentrations). Written protocol agreed with participant and practitioner.</p>
+          </div>
+        </article>
+
+        <article class="indication-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r4" aria-labelledby="ref-title-con-r4" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-r4" data-i18n="ref.con.r4.h">Extreme thermoregulatory sensitivity</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-r4" hidden>
+            <p data-i18n="ref.con.r4.p">Certain medications, menopause, cardiovascular conditions, MS. Adjust clothing requirements, session length, time of day, seasonal timing. Not a barrier — a scheduling constraint.</p>
+          </div>
+        </article>
+
+        <article class="indication-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r5" aria-labelledby="ref-title-con-r5" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-r5" data-i18n="ref.con.r5.h">Sensory processing profiles requiring modified sensory load</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-r5" hidden>
+            <p data-i18n="ref.con.r5.p">Autism spectrum profiles, post-concussion syndrome, migraine disorders. Choose sites by sensory characteristics (reduced acoustic variation, predictable light, known routes). Pre-session site briefing reduces startle load.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="ref-group" data-group="con-competency">
+        <div class="tier-header" data-i18n="ref.con.comp">Practitioner competency contraindications</div>
+
+        <article class="warn-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-c1" aria-labelledby="ref-title-con-c1" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-c1" data-i18n="ref.con.c1.h">When clinical complexity exceeds practitioner training</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-c1" hidden>
+            <p data-i18n="ref.con.c1.p">If the presenting complexity exceeds the practitioner's clinical training, FBT is contraindicated for that practitioner with that participant — regardless of how well the indication fits the approach. Refer, consult, or decline. This is a matter of clinical responsibility, not of willingness.</p>
+          </div>
+        </article>
+
+        <article class="warn-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-c2" aria-labelledby="ref-title-con-c2" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-c2" data-i18n="ref.con.c2.h">When FBT-specific training is absent</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-c2" hidden>
+            <p data-i18n="ref.con.c2.p">Holding a clinical qualification without FBT-specific training is not sufficient for FBT practice. The setting introduces factors (safety, group dynamics outdoors, transference shifts in informal space) that require specific preparation.</p>
+          </div>
+        </article>
+      </div>
+
+    </div>
+
+    <div id="mod-indications">
+
+      <div class="ref-group" data-group="tier1">
+        <div class="tier-header" data-i18n="ref.ind.tier1">Tier 1 · Primary indications — FBT may be first-line</div>
+
+        <article class="indication-block ref-entry" data-kind="indication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-gad" aria-labelledby="ref-title-gad" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.indication">Indication</span>
+            <h4 id="ref-title-gad"><span data-i18n="ref.ind.gad.name">Generalised anxiety and chronic stress</span></h4>
+            <span class="ref-evidence ref-evidence--strong">
+              <span class="ref-ev-bars" aria-hidden="true"><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span></span>
+              <span class="ref-ev-label" data-i18n="ref.ev.strong">Strong</span>
+            </span>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-gad" hidden>
             <p data-i18n="ref.ind.gad.p">Consistent effects on self-reported anxiety and autonomic markers (HRV, cortisol). Outdoor setting directly addresses sensory over-stimulation that commonly maintains anxiety.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format">Format</strong>: <span data-i18n="ref.ind.gad.fmt">Individual, weekly or fortnightly, 6–10 sessions before reassessment.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.acts">Pocket guide activities</strong>: <span data-i18n="ref.ind.gad.acts">Sit spot, forest breathing, sensory mapping.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo">Combines with</strong>: <span data-i18n="ref.ind.gad.combo">CBT (behavioural experiments with graded exposure); somatic approaches for interoceptive work.</span></div>
             <div class="related-reading"><a href="javascript:openChapter('ch-8', 8)" data-i18n="ref.rr.gad">Guide ch. 8, pp. 65–70</a></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4><span data-i18n="ref.ind.bo.name">Burnout and occupational exhaustion</span> <span class="evidence-pill evidence-pill--strong" data-i18n="ref.ev.strong2">Strong</span></h4>
+        <article class="indication-block ref-entry" data-kind="indication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-bo" aria-labelledby="ref-title-bo" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.indication">Indication</span>
+            <h4 id="ref-title-bo"><span data-i18n="ref.ind.bo.name">Burnout and occupational exhaustion</span></h4>
+            <span class="ref-evidence ref-evidence--strong">
+              <span class="ref-ev-bars" aria-hidden="true"><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span></span>
+              <span class="ref-ev-label" data-i18n="ref.ev.strong2">Strong</span>
+            </span>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-bo" hidden>
             <p data-i18n="ref.ind.bo.p">Particularly strong results where exhaustion is accompanied by depletion of directed attention. Low-demand early sessions that permit rest counter the productivity bias sustaining the condition.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format2">Format</strong>: <span data-i18n="ref.ind.bo.fmt">Individual, fortnightly, 8–12 sessions; longer timeframe than anxiety work.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.acts2">Pocket guide activities</strong>: <span data-i18n="ref.ind.bo.acts">Sit spot, silent paired walk, weather dialogue.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo2">Combines with</strong>: <span data-i18n="ref.ind.bo.combo">ACT for values clarification; narrative work on occupational identity.</span></div>
             <div class="related-reading"><a href="javascript:openChapter('ch-8', 8)" data-i18n="ref.rr.bo">Guide ch. 8, pp. 65–70</a></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4><span data-i18n="ref.ind.dep.name">Mild-to-moderate depression (non-psychotic)</span> <span class="evidence-pill evidence-pill--moderate" data-i18n="ref.ev.moderate">Moderate</span></h4>
+        <article class="indication-block ref-entry" data-kind="indication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-dep" aria-labelledby="ref-title-dep" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.indication">Indication</span>
+            <h4 id="ref-title-dep"><span data-i18n="ref.ind.dep.name">Mild-to-moderate depression (non-psychotic)</span></h4>
+            <span class="ref-evidence ref-evidence--moderate">
+              <span class="ref-ev-bars" aria-hidden="true"><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span></span>
+              <span class="ref-ev-label" data-i18n="ref.ev.moderate">Moderate</span>
+            </span>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-dep" hidden>
             <p data-i18n="ref.ind.dep.p">Evidence strongest for depression with behavioural withdrawal and anhedonia components. Movement through natural environments supports activation without the demand characteristic of structured exercise prescriptions.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format3">Format</strong>: <span data-i18n="ref.ind.dep.fmt">Individual, weekly, 8–12 sessions. Assess motivation for outdoor engagement before committing.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.acts3">Pocket guide activities</strong>: <span data-i18n="ref.ind.dep.acts">Threshold walk, roots &amp; branches, bark rubbing &amp; texture journal.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo3">Combines with</strong>: <span data-i18n="ref.ind.dep.combo">Behavioural activation; medication management; narrative therapy for meaning-making.</span></div>
             <div class="related-reading"><a href="javascript:openChapter('ch-9', 9)" data-i18n="ref.rr.dep">Guide ch. 9, pp. 71–75</a></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4><span data-i18n="ref.ind.ado.name">Adolescent emotional and behavioural difficulties (non-acute)</span> <span class="evidence-pill evidence-pill--moderate" data-i18n="ref.ev.moderate2">Moderate</span></h4>
+        <article class="indication-block ref-entry" data-kind="indication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-ado" aria-labelledby="ref-title-ado" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.indication">Indication</span>
+            <h4 id="ref-title-ado"><span data-i18n="ref.ind.ado.name">Adolescent emotional and behavioural difficulties (non-acute)</span></h4>
+            <span class="ref-evidence ref-evidence--moderate">
+              <span class="ref-ev-bars" aria-hidden="true"><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span></span>
+              <span class="ref-ev-label" data-i18n="ref.ev.moderate2">Moderate</span>
+            </span>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-ado" hidden>
             <p data-i18n="ref.ind.ado.p">Outdoor context lowers resistance typical of adolescent presentations: reduces face-to-face pressure, normalises movement and silence, side-by-side dialogue feels less clinical. Group formats leverage peer-relational dynamics.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format4">Format</strong>: <span data-i18n="ref.ind.ado.fmt">Individual or small group (4–6), weekly, 8–12 sessions. Parent/carer communication protocol agreed in advance.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.acts4">Pocket guide activities</strong>: <span data-i18n="ref.ind.ado.acts">Threshold walk, tracking &amp; noticing, forest mandala.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo4">Combines with</strong>: <span data-i18n="ref.ind.ado.combo">CBT-adapted approaches; systemic family work; school liaison where indicated.</span></div>
             <div class="related-reading"><a href="javascript:openChapter('ch-10', 10)" data-i18n="ref.rr.ado">Guide ch. 10, pp. 76–82</a></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4><span data-i18n="ref.ind.adhd.name">Attention difficulties (ADHD profile)</span> <span class="evidence-pill evidence-pill--emerging" data-i18n="ref.ev.emerging">Emerging</span></h4>
+        <article class="indication-block ref-entry" data-kind="indication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-adhd" aria-labelledby="ref-title-adhd" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.indication">Indication</span>
+            <h4 id="ref-title-adhd"><span data-i18n="ref.ind.adhd.name">Attention difficulties (ADHD profile)</span></h4>
+            <span class="ref-evidence ref-evidence--emerging">
+              <span class="ref-ev-bars" aria-hidden="true"><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span></span>
+              <span class="ref-ev-label" data-i18n="ref.ev.emerging">Emerging</span>
+            </span>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-adhd" hidden>
             <p data-i18n="ref.ind.adhd.p">Attention Restoration Theory predicts direct benefit; emerging evidence supports this for both adults and children. Particularly useful as adjunct to stimulant treatment for non-pharmacological skill development.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format5">Format</strong>: <span data-i18n="ref.ind.adhd.fmt">Individual or group, shorter sessions (45–60 min), weekly, 6–10 sessions. Pharmacological treatment continues unchanged.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.acts5">Pocket guide activities</strong>: <span data-i18n="ref.ind.adhd.acts">Tracking &amp; noticing, sit spot, forest breathing.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo5">Combines with</strong>: <span data-i18n="ref.ind.adhd.combo">Ongoing ADHD pharmacotherapy; executive function coaching.</span></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4><span data-i18n="ref.ind.grief.name">Grief and bereavement (post-acute phase)</span> <span class="evidence-pill evidence-pill--moderate" data-i18n="ref.ev.moderate3">Moderate</span></h4>
+        <article class="indication-block ref-entry" data-kind="indication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-grief" aria-labelledby="ref-title-grief" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.indication">Indication</span>
+            <h4 id="ref-title-grief"><span data-i18n="ref.ind.grief.name">Grief and bereavement (post-acute phase)</span></h4>
+            <span class="ref-evidence ref-evidence--moderate">
+              <span class="ref-ev-bars" aria-hidden="true"><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span><span class="ref-ev-bar"></span></span>
+              <span class="ref-ev-label" data-i18n="ref.ev.moderate3">Moderate</span>
+            </span>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-grief" hidden>
             <p data-i18n="ref.ind.grief.p">Not for acute grief. For post-acute grief work — typically 3+ months after loss — nature provides structural metaphors (cycles, decay as generative, seasons) that complement narrative reconstruction of the bereaved's relationship with the deceased.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format6">Format</strong>: <span data-i18n="ref.ind.grief.fmt">Individual, fortnightly, 6–10 sessions. Longer if complicated grief.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.acts6">Pocket guide activities</strong>: <span data-i18n="ref.ind.grief.acts">Dead wood dialogue, threshold walk, tree council.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo6">Combines with</strong>: <span data-i18n="ref.ind.grief.combo">Continuing-bonds frameworks; narrative therapy; meaning reconstruction approaches.</span></div>
             <div class="related-reading"><a href="javascript:openChapter('ch-11', 11)" data-i18n="ref.rr.grief">Guide ch. 11, pp. 83–89</a></div>
           </div>
+        </article>
+      </div>
 
-          <div class="tier-header" data-i18n="ref.ind.tier2">Tier 2 · Adjunctive — FBT as complement to primary treatment</div>
+      <div class="ref-group" data-group="tier2">
+        <div class="tier-header" data-i18n="ref.ind.tier2">Tier 2 · Adjunctive — FBT as complement to primary treatment</div>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.adj.trauma.name">Trauma recovery (post-stabilisation only)</h4>
+        <article class="indication-block ref-entry" data-kind="adjunctive">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-adj-trauma" aria-labelledby="ref-title-adj-trauma" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.adjunctive">Adjunctive</span>
+            <h4 id="ref-title-adj-trauma" data-i18n="ref.adj.trauma.name">Trauma recovery (post-stabilisation only)</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-adj-trauma" hidden>
             <p data-i18n="ref.adj.trauma.p">FBT may support integration work once trauma has been stabilised through trauma-specific approaches (EMDR, CPT, phased trauma therapy). Never a primary trauma treatment. Requires specific training in trauma-informed practice.</p>
             <div class="ind-meta"><strong data-i18n="ref.adj.need">Required before use</strong>: <span data-i18n="ref.adj.trauma.pre">Stabilisation phase complete; participant's window of tolerance mapped; trauma-informed practitioner competency; clear containment protocol if activation occurs outdoors.</span></div>
             <div class="related-reading"><a href="javascript:openChapter('ch-12', 12)" data-i18n="ref.rr.trauma">Guide ch. 12, pp. 90–96</a></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.adj.attach.name">Attachment and relational work</h4>
+        <article class="indication-block ref-entry" data-kind="adjunctive">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-adj-attach" aria-labelledby="ref-title-adj-attach" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.adjunctive">Adjunctive</span>
+            <h4 id="ref-title-adj-attach" data-i18n="ref.adj.attach.name">Attachment and relational work</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-adj-attach" hidden>
             <p data-i18n="ref.adj.attach.p">Paired and small-group formats can surface relational patterns with less defensive structure than indoor settings. Silent paired walks, tree council work, and shared-task activities generate relational material.</p>
             <div class="ind-meta"><strong data-i18n="ref.adj.need2">Required before use</strong>: <span data-i18n="ref.adj.attach.pre">Formulation of relational difficulty; established therapeutic relationship; competence in working with enactments.</span></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.adj.trans.name">Identity and life-stage transitions</h4>
+        <article class="indication-block ref-entry" data-kind="adjunctive">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-adj-trans" aria-labelledby="ref-title-adj-trans" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.adjunctive">Adjunctive</span>
+            <h4 id="ref-title-adj-trans" data-i18n="ref.adj.trans.name">Identity and life-stage transitions</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-adj-trans" hidden>
             <p data-i18n="ref.adj.trans.p">Strong fit for transitions where orientation rather than symptom reduction is the goal. Threshold metaphors, walking structures, and tree-as-structure work are directly generative. Less symptom burden usually means shorter engagements.</p>
             <div class="ind-meta"><strong data-i18n="ref.adj.need3">Required before use</strong>: <span data-i18n="ref.adj.trans.pre">Clinical formulation distinguishing transition work from underlying mood, anxiety, or personality disorder presentations.</span></div>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.adj.couple.name">Family and couples work</h4>
+        <article class="indication-block ref-entry" data-kind="adjunctive">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-adj-couple" aria-labelledby="ref-title-adj-couple" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.adjunctive">Adjunctive</span>
+            <h4 id="ref-title-adj-couple" data-i18n="ref.adj.couple.name">Family and couples work</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-adj-couple" hidden>
             <p data-i18n="ref.adj.couple.p">Outdoor setting disrupts entrenched interaction patterns. Activities requiring cooperation or shared attention externalise relational dynamics in ways that room-based work often cannot.</p>
             <div class="ind-meta"><strong data-i18n="ref.adj.need4">Required before use</strong>: <span data-i18n="ref.adj.couple.pre">Systemic/couples therapy training; clear contracting around confidentiality between partners; safeguarding screen (IPV, child protection).</span></div>
           </div>
+        </article>
+      </div>
 
-          <div class="tier-header" data-i18n="ref.ind.tier3">Tier 3 · Specialist competency required — flags, not contraindications</div>
+      <div class="ref-group" data-group="tier3">
+        <div class="tier-header" data-i18n="ref.ind.tier3">Tier 3 · Specialist competency required — flags, not contraindications</div>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.flag.diss.name">Dissociative presentations</h4>
+        <article class="indication-block ref-entry" data-kind="competency">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-flag-diss" aria-labelledby="ref-title-flag-diss" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.competency">Competency flag</span>
+            <h4 id="ref-title-flag-diss" data-i18n="ref.flag.diss.name">Dissociative presentations</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-flag-diss" hidden>
             <p data-i18n="ref.flag.diss.p">Natural environments can both ground and trigger dissociation. Outcomes depend critically on the practitioner's competence in working with dissociation, not on the setting. Without that competence, FBT is contraindicated for this presentation.</p>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.flag.ptsd.name">Complex PTSD with possible nature-related triggers</h4>
+        <article class="indication-block ref-entry" data-kind="competency">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-flag-ptsd" aria-labelledby="ref-title-flag-ptsd" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.competency">Competency flag</span>
+            <h4 id="ref-title-flag-ptsd" data-i18n="ref.flag.ptsd.name">Complex PTSD with possible nature-related triggers</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-flag-ptsd" hidden>
             <p data-i18n="ref.flag.ptsd.p">Trauma history involving nature (outdoor assault, disaster, childhood neglect involving being left outside) requires specific assessment. The forest is not neutral. Screen explicitly before proceeding.</p>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.flag.sui.name">Recent suicidal ideation (stabilised)</h4>
+        <article class="indication-block ref-entry" data-kind="competency">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-flag-sui" aria-labelledby="ref-title-flag-sui" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.competency">Competency flag</span>
+            <h4 id="ref-title-flag-sui" data-i18n="ref.flag.sui.name">Recent suicidal ideation (stabilised)</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-flag-sui" hidden>
             <p data-i18n="ref.flag.sui.p">FBT is not contraindicated in recent (not current) suicidality if stabilisation is established. However, remote-setting risk considerations (access to means, phone signal, extraction time) require explicit planning and shared with the participant.</p>
           </div>
+        </article>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.flag.pd.name">Severe personality disorder presentations</h4>
+        <article class="indication-block ref-entry" data-kind="competency">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-flag-pd" aria-labelledby="ref-title-flag-pd" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.competency">Competency flag</span>
+            <h4 id="ref-title-flag-pd" data-i18n="ref.flag.pd.name">Severe personality disorder presentations</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-flag-pd" hidden>
             <p data-i18n="ref.flag.pd.p">Particularly for presentations with intense transference/counter-transference dynamics. The informality of outdoor settings can blur frames in ways that destabilise therapeutic boundaries. Requires supervision specifically competent in this work.</p>
           </div>
-
-        </div>
+        </article>
       </div>
 
-      <!-- Module 2: Contraindications -->
-      <div class="module-card" id="mod-contraindications">
-        <div class="module-body">
+    </div>
 
-          <div class="tier-header" data-i18n="ref.con.abs">Absolute — do not proceed without specialist consultation</div>
+    <div class="ref-group" data-group="population">
 
-          <div class="warn-block">
-            <h4 data-i18n="ref.con.a1.h">Acute or recent psychosis</h4>
-            <p data-i18n="ref.con.a1.p">Active psychotic symptoms or psychosis within a period too recent for stability (judgement of treating team). Perceptual ambiguity of forest environments can compound symptoms. Specialist psychiatric consultation required before any consideration.</p>
+        <article class="indication-block ref-entry" data-kind="population">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-pop-ado" aria-labelledby="ref-title-pop-ado" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.population">Population</span>
+            <h4 id="ref-title-pop-ado" data-i18n="ref.pop.ado.h">Adolescents</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="warn-block">
-            <h4 data-i18n="ref.con.a2.h">Active suicidal crisis without stabilisation</h4>
-            <p data-i18n="ref.con.a2.p">Current plan, intent, or recent attempt without adequate safety planning and clinical stabilisation. Outdoor setting complicates crisis response time and may introduce means. Crisis care takes precedence.</p>
+          <div class="ref-panel" id="ref-panel-pop-ado" hidden>
+            <p data-i18n="ref.pop.ado.p">Outdoor settings reduce the clinical gaze that many adolescents find intolerable indoors. Side-by-side dialogue (while walking, while working with bark, while making something) feels less confrontational than face-to-face. Peer-relational dynamics in group formats can be productively used but require active facilitation. Safeguarding considerations: clear contact protocols, supervision ratio, terrain safety, mobile phone policy, and explicit protocol for what is and is not shared with parents or carers. Parent/carer communication should be agreed with the young person at the outset and revisited.</p>
+            <div class="related-reading"><a href="javascript:openChapter('ch-10', 10)" data-i18n="ref.rr.pop_ado">Guide ch. 10, pp. 76–82</a></div>
           </div>
-          <div class="warn-block">
-            <h4 data-i18n="ref.con.a3.h">Severe untreated agoraphobia or specific nature-related phobia</h4>
-            <p data-i18n="ref.con.a3.p">Where the forest setting itself would constitute an untreated phobic exposure without gradient and without specific therapeutic framing. Phobia treatment with graded exposure must precede or be the explicit frame of the work.</p>
-          </div>
-          <div class="warn-block">
-            <h4 data-i18n="ref.con.a4.h">Conditions requiring continuous clinical monitoring</h4>
-            <p data-i18n="ref.con.a4.p">Acute eating disorder below safe weight, brittle diabetes, unstable epilepsy, severe cardiac conditions, or any condition where the distance from emergency response exceeds safe intervention time.</p>
-          </div>
+        </article>
 
-          <div class="tier-header" data-i18n="ref.con.rel">Relative — protocol adaptation required</div>
+        <article class="indication-block ref-entry" data-kind="population">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-pop-bo" aria-labelledby="ref-title-pop-bo" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.population">Population</span>
+            <h4 id="ref-title-pop-bo" data-i18n="ref.pop.bo.h">Burnout</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-pop-bo" hidden>
+            <p data-i18n="ref.pop.bo.p">A recognisable trajectory: recognition of depletion → permission to rest without guilt → gradual reconnection with interest and capacity → reorientation toward a sustainable rhythm. Early sessions should demand almost nothing. Resist the participant's frequent wish to make sessions productive. The guilt response to stillness is the clinical material. Expect the engagement to be longer than for anxiety — burnout recovers on a slower timescale and cannot be compressed.</p>
+            <div class="related-reading"><a href="javascript:openChapter('ch-8', 8)" data-i18n="ref.rr.pop_bo">Guide ch. 8, pp. 65–70</a></div>
+          </div>
+        </article>
 
-          <div class="indication-block">
-            <h4 data-i18n="ref.con.r1.h">PTSD with possible nature triggers</h4>
-            <p data-i18n="ref.con.r1.p">Assess history before proceeding. Specific sensory modalities (certain sounds, light conditions, smells, enclosure/exposure) may trigger. Co-design the session with explicit trigger map and exit protocol.</p>
+        <article class="indication-block ref-entry" data-kind="population">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-pop-grief" aria-labelledby="ref-title-pop-grief" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.population">Population</span>
+            <h4 id="ref-title-pop-grief" data-i18n="ref.pop.grief.h">Bereavement</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="indication-block">
-            <h4 data-i18n="ref.con.r2.h">Significant mobility impairment</h4>
-            <p data-i18n="ref.con.r2.p">Adapt site and activity selection. Accessible trails, reduced distance, stationary activities. Not a contraindication — an activity selection constraint. Consult with the participant on capability and preference.</p>
+          <div class="ref-panel" id="ref-panel-pop-grief" hidden>
+            <p data-i18n="ref.pop.grief.p">Timing matters. Acute grief (weeks to a few months) is usually better served by gentler, more contained settings; forest sessions at that stage can feel exposed. In post-acute grief, nature-as-witness framing is particularly generative: the forest does not try to console, does not look away, continues its own processes. Dead wood, seasonal change, and threshold metaphors offer structural support for mourning work. Build explicit closure protocols for sessions where grief activates strongly.</p>
+            <div class="related-reading"><a href="javascript:openChapter('ch-11', 11)" data-i18n="ref.rr.pop_grief">Guide ch. 11, pp. 83–89</a></div>
           </div>
-          <div class="indication-block">
-            <h4 data-i18n="ref.con.r3.h">Severe pollen or insect allergy</h4>
-            <p data-i18n="ref.con.r3.p">Seasonal scheduling, pharmacological management (antihistamines, epinephrine auto-injector accessible), site selection (avoid known allergen concentrations). Written protocol agreed with participant and practitioner.</p>
-          </div>
-          <div class="indication-block">
-            <h4 data-i18n="ref.con.r4.h">Extreme thermoregulatory sensitivity</h4>
-            <p data-i18n="ref.con.r4.p">Certain medications, menopause, cardiovascular conditions, MS. Adjust clothing requirements, session length, time of day, seasonal timing. Not a barrier — a scheduling constraint.</p>
-          </div>
-          <div class="indication-block">
-            <h4 data-i18n="ref.con.r5.h">Sensory processing profiles requiring modified sensory load</h4>
-            <p data-i18n="ref.con.r5.p">Autism spectrum profiles, post-concussion syndrome, migraine disorders. Choose sites by sensory characteristics (reduced acoustic variation, predictable light, known routes). Pre-session site briefing reduces startle load.</p>
-          </div>
+        </article>
 
-          <div class="tier-header" data-i18n="ref.con.comp">Practitioner competency contraindications</div>
-
-          <div class="warn-block">
-            <h4 data-i18n="ref.con.c1.h">When clinical complexity exceeds practitioner training</h4>
-            <p data-i18n="ref.con.c1.p">If the presenting complexity exceeds the practitioner's clinical training, FBT is contraindicated for that practitioner with that participant — regardless of how well the indication fits the approach. Refer, consult, or decline. This is a matter of clinical responsibility, not of willingness.</p>
+        <article class="indication-block ref-entry" data-kind="population">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-pop-group" aria-labelledby="ref-title-pop-group" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.population">Population</span>
+            <h4 id="ref-title-pop-group" data-i18n="ref.pop.group.h">Groups</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="warn-block">
-            <h4 data-i18n="ref.con.c2.h">When FBT-specific training is absent</h4>
-            <p data-i18n="ref.con.c2.p">Holding a clinical qualification without FBT-specific training is not sufficient for FBT practice. The setting introduces factors (safety, group dynamics outdoors, transference shifts in informal space) that require specific preparation.</p>
+          <div class="ref-panel" id="ref-panel-pop-group" hidden>
+            <p data-i18n="ref.pop.group.p">Group facilitation outdoors has distinct dynamics from individual work and from indoor groups. Dispersion (participants at different spots during an activity) requires attention-holding across space. Divergent responses in a shared setting — one person finding a quality of peace, another finding discomfort — are the norm, not a problem; manage them in the integration phase rather than suppressing them. Decide in advance between circle formats (tighter containment) and dispersed formats (greater autonomy, more complex facilitation). Ideal group size is usually 6–10, with clear sightlines.</p>
+            <div class="related-reading"><a href="javascript:openChapter('ch-7', 7)" data-i18n="ref.rr.pop_group">Guide ch. 7, pp. 59–64</a></div>
           </div>
+        </article>
+    </div>
 
-        </div>
-      </div>
+    <div class="ref-group" data-group="dosage">
 
-      <!-- Module 3: Population-Specific Guidance -->
-      <div class="module-card" id="mod-populations">
-        <div class="module-body">
-          <div class="learn-blocks">
-            <div class="learn-block">
-              <h4 data-i18n="ref.pop.ado.h">Adolescents</h4>
-              <p data-i18n="ref.pop.ado.p">Outdoor settings reduce the clinical gaze
-            <div class="related-reading"><a href="javascript:openChapter('ch-10', 10)" data-i18n="ref.rr.pop_ado">Guide ch. 10, pp. 76–82</a></div> that many adolescents find intolerable indoors. Side-by-side dialogue (while walking, while working with bark, while making something) feels less confrontational than face-to-face. Peer-relational dynamics in group formats can be productively used but require active facilitation. Safeguarding considerations: clear contact protocols, supervision ratio, terrain safety, mobile phone policy, and explicit protocol for what is and is not shared with parents or carers. Parent/carer communication should be agreed with the young person at the outset and revisited.</p>
-            </div>
-            <div class="learn-block">
-              <h4 data-i18n="ref.pop.bo.h">Burnout</h4>
-              <p data-i18n="ref.pop.bo.p">A recognisable trajectory:
-            <div class="related-reading"><a href="javascript:openChapter('ch-8', 8)" data-i18n="ref.rr.pop_bo">Guide ch. 8, pp. 65–70</a></div> recognition of depletion → permission to rest without guilt → gradual reconnection with interest and capacity → reorientation toward a sustainable rhythm. Early sessions should demand almost nothing. Resist the participant's frequent wish to make sessions productive. The guilt response to stillness is the clinical material. Expect the engagement to be longer than for anxiety — burnout recovers on a slower timescale and cannot be compressed.</p>
-            </div>
-            <div class="learn-block">
-              <h4 data-i18n="ref.pop.grief.h">Bereavement</h4>
-              <p data-i18n="ref.pop.grief.p">Timing matters. Acute grief
-            <div class="related-reading"><a href="javascript:openChapter('ch-11', 11)" data-i18n="ref.rr.pop_grief">Guide ch. 11, pp. 83–89</a></div> (weeks to a few months) is usually better served by gentler, more contained settings; forest sessions at that stage can feel exposed. In post-acute grief, nature-as-witness framing is particularly generative: the forest does not try to console, does not look away, continues its own processes. Dead wood, seasonal change, and threshold metaphors offer structural support for mourning work. Build explicit closure protocols for sessions where grief activates strongly.</p>
-            </div>
-            <div class="learn-block">
-              <h4 data-i18n="ref.pop.group.h">Groups</h4>
-              <p data-i18n="ref.pop.group.p">Group facilitation outdoors has distinct dynamics
-            <div class="related-reading"><a href="javascript:openChapter('ch-7', 7)" data-i18n="ref.rr.pop_group">Guide ch. 7, pp. 59–64</a></div> from individual work and from indoor groups. Dispersion (participants at different spots during an activity) requires attention-holding across space. Divergent responses in a shared setting — one person finding a quality of peace, another finding discomfort — are the norm, not a problem; manage them in the integration phase rather than suppressing them. Decide in advance between circle formats (tighter containment) and dispersed formats (greater autonomy, more complex facilitation). Ideal group size is usually 6–10, with clear sightlines.</p>
-            </div>
+        <article class="indication-block ref-entry" data-kind="dosage">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-dosage" aria-labelledby="ref-title-dosage" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.dosage">Dosage</span>
+            <h4 id="ref-title-dosage" data-i18n="ref.dos.title">Session dosage reference</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-        </div>
-      </div>
-
-      <!-- Module 4: Dosage Reference -->
-      <div class="module-card" id="mod-dosage">
-        <div class="module-body">
-          <p class="assessment-intro" data-i18n="ref.dos.intro">Evidence-informed starting points for session format, frequency, and minimum duration before reassessment. These are reference values, not prescriptions — clinical judgement, supervision, and the participant's response govern all decisions.</p>
-          <div class="dosage-grid">
-            <div class="dosage-row dosage-head">
-              <div class="dosage-cell-label" data-i18n="ref.dos.hd1">Condition</div>
-              <div class="dosage-cell" data-i18n="ref.dos.hd2">Format</div>
-              <div class="dosage-cell" data-i18n="ref.dos.hd3">Frequency</div>
-              <div class="dosage-cell" data-i18n="ref.dos.hd4">Before reassessment</div>
-            </div>
+          <div class="ref-panel" id="ref-panel-dosage" hidden>
+            <p class="assessment-intro" data-i18n="ref.dos.intro">Evidence-informed starting points for session format, frequency, and minimum duration before reassessment. These are reference values, not prescriptions — clinical judgement, supervision, and the participant's response govern all decisions.</p>
+            <div class="dosage-grid">
+              <div class="dosage-row dosage-head">
+                <div class="dosage-cell-label" data-i18n="ref.dos.hd1">Condition</div>
+                <div class="dosage-cell" data-i18n="ref.dos.hd2">Format</div>
+                <div class="dosage-cell" data-i18n="ref.dos.hd3">Frequency</div>
+                <div class="dosage-cell" data-i18n="ref.dos.hd4">Before reassessment</div>
+              </div>
             <div class="dosage-row">
               <div class="dosage-cell-label" data-i18n="ref.dos.r1.c">Generalised anxiety / chronic stress</div>
               <div class="dosage-cell" data-label="Format" data-i18n="ref.dos.r1.f">Individual</div>
@@ -1018,40 +1308,74 @@
               <div class="dosage-cell" data-label="Frequency" data-i18n="ref.dos.r9.fr">Fortnightly</div>
               <div class="dosage-cell" data-label="Min. sessions" data-i18n="ref.dos.r9.m">6–10 sessions</div>
             </div>
+            </div>
+            <p class="checklist-note" data-i18n="ref.dos.note">Session length 60–90 min is the common range. Shorter sessions are appropriate for ADHD work and some adolescent contexts. Longer sessions (up to 120 min) may be appropriate for specific group formats.</p>
           </div>
-          <p class="checklist-note" data-i18n="ref.dos.note">Session length 60–90 min is the common range. Shorter sessions are appropriate for ADHD work and some adolescent contexts. Longer sessions (up to 120 min) may be appropriate for specific group formats.</p>
-        </div>
-      </div>
+        </article>
+    </div>
 
-      <!-- Module 5: Integration with Other Modalities -->
-      <div class="module-card" id="mod-integration">
-        <div class="module-body">
-          <div class="integration-block">
-            <h4 data-i18n="ref.int.cbt.h">CBT — forest observations as behavioural experiments</h4>
+    <div class="ref-group" data-group="integration">
+
+        <article class="indication-block ref-entry" data-kind="integration">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-int-cbt" aria-labelledby="ref-title-int-cbt" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.integration">Integration</span>
+            <h4 id="ref-title-int-cbt" data-i18n="ref.int.cbt.h">CBT — forest observations as behavioural experiments</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-int-cbt" hidden>
             <p data-i18n="ref.int.cbt.p">Cognitive-behavioural work benefits from concrete contexts for testing predictions. The forest provides unpredictable, real-world material for behavioural experiments: predicting one's own response, testing avoidance patterns against actual tolerance, graded exposure to externally-imposed discomfort (cold, unfamiliar terrain, uncertainty).</p>
             <div class="int-pair" data-i18n="ref.int.cbt.pair">Pairs with: sit spot, tracking &amp; noticing, threshold walk.</div>
             <div class="related-reading"><a href="javascript:openChapter('ch-6', 6)" data-i18n="ref.rr.int_cbt">Guide ch. 6, pp. 45–58</a></div>
           </div>
-          <div class="integration-block">
-            <h4 data-i18n="ref.int.act.h">ACT — values clarification through nature metaphor</h4>
+        </article>
+
+        <article class="indication-block ref-entry" data-kind="integration">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-int-act" aria-labelledby="ref-title-int-act" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.integration">Integration</span>
+            <h4 id="ref-title-int-act" data-i18n="ref.int.act.h">ACT — values clarification through nature metaphor</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-int-act" hidden>
             <p data-i18n="ref.int.act.p">The forest offers rich metaphor for values work: what directions does this tree grow toward, what has it had to adapt around, where does it give way. Many ACT practitioners find values clarification substantially easier with a concrete referent than with abstract worksheets.</p>
             <div class="int-pair" data-i18n="ref.int.act.pair">Pairs with: roots &amp; branches, tree council, weather dialogue.</div>
             <div class="related-reading"><a href="javascript:openChapter('ch-6', 6)" data-i18n="ref.rr.int_act">Guide ch. 6, pp. 45–58</a></div>
           </div>
-          <div class="integration-block">
-            <h4 data-i18n="ref.int.som.h">Somatic and body-based approaches — interoceptive attention</h4>
+        </article>
+
+        <article class="indication-block ref-entry" data-kind="integration">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-int-som" aria-labelledby="ref-title-int-som" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.integration">Integration</span>
+            <h4 id="ref-title-int-som" data-i18n="ref.int.som.h">Somatic and body-based approaches — interoceptive attention</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-int-som" hidden>
             <p data-i18n="ref.int.som.p">Somatic work depends on sustained interoceptive attention, which is easily disrupted by indoor sensory saturation. The forest provides a lower-noise environment where subtle body signals become available. Movement becomes part of processing rather than an interruption of it.</p>
             <div class="int-pair" data-i18n="ref.int.som.pair">Pairs with: forest breathing, bark rubbing &amp; texture journal, silent paired walk.</div>
           </div>
-          <div class="integration-block">
-            <h4 data-i18n="ref.int.nar.h">Narrative therapy — externalisation and re-authoring</h4>
+        </article>
+
+        <article class="indication-block ref-entry" data-kind="integration">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-int-nar" aria-labelledby="ref-title-int-nar" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.integration">Integration</span>
+            <h4 id="ref-title-int-nar" data-i18n="ref.int.nar.h">Narrative therapy — externalisation and re-authoring</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-int-nar" hidden>
             <p data-i18n="ref.int.nar.p">The threshold walk is a re-authoring structure in physical form — moving from one version of the story to another through a marked middle. Tree council externalises voices and positions. The forest provides spatial scaffolding for narrative moves that would otherwise be imagined.</p>
             <div class="int-pair" data-i18n="ref.int.nar.pair">Pairs with: threshold walk, tree council, sensory mapping.</div>
           </div>
-        </div>
-      </div>
-
+        </article>
     </div>
+
+
+    <p class="reference-search-empty" id="reference-search-empty" hidden>
+      <span data-i18n="ref.search.empty">Nothing on this page matches that.</span>
+      <button type="button" class="ref-clear-btn" onclick="refClearSearch()" data-i18n="ref.search.clear">Clear the search</button>
+    </p>
   </div>
 
     <!-- LEARN -->
@@ -1140,14 +1464,28 @@
       <div class="module-card is-door" id="mod-pocket" style="grid-column: 1 / -1;">
         <div class="module-body" id="pb-mount">
           <div class="pb-host">
-            <main class="pb-main">
+            <!-- Was a "main" landmark element; now that index.html has a
+                 page-level one (the skip-link target, wrapping every
+                 screen), nesting a second one here would be invalid.
+                 Same class, same layout — just a div, not its own landmark. -->
+            <div class="pb-main">
               <section class="pb-prose">
                 <h3 data-i18n="pbui.howto.title">How to use this section</h3>
                 <p data-i18n-html="pbui.howto.p1">Activities are grouped under five themes that map onto the therapeutic arc: <strong>Getting There</strong>; <strong>Waking Up Your Senses</strong>; <strong>Discovering Yourself</strong>; <strong>Connecting with Others</strong>; and <strong>Coming Back to Yourself</strong>. Within each group, activities range from lower to higher demand. Select based on where the group is on a given day, not on where the session plan says they should be.</p>
                 <p data-i18n-html="pbui.howto.p2">The principle of <em>invitation rather than task</em> applies throughout. No activity is mandatory, and a young person who watches rather than participates is participating.</p>
               </section>
+              <div class="pb-filters">
+                <div class="pb-filter-row" id="pb-filter-groups" aria-label="Filter by group" data-i18n-attr="aria-label:pbui.filter.groups.label"></div>
+                <div class="pb-filter-toggle-row">
+                  <button type="button" class="pb-filter-toggle" id="pb-filter-toggle" aria-expanded="false" aria-controls="pb-filter-tags" onclick="pbToggleFilterPanel()" data-i18n="pbui.filter.toggle">More filters</button>
+                  <button type="button" class="pb-filter-clear-btn" id="pb-filter-clear" onclick="pbClearFilters()" disabled data-i18n="pbui.filter.clear">Clear filters</button>
+                </div>
+                <div class="pb-filter-row pb-filter-tags" id="pb-filter-tags" hidden></div>
+                <div class="pb-filter-summary" id="pb-filter-summary" aria-live="polite"></div>
+              </div>
               <div id="pb-groups"></div>
-            </main>
+            </div>
+            <div class="pb-builder-backdrop" id="pb-builder-backdrop" onclick="pbToggleBuilderMobile()"></div>
             <aside class="pb-builder" id="pb-builder">
               <header class="pb-builder-header" onclick="pbToggleBuilderMobile()">
                 <div class="pb-builder-eyebrow" data-i18n="pbui.builder.eyebrow">Practitioner tool</div>
@@ -1168,6 +1506,8 @@
                 <div class="pb-arc-label" data-i18n="pbui.builder.arcbalance">Arc balance</div>
                 <div class="pb-arc-bar" id="pb-arc-bar"></div>
                 <div class="pb-arc-legend" id="pb-arc-legend"></div>
+                <div class="pb-arc-advice" id="pb-arc-advice" aria-live="polite"></div>
+                <button type="button" class="pb-suggest-btn" onclick="pbSuggestArc()" data-i18n="pbui.arc.suggest">Suggest an arc</button>
               </div>
               <div class="pb-builder-list" id="pb-builder-list">
                 <div class="pb-builder-empty">
@@ -1179,10 +1519,34 @@
                   <div data-i18n-html="pbui.builder.empty">No activities yet.<br>Tap <strong>+</strong> next to any activity to begin.</div>
                 </div>
               </div>
+              <!-- Optional session-level info for the plan export (start
+                   time / group-site / practitioner). Purely additive: export
+                   works identically whether this is filled in or left
+                   untouched — see pbComputeClockTimes(), which returns blank
+                   clock times rather than blocking anything when no start
+                   time is set. Collapsed by default (native <details>, no
+                   extra JS needed for the toggle) since it's the "extra",
+                   not the primary flow through this panel. -->
+              <details class="pb-session-meta" id="pb-session-meta">
+                <summary class="pb-session-meta-summary" data-i18n="pbui.planexport.meta.title">Session details</summary>
+                <p class="pb-session-meta-sub" data-i18n="pbui.planexport.meta.sub">Optional — included in the export if filled in.</p>
+                <div class="pb-session-meta-field">
+                  <label for="pb-meta-starttime" data-i18n="pbui.planexport.meta.starttime">Start time</label>
+                  <input type="time" id="pb-meta-starttime" oninput="pbUpdateSessionMeta('startTime', this.value)">
+                </div>
+                <div class="pb-session-meta-field">
+                  <label for="pb-meta-site" data-i18n="pbui.planexport.meta.site">Group / Site</label>
+                  <input type="text" id="pb-meta-site" oninput="pbUpdateSessionMeta('site', this.value)">
+                </div>
+                <div class="pb-session-meta-field">
+                  <label for="pb-meta-practitioner" data-i18n="pbui.planexport.meta.practitioner">Practitioner</label>
+                  <input type="text" id="pb-meta-practitioner" oninput="pbUpdateSessionMeta('practitioner', this.value)">
+                </div>
+              </details>
               <div class="pb-builder-actions">
                 <button class="pb-builder-btn" id="pb-btn-clear" onclick="pbClearSession()" disabled="" data-i18n="pbui.builder.clear">Clear</button>
                 <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-pdf" type="button"
-                        onclick="exportRunPDF()" disabled=""
+                        onclick="exportRunPDF()" disabled="" aria-disabled="true"
                         aria-label="Export to PDF" title="Export to PDF" data-i18n-attr="aria-label,title:export.pdf">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1193,7 +1557,7 @@
                   </svg>
                 </button>
                 <button class="pb-builder-btn pb-builder-btn-icon" id="pb-export-png" type="button"
-                        onclick="exportRunPNG()" disabled=""
+                        onclick="exportRunPNG()" disabled="" aria-disabled="true"
                         aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                        stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1204,6 +1568,7 @@
                 </button>
                 <button class="pb-builder-btn primary" id="pb-btn-export" onclick="pbStartRunMode()" disabled="" data-i18n="pbui.builder.runmode">Run mode →</button>
               </div>
+              <p class="pb-builder-hint" id="pb-builder-export-hint" aria-live="polite"></p>
             </aside>
           </div>
         </div>
@@ -1258,10 +1623,23 @@
       <h2 data-i18n="reflect.heading">Post-Session Reflection</h2>
       <p data-i18n="reflect.sub">Prompts and indicators to support practitioner reflection after each session.</p>
     </div>
+
+    <!-- "Session just run" recap — only shown once a Run Mode record
+         exists (pbRenderReflectSummary() in pocketbook-reflect.js toggles [hidden]).
+         Sits above the prompts/indicators grid so the loop from Plan → Run
+         is visible before anything else on this screen. -->
+    <section class="reflect-session-recap" id="reflect-session-recap" hidden>
+      <div class="reflect-session-recap-head">
+        <span class="reflect-session-recap-eyebrow" data-i18n="pbui.reflect.recap.eyebrow">Session just run</span>
+        <span class="reflect-session-recap-when" id="reflect-recap-when"></span>
+      </div>
+      <div class="reflect-session-recap-list" id="reflect-recap-list"></div>
+    </section>
+
     <div class="modules-grid">
 
       <!-- Self-Reflection -->
-      <div class="module-card is-door" id="mod-reflect-self">
+      <div class="module-card" id="mod-reflect-self">
         <div class="module-body">
           <div class="reflect-prompts">
             <div class="reflect-prompt">
@@ -1269,6 +1647,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b1.h">What did you notice in yourself?</h4>
                 <p data-i18n="mod.reflectself.b1.p">Were there moments you felt drawn to redirect, speed up, or fill silence? What does that tell you about your own relationship to the material or the environment?</p>
+                <label class="reflect-answer-label" for="reflect-answer-0" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-0" rows="2" oninput="pbSaveReflectAnswer(0, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
             <div class="reflect-prompt">
@@ -1276,6 +1656,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b2.h">What did the environment do?</h4>
                 <p data-i18n="mod.reflectself.b2.p">Did anything in the natural space shift the session unexpectedly — weather, an animal, a sound? How did you and the participant respond? Was that response worked with or avoided?</p>
+                <label class="reflect-answer-label" for="reflect-answer-1" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-1" rows="2" oninput="pbSaveReflectAnswer(1, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
             <div class="reflect-prompt">
@@ -1283,6 +1665,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b3.h">What would you do differently?</h4>
                 <p data-i18n="mod.reflectself.b3.p">Was the activity well-matched to the participant's state? Was the timing right? Where did the frame hold and where did it need flexibility?</p>
+                <label class="reflect-answer-label" for="reflect-answer-2" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-2" rows="2" oninput="pbSaveReflectAnswer(2, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
             <div class="reflect-prompt">
@@ -1290,6 +1674,8 @@
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b4.h">What needs to be brought to supervision?</h4>
                 <p data-i18n="mod.reflectself.b4.p">Note any countertransference, boundary moments, clinical concerns, or powerful projective material that emerged. FBT supervision should include the environmental dimension explicitly.</p>
+                <label class="reflect-answer-label" for="reflect-answer-3" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
+                <textarea class="reflect-answer" id="reflect-answer-3" rows="2" oninput="pbSaveReflectAnswer(3, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
             </div>
           </div>
@@ -1297,30 +1683,30 @@
       </div>
 
       <!-- Outcome Indicators -->
-      <div class="module-card is-door" id="mod-indicators">
+      <div class="module-card" id="mod-indicators">
         <div class="module-body">
           <div class="check-list-v2">
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 0)" onkeydown="pbIndicatorKeydown(event, this, 0)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.1">Participant appeared more physically relaxed at end than at start</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 1)" onkeydown="pbIndicatorKeydown(event, this, 1)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.2">Spontaneous engagement with the environment (not only prompted)</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 2)" onkeydown="pbIndicatorKeydown(event, this, 2)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.3">Use of metaphor or narrative language unprompted</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 3)" onkeydown="pbIndicatorKeydown(event, this, 3)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.4">Expressed reluctance to leave the space</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 4)" onkeydown="pbIndicatorKeydown(event, this, 4)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.5">Connected current session to personal context without prompting</label>
             </div>
-            <div class="check-item-v2" onclick="toggleCheckV2(this)">
+            <div class="check-item-v2" role="checkbox" aria-checked="false" tabindex="0" onclick="pbToggleIndicator(this, 5)" onkeydown="pbIndicatorKeydown(event, this, 5)">
               <div class="check-dot"></div>
               <label data-i18n="check.ind.6">Visible emotional response (tears, laughter, stillness)</label>
             </div>
@@ -1328,38 +1714,92 @@
         </div>
       </div>
 
-      <!-- Glossary -->
-      <div class="module-card is-door" id="mod-glossary">
-        <div class="module-body">
-          <div class="glossary-list">
-            <div class="glossary-item">
-              <div class="glossary-term">Attention Restoration Theory (ART)</div>
-              <div class="glossary-def" data-i18n="mod.glossary.art">Natural environments restore directed attention capacity by engaging involuntary fascination — the mind rests its effortful focus, reducing fatigue and improving cognitive function.</div>
-            </div>
-            <div class="glossary-item">
-              <div class="glossary-term">Biophilia</div>
-              <div class="glossary-def" data-i18n="mod.glossary.bio">Wilson's hypothesis that humans have an innate affiliation with other living systems — the basis for why natural settings may uniquely support wellbeing.</div>
-            </div>
-            <div class="glossary-item">
-              <div class="glossary-term">Phytoncides</div>
-              <div class="glossary-def" data-i18n="mod.glossary.phyto">Volatile organic compounds released by trees, particularly conifers. Inhalation is associated with reduced cortisol, increased NK cell activity, and improved mood.</div>
-            </div>
-            <div class="glossary-item">
-              <div class="glossary-term">Somatic awareness</div>
-              <div class="glossary-def" data-i18n="mod.glossary.somatic">In FBT, attention to body sensation as a channel for emotional information — supported by the environmental context, which naturally directs attention outward and then back inward.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
+
+    <!-- Extra context for the report — plain fields, deliberately not
+         boxed in a .module-card like the sections above (kept lightweight
+         since it's metadata, not reflection content). Persisted to
+         localStorage and read by exportRenderPrintReport() so it appears
+         in both the PDF and PNG export, not just on screen. -->
+    <section class="reflect-meta-block" id="reflect-meta-block">
+      <h3 data-i18n="pbui.reflect.meta.title">Extra information for the report</h3>
+      <p class="reflect-meta-sub" data-i18n="pbui.reflect.meta.sub">Optional — included in the export if filled in.</p>
+      <div class="reflect-meta-grid">
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.participants">Number of participants</span>
+          <input type="number" min="0" id="reflect-meta-participants" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.start">Start time</span>
+          <input type="text" id="reflect-meta-start" data-i18n-attr="placeholder:pbui.reflect.meta.start.placeholder" placeholder="e.g. 10:00" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.place">Place</span>
+          <input type="text" id="reflect-meta-place" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field">
+          <span data-i18n="pbui.reflect.meta.institution">Institution</span>
+          <input type="text" id="reflect-meta-institution" oninput="pbSaveReflectMeta()">
+        </label>
+        <label class="reflect-meta-field reflect-meta-field-full">
+          <span data-i18n="pbui.reflect.meta.other">Other notes for the report</span>
+          <textarea rows="2" id="reflect-meta-other" oninput="pbSaveReflectMeta()"></textarea>
+        </label>
+      </div>
+    </section>
+
+    <!-- Single export action, positioned after everything that can feed the
+         report (recap, self-reflection, indicators, the extra-info block
+         above) and before Session history, per the intended reading order.
+         Gated live by pbUpdateReflectExportGate() in pocketbook-export.js on a
+         session record existing AND at least one reflection field having
+         content, so an export can't be produced from an empty reflection. -->
+    <section class="reflect-export-panel" id="reflect-export-panel">
+      <div class="reflect-export-actions">
+        <button type="button" class="pb-builder-btn primary" id="reflect-export-btn"
+                onclick="exportSessionReportPDF()" disabled aria-disabled="true"
+                data-i18n="pbui.reflect.export">Export session report</button>
+        <button type="button" class="pb-builder-btn pb-builder-btn-icon" id="reflect-export-png-btn"
+                onclick="exportSessionReportPNG()" disabled aria-disabled="true"
+                aria-label="Export to PNG" title="Export to PNG" data-i18n-attr="aria-label,title:export.png">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+               stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2"/>
+            <circle cx="8.5" cy="10.5" r="1.5"/>
+            <polyline points="21 16 16 11 5 19"/>
+          </svg>
+        </button>
+      </div>
+      <p class="reflect-export-hint" id="reflect-export-hint" aria-live="polite"></p>
+    </section>
+
+    <!-- Session history — every recorded run (pbLoadSessionRecords()),
+         most recent first, each with its own mini arc-balance bar reusing
+         the same per-group colors as the Session Builder. -->
+    <section class="reflect-history" id="reflect-history" hidden>
+      <h3 data-i18n="pbui.reflect.history.title">Session history</h3>
+      <div class="reflect-history-list" id="reflect-history-list"></div>
+    </section>
+
   </div>
 
-  <footer>
-    <a href="javascript:void(0)" onclick="goToRoleScreen()" style="color: var(--forest-mid); text-decoration: none; border-bottom: 1px dotted var(--forest-soft); cursor: pointer;" data-i18n="footer.changerole">Change perspective</a>
-    <span class="f4y-badge">forest4youth.nweurope.eu</span>
-  </footer>
+  </main>
 
+</div>
+
+<!-- ─── SEARCH DIALOG (⌘K / Ctrl+K) ─── -->
+<div class="search-dialog-overlay" id="search-overlay" onclick="if(event.target===this) closeSearchDialog()">
+  <div class="search-dialog" id="search-dialog" role="dialog" aria-modal="true" aria-label="Search" data-i18n-attr="aria-label:nav.search">
+    <div class="search-dialog-head">
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg>
+      <input type="text" id="search-input" class="search-input" autocomplete="off" spellcheck="false"
+             placeholder="Search activities, indications, chapters…" aria-label="Search"
+             data-i18n-attr="placeholder,aria-label:search.placeholder">
+      <button type="button" class="search-close" id="search-close" onclick="closeSearchDialog()" aria-label="Close search" data-i18n-attr="aria-label:search.close">×</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+    <div id="search-live" class="sr-only" aria-live="polite"></div>
+  </div>
 </div>
 
 <!-- ─── POCKETBOOK OVERLAYS (Run Mode, Timer, Toast) ─── -->
@@ -1384,54 +1824,90 @@
 <div class="pb-toast" id="pb-toast"></div>
 
 <div class="pb-run-mode" id="pb-runMode" role="dialog" aria-modal="true">
-  <div class="pb-run-header">
-    <div class="pb-run-step" id="pb-runStep">1 / 1</div>
-    <button class="pb-run-close" onclick="pbCloseRunMode()" aria-label="Close run mode" data-i18n-attr="aria-label:pbui.run.close">×</button>
+  <!-- Breadcrumb bar — mirrors the "Practitioner › <screen>" pattern used
+       elsewhere in the app, even though Run Mode is still its own
+       fixed-overlay (not yet folded into the shared header/nav shell like
+       Plan/Reflect/Reference are — that's a bigger, separate structural
+       change; this at least gives it the same textual orientation cue). -->
+  <div class="pb-run-topbar">
+    <div class="pb-run-crumb">
+      <span data-i18n="role.bar.practitioner">Practitioner</span>
+      <span aria-hidden="true">›</span>
+      <span data-i18n="pbui.run.crumb">Run session</span>
+    </div>
   </div>
   <div class="pb-run-body">
-    <div class="pb-run-group-tag" id="pb-runGroup"></div>
-    <h2 class="pb-run-name" id="pb-runName"></h2>
-    <div class="pb-run-duration" id="pb-runDuration"></div>
-    <div class="pb-run-section">
-      <div class="pb-run-label" id="pb-runLabelPurpose">Purpose</div>
-      <div class="pb-run-text" id="pb-runPurpose"></div>
+    <div class="pb-run-headrow">
+      <div class="pb-run-step" id="pb-runStep">Step 1 of 1</div>
+      <button type="button" class="pb-run-btn" id="pb-runFinishReflect" onclick="pbCloseRunMode()"
+              data-i18n="pbui.run.finishreflect">Finish &amp; reflect →</button>
     </div>
-    <div class="pb-run-section">
-      <div class="pb-run-label" id="pb-runLabelIntro">How to introduce</div>
-      <div class="pb-run-intro" id="pb-runIntro"></div>
-    </div>
-    <div class="pb-run-section">
-      <div class="pb-run-label" id="pb-runLabelMaterials">Materials</div>
-      <div class="pb-run-text" id="pb-runMaterials"></div>
-    </div>
-    <div class="pb-run-section">
-      <div class="pb-run-label" id="pb-runLabelClose">How to close</div>
-      <div class="pb-run-text" id="pb-runClose"></div>
-    </div>
-    <div class="pb-run-timer" id="pb-runTimer">
-      <div class="pb-run-timer-head">
-        <div class="pb-run-timer-eyebrow" data-i18n="pbui.runtimer.eyebrow">Session timer</div>
-        <div class="pb-run-timer-display" id="pb-runTimerDisplay">00:00</div>
+    <ol class="pb-run-dots" id="pb-runDots" aria-label="Session progress"></ol>
+
+    <div class="pb-run-card">
+      <div class="pb-run-group-tag" id="pb-runGroup"></div>
+      <h2 class="pb-run-name" id="pb-runName"></h2>
+      <div class="pb-run-duration" id="pb-runDuration"></div>
+
+      <div class="pb-run-visual" id="pb-runVisual" aria-hidden="true"></div>
+
+      <div class="pb-run-section">
+        <div class="pb-run-label" id="pb-runLabelIntro">How to introduce</div>
+        <div class="pb-run-intro" id="pb-runIntro"></div>
       </div>
-      <div class="pb-run-timer-track">
-        <div class="pb-run-timer-fill" id="pb-runTimerFill"></div>
-      </div>
-      <div class="pb-run-timer-meta">
-        <span id="pb-runTimerHint" data-i18n="pbui.runtimer.hint.counting">Counting down · advance when ready.</span>
-        <div class="pb-run-timer-actions">
-          <button class="pb-run-timer-btn" id="pb-runTimerReset" onclick="pbRunTimerReset()" data-i18n="pbui.runtimer.reset">Reset</button>
-          <button class="pb-run-timer-btn" id="pb-runTimerPause" onclick="pbRunTimerPause()" data-i18n="pbui.timer.pause">Pause</button>
+
+      <div class="pb-run-grid">
+        <div class="pb-run-section">
+          <div class="pb-run-label" id="pb-runLabelPurpose">Purpose</div>
+          <div class="pb-run-text" id="pb-runPurpose"></div>
+        </div>
+        <div class="pb-run-section">
+          <div class="pb-run-label" id="pb-runLabelMaterials">Materials</div>
+          <div class="pb-run-text" id="pb-runMaterials"></div>
         </div>
       </div>
+      <div class="pb-run-section pb-run-section-full">
+        <div class="pb-run-label" id="pb-runLabelClose">How to close</div>
+        <div class="pb-run-text" id="pb-runClose"></div>
+      </div>
+
+      <div class="pb-run-timer" id="pb-runTimer">
+        <div class="pb-run-timer-head">
+          <div class="pb-run-timer-eyebrow" data-i18n="pbui.runtimer.eyebrow">Session timer</div>
+          <div class="pb-run-timer-display" id="pb-runTimerDisplay">00:00</div>
+        </div>
+        <div class="pb-run-timer-track">
+          <div class="pb-run-timer-fill" id="pb-runTimerFill"></div>
+        </div>
+        <div class="pb-run-timer-meta">
+          <span id="pb-runTimerHint" data-i18n="pbui.runtimer.hint.counting">Counting down · advance when ready.</span>
+          <div class="pb-run-timer-actions">
+            <button type="button" class="pb-run-timer-btn" id="pb-runTimerPause" onclick="pbRunTimerPause()" data-i18n="pbui.timer.pause">Pause</button>
+            <button type="button" class="pb-run-timer-btn" id="pb-runTimerPlus5" onclick="pbRunTimerPlus5()" data-i18n="pbui.runtimer.plus5">+5 min</button>
+            <button type="button" class="pb-run-timer-btn" id="pb-runTimerReset" onclick="pbRunTimerReset()" data-i18n="pbui.runtimer.reset">Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pb-run-section pb-run-notes-block">
+        <label class="pb-run-notes-label" for="pb-runNotes" data-i18n="pbui.run.notes.label">Notes</label>
+        <p class="pb-run-notes-hint" data-i18n="pbui.run.notes.hint">Anything you want to bring to reflection or supervision. Saved with this session.</p>
+        <textarea class="pb-run-notes" id="pb-runNotes" rows="3" oninput="pbRunNoteInput(event)"
+                  placeholder="What happened, what you noticed…" data-i18n-attr="placeholder:pbui.run.notes.placeholder"></textarea>
+      </div>
+
+      <div class="pb-run-footer">
+        <button class="pb-run-btn" id="pb-runPrev" onclick="pbRunPrev()" data-i18n="pbui.run.prev">← Previous</button>
+        <button class="pb-run-btn primary" id="pb-runNext" onclick="pbRunNext()" data-i18n="pbui.run.next">Next →</button>
+        <span class="pb-run-kbd-hint" data-i18n="pbui.run.kbdhint">Keyboard: ← → to move, Esc to finish</span>
+      </div>
     </div>
-  </div>
-  <div class="pb-run-footer">
-    <button class="pb-run-btn" id="pb-runPrev" onclick="pbRunPrev()" data-i18n="pbui.run.prev">← Previous</button>
-    <div class="spacer"></div>
-    <button class="pb-run-btn primary" id="pb-runNext" onclick="pbRunNext()" data-i18n="pbui.run.next">Next →</button>
   </div>
 </div>
 
+<script src="i18n-en.js"></script>
+<script src="i18n-fr.js"></script>
+<script src="i18n-de.js"></script>
 <script src="content.js"></script>
 
 <!-- iframe height reporter + scroll bridge: reports document height to
@@ -1446,8 +1922,24 @@
 <script src="router.js"></script>
 <script src="pocketbook-data.js"></script>
 <script src="pocketbook-i18n.js"></script>
-<script src="pocketbook.js"></script>
+<!-- pocketbook.js split into six concern-based files (still plain classic
+     scripts sharing one global scope, same as before — this is a size/
+     organization split, not a module system). Order matters: each later
+     file calls functions defined in earlier ones, and pocketbook-init.js's
+     pbInit() ties all of them together on DOMContentLoaded, so it loads
+     last. -->
+<script src="pocketbook-activities.js"></script>
+<script src="pocketbook-builder.js"></script>
+<script src="pocketbook-export.js"></script>
+<script src="pocketbook-run.js"></script>
+<script src="pocketbook-reflect.js"></script>
+<script src="pocketbook-init.js"></script>
 <script src="ui-behaviors.js"></script>
+
+<!-- Search dialog (⌘K / Ctrl+K). Loaded last so ACTIVITIES, pbT(), t(),
+     and the router's navigation helpers all already exist — it only
+     reads from them, live, at search time. -->
+<script src="search.js"></script>
 
 <!-- Mobile session-builder FAB. Direct child of <body> so no transformed
      ancestor (e.g. .screen with animation: fadeUp) creates a containing
@@ -1459,15 +1951,22 @@
   <span class="pb-fab-count" id="pb-fab-count">0</span>
 </button>
 
-<!-- ─── HIDDEN PRINT TEMPLATE ─── -->
-<!-- Populated by exportRenderPrintSession() just before print/PNG.
-     Off-screen in normal use; the only thing visible in @media print
-     and the html2canvas target for PNG export. -->
+<!-- ─── HIDDEN EXPORT TEMPLATES ─── -->
+<!-- Populated by exportRenderPrintSession() just before PDF/PNG export.
+     Off-screen in normal use; revealed (body.is-exporting-png) only as
+     the html2canvas rasterization target. -->
 <section id="print-session" aria-hidden="true"></section>
+
+<!-- Populated by exportRenderPrintReport() just before the Reflect
+     screen's "Export session report" PDF/PNG buttons run — the session
+     record, self-reflection answers, and outcome indicators combined.
+     Shares the #print-session base styles and reveal mechanism. -->
+<section id="print-report" aria-hidden="true"></section>
 
 <!-- ─── INLINED LIBRARIES (no CDN at runtime) ─── -->
 <!-- html2canvas + qrcodejs are vendored here as <script> blocks. -->
 <script src="vendor/html2canvas.min.js"></script>
 <script src="vendor/qrcode.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
 </body>
 </html>
