@@ -1,4 +1,19 @@
 // ─────────────────────────────────────────
+// FAILURE LOGGING
+// ─────────────────────────────────────────
+// Most storage/history calls across this app are wrapped in try/catch and
+// meant to degrade gracefully (private-browsing storage restrictions,
+// quota limits, a browser without the History API) — the app keeps
+// working without them. "Degrade gracefully" isn't the same as "hide
+// completely", though: every one of those catches used to be silent
+// (`catch(e){}`), which meant a real bug report ("my session didn't
+// save") had nothing in the console to point at. This logs it instead —
+// console.warn, not .error, since none of these are meant to be fatal.
+function warnFailure(context, err) {
+  console.warn('[Forest4Youth] ' + context + ':', err);
+}
+
+// ─────────────────────────────────────────
 // TRANSLATIONS
 // ─────────────────────────────────────────
 // Each language's strings live in their own file — i18n-en.js, i18n-fr.js,

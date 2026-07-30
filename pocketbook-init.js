@@ -32,7 +32,7 @@ function pbRestoreSharedSession() {
     pbSessionMins = mins;
     const lang = usp.get('l');
     if (lang && T[lang]) setLang(lang);
-  } catch (e) {}
+  } catch (e) { warnFailure('restoring shared session from ?s=/?m=/?l= (malformed share link?)', e); }
 }
 
 // (init invoked by pbInit() in main script)

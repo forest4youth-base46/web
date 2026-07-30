@@ -15,7 +15,7 @@ function pbFormatWhen(iso) {
   try {
     const lang = typeof currentLang === 'string' ? currentLang : 'en';
     return new Date(iso).toLocaleString(lang);
-  } catch (e) { return iso; }
+  } catch (e) { warnFailure('formatting a session timestamp, showing the raw value instead', e); return iso; }
 }
 function pbFmtActualVsPlanned(plannedMins, actualSecs) {
   if (actualSecs == null) return t('pbui.reflect.notrun');
@@ -96,7 +96,7 @@ function pbSaveReflectAnswer(idx, value) {
     const answers = JSON.parse(localStorage.getItem('f4y.reflect.answers') || '[]');
     answers[idx] = value;
     localStorage.setItem('f4y.reflect.answers', JSON.stringify(answers));
-  } catch (e) {}
+  } catch (e) { warnFailure('saving f4y.reflect.answers to localStorage', e); }
   pbUpdateReflectExportGate();
 }
 // Keyboard equivalent for the indicator rows' role="checkbox" (plain divs,
@@ -117,7 +117,7 @@ function pbToggleIndicator(el, idx) {
     const flags = JSON.parse(localStorage.getItem('f4y.reflect.indicators') || '[]');
     flags[idx] = on;
     localStorage.setItem('f4y.reflect.indicators', JSON.stringify(flags));
-  } catch (e) {}
+  } catch (e) { warnFailure('saving f4y.reflect.indicators to localStorage', e); }
   pbUpdateReflectExportGate();
 }
 function pbRestoreReflectState() {
@@ -126,7 +126,7 @@ function pbRestoreReflectState() {
     document.querySelectorAll('.reflect-answer').forEach((ta, i) => {
       if (typeof answers[i] === 'string') ta.value = answers[i];
     });
-  } catch (e) {}
+  } catch (e) { warnFailure('restoring f4y.reflect.answers from localStorage (corrupted or blocked)', e); }
   try {
     const flags = JSON.parse(localStorage.getItem('f4y.reflect.indicators') || '[]');
     document.querySelectorAll('#mod-indicators .check-item-v2').forEach((el, i) => {
@@ -135,7 +135,7 @@ function pbRestoreReflectState() {
         el.setAttribute('aria-checked', 'true');
       }
     });
-  } catch (e) {}
+  } catch (e) { warnFailure('restoring f4y.reflect.indicators from localStorage (corrupted or blocked)', e); }
   pbRestoreReflectMeta();
 }
 
@@ -158,11 +158,11 @@ function pbSaveReflectMeta() {
     const el = document.getElementById(id);
     if (el) meta[key] = el.value;
   });
-  try { localStorage.setItem('f4y.reflect.meta', JSON.stringify(meta)); } catch (e) {}
+  try { localStorage.setItem('f4y.reflect.meta', JSON.stringify(meta)); } catch (e) { warnFailure('saving f4y.reflect.meta to localStorage', e); }
 }
 function pbRestoreReflectMeta() {
   let meta = {};
-  try { meta = JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) {}
+  try { meta = JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) { warnFailure('restoring f4y.reflect.meta from localStorage (corrupted or blocked)', e); }
   PB_REFLECT_META_FIELDS.forEach(([id, key]) => {
     const el = document.getElementById(id);
     if (el && typeof meta[key] === 'string') el.value = meta[key];

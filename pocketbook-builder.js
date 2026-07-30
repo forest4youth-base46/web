@@ -190,7 +190,7 @@ function pbBuildSessionShapeSVG(session, clockTimes) {
 function pbAdjustItemMins(id, delta) {
   const next = Math.max(5, Math.min(120, pbGetItemMins(id) + delta));
   pbSessionMins[id] = next;
-  try { localStorage.setItem('pb_session_mins', JSON.stringify(pbSessionMins)); } catch (e) {}
+  try { localStorage.setItem('pb_session_mins', JSON.stringify(pbSessionMins)); } catch (e) { warnFailure('saving pb_session_mins to localStorage', e); }
   pbRenderBuilder();
 }
 
@@ -229,13 +229,13 @@ function pbClearSession() {
 }
 
 function pbSaveSession() {
-  try { localStorage.setItem('pb_session', JSON.stringify(pbSession)); } catch (e) {}
+  try { localStorage.setItem('pb_session', JSON.stringify(pbSession)); } catch (e) { warnFailure('saving pb_session to localStorage', e); }
 }
 function pbLoadSession() {
   try {
     const v = JSON.parse(localStorage.getItem('pb_session') || '[]');
     if (Array.isArray(v)) pbSession = v.filter(id => ACTIVITIES.find(a => a.id === id));
-  } catch (e) {}
+  } catch (e) { warnFailure('loading pb_session from localStorage (corrupted or blocked)', e); }
 }
 
 function pbRenderBuilder() {

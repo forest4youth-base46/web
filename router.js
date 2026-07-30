@@ -51,6 +51,7 @@ function applyRoute() {
       try {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       } catch(e) {
+        warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
         window.location.hash = '';
       }
       document.getElementById('entry-screen').classList.add('active');
@@ -444,7 +445,7 @@ function toggleTimeline(id) {
 // ROLE STATE & TOGGLE
 // ─────────────────────────────────────────
 let currentRole = null;
-try { currentRole = sessionStorage.getItem('fbt.role'); } catch(e) { currentRole = null; }
+try { currentRole = sessionStorage.getItem('fbt.role'); } catch(e) { warnFailure('reading fbt.role from sessionStorage', e); currentRole = null; }
 
 // Guarantees currentRole is always 'practitioner' or 'participant' before
 // a screen renders. The app used to force a blocking #role-screen instead
@@ -455,7 +456,7 @@ try { currentRole = sessionStorage.getItem('fbt.role'); } catch(e) { currentRole
 function ensureRole() {
   if (currentRole !== 'practitioner' && currentRole !== 'participant') {
     currentRole = 'practitioner';
-    try { sessionStorage.setItem('fbt.role', currentRole); } catch(e) {}
+    try { sessionStorage.setItem('fbt.role', currentRole); } catch(e) { warnFailure('saving fbt.role to sessionStorage', e); }
   }
   // Always (re)apply — currentRole can already be resolved from
   // sessionStorage before this runs (e.g. on a refresh), but the body
@@ -468,7 +469,7 @@ function ensureRole() {
 
 function setRole(role, fromRoleScreen) {
   currentRole = role;
-  try { sessionStorage.setItem('fbt.role', role); } catch(e) {}
+  try { sessionStorage.setItem('fbt.role', role); } catch(e) { warnFailure('saving fbt.role to sessionStorage', e); }
   document.body.setAttribute('data-role', role);
 
   // If coming from the role-screen choice, land on the entry screen.
@@ -480,6 +481,7 @@ function setRole(role, fromRoleScreen) {
       try {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       } catch(e) {
+        warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
         window.location.hash = '';
       }
     }
@@ -494,6 +496,7 @@ function setRole(role, fromRoleScreen) {
       try {
         history.replaceState(null, '', window.location.pathname + window.location.search);
       } catch(e) {
+        warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
         window.location.hash = '';
       }
     }
@@ -517,18 +520,18 @@ refApplyFilter();
 try {
   const usp = new URLSearchParams(window.location.search);
   if (usp.has('reset')) {
-    try { sessionStorage.removeItem('fbt.role'); } catch(e) {}
+    try { sessionStorage.removeItem('fbt.role'); } catch(e) { warnFailure('clearing fbt.role from sessionStorage for ?reset', e); }
     currentRole = null;
     // Strip the query string so reload doesn't keep resetting.
-    try { history.replaceState(null, '', window.location.pathname + window.location.hash); } catch(e) {}
+    try { history.replaceState(null, '', window.location.pathname + window.location.hash); } catch(e) { warnFailure('stripping ?reset from the URL', e); }
   }
   const rq = usp.get('role');
   if (rq === 'participant' || rq === 'practitioner') {
     currentRole = rq;
-    try { sessionStorage.setItem('fbt.role', rq); } catch(e) {}
-    try { history.replaceState(null, '', window.location.pathname + window.location.hash); } catch(e) {}
+    try { sessionStorage.setItem('fbt.role', rq); } catch(e) { warnFailure('saving fbt.role to sessionStorage for ?role=', e); }
+    try { history.replaceState(null, '', window.location.pathname + window.location.hash); } catch(e) { warnFailure('stripping ?role= from the URL', e); }
   }
-} catch(e) {}
+} catch(e) { warnFailure('parsing ?reset/?role= URL params', e); }
 
 // Defensive: bind role-card clicks programmatically in addition to inline onclick.
 // If inline handlers are blocked (strict CSP) or the onclick attribute is somehow
@@ -550,12 +553,13 @@ document.querySelectorAll('.role-card').forEach(card => {
 // silently re-default to practitioner the moment any other route is
 // applied, so this can never strand the app without a role.
 function goToRoleScreen() {
-  try { sessionStorage.removeItem('fbt.role'); } catch(e) {}
+  try { sessionStorage.removeItem('fbt.role'); } catch(e) { warnFailure('clearing fbt.role from sessionStorage', e); }
   currentRole = null;
   document.body.removeAttribute('data-role');
   try {
     history.replaceState(null, '', window.location.pathname + window.location.search);
   } catch(e) {
+    warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
     window.location.hash = '';
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
