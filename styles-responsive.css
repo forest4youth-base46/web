@@ -26,9 +26,19 @@
   .pb-host { grid-template-columns: 1fr; padding-bottom: 88px; }
 
   /* Builder on mobile: popup that grows OUT of the FAB. Ironclad hide
-     when not .expanded — visibility:hidden + opacity:0 + scale near 0 +
-     pointer-events:none. The visibility transition is delayed so the
-     element only becomes hittable AFTER it has finished animating in. */
+     when not .expanded — visibility:hidden + opacity:0 + pointer-events:none.
+     The visibility transition is delayed so the element only becomes
+     hittable AFTER it has finished animating in.
+     Uses opacity+translateY rather than transform:scale() for the show/hide
+     animation — an extreme-scale (0.05 -> 1) transform on an element whose
+     own content is independently reflowing (activities added/removed, the
+     "Session details" <details> toggled) is a known trigger for mobile
+     WebKit/Chrome compositing glitches where child content briefly paints
+     mid-list rather than pinned in place. translateY has no such issue.
+     .pb-builder itself no longer scrolls — only #pb-builder-list does (see
+     below) — so the header/arc-balance/session-details/actions chrome
+     always stays put and can never be interleaved with mid-scroll list
+     content. */
   .pb-builder {
     position: fixed !important;
     bottom: 96px !important;          /* clears the 64px circular FAB */
@@ -36,10 +46,11 @@
     right: 16px !important;
     top: auto !important;
     max-height: calc(var(--vh, 1vh) * 70);
-    overflow-y: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     border-radius: var(--pb-r-lg);
-    transform-origin: bottom right;
-    transform: scale(0.05);
+    transform: translateY(16px);
     opacity: 0;
     visibility: hidden;
     transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0.22s;
@@ -48,13 +59,21 @@
     box-shadow: var(--shadow-lg);
   }
   .pb-builder.expanded {
-    transform: scale(1);
+    transform: translateY(0);
     opacity: 1;
     visibility: visible;
     transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0s;
     pointer-events: auto;
   }
   .pb-builder-header { cursor: pointer; }
+
+  /* Only the added-activities list scrolls internally on mobile — the
+     "Session details" panel and the action buttons below it stay fixed in
+     place regardless of list length or scroll position. */
+  .pb-builder-list {
+    overflow-y: auto;
+    max-height: 38vh;
+  }
 
   /* Dims and separates the page content behind the popup so it reads as
      a modal rather than a box floating on top of the activity list. */
@@ -189,6 +208,22 @@
      this existing ≤768px breakpoint only, so nothing above it changes. */
   body { zoom: 0.75; }
 }
+/* The off-screen export templates (#print-session/#print-report) are direct
+   children of <body> and render at a fixed, print-native 794px width
+   regardless of viewport — but with no reset they'd inherit the 0.75 zoom
+   above on phones. That desyncs the export pipeline's own height
+   measurements (taken against this zoomed, live DOM) from what html2canvas
+   actually rasterizes (its internal clone is 794px wide, wider than the
+   768px breakpoint, so the zoom rule never applies there) — producing
+   overlapping rows/columns and mis-kerned text on phones only. A CSS-only
+   counter-zoom on the templates (their own zoom set to the reciprocal,
+   e.g. 1/0.75) does restore their true on-screen *size*, but nested/
+   cancelled zoom still confuses html2canvas's own text-layout pass —
+   confirmed: the rasterized text stays garbled even once the element's
+   measured size is correct again. Resetting body's zoom to 1 for the
+   brief span of measuring + rasterizing (pbWaitFontsReady() callers in
+   pocketbook-export.js) sidesteps that entirely — one zoom context, not a
+   nested one — then restores it immediately after. */
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
   .pb-detail-grid { grid-template-columns: 1fr; gap: 4px 0; }

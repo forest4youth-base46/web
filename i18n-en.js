@@ -672,8 +672,8 @@ const T_EN = {
 
     "pbui.arc.advice.noarrival": "No arrival activity yet — consider adding one from Getting There.",
     "pbui.arc.advice.noclosing": "No closing activity yet — consider ending with Coming Back to Yourself.",
-    "pbui.arc.advice.under": "Well under target — room for a core activity.",
-    "pbui.arc.advice.over": "Well over target — consider trimming an activity.",
+    "pbui.arc.advice.under": "This session is on the shorter side — room for another core activity.",
+    "pbui.arc.advice.over": "This session is running long — worth checking the pacing.",
     "pbui.arc.advice.gap": "Balanced ends, but the middle has gaps.",
     "pbui.arc.advice.balanced": "Balanced arc, ready to run.",
     "pbui.arc.suggest": "Suggest an arc",
@@ -736,6 +736,7 @@ const T_EN = {
     "pbui.planexport.shape.title": "Session Shape",
     "pbui.planexport.shape.sub": "Ground over time",
     "pbui.planexport.materials.title": "Materials & Site",
+    "pbui.planexport.materials.continued": "Materials & Site (continued)",
     "pbui.planexport.qr.caption": "Scan to reopen the exact version of this session — order, timings, and language included.",
     "pbui.planexport.banner": "Invitation, not task — watching is participating.",
     "pbui.planexport.beforeyougo": "Before You Go",

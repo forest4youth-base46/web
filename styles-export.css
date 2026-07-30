@@ -128,7 +128,12 @@
    height pages. Each page gets a fixed height (one full A4 content area)
    and the footer is pinned to the true bottom via the auto margin, instead
    of trailing right after wherever that page's content happens to end. */
-.pexport--paged { display: flex; flex-direction: column; }
+/* Defensive backstop: the JS packer (pbPackBlocks) is what's actually
+   supposed to keep every page's content within its fixed height — this
+   just makes sure that if a future budgeting gap ever lets something
+   through anyway, it clips instead of silently pushing the QR code/footer
+   below it off the rasterized page. */
+.pexport--paged { display: flex; flex-direction: column; overflow: hidden; }
 .pexport--paged > * { flex-shrink: 0; } /* flex items default to shrinkable — without this, content silently compresses/clips to fit the fixed page height instead of the packer's page break ever kicking in */
 .pexport--paged > .pexport-footer-bottom { margin-top: auto; }
 /* Session-plan pages only: when the trailing banner+checklist lands on a

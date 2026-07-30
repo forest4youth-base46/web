@@ -11,10 +11,12 @@
 // always starts clean". Deliberately does NOT strip the params afterward —
 // the whole point of the link is that it stays live, so reopening it or
 // simply refreshing the page reproduces the same session every time.
+// Returns true when a shared session was actually restored, so pbInit()
+// can tell a QR/link open apart from an ordinary page load.
 function pbRestoreSharedSession() {
   try {
     const usp = new URLSearchParams(window.location.search);
-    if (!usp.has('s')) return;
+    if (!usp.has('s')) return false;
     const order = usp.get('s').split('.').filter(Boolean).map(Number);
     pbSession = order.map(i => ACTIVITIES[i] && ACTIVITIES[i].id).filter(Boolean);
     const mins = {};
@@ -32,7 +34,8 @@ function pbRestoreSharedSession() {
     pbSessionMins = mins;
     const lang = usp.get('l');
     if (lang && T[lang]) setLang(lang);
-  } catch (e) { warnFailure('restoring shared session from ?s=/?m=/?l= (malformed share link?)', e); }
+    return pbSession.length > 0;
+  } catch (e) { warnFailure('restoring shared session from ?s=/?m=/?l= (malformed share link?)', e); return false; }
 }
 
 // (init invoked by pbInit() in main script)
@@ -43,7 +46,7 @@ function pbInit() {
   // localStorage: count always starts at 0 on page load so a returning
   // user is never shown a stale plan. A shared session (?s= from a QR/
   // export link) is a separate, explicit path — restore that instead.
-  pbRestoreSharedSession();
+  const sharedSessionRestored = pbRestoreSharedSession();
   pbRenderGroups();
   pbRenderFilters();
   pbRenderAdaptations();
@@ -51,6 +54,11 @@ function pbInit() {
   pbRefreshAddButtons();
   pbRestoreReflectState();
   pbRenderReflectSummary();
+  // A QR-scanned/shared-link open is meant to get the practitioner straight
+  // into running the session, not leave them staring at the builder they'd
+  // already finished composing — mirrors navGoRun()'s own
+  // "session ready -> start Run Mode" guard (router.js).
+  if (sharedSessionRestored && typeof pbStartRunMode === 'function') pbStartRunMode();
 }
 
 
