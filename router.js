@@ -21,6 +21,55 @@ function navigate(section) {
   }
 }
 
+// Hides every .screen, activates the one given by id (if present), and
+// refreshes the header chrome — the "just show this screen and stop" exit
+// path applyRoute() takes for its role/empty-hash/unknown-route/wrong-role
+// branches, none of which have anything else left to do afterward.
+function applyRouteActivateOnly(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(screenId);
+  if (el) el.classList.add('active');
+  updateHeaderChrome();
+}
+
+// Door modules: open the module as a focused page rather than inline.
+// mod-reflect-self/mod-indicators/mod-glossary used to be door modules
+// too, but they were headerless cards with no toggle/entry-point ever
+// wired to focus them — meaning their content was permanently invisible
+// (module-body defaults to display:none; only .open or door-focus-mode
+// reveals it, and neither ever applied to them). Reflect is now one
+// continuous page instead, so they're plain always-visible cards, styled
+// directly in styles-screens-reflect.css (#reflect-screen .module-card) rather
+// than relying on the door-focus mechanism.
+const DOOR_MODULES = ['mod-pre','mod-plan','mod-pocket','mod-adapt'];
+function applyRouteOpenModule(target, moduleId) {
+  if (moduleId && DOOR_MODULES.indexOf(moduleId) !== -1) {
+    applyFocusMode(target, moduleId);
+    return;
+  }
+  // Clear any prior focus state
+  applyFocusMode(null, null);
+  // Open module if specified (legacy inline behavior)
+  if (moduleId) {
+    const mod = document.getElementById(moduleId);
+    if (mod) mod.classList.add('open');
+  }
+}
+
+// Open and highlight an activity, deferred so it runs after the module's
+// own open/focus transition above has had a chance to lay out — otherwise
+// scrollIntoView() would measure a position that's about to shift.
+function applyRouteHighlightActivity(activityId) {
+  setTimeout(() => {
+    const act = document.getElementById(activityId);
+    if (act) {
+      act.classList.add('open', 'highlight');
+      act.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => act.classList.remove('highlight'), 2500);
+    }
+  }, 150);
+}
+
 function applyRoute() {
   // The app never blocks rendering on a role choice — default silently
   // to practitioner if nothing is stored yet or the role was just
@@ -38,76 +87,39 @@ function applyRoute() {
   // perspective" link via goToRoleScreen()) — an optional side-by-side
   // comparison screen now, not a gate. Nothing routes here automatically.
   if (section === 'role') {
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('role-screen').classList.add('active');
-    updateHeaderChrome();
+    applyRouteActivateOnly('role-screen');
     return;
   }
 
   // Show the requested screen (or entry if hash is empty).
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   if (!section) {
-    document.getElementById('entry-screen').classList.add('active');
-    updateHeaderChrome();
+    applyRouteActivateOnly('entry-screen');
     return;
   }
   const target = document.getElementById(section + '-screen');
-  if (target) {
-    // If the screen is restricted to the other role, redirect to entry
-    // and show entry immediately (don't rely on hashchange firing).
-    const screenRole = target.getAttribute('data-role-only');
-    if (screenRole && screenRole !== currentRole) {
-      try {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      } catch(e) {
-        warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
-        window.location.hash = '';
-      }
-      document.getElementById('entry-screen').classList.add('active');
-      updateHeaderChrome();
-      return;
-    }
-    target.classList.add('active');
-  } else {
+  if (!target) {
     // Unknown route — fall back to entry.
-    document.getElementById('entry-screen').classList.add('active');
-    updateHeaderChrome();
+    applyRouteActivateOnly('entry-screen');
     return;
   }
-
-  // Door modules: open the module as a focused page rather than inline
-  // mod-reflect-self/mod-indicators/mod-glossary used to be door modules
-  // too, but they were headerless cards with no toggle/entry-point ever
-  // wired to focus them — meaning their content was permanently invisible
-  // (module-body defaults to display:none; only .open or door-focus-mode
-  // reveals it, and neither ever applied to them). Reflect is now one
-  // continuous page instead, so they're plain always-visible cards, styled
-  // directly in styles-screens-reflect.css (#reflect-screen .module-card) rather
-  // than relying on the door-focus mechanism.
-  const DOOR_MODULES = ['mod-pre','mod-plan','mod-pocket','mod-adapt'];
-  if (moduleId && DOOR_MODULES.indexOf(moduleId) !== -1) {
-    applyFocusMode(target, moduleId);
-  } else {
-    // Clear any prior focus state
-    applyFocusMode(null, null);
-    // Open module if specified (legacy inline behavior)
-    if (moduleId) {
-      const mod = document.getElementById(moduleId);
-      if (mod) mod.classList.add('open');
+  // If the screen is restricted to the other role, redirect to entry
+  // and show entry immediately (don't rely on hashchange firing).
+  const screenRole = target.getAttribute('data-role-only');
+  if (screenRole && screenRole !== currentRole) {
+    try {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    } catch(e) {
+      warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
+      window.location.hash = '';
     }
+    applyRouteActivateOnly('entry-screen');
+    return;
   }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  target.classList.add('active');
 
-  // Open and highlight activity if specified
-  if (activityId) {
-    setTimeout(() => {
-      const act = document.getElementById(activityId);
-      if (act) {
-        act.classList.add('open', 'highlight');
-        act.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => act.classList.remove('highlight'), 2500);
-      }
-    }, 150);
-  }
+  applyRouteOpenModule(target, moduleId);
+  if (activityId) applyRouteHighlightActivity(activityId);
 
   updateHeaderChrome();
 }
