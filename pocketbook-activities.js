@@ -61,6 +61,16 @@ function pbLocalizeVisual(svg, activityId) {
 // would sit frozen for almost all of that time. This re-injects the same
 // markup on a timer instead, so the illustration keeps gently replaying
 // for as long as the step is showing.
+//
+// SMIL <animate> elements aren't reachable from CSS, so the
+// prefers-reduced-motion media query in styles-responsive.css can't
+// silence this loop — it has to check the same OS-level preference itself.
+// Checked live (not cached) since a visitor can toggle the OS setting
+// mid-session without reloading the page.
+function pbPrefersReducedMotion() {
+  return typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 let pbRunVisualTimer = null;
 function pbClearRunVisual() {
   if (pbRunVisualTimer) { clearTimeout(pbRunVisualTimer); pbRunVisualTimer = null; }
@@ -73,6 +83,9 @@ function pbSetRunVisual(svg) {
   if (!el) return;
   el.innerHTML = svg || '';
   if (!svg) return;
+  // Show the illustration's first frame and stop — no perpetual
+  // re-triggering for a visitor who's asked their OS for less motion.
+  if (pbPrefersReducedMotion()) return;
   // Longest (begin + dur) across every <animate>, in document order or
   // not — order doesn't matter, only the latest finish time does — plus
   // a short pause so the settled illustration reads as "arrived"

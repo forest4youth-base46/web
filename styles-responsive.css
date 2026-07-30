@@ -3,6 +3,24 @@
    normal cascade order (later rule wins at equal specificity), not just
    the !important ones, to override the base (desktop) rules. ─── */
 
+/* ─── prefers-reduced-motion ───
+   Every CSS animation/transition in the app (fades, slides, the FAB bump)
+   collapses to effectively instant, not just "fewer" — no coverage of this
+   existed before. Kept as duration overrides rather than deleting the
+   animations, so nothing that depends on layout settling still works the
+   same, just without the motion. This can't reach the SMIL <animate>
+   elements inside the Pocketbook's inline SVG illustrations (CSS doesn't
+   govern SVG SMIL) — see pbSetRunVisual()'s prefersReducedMotion() check
+   in pocketbook-activities.js for that half of this. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ─── RESPONSIVE ─── */
 @media (max-width: 1100px) {
   .pb-host { grid-template-columns: 1fr; padding-bottom: 88px; }
