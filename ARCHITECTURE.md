@@ -125,6 +125,36 @@ every invariant the rest of the app depends on (a DOM attribute, a
 `localStorage` write, a re-render) unconditionally — never gated behind "if
 this is the first time we're setting it."
 
+## Naming convention for cross-file functions
+
+Two feature areas use a name prefix to mark "this is that feature's
+cross-file API, don't mistake it for a private helper": `pb` for the
+Pocketbook module (`pbSaveSession`, `pbRestoreSharedSession`, ...) and `ref`
+for the Reference screen (`refSetKind`, `refApplyFilter`, ...). Both were
+introduced with those files, so every function in them already follows the
+pattern.
+
+`router.js` and `content.js` predate that convention, and their
+cross-file-called functions — `navigate`, `applyRoute`, `ensureRole`,
+`setRole`, `toggleModule`, `toggleCheck`, `toggleExp`/`toggleTimeline`,
+`openChapter`, `openGuide`, `swapVisual`, `t`, `setLang`, `applyTranslations`
+— stay bare rather than being retrofitted with a prefix. This is a
+deliberate choice, not an oversight: these are exactly the functions
+`index.html` calls directly from `onclick="..."` attributes, in some cases
+a very large number of times (`openChapter` 136 call sites, `navigate` 97,
+`toggleModule` 88, `toggleCheck` 59, `setRole` 42, at last count). Renaming
+any of them means finding and updating every one of those attribute strings
+across a 2,000+ line HTML file with no compiler to catch a missed site — a
+typo there fails silently as a broken button, not a build error. That's a
+large, error-prone, low-value change for a cosmetic naming preference, so
+it's left as-is rather than forced through for consistency's sake.
+
+Going forward: any *new* function meant to be called across files (from
+another `<script>` file or from an `onclick` attribute) should get a short
+prefix tied to its owning file, the same way `pb`/`ref` do — it's cheap to
+do at creation time and expensive to retrofit later, which is exactly the
+situation `router.js`/`content.js` are in now.
+
 ## Tunable constants: deliberately not consolidated
 
 Every named `const` tunable in the app (`PB_ARC_TARGET_MIN`,
