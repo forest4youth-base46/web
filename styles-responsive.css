@@ -35,10 +35,17 @@
      "Session details" <details> toggled) is a known trigger for mobile
      WebKit/Chrome compositing glitches where child content briefly paints
      mid-list rather than pinned in place. translateY has no such issue.
-     .pb-builder itself no longer scrolls — only #pb-builder-list does (see
-     below) — so the header/arc-balance/session-details/actions chrome
-     always stays put and can never be interleaved with mid-scroll list
-     content. */
+     Only #pb-builder-list scrolls internally (flex:1 + min-height:0, its
+     own overflow-y:auto below) — the header/stats/arc-balance above it and
+     the "Session details" panel + action buttons (Clear/PDF/PNG/Run mode)
+     below it are flex-shrink:0, so they always render at full size and are
+     never clipped or require scrolling to reach, regardless of how many
+     activities are in the list. (An earlier attempt gave the list a fixed
+     max-height instead of flex:1 — that still let the header+list+footer
+     combined exceed the popup's own max-height, clipping the footer
+     entirely with the outer container's overflow:hidden. flex:1 avoids
+     that: the list only ever gets whatever's left after the fixed-size
+     header/footer are laid out.) */
   .pb-builder {
     position: fixed !important;
     bottom: 96px !important;          /* clears the 64px circular FAB */
@@ -47,8 +54,6 @@
     top: auto !important;
     max-height: calc(var(--vh, 1vh) * 70);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
     border-radius: var(--pb-r-lg);
     transform: translateY(16px);
     opacity: 0;
@@ -66,14 +71,9 @@
     pointer-events: auto;
   }
   .pb-builder-header { cursor: pointer; }
-
-  /* Only the added-activities list scrolls internally on mobile — the
-     "Session details" panel and the action buttons below it stay fixed in
-     place regardless of list length or scroll position. */
-  .pb-builder-list {
-    overflow-y: auto;
-    max-height: 38vh;
-  }
+  .pb-builder-header, .pb-builder-stats, .pb-arc-balance,
+  .pb-session-meta, .pb-builder-actions { flex-shrink: 0; }
+  .pb-builder-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 
   /* Dims and separates the page content behind the popup so it reads as
      a modal rather than a box floating on top of the activity list. */
