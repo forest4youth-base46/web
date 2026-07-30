@@ -4,6 +4,7 @@
   "description": "Dev/test tooling only — the deployed app itself is plain HTML/CSS/JS with no build step. See ARCHITECTURE.md.",
   "scripts": {
     "test": "node test/smoke.js",
+    "test:unit": "node test/unit.js",
     "check:i18n": "node scripts/check-i18n-sync.js"
   },
   "devDependencies": {

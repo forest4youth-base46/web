@@ -17,11 +17,14 @@ jobs:
       - name: Install dev tooling (Playwright only — the app itself has no build step)
         run: npm install
 
-      - name: Install Playwright's Chromium
-        run: npx playwright install --with-deps chromium
-
       - name: i18n key-sync check
         run: npm run check:i18n
+
+      - name: Unit tests (pure Node, no browser needed)
+        run: npm run test:unit
+
+      - name: Install Playwright's Chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Smoke tests
         run: npm test
