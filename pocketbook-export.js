@@ -26,16 +26,25 @@ function exportBuildSessionURL() {
 function exportGenerateSessionQRNode() {
   if (typeof QRCode === 'undefined') return null;
   const wrap = document.createElement('div');
-  new QRCode(wrap, {
-    text: exportBuildSessionURL(),
-    // 2x the old 52px raster — at the worst case (all 17 activities, still
-    // well under version 9/53 modules thanks to the compact encoding above)
-    // this keeps comfortably above 1.5px per module; real sessions (a
-    // handful of activities) land closer to 4-6px per module.
-    width: 104, height: 104,
-    colorDark: '#3d5a3e', colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M,
-  });
+  try {
+    new QRCode(wrap, {
+      text: exportBuildSessionURL(),
+      // 2x the old 52px raster — at the worst case (all 17 activities, still
+      // well under version 9/53 modules thanks to the compact encoding above)
+      // this keeps comfortably above 1.5px per module; real sessions (a
+      // handful of activities) land closer to 4-6px per module.
+      width: 104, height: 104,
+      colorDark: '#3d5a3e', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  } catch (e) {
+    // exportRenderPrintSession() (called from exportRunPNG before its own
+    // try/catch starts) relies on this failing soft rather than throwing —
+    // a QR-less export is a fine degradation, an uncaught exception here
+    // is not.
+    warnFailure('generating session QR code (payload may exceed the QR capacity)', e);
+    return null;
+  }
   return wrap.querySelector('canvas') || wrap.querySelector('img');
 }
 
