@@ -117,6 +117,21 @@ every invariant the rest of the app depends on (a DOM attribute, a
 `localStorage` write, a re-render) unconditionally — never gated behind "if
 this is the first time we're setting it."
 
+## Tunable constants: deliberately not consolidated
+
+Every named `const` tunable in the app (`PB_ARC_TARGET_MIN`,
+`PB_RING_CIRCUM`, `PB_SESSIONS_MAX`, `GUIDE_PDF_URL`, the `PEXPORT_PAGE_*`
+group, `STORAGE_SCHEMA_VERSION`, etc.) already has a comment explaining
+*why* that value, sitting right next to the code that gives that comment
+its context — e.g. `PB_ARC_TARGET_MIN = 60` sits under a comment about the
+Structure Guide's Opening/Core/Integration/Transition timing that only
+makes sense read together. Collecting these into one shared "config"
+block was considered and rejected: it would separate each value from the
+context that explains it, trading real clarity for the appearance of
+organization. If a file's tunables are genuinely scattered *and*
+unexplained, group and comment them — but check whether they're already
+adequately placed first, since most of this codebase's are.
+
 ## Dev tooling (new this session)
 
 - `scripts/check-i18n-sync.js` — verifies `i18n-en.js`/`i18n-fr.js`/
