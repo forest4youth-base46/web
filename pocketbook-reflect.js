@@ -92,11 +92,9 @@ function pbRenderReflectSummary() {
 // never reload, these represent reflection already written down, not an
 // in-progress plan, so losing them on refresh would be a regression.
 function pbSaveReflectAnswer(idx, value) {
-  try {
-    const answers = JSON.parse(localStorage.getItem('f4y.reflect.answers') || '[]');
-    answers[idx] = value;
-    localStorage.setItem('f4y.reflect.answers', JSON.stringify(answers));
-  } catch (e) { warnFailure('saving f4y.reflect.answers to localStorage', e); }
+  const answers = storageLoad('f4y.reflect.answers', []);
+  answers[idx] = value;
+  storageSave('f4y.reflect.answers', answers);
   pbUpdateReflectExportGate();
 }
 // Keyboard equivalent for the indicator rows' role="checkbox" (plain divs,
@@ -113,29 +111,23 @@ function pbIndicatorKeydown(e, el, idx) {
 function pbToggleIndicator(el, idx) {
   const on = el.classList.toggle('checked');
   el.setAttribute('aria-checked', String(on));
-  try {
-    const flags = JSON.parse(localStorage.getItem('f4y.reflect.indicators') || '[]');
-    flags[idx] = on;
-    localStorage.setItem('f4y.reflect.indicators', JSON.stringify(flags));
-  } catch (e) { warnFailure('saving f4y.reflect.indicators to localStorage', e); }
+  const flags = storageLoad('f4y.reflect.indicators', []);
+  flags[idx] = on;
+  storageSave('f4y.reflect.indicators', flags);
   pbUpdateReflectExportGate();
 }
 function pbRestoreReflectState() {
-  try {
-    const answers = JSON.parse(localStorage.getItem('f4y.reflect.answers') || '[]');
-    document.querySelectorAll('.reflect-answer').forEach((ta, i) => {
-      if (typeof answers[i] === 'string') ta.value = answers[i];
-    });
-  } catch (e) { warnFailure('restoring f4y.reflect.answers from localStorage (corrupted or blocked)', e); }
-  try {
-    const flags = JSON.parse(localStorage.getItem('f4y.reflect.indicators') || '[]');
-    document.querySelectorAll('#mod-indicators .check-item-v2').forEach((el, i) => {
-      if (flags[i]) {
-        el.classList.add('checked');
-        el.setAttribute('aria-checked', 'true');
-      }
-    });
-  } catch (e) { warnFailure('restoring f4y.reflect.indicators from localStorage (corrupted or blocked)', e); }
+  const answers = storageLoad('f4y.reflect.answers', []);
+  document.querySelectorAll('.reflect-answer').forEach((ta, i) => {
+    if (typeof answers[i] === 'string') ta.value = answers[i];
+  });
+  const flags = storageLoad('f4y.reflect.indicators', []);
+  document.querySelectorAll('#mod-indicators .check-item-v2').forEach((el, i) => {
+    if (flags[i]) {
+      el.classList.add('checked');
+      el.setAttribute('aria-checked', 'true');
+    }
+  });
   pbRestoreReflectMeta();
 }
 
@@ -158,11 +150,10 @@ function pbSaveReflectMeta() {
     const el = document.getElementById(id);
     if (el) meta[key] = el.value;
   });
-  try { localStorage.setItem('f4y.reflect.meta', JSON.stringify(meta)); } catch (e) { warnFailure('saving f4y.reflect.meta to localStorage', e); }
+  storageSave('f4y.reflect.meta', meta);
 }
 function pbRestoreReflectMeta() {
-  let meta = {};
-  try { meta = JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) { warnFailure('restoring f4y.reflect.meta from localStorage (corrupted or blocked)', e); }
+  const meta = storageLoad('f4y.reflect.meta', {});
   PB_REFLECT_META_FIELDS.forEach(([id, key]) => {
     const el = document.getElementById(id);
     if (el && typeof meta[key] === 'string') el.value = meta[key];
@@ -172,5 +163,5 @@ function pbRestoreReflectMeta() {
 // exportRenderPrintReport() so the "Session details" block is skipped
 // entirely when nothing was filled in, rather than printing empty rows.
 function pbLoadReflectMeta() {
-  try { return JSON.parse(localStorage.getItem('f4y.reflect.meta') || '{}') || {}; } catch (e) { return {}; }
+  return storageLoad('f4y.reflect.meta', {});
 }

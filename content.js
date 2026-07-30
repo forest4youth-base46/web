@@ -14,6 +14,52 @@ function warnFailure(context, err) {
 }
 
 // ─────────────────────────────────────────
+// LOCALSTORAGE (versioned)
+// ─────────────────────────────────────────
+// Every localStorage key this app writes (pb_session, pb_session_mins,
+// f4y.reflect.*, f4y.sessions) used to be a bare, unversioned JSON value —
+// fine until the shape of one of them ever needs to change, at which point
+// a returning visitor's old data would either silently corrupt whatever
+// reads it or need one-off defensive code at every read site. These two
+// helpers wrap every key as { v: STORAGE_SCHEMA_VERSION, data } instead, so
+// a future format change has one place to add a migration rather than
+// needing to be threaded through every call site by hand.
+//
+// storageLoad() still reads a pre-existing bare (unwrapped) value once —
+// that's what every key already in a real visitor's browser looks like
+// today — the next storageSave() call wraps it going forward.
+const STORAGE_SCHEMA_VERSION = 1;
+
+function storageSave(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ v: STORAGE_SCHEMA_VERSION, data: value }));
+  } catch (e) {
+    warnFailure('saving ' + key + ' to localStorage', e);
+  }
+}
+
+function storageLoad(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return fallback;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && 'v' in parsed && 'data' in parsed) {
+      if (parsed.v !== STORAGE_SCHEMA_VERSION) {
+        // No migrations exist yet (v1 is the first version) — an unknown
+        // version falls back rather than risk misreading a future shape.
+        warnFailure('localStorage key "' + key + '" has schema version ' + parsed.v + ', expected ' + STORAGE_SCHEMA_VERSION + ' (no migration defined for it yet)', null);
+        return fallback;
+      }
+      return parsed.data;
+    }
+    return parsed; // pre-versioning bare value
+  } catch (e) {
+    warnFailure('loading ' + key + ' from localStorage (corrupted or blocked)', e);
+    return fallback;
+  }
+}
+
+// ─────────────────────────────────────────
 // TRANSLATIONS
 // ─────────────────────────────────────────
 // Each language's strings live in their own file — i18n-en.js, i18n-fr.js,

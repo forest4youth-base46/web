@@ -111,10 +111,8 @@ const PB_SESSIONS_KEY = 'f4y.sessions';
 const PB_SESSIONS_MAX = 12;
 
 function pbLoadSessionRecords() {
-  try {
-    const v = JSON.parse(localStorage.getItem(PB_SESSIONS_KEY) || '[]');
-    return Array.isArray(v) ? v : [];
-  } catch (e) { warnFailure('loading f4y.sessions from localStorage (corrupted or blocked)', e); return []; }
+  const v = storageLoad(PB_SESSIONS_KEY, []);
+  return Array.isArray(v) ? v : [];
 }
 
 // Skips writing a record if nothing actually happened (opened Run Mode
@@ -123,11 +121,9 @@ function pbLoadSessionRecords() {
 function pbMaybeSaveSessionRecord(record) {
   const meaningful = record.items.some(it => (it.actualSecs && it.actualSecs > 0) || it.note);
   if (!meaningful) return;
-  try {
-    const list = pbLoadSessionRecords();
-    list.unshift(record);
-    localStorage.setItem(PB_SESSIONS_KEY, JSON.stringify(list.slice(0, PB_SESSIONS_MAX)));
-  } catch (e) { warnFailure('saving completed session record to localStorage', e); }
+  const list = pbLoadSessionRecords();
+  list.unshift(record);
+  storageSave(PB_SESSIONS_KEY, list.slice(0, PB_SESSIONS_MAX));
 }
 
 // ── Inline run-mode timer (continuous — counts past zero instead of
