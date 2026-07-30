@@ -21,6 +21,14 @@ function exportBuildSessionURL() {
   params.set('s', order.join('.'));
   if (mins.length) params.set('m', mins.map(pair => pair[0] + ':' + pair[1]).join('.'));
   params.set('l', typeof currentLang === 'string' ? currentLang : 'en');
+  // Session details — same fields the PDF/PNG export already reads from
+  // pbSessionMeta (see the header meta block in pbBuildSessionExportData
+  // below) — carried through the share link too, so scanning/opening it
+  // shows the same start time/site/practitioner the plan was built with,
+  // not blank defaults. Optional, same as the PDF: only set when filled in.
+  if (pbSessionMeta.startTime) params.set('t', pbSessionMeta.startTime);
+  if (pbSessionMeta.site) params.set('g', pbSessionMeta.site);
+  if (pbSessionMeta.practitioner) params.set('p', pbSessionMeta.practitioner);
   return window.location.origin + window.location.pathname + '?' + params.toString() + '#implement/mod-pocket';
 }
 function exportGenerateSessionQRNode() {

@@ -26,26 +26,9 @@
   .pb-host { grid-template-columns: 1fr; padding-bottom: 88px; }
 
   /* Builder on mobile: popup that grows OUT of the FAB. Ironclad hide
-     when not .expanded — visibility:hidden + opacity:0 + pointer-events:none.
-     The visibility transition is delayed so the element only becomes
-     hittable AFTER it has finished animating in.
-     Uses opacity+translateY rather than transform:scale() for the show/hide
-     animation — an extreme-scale (0.05 -> 1) transform on an element whose
-     own content is independently reflowing (activities added/removed, the
-     "Session details" <details> toggled) is a known trigger for mobile
-     WebKit/Chrome compositing glitches where child content briefly paints
-     mid-list rather than pinned in place. translateY has no such issue.
-     Only #pb-builder-list scrolls internally (flex:1 + min-height:0, its
-     own overflow-y:auto below) — the header/stats/arc-balance above it and
-     the "Session details" panel + action buttons (Clear/PDF/PNG/Run mode)
-     below it are flex-shrink:0, so they always render at full size and are
-     never clipped or require scrolling to reach, regardless of how many
-     activities are in the list. (An earlier attempt gave the list a fixed
-     max-height instead of flex:1 — that still let the header+list+footer
-     combined exceed the popup's own max-height, clipping the footer
-     entirely with the outer container's overflow:hidden. flex:1 avoids
-     that: the list only ever gets whatever's left after the fixed-size
-     header/footer are laid out.) */
+     when not .expanded — visibility:hidden + opacity:0 + scale near 0 +
+     pointer-events:none. The visibility transition is delayed so the
+     element only becomes hittable AFTER it has finished animating in. */
   .pb-builder {
     position: fixed !important;
     bottom: 96px !important;          /* clears the 64px circular FAB */
@@ -53,9 +36,10 @@
     right: 16px !important;
     top: auto !important;
     max-height: calc(var(--vh, 1vh) * 70);
-    overflow: hidden;
+    overflow-y: auto;
     border-radius: var(--pb-r-lg);
-    transform: translateY(16px);
+    transform-origin: bottom right;
+    transform: scale(0.05);
     opacity: 0;
     visibility: hidden;
     transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0.22s;
@@ -64,16 +48,13 @@
     box-shadow: var(--shadow-lg);
   }
   .pb-builder.expanded {
-    transform: translateY(0);
+    transform: scale(1);
     opacity: 1;
     visibility: visible;
     transition: transform 0.22s ease, opacity 0.22s ease, visibility 0s linear 0s;
     pointer-events: auto;
   }
   .pb-builder-header { cursor: pointer; }
-  .pb-builder-header, .pb-builder-stats, .pb-arc-balance,
-  .pb-session-meta, .pb-builder-actions { flex-shrink: 0; }
-  .pb-builder-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 
   /* Dims and separates the page content behind the popup so it reads as
      a modal rather than a box floating on top of the activity list. */

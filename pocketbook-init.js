@@ -34,6 +34,28 @@ function pbRestoreSharedSession() {
     pbSessionMins = mins;
     const lang = usp.get('l');
     if (lang && T[lang]) setLang(lang);
+
+    // Session details (Start time/Group-Site/Practitioner) — round-trips
+    // through ?t=/?g=/?p= the same way the PDF/PNG export already reads
+    // these off pbSessionMeta, so a scanned/opened share link shows the
+    // same details the plan was built with instead of blank defaults.
+    // Also mirrored onto the actual <input> elements (not just internal
+    // state) since nothing else keeps them in sync with pbSessionMeta.
+    pbSessionMeta = {
+      startTime: usp.get('t') || '',
+      site: usp.get('g') || '',
+      practitioner: usp.get('p') || '',
+    };
+    const metaHasContent = !!(pbSessionMeta.startTime || pbSessionMeta.site || pbSessionMeta.practitioner);
+    const startEl = document.getElementById('pb-meta-starttime');
+    const siteEl = document.getElementById('pb-meta-site');
+    const practitionerEl = document.getElementById('pb-meta-practitioner');
+    const metaPanel = document.getElementById('pb-session-meta');
+    if (startEl) startEl.value = pbSessionMeta.startTime;
+    if (siteEl) siteEl.value = pbSessionMeta.site;
+    if (practitionerEl) practitionerEl.value = pbSessionMeta.practitioner;
+    if (metaPanel && metaHasContent) metaPanel.open = true;
+
     return pbSession.length > 0;
   } catch (e) { warnFailure('restoring shared session from ?s=/?m=/?l= (malformed share link?)', e); return false; }
 }
