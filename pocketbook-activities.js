@@ -124,6 +124,14 @@ const PB_GROUP_COLORS = {
   4: 'var(--bark)', 5: 'var(--ember)',
 };
 
+// Audited this session: every place across pocketbook-*.js/router.js/
+// search.js that interpolates genuinely free-text user input into an
+// innerHTML string — pbSessionMeta.site/.practitioner, the Reflect extra-
+// info fields (start/participants/place/institution/other), self-
+// reflection answers, and Run Mode per-step notes — passes it through
+// this (or search.js's identical local escapeHtml()) first. Developer-
+// authored content (activity names, i18n strings) is escaped too in most
+// spots as a matter of consistency, not because it's user-controllable.
 function pbEscapeHtml(str) {
   return String(str == null ? '' : str)
     .replace(/&/g, '&amp;')
