@@ -207,6 +207,15 @@
      effectively every mobile browser this size range targets. Scoped to
      this existing ≤768px breakpoint only, so nothing above it changes. */
   body { zoom: 0.75; }
+
+  /* Run Mode entered by scanning a shared QR code/link (pocketbook-init.js
+     sets .pb-qr-launch on <body> for that path only) counter-zooms back to
+     native scale. That entry is always a phone, often outdoors, glanced at
+     rather than browsed — the density pass is the wrong tradeoff there,
+     unlike the rest of the app where it stays on. Same reciprocal-zoom
+     technique as the export templates below; safe here since this is a
+     live on-screen render, not an html2canvas capture. */
+  body.pb-qr-launch .pb-run-mode { zoom: calc(1 / 0.75); }
 }
 /* The off-screen export templates (#print-session/#print-report) are direct
    children of <body> and render at a fixed, print-native 794px width

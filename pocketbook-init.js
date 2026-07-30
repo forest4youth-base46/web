@@ -58,7 +58,14 @@ function pbInit() {
   // into running the session, not leave them staring at the builder they'd
   // already finished composing — mirrors navGoRun()'s own
   // "session ready -> start Run Mode" guard (router.js).
-  if (sharedSessionRestored && typeof pbStartRunMode === 'function') pbStartRunMode();
+  if (sharedSessionRestored && typeof pbStartRunMode === 'function') {
+    // This entry point is scan-and-go, always on a phone, often outdoors —
+    // legibility matters more here than the density this class buys back
+    // for ordinary in-app browsing. See the .pb-qr-launch rule next to
+    // `body { zoom: 0.75 }` in styles-responsive.css for the counter-zoom.
+    document.body.classList.add('pb-qr-launch');
+    pbStartRunMode();
+  }
 }
 
 
