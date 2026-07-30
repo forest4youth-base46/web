@@ -77,6 +77,13 @@ with a clearer single concern each:
   `styles-pocketbook.css`, `styles-export.css`, `styles-responsive.css`
   (also order-sensitive — several rules, including the mobile Pocketbook
   drawer's `!important` overrides, depend on cascade position).
+- `styles-screens.css` (1,639 lines, still covering entry/reference/
+  participant/reflect screens as one file) was later split further into
+  `styles-screens-entry.css`, `styles-screens-reflect.css`,
+  `styles-screens-reference.css` — same mechanical pattern, same
+  cascade-order preservation (three sequential `<link>` tags in the
+  original file's rule order, not reorganized by topic, since CSS source
+  order can decide specificity ties).
 
 Both splits were verified byte-for-byte lossless before deleting the
 originals (`cat` the pieces back together, diff against the original), then
@@ -84,9 +91,10 @@ verified functionally with the full smoke suite plus a manual visual pass
 of the most cascade/timing-sensitive parts (the mobile drawer's
 collapsed↔expanded transition, Run Mode).
 
-Adding a sixth or seventh file the same way, later, is cheap and safe —
-it's the same mechanical pattern (`sed -n` a line range out, diff the
-reassembly, add a `<script>`/`<link>` tag in the same relative position).
+Adding another file the same way, later, is cheap and safe — it's the same
+mechanical pattern (`sed -n` a line range out, diff the reassembly, add a
+`<script>`/`<link>` tag in the same relative position, preserving order for
+CSS).
 That's the lever to pull for "this file's too big again," not a module
 system.
 
