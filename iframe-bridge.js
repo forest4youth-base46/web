@@ -17,8 +17,18 @@
     }
     // Send on load and on every DOM mutation that changes height
     window.addEventListener('load', sendHeight);
-    var ro = new ResizeObserver(sendHeight);
-    ro.observe(document.body);
+    // Feature-detected: an older WebView lacking ResizeObserver (the exact
+    // compatibility concern this file already exists for) would otherwise
+    // throw here uncaught, which — since this sits inside the same IIFE,
+    // above window.scrollToViewTop below — would silently stop that from
+    // ever being defined too. Degrades to load-time-only height reporting
+    // instead of losing scrollToViewTop() entirely.
+    if (typeof ResizeObserver === 'function') {
+      var ro = new ResizeObserver(sendHeight);
+      ro.observe(document.body);
+    } else {
+      warnFailure('ResizeObserver unavailable — iframe height only reported on load, not on later size changes', null);
+    }
   }
 
   // Scrolls to the top of the current view after navigating to a
