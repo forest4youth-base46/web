@@ -28,15 +28,26 @@
   /* Builder on mobile: popup that grows OUT of the FAB. Ironclad hide
      when not .expanded — visibility:hidden + opacity:0 + scale near 0 +
      pointer-events:none. The visibility transition is delayed so the
-     element only becomes hittable AFTER it has finished animating in. */
+     element only becomes hittable AFTER it has finished animating in.
+     80vh (was 70) — a bit more headroom before the activity list needs to
+     scroll at all, and a taller scroll region once it does.
+     The popup itself is a fixed-size flex column that never scrolls as a
+     whole (overflow:hidden) — only #pb-builder-list (flex:1, min-height:0,
+     its own overflow-y:auto below) scrolls internally. Everything else —
+     header, stats, arc balance, the "Session details" panel, and the
+     action buttons — is flex-shrink:0, so it's always rendered at full
+     size below the last activity, footer-style, never mid-scroll content
+     the practitioner has to hunt for. */
   .pb-builder {
     position: fixed !important;
     bottom: 96px !important;          /* clears the 64px circular FAB */
     left: 16px !important;
     right: 16px !important;
     top: auto !important;
-    max-height: calc(var(--vh, 1vh) * 70);
-    overflow-y: auto;
+    max-height: calc(var(--vh, 1vh) * 80);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     border-radius: var(--pb-r-lg);
     transform-origin: bottom right;
     transform: scale(0.05);
@@ -55,6 +66,9 @@
     pointer-events: auto;
   }
   .pb-builder-header { cursor: pointer; }
+  .pb-builder-header, .pb-builder-stats, .pb-arc-balance,
+  .pb-session-meta, .pb-builder-actions, .pb-builder-hint { flex-shrink: 0; }
+  .pb-builder-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 
   /* Dims and separates the page content behind the popup so it reads as
      a modal rather than a box floating on top of the activity list. */
