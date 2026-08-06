@@ -287,7 +287,29 @@
       <p class="section-sub" data-i18n="psession.sub">Most sessions run 60 to 90 minutes and follow a rough structure. Your practitioner adjusts it for you — but the shape usually looks like this.</p>
     </div>
 
-    <div class="timeline">
+    <div class="pv-viewtoggle" role="tablist" aria-label="View mode">
+      <button type="button" class="pv-viewtab active" id="pv-tab-journey" role="tab" aria-selected="true" onclick="pvSetViewMode('journey')" data-i18n="psession.view.journey">Journey</button>
+      <button type="button" class="pv-viewtab" id="pv-tab-list" role="tab" aria-selected="false" onclick="pvSetViewMode('list')" data-i18n="psession.view.list">List view</button>
+    </div>
+
+    <!-- Gamified walk-through: rendered entirely by participant-preview.js
+         (pvRenderJourney) into these containers, the same way the
+         Pocketbook renders #pb-builder-list/#pb-arc-bar from JS rather
+         than static markup. -->
+    <div id="pv-journey" class="pv-journey">
+      <div class="pv-badges" id="pv-badges"></div>
+      <div class="pv-progress" aria-live="polite">
+        <span id="pv-progress-count">0 / 4</span>
+        <span data-i18n="psession.journey.progressLabel">discovered</span>
+      </div>
+      <div class="pv-trail" id="pv-trail"></div>
+      <div class="pv-panel" id="pv-panel"></div>
+    </div>
+
+    <!-- Original static accordion, kept exactly as-is: the accessible
+         "just let me read it" fallback, one tap away from the journey
+         view above via the toggle. -->
+    <div class="timeline" id="pv-list" hidden>
 
       <div class="timeline-item" id="ts-1">
         <div class="timeline-header" onclick="toggleTimeline('ts-1')">
@@ -1934,6 +1956,7 @@
 <script src="pocketbook-run.js"></script>
 <script src="pocketbook-reflect.js"></script>
 <script src="pocketbook-init.js"></script>
+<script src="participant-preview.js"></script>
 <script src="ui-behaviors.js"></script>
 
 <!-- Search dialog (⌘K / Ctrl+K). Loaded last so ACTIVITIES, pbT(), t(),

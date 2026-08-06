@@ -211,6 +211,12 @@
      technique as the export templates below; safe here since this is a
      live on-screen render, not an html2canvas capture. */
   body.pb-qr-launch .pb-run-mode { zoom: calc(1 / 0.75); }
+
+  /* Session Journey (participant-preview.js): stack the nav buttons and
+     let the badge strip wrap rather than forcing horizontal scroll. */
+  .pv-badges { flex-wrap: wrap; }
+  .pv-step-nav { flex-direction: column-reverse; }
+  .pv-step-nav .pv-btn { width: 100%; text-align: center; }
 }
 /* The off-screen export templates (#print-session/#print-report) are direct
    children of <body> and render at a fixed, print-native 794px width
@@ -236,5 +242,9 @@
   .pb-adapt-row { grid-template-columns: 1fr; gap: 8px; padding: 16px 18px; }
   .pb-group-title { font-size: 18px; }
   .pb-group-num { font-size: 22px; }
+
+  .pv-node { width: 28px; height: 28px; font-size: 11px; }
+  .pv-choice-chips { flex-direction: column; }
+  .pv-chip { width: 100%; text-align: center; }
 }
 

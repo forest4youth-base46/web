@@ -141,4 +141,9 @@ function setLang(lang) {
     refRenderFilters();
     refApplyFilter();
   }
+  // The participant Session Preview's journey view is also built via
+  // innerHTML from JS, not [data-i18n] markup — re-render it in place so
+  // switching language updates it immediately rather than only on next
+  // visit to the screen.
+  if (typeof pvRenderJourney === 'function') pvRenderJourney(null);
 }
