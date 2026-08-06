@@ -630,21 +630,53 @@
 .pv-node:hover { border-color: var(--forest-soft); }
 .pv-node-done { border-color: var(--pv-node-color, var(--forest-deep)); background: var(--pv-node-color, var(--forest-deep)); color: var(--paper-pure); }
 .pv-node-current { border-color: var(--forest-deep); box-shadow: 0 0 0 3px var(--forest-mist); }
-.pv-node-link { flex: 1; height: 1px; background: var(--forest-mist); min-width: 12px; }
+.pv-node-link {
+  flex: 1;
+  height: 3px;
+  min-width: 12px;
+  border-radius: 2px;
+  background-image: repeating-linear-gradient(90deg, var(--forest-mist) 0 6px, transparent 6px 11px);
+  transition: background-image 0.2s;
+}
+.pv-node-link.done { background-image: repeating-linear-gradient(90deg, var(--pv-link-color, var(--forest-deep)) 0 6px, transparent 6px 11px); }
 
 .pv-panel {
   background: var(--paper-pure);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-md);
   padding: 20px 22px;
+  overflow: hidden;
   animation: fadeUp 0.25s ease;
 }
+
+/* The forest scene bleeds to the panel's outer edge (same "cancel the
+   padding" technique as .pb-run-visual in the Pocketbook) so it renders
+   at full width instead of sitting narrower inside the card. */
+.pv-scene {
+  display: block;
+  width: calc(100% + 44px);
+  aspect-ratio: 500 / 110;
+  margin: -20px -22px 16px;
+}
+.pv-scene-glow { animation: pvGlowDrift 7s ease-in-out infinite; }
+@keyframes pvGlowDrift {
+  0%, 100% { opacity: 0.10; transform: translateY(0); }
+  50% { opacity: 0.20; transform: translateY(-3px); }
+}
+.pv-scene-trees .pv-tree-near { fill: var(--forest-deep); opacity: 0.9; }
+.pv-scene-trees .pv-tree-far { fill: var(--forest-mid); opacity: 0.75; }
+.pv-scene-focal { animation: fadeUp 0.4s ease; }
 .pv-step-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .pv-step-head h3 { font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 500; color: var(--forest-ink); margin: 0; }
 .pv-step-dur { font-size: 10.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; white-space: nowrap; }
 
 .pv-reveal { animation: fadeUp 0.3s ease; }
-.pv-collected-tag { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: none; color: var(--forest-mid); margin-left: 6px; }
+.pv-collected-tag { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: none; color: var(--forest-mid); margin-left: 6px; display: inline-flex; align-items: center; }
+.pv-spark { width: 10px; height: 10px; margin-right: 3px; color: var(--ember); animation: pvSparkPulse 1.6s ease-in-out infinite; }
+@keyframes pvSparkPulse {
+  0%, 100% { opacity: 0.6; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
 
 .pv-choice { margin-top: 14px; }
 .pv-choice-prompt { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 10px; font-style: italic; }
