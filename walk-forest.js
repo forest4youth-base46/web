@@ -102,7 +102,7 @@ const WF_DAPPLE = (function () {
 // trail — same substitution pbLocalizeVisual() does for the detail panel,
 // just extracted in English rather than duplicated by hand.
 const WF = {
-  el: null, active: false, cam: 0, mode: 'hold',
+  el: null, active: false, on: false, cam: 0, mode: 'hold',
   from: 0, to: 0, moveStart: 0, holdEnd: 0,
   paused: false, resumeAt: 0, manual: false, reduced: false,
   openId: null, sessionDrawerOpen: false,
@@ -471,7 +471,7 @@ function wfToggleSessionDrawer() {
 }
 
 // ───────── frame computation + render ─────────
-function wfComputeFrame(chrome) {
+function wfComputeFrame() {
   const w = WF.w, h = WF.h, lang = currentLang;
   const narrow = w < 768;
   const camIndex = Math.round(WF.cam);
@@ -548,12 +548,8 @@ function wfComputeFrame(chrome) {
     });
   });
 
-  // The stop pins/set-dressing/character/rail are only rendered at all
-  // when chrome is true (see the comment in wfRender()) — skip computing
-  // them entirely on the ambient-background path so the ~30fps repaint
-  // while the camera drifts behind #entry-screen stays cheap.
   const stops = [];
-  if (chrome) ACTIVITIES.forEach((s, i) => {
+  ACTIVITIES.forEach((s, i) => {
     const gMeta = WF_GROUP_META[s.group];
     const p = wfProject(i, WF_STOP_SIDE[s.id] || 0);
     if (!p || p.scale < 0.16 || p.d > 6.4) return;
@@ -576,8 +572,10 @@ function wfComputeFrame(chrome) {
       hit, size,
       // Narrow mode docks the "nearest stop" caption to a fixed band
       // rather than following the pin — anchored from the bottom (above
-      // the rail/bubble-dock/controls stack) rather than the top, so the
-      // role-screen's own heading has the whole top of the scene free.
+      // the rail/controls stack) rather than the top, since the top is
+      // where the site's own persistent header sits (#wf-scene is a fixed
+      // viewport-relative background behind every screen — see the
+      // comment on #wf-scene in index.html).
       chipStyle: narrow
         ? 'position:absolute;left:' + (12 - p.x).toFixed(1) + 'px;bottom:' + (230 + (p.y - baseRx * 0.5) - WF.h).toFixed(1) +
           'px;width:' + (w - 24).toFixed(0) + 'px'
@@ -590,7 +588,7 @@ function wfComputeFrame(chrome) {
   stops.sort((a, b) => parseFloat(a.baseRx) - parseFloat(b.baseRx));
 
   const setPieces = [];
-  if (chrome) ACTIVITIES.forEach((s, i) => {
+  ACTIVITIES.forEach((s, i) => {
     const p = wfProject(i, 0);
     if (!p) return;
     const d = p.d;
@@ -605,13 +603,13 @@ function wfComputeFrame(chrome) {
   setPieces.sort((a, b) => b.d - a.d);
   const setLayer = setPieces.map(x => x.html).join('');
 
-  const atStop = chrome && Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
+  const atStop = Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
   const atId = atStop ? atStop.id : '';
   const seated = atId === 'soundscape' || atId === 'sitspot' || atId === 'campfire';
   const hidden = atId === 'hammock';
   const shoeless = atId === 'barefoot';
 
-  const rail = !chrome ? [] : ACTIVITIES.map((s, i) => {
+  const rail = ACTIVITIES.map((s, i) => {
     const group = GROUPS.find(g => g.id === s.group);
     const gMeta = WF_GROUP_META[s.group];
     const active = i === camIndex;
@@ -762,17 +760,7 @@ function wfPanelHTML(frame) {
 function wfRender() {
   if (!WF.el) return;
   wfMeasure();
-
-  // #wf-scene is now a persistent background shared by #role-screen and
-  // #entry-screen (see the comment on #wf-scene in index.html) — the
-  // trail/character/pins/controls/rail/panel only make sense as an
-  // interactive hero on #role-screen itself. On #entry-screen the same
-  // camera keeps drifting (so it reads as one continuous scene, not two),
-  // but renders as pure ambient scenery behind the pathway cards: no
-  // walker, no clickable stops, no chrome competing with the cards.
-  const roleScreenEl = document.getElementById('role-screen');
-  const chrome = !!(roleScreenEl && roleScreenEl.classList.contains('active'));
-  const frame = wfComputeFrame(chrome);
+  const frame = wfComputeFrame();
 
   const sceneSvg = '' +
     '<g>' + frame.farTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>' +
@@ -781,7 +769,7 @@ function wfRender() {
     '<g>' + frame.dapples.map(dp => '<ellipse cx="' + dp.cx + '" cy="' + dp.cy + '" rx="' + dp.rx + '" ry="' + dp.ry + '" fill="#F2EBD8" opacity="' + dp.op + '"/>').join('') + '</g>' +
     '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
 
-  const pinsHtml = !chrome ? '' : frame.stops.map(st => '' +
+  const pinsHtml = frame.stops.map(st => '' +
     '<div style="position:absolute;left:' + st.pinLeft + 'px;top:' + st.pinTop + 'px;width:0;height:0;z-index:' + st.z + '">' +
       '<button type="button" class="wf-pin-btn" aria-label="' + wfEsc(st.aria) + '" aria-expanded="' + st.expanded + '" onclick="wfOpenStop(\'' + st.id + '\')" ' +
         'style="left:' + (-st.hit / 2).toFixed(1) + 'px;top:' + (-st.size / 2 - st.hit / 2).toFixed(1) + 'px;width:' + st.hit.toFixed(1) + 'px;height:' + st.hit.toFixed(1) + 'px">' +
@@ -817,33 +805,30 @@ function wfRender() {
     '<div class="wf-mote" style="position:absolute;left:32%;top:52%;width:5px;height:5px;border-radius:50%;background:#FBF9F4;opacity:.6;pointer-events:none"></div>' +
     '<div class="wf-mote" style="position:absolute;left:58%;top:60%;width:4px;height:4px;border-radius:50%;background:#FBF9F4;opacity:.5;animation-delay:3.4s;pointer-events:none"></div>' +
     '<div class="wf-mote" style="position:absolute;left:71%;top:47%;width:6px;height:6px;border-radius:50%;background:#FBF9F4;opacity:.45;animation-delay:6.8s;pointer-events:none"></div>' +
-    (!chrome ? '' :
-      '<svg style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:150" aria-hidden="true">' + frame.setLayer + '</svg>' +
-      '<div style="position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform:translateX(-58%);width:' + (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) + 'px;z-index:320;pointer-events:none;transition:opacity .6s;opacity:' + (frame.hidden ? 0 : 1) + '">' +
-        '<div class="wf-bob" style="width:100%;height:100%;position:relative">' + wfCharacterSVG(frame) + '</div>' +
-      '</div>') +
+    '<svg style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:150" aria-hidden="true">' + frame.setLayer + '</svg>' +
+    '<div style="position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform:translateX(-58%);width:' + (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) + 'px;z-index:320;pointer-events:none;transition:opacity .6s;opacity:' + (frame.hidden ? 0 : 1) + '">' +
+      '<div class="wf-bob" style="width:100%;height:100%;position:relative">' + wfCharacterSVG(frame) + '</div>' +
+    '</div>' +
     pinsHtml +
-    (!chrome ? '' : '' +
-      '<div class="wf-title-chip"><div class="wf-title-chip-main">' + wfEsc(t('walk.title')) + '</div><div class="wf-title-chip-sub">' + wfEsc(frame.stepLabel) + '</div></div>' +
-      (frame.narrow ? '<div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:rgba(244,241,234,0.92);border-top:1px solid #DCD6C8;pointer-events:none"></div>' : '') +
-      '<div class="wf-controls" style="left:20px;bottom:' + (frame.narrow ? 16 : 20) + 'px">' +
-        '<button type="button" class="wf-ctrl-btn" onclick="wfGoBack()" aria-label="' + wfEsc(t('walk.back')) + '" title="' + wfEsc(t('walk.back')) + '">' +
-          '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg></button>' +
-        '<button type="button" class="wf-ctrl-btn" onclick="wfRestart()" aria-label="' + wfEsc(t('walk.restart')) + '" title="' + wfEsc(t('walk.restart')) + '">' +
-          '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.5V5h-2.5"/></svg></button>' +
-        '<button type="button" class="wf-ctrl-btn" onclick="wfGoNext()" aria-label="' + wfEsc(t('walk.next')) + '" title="' + wfEsc(t('walk.next')) + '">' +
-          '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>' +
-        '<div class="wf-status-pill">' + wfEsc(frame.status) + '</div>' +
-      '</div>' +
-      '<div class="wf-rail" style="' + (frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:190px' : 'right:20px;bottom:66px') + '">' + railHtml + '</div>' +
-      // Narrow-mode top offset (160px) clears the site's own persistent
-      // header, which wraps to ~150px tall on phone widths — #wf-scene is
-      // a fixed viewport-relative layer now (see index.html), not scoped
-      // below the header the way it was when nested inside #role-screen,
-      // so this and the title chip below both need to duck under it
-      // explicitly rather than assuming they start below it.
-      '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:160px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
-      (frame.isOpen ? wfPanelHTML(frame) : ''));
+    '<div class="wf-title-chip"><div class="wf-title-chip-main">' + wfEsc(t('walk.title')) + '</div><div class="wf-title-chip-sub">' + wfEsc(frame.stepLabel) + '</div></div>' +
+    (frame.narrow ? '<div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:rgba(244,241,234,0.92);border-top:1px solid #DCD6C8;pointer-events:none"></div>' : '') +
+    '<div class="wf-controls" style="left:20px;bottom:' + (frame.narrow ? 16 : 20) + 'px">' +
+      '<button type="button" class="wf-ctrl-btn" onclick="wfGoBack()" aria-label="' + wfEsc(t('walk.back')) + '" title="' + wfEsc(t('walk.back')) + '">' +
+        '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg></button>' +
+      '<button type="button" class="wf-ctrl-btn" onclick="wfRestart()" aria-label="' + wfEsc(t('walk.restart')) + '" title="' + wfEsc(t('walk.restart')) + '">' +
+        '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.5V5h-2.5"/></svg></button>' +
+      '<button type="button" class="wf-ctrl-btn" onclick="wfGoNext()" aria-label="' + wfEsc(t('walk.next')) + '" title="' + wfEsc(t('walk.next')) + '">' +
+        '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>' +
+      '<div class="wf-status-pill">' + wfEsc(frame.status) + '</div>' +
+    '</div>' +
+    '<div class="wf-rail" style="' + (frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:190px' : 'right:20px;bottom:66px') + '">' + railHtml + '</div>' +
+    // Narrow-mode top offset (160px) clears the site's own persistent
+    // header, which wraps to ~150px tall on phone widths — #wf-scene is a
+    // fixed viewport-relative layer (see index.html) behind every screen,
+    // so this and the title chip above both need to duck under it
+    // explicitly rather than assuming they start below it.
+    '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:160px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
+    (frame.isOpen ? wfPanelHTML(frame) : '');
 
   WF.el.innerHTML = html;
 }
@@ -856,6 +841,26 @@ function wfMeasure() {
 }
 
 // ───────── mount / unmount ─────────
+// ───────── global on/off toggle ─────────
+// Walk the Forest is a persistent background layer behind every screen,
+// not tied to routing — it only ever shows because a visitor switched it
+// on (the header's toggle button, wfToggleGlobal()), and it keeps running
+// continuously (camera position included) across navigation until they
+// switch it off again. body.wf-scene-on is what makes every other
+// screen's cards translucent — see the --paper/--paper-card/--paper-pure
+// override in styles-walk-forest.css.
+function wfToggleGlobal() {
+  wfSetOn(!WF.on);
+}
+
+function wfSetOn(on) {
+  WF.on = on;
+  document.body.classList.toggle('wf-scene-on', on);
+  const btn = document.getElementById('wf-toggle-btn');
+  if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (on) wfEnterScene(); else wfExitScene();
+}
+
 function wfEnterScene() {
   WF.el = document.getElementById('wf-scene');
   if (!WF.el) return;
@@ -887,11 +892,6 @@ function wfEnterScene() {
 
 function wfExitScene() {
   if (WF.el) WF.el.classList.remove('wf-scene--visible');
-  wfCloseBubbles();
-  if (WF._bubbleOutsideHandler) {
-    document.removeEventListener('click', WF._bubbleOutsideHandler, true);
-    WF._bubbleOutsideHandler = null;
-  }
   if (!WF.active) return;
   WF.active = false;
   if (WF.raf) cancelAnimationFrame(WF.raf);
@@ -899,56 +899,3 @@ function wfExitScene() {
   if (WF.onResize) window.removeEventListener('resize', WF.onResize);
   if (WF.onKey) window.removeEventListener('keydown', WF.onKey);
 }
-
-// ───────── role bubble expand-then-confirm ─────────
-// Mouse/trackpad users get the original one-click behavior (:hover already
-// previews the expanded card via CSS, so a click always lands on an
-// already-open-looking bubble). Touch has no hover, so the first tap only
-// expands it — a second tap on that same open bubble proceeds. Tapping
-// anywhere else closes it without navigating, the same way the trail
-// stop's own detail panel closes on a scrim click (see wfClose()).
-function wfBubbleClick(el, role, ev) {
-  if (ev) ev.stopPropagation();
-  const canHover = typeof window.matchMedia === 'function' &&
-    window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  if (!canHover && !el.classList.contains('is-open')) {
-    wfCloseBubbles();
-    el.classList.add('is-open');
-    wfArmBubbleOutsideClose();
-    return;
-  }
-  setRole(role, true);
-}
-
-function wfCloseBubbles() {
-  document.querySelectorAll('.role-card--bubble.is-open').forEach((o) => o.classList.remove('is-open'));
-}
-
-// Armed only while a bubble is actually open (touch path) — a single
-// document-level capture listener that closes whichever bubble is open
-// the moment a click lands outside every bubble, then removes itself.
-// Added mid-dispatch of the opening click itself, which is safe: capture-
-// phase listeners on ancestors are resolved before the event reaches its
-// target, so one added here never fires for that same click.
-function wfArmBubbleOutsideClose() {
-  if (WF._bubbleOutsideHandler) return;
-  WF._bubbleOutsideHandler = function (e) {
-    if (e.target.closest && e.target.closest('.role-card--bubble')) return;
-    wfCloseBubbles();
-    document.removeEventListener('click', WF._bubbleOutsideHandler, true);
-    WF._bubbleOutsideHandler = null;
-  };
-  document.addEventListener('click', WF._bubbleOutsideHandler, true);
-}
-
-// router.js's own initial applyRoute() call runs synchronously as part of
-// its <script> tag, long before this file (loaded after pocketbook-init.js)
-// exists — so a page freshly loaded straight into #role, or a plain first
-// visit (which defaults to #entry-screen), misses the wfEnterScene() call
-// applyRouteActivateOnly() would otherwise have made. Catch that one case
-// here, once, now that everything this needs (ACTIVITIES/GROUPS/pbT/...)
-// is actually loaded.
-(function () {
-  const active = document.querySelector('.screen.active');
-  if (active && (active.id === 'role-screen' || active.id === 'entry-screen')) wfEnterScene();
-})();

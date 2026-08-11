@@ -96,6 +96,7 @@ const T_DE = {
     "role.prac.cta": "Weiter →",
 
     "walk.title": "Durch den Wald gehen",
+    "walk.toggle": "Durch den Wald gehen",
     "walk.stop": "Station",
     "walk.of": "von",
     "walk.back": "Einen Schritt zurück",

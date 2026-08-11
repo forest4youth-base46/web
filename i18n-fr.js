@@ -171,6 +171,7 @@ const T_FR = {
     "role.prac.cta": "Continuer →",
 
     "walk.title": "Marcher dans la forêt",
+    "walk.toggle": "Marcher dans la forêt",
     "walk.stop": "Étape",
     "walk.of": "sur",
     "walk.back": "Revenir en arrière",

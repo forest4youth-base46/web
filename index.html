@@ -89,6 +89,14 @@
           <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant')" data-i18n="role.bar.participant">Exploring</button>
         </div>
 
+        <!-- Walk the Forest (walk-forest.js): a persistent animated
+             background behind every screen, only ever on because this was
+             switched on — see wfToggleGlobal()/wfSetOn() and the
+             body.wf-scene-on rule in styles-walk-forest.css. -->
+        <button type="button" class="wf-toggle-btn" id="wf-toggle-btn" onclick="wfToggleGlobal()" aria-pressed="false" aria-label="Walk the Forest" title="Walk the Forest" data-i18n-attr="aria-label,title:walk.toggle">
+          <svg viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 26C6 14 14 6 26 6c0 12-8 20-20 20Z"/><path d="M6 26 18 14"/></svg>
+        </button>
+
         <div class="lang-bar">
           <button class="lang-btn active" onclick="setLang('en')">EN</button>
           <button class="lang-btn" onclick="setLang('fr')">FR</button>
@@ -107,23 +115,19 @@
        automatically, and currentRole always defaults to 'practitioner'
        before any route is applied. See router.js ensureRole(). -->
   <div id="role-screen" class="screen">
-    <!-- Walk the Forest (#wf-scene, a sibling of .container near the top
-         of <body>) shows fixed behind this — wfEnterScene()/wfExitScene()
-         in router.js keep it running continuously while either this
-         screen or #entry-screen is active. -->
-    <div class="wf-hero-overlay">
+    <div class="role-screen-inner">
       <div class="entry-label" data-i18n="role.label">Welcome</div>
       <h1 class="entry-title" data-i18n="role.title">Who is this for?</h1>
       <p class="entry-sub" data-i18n="role.sub">Choose the perspective that fits your current need. You can switch at any time using the toggle in the corner.</p>
-      <div class="role-cards role-cards--bubble">
-        <div class="role-card role-card--bubble" onclick="wfBubbleClick(this, 'participant', event)">
+      <div class="role-cards">
+        <div class="role-card" onclick="setRole('participant', true)">
           <div class="role-card-sub" data-i18n="role.part.sub">Exploring FBT</div>
           <h2 data-i18n="role.part.title">I'm exploring forest-based therapy</h2>
           <p data-i18n="role.part.desc">Plain-language information about what FBT is, how sessions work, and whether it might be useful for your situation or someone you care about.</p>
           <div class="role-examples" data-i18n="role.part.eg">Participant · carer · referrer · curious person</div>
           <span class="role-card-arrow" data-i18n="role.part.cta">Continue →</span>
         </div>
-        <div class="role-card role-card--bubble" onclick="wfBubbleClick(this, 'practitioner', event)">
+        <div class="role-card" onclick="setRole('practitioner', true)">
           <div class="role-card-sub" data-i18n="role.prac.sub">Practising FBT</div>
           <h2 data-i18n="role.prac.title">I'm a practitioner</h2>
           <p data-i18n="role.prac.desc">Clinical reference, session tools, pocket guide to activities, indications and contraindications, integration with other modalities, and reflection prompts.</p>
@@ -134,10 +138,7 @@
     </div>
   </div>
 
-  <!-- ENTRY (role-aware) — same Walk the Forest background continues
-       behind this screen too (see the comment on #role-screen above);
-       .pathway-card/.entry-label/.entry-title/.entry-sub get a frosted-
-       glass treatment (styles-walk-forest.css) so it shows through. -->
+  <!-- ENTRY (role-aware) -->
   <div id="entry-screen" class="screen active">
 
     <!-- PRACTITIONER ENTRY -->
