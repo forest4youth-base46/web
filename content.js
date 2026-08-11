@@ -141,4 +141,10 @@ function setLang(lang) {
     refRenderFilters();
     refApplyFilter();
   }
+  // Walk the Forest (walk-forest.js) builds its scene from innerHTML too,
+  // and only while #role-screen is actually active (see WF.active in that
+  // file) — re-render is a no-op the rest of the time.
+  if (typeof wfRender === 'function' && typeof WF !== 'undefined' && WF.active) {
+    wfRender();
+  }
 }

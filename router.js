@@ -30,6 +30,21 @@ function applyRouteActivateOnly(screenId) {
   const el = document.getElementById(screenId);
   if (el) el.classList.add('active');
   updateHeaderChrome();
+  wfSyncSceneVisibility(screenId);
+}
+
+// Walk the Forest (walk-forest.js) is a single persistent background
+// element (not scoped to any one .screen — see the comment on #wf-scene
+// in index.html), kept running continuously across #role-screen <->
+// #entry-screen so switching between them never resets or restarts it.
+// It only actually animates while one of the two is on screen — anywhere
+// else it's paused/hidden, so it doesn't run (or show through) forever.
+function wfSyncSceneVisibility(screenId) {
+  if (screenId === 'role-screen' || screenId === 'entry-screen') {
+    if (typeof wfEnterScene === 'function') wfEnterScene();
+  } else if (typeof wfExitScene === 'function') {
+    wfExitScene();
+  }
 }
 
 // Door modules: open the module as a focused page rather than inline.
@@ -117,6 +132,7 @@ function applyRoute() {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   target.classList.add('active');
+  wfSyncSceneVisibility(target.id);
 
   applyRouteOpenModule(target, moduleId);
   if (activityId) applyRouteHighlightActivity(activityId);

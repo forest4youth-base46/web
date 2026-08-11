@@ -1,0 +1,346 @@
+/* ── WALK THE FOREST — animated role-screen scene ──
+   Keyframes ported verbatim from the design prototype ("Walk the Forest
+   v2.dc.html"); everything else (scene container, pins, panel, controls,
+   role-screen bubbles) is new, written to this app's own conventions.
+   See walk-forest.js for the JS that renders into #wf-scene. */
+
+@keyframes wfBob { 0%,100% { transform:translateY(0) rotate(-0.25deg); } 50% { transform:translateY(-1.1%) rotate(0.25deg); } }
+@keyframes wfPing { 0% { transform:scale(.62); opacity:.75; } 100% { transform:scale(2.5); opacity:0; } }
+@keyframes wfMote { 0% { transform:translate3d(0,0,0); opacity:0; } 20% { opacity:.7; } 100% { transform:translate3d(70px,-38px,0); opacity:0; } }
+@keyframes wfSway { 0%,100% { transform:rotate(-0.55deg); } 50% { transform:rotate(0.55deg); } }
+.wf-bob { animation: wfBob 6.5s ease-in-out infinite; }
+.wf-ping { transform-box: fill-box; transform-origin: center; animation: wfPing 4.6s ease-out infinite; }
+.wf-mote { animation: wfMote 19s linear infinite; }
+.wf-sway { transform-box: fill-box; transform-origin: bottom center; animation: wfSway 13s ease-in-out infinite; }
+@keyframes wfThigh { 0%,100% { transform:rotate(12deg); } 50% { transform:rotate(-12deg); } }
+.wfThighA { transform-box: fill-box; transform-origin: top center; animation: wfThigh 1.9s ease-in-out infinite; }
+.wfThighB { transform-box: fill-box; transform-origin: top center; animation: wfThigh 1.9s ease-in-out infinite reverse; }
+@keyframes wfShin { 0% { transform:rotate(-5deg); } 22% { transform:rotate(-5deg); } 44% { transform:rotate(28deg); } 62% { transform:rotate(6deg); } 100% { transform:rotate(-5deg); } }
+.wfShinA { transform-box: fill-box; transform-origin: top center; animation: wfShin 1.9s ease-in-out infinite; }
+.wfShinB { transform-box: fill-box; transform-origin: top center; animation: wfShin 1.9s ease-in-out infinite reverse; }
+@keyframes wfFlick { 0%,100% { transform:scale(1,1); opacity:.95; } 40% { transform:scale(.9,1.24); opacity:1; } 70% { transform:scale(1.08,.88); opacity:.82; } }
+.wfFlick { transform-box: fill-box; transform-origin: bottom center; animation: wfFlick 2.6s ease-in-out infinite; }
+@keyframes wfSmoke { 0% { opacity:0; transform:translateY(0) scale(.6); } 30% { opacity:.4; } 100% { opacity:0; transform:translateY(-42px) scale(1.7); } }
+.wfSmoke { transform-box: fill-box; transform-origin: center; animation: wfSmoke 7.5s linear infinite; }
+@keyframes wfHang { 0%,100% { transform:rotate(-2.6deg); } 50% { transform:rotate(2.6deg); } }
+.wfHang { transform-box: fill-box; transform-origin: top center; animation: wfHang 8.5s ease-in-out infinite; }
+@keyframes wfBreath { 0%,100% { transform:scale(.94); opacity:.5; } 50% { transform:scale(1.14); opacity:.85; } }
+.wfBreath { transform-box: fill-box; transform-origin: center; animation: wfBreath 9.5s ease-in-out infinite; }
+@keyframes wfLift { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+.wfLift { transform-box: fill-box; animation: wfLift 6.5s ease-in-out infinite; }
+@keyframes wfPeg { 0%,100% { transform:rotate(-3deg); } 50% { transform:rotate(3deg); } }
+.wfPeg { transform-box: fill-box; transform-origin: top center; animation: wfPeg 6.5s ease-in-out infinite; }
+@keyframes wfDrift { 0%,100% { transform:translateX(0); } 50% { transform:translateX(3.5%); } }
+.wf-drift { animation: wfDrift 75s ease-in-out infinite; }
+@keyframes wfDrift2 { 0%,100% { transform:translateX(0); } 50% { transform:translateX(-2.6%); } }
+.wf-drift2 { animation: wfDrift2 92s ease-in-out infinite; }
+@keyframes wfGlow { 0%,100% { opacity:.09; } 50% { opacity:.24; } }
+.wf-glow { animation: wfGlow 12s ease-in-out infinite; }
+@keyframes wfGlow2 { 0%,100% { opacity:.06; } 50% { opacity:.16; } }
+.wf-glow2 { animation: wfGlow2 15.5s ease-in-out infinite 3s; }
+@media (prefers-reduced-motion: reduce) {
+  .wf-bob,.wf-ping,.wf-mote,.wf-sway,.wfThighA,.wfThighB,.wfShinA,.wfShinB,
+  .wfFlick,.wfSmoke,.wfHang,.wfBreath,.wfLift,.wfPeg,.wf-drift,.wf-drift2,
+  .wf-glow,.wf-glow2 { animation: none; }
+}
+
+/* ── scene container ──
+   Capped/fluid height rather than raw 100vh: this app embeds in an
+   auto-height iframe (see README "Embedding on the Odoo site") — 100vh of
+   an auto-sizing iframe is circular. Uses the site's own --vh custom
+   property (see ui-behaviors.js) for the same reason it's used elsewhere:
+   more reliable than raw vh units on mobile browser chrome. */
+.wf-scene {
+  /* A persistent fixed background, not scoped to any one .screen — see
+     the comment on #wf-scene in index.html. Sits at the same layer
+     body::before reserves (z-index:0, styles-base.css) so .container's
+     own z-index:1 content (both screens' cards/bubbles) floats over it.
+     Hidden by default (walk-forest.js toggles wf-scene--visible only
+     while #role-screen or #entry-screen is the active screen) so it
+     never bleeds through on every other screen. */
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #E8EDE7;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  display: none;
+}
+.wf-scene.wf-scene--visible { display: block; }
+.wf-scene svg text { user-select: none; }
+
+.wf-title-chip {
+  position: absolute; left: 14px; top: 12px;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px 14px 9px; border-radius: 14px;
+  background: rgba(251,249,244,0.82);
+  pointer-events: none; z-index: 400;
+}
+.wf-title-chip-main { font: 600 15px/1.2 'Montserrat', sans-serif; color: #14302A; letter-spacing: -0.01em; }
+.wf-title-chip-sub { font: 400 10.5px/1.3 'Open Sans', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #4D6359; }
+@media (max-width: 720px) {
+  /* #wf-scene is a fixed viewport-relative layer (see index.html), so on
+     narrow widths — where the site's own persistent header wraps to
+     ~150px tall — this needs to duck below it explicitly rather than
+     assuming it starts below the header the way it did when nested
+     inside #role-screen. */
+  .wf-title-chip { top: 160px; }
+}
+
+/* Trail stop pins */
+.wf-pin-btn {
+  position: absolute;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: none; padding: 0; border-radius: 999px;
+  cursor: pointer; transition: transform .18s;
+}
+.wf-pin-btn:hover, .wf-pin-btn:focus-visible { transform: scale(1.09); }
+.wf-pin-btn:focus-visible { outline: 2px solid #234A3E; outline-offset: 2px; }
+.wf-pin-disc {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 999px; border: 2px solid #FBF9F4; background: #FBF9F4;
+  box-shadow: 0 4px 12px rgba(20,48,42,0.18);
+  transition: border-color .18s;
+}
+.wf-pin-chip {
+  padding: 9px 12px; background: #FBF9F4; border: 1px solid #C8D8D0;
+  border-radius: 10px; box-shadow: 0 6px 18px rgba(20,48,42,0.14);
+  pointer-events: none;
+}
+.wf-pin-chip-name { font: 600 12.5px/1.3 'Montserrat', sans-serif; color: #14302A; }
+.wf-pin-chip-sub { margin-top: 2px; font: 400 10px/1.3 'Open Sans', sans-serif; color: #7C8E85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Controls (back / restart / next) */
+.wf-controls { position: absolute; display: flex; align-items: center; gap: 10px; z-index: 400; }
+.wf-ctrl-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 999px;
+  border: 1px solid #C8D8D0; background: #FFFFFF; color: #4D6359;
+  cursor: pointer; box-shadow: 0 1px 2px rgba(20,48,42,0.06);
+  transition: border-color .15s, color .15s;
+}
+.wf-ctrl-btn:hover, .wf-ctrl-btn:focus-visible { border-color: #7FA396; color: #234A3E; }
+.wf-status-pill {
+  font: 400 10.5px/1.4 'Open Sans', sans-serif; color: #4D6359;
+  background: rgba(251,249,244,0.82); border-radius: 999px; padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.wf-rail {
+  position: absolute; display: flex; align-items: flex-end; height: 12px;
+  padding: 8px 12px; background: rgba(251,249,244,0.82); border-radius: 999px;
+  z-index: 400;
+}
+
+.wf-list-link {
+  position: absolute; z-index: 400;
+  font: 400 10.5px/1.4 'Open Sans', sans-serif; color: #4D6359;
+  text-decoration: none; border-bottom: 1px dotted #7FA396;
+  background: rgba(251,249,244,0.82); padding: 4px 7px; border-radius: 4px;
+}
+.wf-list-link:hover { color: #B8552E; }
+
+/* Detail panel */
+.wf-panel {
+  position: absolute; display: flex; flex-direction: column;
+  background: #FBF9F4; z-index: 500;
+}
+.wf-panel--side {
+  right: 0; top: 0; bottom: 0; width: min(430px, 42%);
+  box-shadow: -12px 0 32px rgba(20,48,42,0.14);
+}
+.wf-panel--sheet {
+  left: 0; right: 0; bottom: 0; max-height: 78%;
+  border-top-left-radius: 16px; border-top-right-radius: 16px;
+  box-shadow: 0 -12px 32px rgba(20,48,42,0.18);
+}
+.wf-panel-close {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; margin: -8px -8px 0 0;
+  border: none; background: none; color: #7C8E85;
+  font: 300 22px/1 'Open Sans', sans-serif; cursor: pointer; border-radius: 6px;
+}
+.wf-panel-close:hover, .wf-panel-close:focus-visible { color: #1B2A24; background: #F4F1EA; }
+.wf-tag-chip {
+  font: 500 9.5px/1 'Open Sans', sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  color: #4D6359; background: #F4F1EA; border-radius: 999px; padding: 7px 11px;
+}
+.wf-panel-label { font: 600 9.5px/1 'Open Sans', sans-serif; letter-spacing: .13em; text-transform: uppercase; color: #7FA396; }
+.wf-panel-text { margin-top: 6px; font: 300 13.5px/1.62 'Open Sans', sans-serif; color: #1B2A24; }
+.wf-panel-text-example {
+  margin-top: 8px; padding: 12px 14px; background: #F4F1EA; border-radius: 10px;
+  font: 300 italic 13.5px/1.6 'Open Sans', sans-serif; color: #234A3E;
+}
+.wf-panel-foot {
+  padding: 12px 22px 18px; font: 400 10.5px/1.5 'Open Sans', sans-serif; color: #7C8E85;
+}
+
+/* Session strip — progression (add-to-session) + export, collapsed by
+   default: the "clever trick" is keeping the real Session Builder state
+   (pbSession/pbToggleInSession) and the real export pipeline
+   (exportRunPDF/exportRunPNG) reachable from inside the scene's own panel
+   without duplicating either, via a one-line summary that expands. */
+.wf-session-strip { margin: 4px 22px 0; border-top: 1px solid #EDEAE0; }
+.wf-session-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; padding: 12px 0; border: none; background: none; cursor: pointer;
+  font: 500 11.5px/1.3 'Open Sans', sans-serif; color: #234A3E; text-align: left;
+}
+.wf-session-toggle:hover, .wf-session-toggle:focus-visible { color: #B8552E; }
+.wf-session-drawer { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; }
+.wf-session-add {
+  align-self: flex-start; padding: 7px 14px; border-radius: 999px;
+  border: 1px solid #7FA396; background: #FFFFFF; color: #234A3E;
+  font: 500 11px/1 'Open Sans', sans-serif; cursor: pointer;
+}
+.wf-session-add.in-pbSession { background: #234A3E; border-color: #234A3E; color: #FFFFFF; }
+.wf-session-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wf-session-export {
+  padding: 7px 12px; border-radius: 8px; border: 1px solid #C8D8D0; background: #FFFFFF;
+  color: #4D6359; font: 600 10.5px/1 'Open Sans', sans-serif; letter-spacing: .04em;
+  cursor: pointer;
+}
+.wf-session-export:hover:not(:disabled), .wf-session-export:focus-visible:not(:disabled) { border-color: #7FA396; color: #234A3E; }
+.wf-session-export:disabled { opacity: .4; cursor: not-allowed; }
+.wf-session-open {
+  font: 500 10.5px/1 'Open Sans', sans-serif; color: #4D6359; text-decoration: none;
+  border-bottom: 1px dotted #7FA396; padding-bottom: 1px;
+}
+.wf-session-open:hover { color: #B8552E; }
+
+/* ── role screen: full-screen hero ──
+   The scene fills the viewport (see .wf-scene above); the two role-cards
+   float over it as expandable glass "bubbles" tucked to one side rather
+   than sitting in the middle of the animation, so the trail/character/
+   pins stay the visual focus. Desktop: docked mid-left, stacked
+   vertically. Narrow/mobile: docked bottom-center, stacked horizontally
+   (see the @media block below) so they don't eat the limited width. */
+.wf-hero-overlay {
+  position: relative;
+  /* Full-bleed breakout: #role-screen sits inside .container
+     (max-width:960px; padding:0 24px — see styles-base.css), and a
+     full-screen hero needs to ignore both. #wf-scene itself (the fixed
+     background) doesn't need this — it's already fixed;inset:0 — this is
+     just so the heading/bubbles can use the full viewport width too. */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  /* #wf-scene is a fixed background now (not nested in here), so unlike
+     an in-flow child it contributes nothing to this element's height —
+     give it one explicitly, matching the same allowance as the scene
+     itself, so the bubble dock's top:50% centers against the same
+     region the animation actually fills. */
+  min-height: calc(var(--vh, 1vh) * 100 - 140px);
+  padding: 28px 20px;
+}
+.wf-hero-overlay .entry-label,
+.wf-hero-overlay .entry-title,
+.wf-hero-overlay .entry-sub {
+  text-align: center;
+  background: rgba(251,249,244,0.82);
+  border-radius: var(--r-md);
+  padding: 4px 14px;
+  width: fit-content;
+  margin-left: auto; margin-right: auto;
+}
+.wf-hero-overlay .entry-sub { padding: 10px 18px; max-width: 46ch; }
+
+/* ── entry screen: the same background keeps running behind it too (see
+   the comment on #role-screen in index.html) — the existing pathway-card
+   grid (both practitioner and participant variants) gets a frosted-glass
+   treatment instead of a solid one, so the scene shows through. Nothing
+   else about these screens changes — same cards, same copy, same nav. ── */
+#entry-screen {
+  position: relative;
+  padding-top: 4px;
+}
+#entry-screen .entry-label,
+#entry-screen .entry-title,
+#entry-screen .entry-sub {
+  background: rgba(251,249,244,0.82);
+  border-radius: var(--r-md);
+  padding: 4px 14px;
+  width: fit-content;
+}
+#entry-screen .entry-sub { padding: 10px 18px; }
+#entry-screen .pathway-card {
+  background: rgba(251,249,244,0.74);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-color: rgba(255,255,255,0.55);
+}
+#entry-screen .pathway-card:hover {
+  background: rgba(251,249,244,0.92);
+}
+
+.role-cards--bubble {
+  position: absolute;
+  pointer-events: auto;
+  display: flex; flex-direction: column;
+  gap: 20px;
+  left: clamp(16px, 3vw, 48px); top: 50%; transform: translateY(-50%);
+}
+.role-card--bubble {
+  width: 128px; height: 128px; padding: 0 16px;
+  border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  background: rgba(251,249,244,0.68);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,0.5);
+  box-shadow: 0 4px 16px rgba(20,48,42,0.15);
+  transition: width .32s ease, height .32s ease, border-radius .32s ease,
+    padding .32s ease, background .32s ease, box-shadow .32s ease, transform .25s ease;
+  overflow: hidden;
+}
+.role-card--bubble::before { display: none; }
+/* Collapsed: only the short eyebrow label shows (2-3 words — fits a small
+   circle with room to spare). h2/p/examples/arrow reveal on expand rather
+   than being crammed — and clipped by overflow:hidden — into the circle. */
+.role-card--bubble h2,
+.role-card--bubble .role-examples,
+.role-card--bubble p,
+.role-card--bubble .role-card-arrow { opacity: 0; max-height: 0; transition: opacity .18s ease; }
+.role-card--bubble .role-card-sub {
+  margin-bottom: 0; font-size: 10.5px; opacity: 1;
+  transition: margin-bottom .32s ease;
+}
+
+.role-card--bubble:hover,
+.role-card--bubble.is-open {
+  width: min(320px, 78vw); height: auto; min-height: 220px;
+  padding: 30px 26px 24px; border-radius: var(--r-lg);
+  background: rgba(251,249,244,0.93);
+  box-shadow: 0 12px 32px rgba(20,48,42,0.2);
+  text-align: left;
+}
+.role-card--bubble:hover .role-card-sub,
+.role-card--bubble.is-open .role-card-sub { margin-bottom: 16px; }
+.role-card--bubble:hover h2,
+.role-card--bubble.is-open h2 { opacity: 1; max-height: none; font-size: 21px; margin-bottom: 10px; }
+.role-card--bubble:hover .role-card-arrow,
+.role-card--bubble.is-open .role-card-arrow { opacity: 1; max-height: none; display: inline-block; }
+.role-card--bubble:hover .role-examples, .role-card--bubble.is-open .role-examples,
+.role-card--bubble:hover p, .role-card--bubble.is-open p { opacity: 1; max-height: none; }
+
+@media (max-width: 720px) {
+  .role-cards--bubble {
+    /* Clears the scene's own bottom-left controls row (back/restart/next
+       + status pill, ~60px tall including its own offset) rather than
+       stacking on top of it. */
+    left: 50%; top: auto; bottom: 78px; transform: translateX(-50%);
+    flex-direction: row; gap: 14px;
+  }
+  .role-card--bubble { width: 100px; height: 100px; }
+  .role-card--bubble h2 { font-size: 12px; }
+  .role-card--bubble:hover,
+  .role-card--bubble.is-open {
+    width: min(260px, 70vw); min-height: 190px;
+  }
+  /* A card expanding upward from a bottom dock, still centered as a
+     pair — translateX keeps both anchored to the dock's own centre
+     line rather than drifting per-card. */
+  .role-cards--bubble.role-cards--bubble { align-items: flex-end; }
+}

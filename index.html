@@ -23,12 +23,22 @@
 <link rel="stylesheet" href="styles-screens-reflect.css">
 <link rel="stylesheet" href="styles-screens-reference.css">
 <link rel="stylesheet" href="styles-pocketbook.css">
+<link rel="stylesheet" href="styles-walk-forest.css">
 <link rel="stylesheet" href="styles-export.css">
 <link rel="stylesheet" href="styles-responsive.css">
 </head>
 <body>
 
 <a class="skip-link" href="#main-content" data-i18n="nav.skip">Skip to main content</a>
+
+<!-- Walk the Forest — persistent animated background (walk-forest.js).
+     Lives here, not inside any single .screen, so it can keep running
+     continuously behind both #role-screen and #entry-screen as you move
+     between them — wfEnterScene()/wfExitScene() (called from router.js)
+     just show/hide and start/stop it, never tear it down. Fixed behind
+     .container (z-index:0 vs .container's z-index:1 — see styles-base.css)
+     so both screens' own content can float over it in translucent panels. -->
+<div id="wf-scene" class="wf-scene" aria-label="An animated illustration of a forest trail" role="img"></div>
 
 <template id="__bundler_thumbnail" data-bg-color="#F4F1EA">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
@@ -97,19 +107,23 @@
        automatically, and currentRole always defaults to 'practitioner'
        before any route is applied. See router.js ensureRole(). -->
   <div id="role-screen" class="screen">
-    <div class="role-screen-inner">
+    <!-- Walk the Forest (#wf-scene, a sibling of .container near the top
+         of <body>) shows fixed behind this — wfEnterScene()/wfExitScene()
+         in router.js keep it running continuously while either this
+         screen or #entry-screen is active. -->
+    <div class="wf-hero-overlay">
       <div class="entry-label" data-i18n="role.label">Welcome</div>
       <h1 class="entry-title" data-i18n="role.title">Who is this for?</h1>
       <p class="entry-sub" data-i18n="role.sub">Choose the perspective that fits your current need. You can switch at any time using the toggle in the corner.</p>
-      <div class="role-cards">
-        <div class="role-card" onclick="setRole('participant', true)">
+      <div class="role-cards role-cards--bubble">
+        <div class="role-card role-card--bubble" onclick="wfBubbleClick(this, 'participant', event)">
           <div class="role-card-sub" data-i18n="role.part.sub">Exploring FBT</div>
           <h2 data-i18n="role.part.title">I'm exploring forest-based therapy</h2>
           <p data-i18n="role.part.desc">Plain-language information about what FBT is, how sessions work, and whether it might be useful for your situation or someone you care about.</p>
           <div class="role-examples" data-i18n="role.part.eg">Participant · carer · referrer · curious person</div>
           <span class="role-card-arrow" data-i18n="role.part.cta">Continue →</span>
         </div>
-        <div class="role-card" onclick="setRole('practitioner', true)">
+        <div class="role-card role-card--bubble" onclick="wfBubbleClick(this, 'practitioner', event)">
           <div class="role-card-sub" data-i18n="role.prac.sub">Practising FBT</div>
           <h2 data-i18n="role.prac.title">I'm a practitioner</h2>
           <p data-i18n="role.prac.desc">Clinical reference, session tools, pocket guide to activities, indications and contraindications, integration with other modalities, and reflection prompts.</p>
@@ -120,7 +134,10 @@
     </div>
   </div>
 
-  <!-- ENTRY (role-aware) -->
+  <!-- ENTRY (role-aware) — same Walk the Forest background continues
+       behind this screen too (see the comment on #role-screen above);
+       .pathway-card/.entry-label/.entry-title/.entry-sub get a frosted-
+       glass treatment (styles-walk-forest.css) so it shows through. -->
   <div id="entry-screen" class="screen active">
 
     <!-- PRACTITIONER ENTRY -->
@@ -1934,6 +1951,12 @@
 <script src="pocketbook-run.js"></script>
 <script src="pocketbook-reflect.js"></script>
 <script src="pocketbook-init.js"></script>
+<!-- Role-screen hero: the animated trail scene behind the two role
+     bubbles. Loaded after pocketbook-init.js since it calls into
+     ACTIVITIES/GROUPS/VISUAL/PB_I18N/pbT()/pbTagT()/pbGroupT()/
+     pbFmtDuration()/pbLocalizeVisual()/pbSession/pbToggleInSession()/
+     exportRunPDF()/exportRunPNG() — all defined by then. -->
+<script src="walk-forest.js"></script>
 <script src="ui-behaviors.js"></script>
 
 <!-- Search dialog (⌘K / Ctrl+K). Loaded last so ACTIVITIES, pbT(), t(),
