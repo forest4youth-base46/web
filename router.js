@@ -583,3 +583,45 @@ function goToRoleScreen() {
 // blocks on a role choice: ensureRole() (called from inside applyRoute)
 // defaults to practitioner if no role is stored yet.
 applyRoute();
+
+// ─────────────────────────────────────────
+// UNIVERSAL ESCAPE / "OPEN SPACE" HOTSPOT
+// ─────────────────────────────────────────
+// The site starts on the game (walk-forest.js turns the scene on by
+// default) and both Escape and a click on open space should always get
+// you back to it, cascading inward-out: close whichever overlay is
+// topmost first, and only once nothing is left open does it actually
+// revert to the game (entry screen, scene crisp). search.js and
+// pocketbook-run.js already own Escape for their own overlays (the search
+// dialog, run mode, run mode's timer) and close themselves via their own
+// listeners — this checks their DOM state and steps aside rather than
+// double-handling the same keypress.
+function appEscapeAction() {
+  const searchOverlay = document.getElementById('search-overlay');
+  if (searchOverlay && searchOverlay.classList.contains('active')) return;
+  const runMode = document.getElementById('pb-runMode');
+  if (runMode && runMode.classList.contains('active')) return;
+  const timerModal = document.getElementById('pb-timerModal');
+  if (timerModal && timerModal.classList.contains('active')) return;
+
+  if (typeof WF !== 'undefined' && WF.openId) { wfClose(); return; }
+
+  const focusedScreen = document.querySelector('.screen.focus-mode');
+  if (focusedScreen) {
+    const back = focusedScreen.querySelector('.module-back-link.injected');
+    if (back) { back.click(); return; }
+  }
+
+  // Nothing left open — this is the fallback the cascade always bottoms
+  // out at: back to the game itself.
+  if (window.location.hash) navigate('');
+  if (typeof wfSetDeep === 'function') wfSetDeep(false);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  // Same guard pocketbook-run.js uses for its own Escape handling — don't
+  // hijack Esc out of a text field the user is actively typing in.
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  appEscapeAction();
+});

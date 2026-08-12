@@ -912,17 +912,18 @@ function wfSetDeepFromScreen(screenId) {
   wfSetDeep(screenId !== 'entry-screen' && screenId !== 'role-screen');
 }
 
-// Suspension is otherwise only lifted by navigating back to entry/role —
-// which can't happen if you never left (e.g. the mode-switch toggled deep
-// on while already sitting on entry-screen). Without this, blur can get
-// stuck with no way back short of switching the whole backdrop off and on.
-// Reaching directly into the scene — anywhere that isn't a pin/control/link
-// (all real buttons/anchors) — hands control back immediately, the same
-// way it did before contextual blur existed.
+// A click that reaches the scene's own background — anywhere that isn't a
+// pin/control/link (all real buttons/anchors) — counts as "open space,"
+// same as Escape: see appEscapeAction() in router.js, which this defers
+// to entirely (closing whatever's open, or reverting to the game if
+// nothing is). Without a route back like this, suspension (blur) could get
+// stuck with no way out short of switching the whole backdrop off and on —
+// e.g. the mode-switch toggles deep on while already sitting on
+// entry-screen, which navigating can't undo since you never left.
 function wfOnSceneClick(e) {
   if (!WF.on || !e.target.closest) return;
   if (e.target.closest('button, a')) return;
-  wfSetDeep(false);
+  if (typeof appEscapeAction === 'function') appEscapeAction();
 }
 
 function wfEnterScene() {
@@ -944,7 +945,8 @@ function wfEnterScene() {
     if (!WF.active) return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); wfGoBack(); }
     else if (e.key === 'r' || e.key === 'R') { wfRestart(); }
-    else if (e.key === 'Escape') { if (WF.openId) wfClose(); }
+    // Escape is handled centrally — see appEscapeAction() in router.js,
+    // which closes the panel (among everything else it cascades through).
   };
   window.addEventListener('keydown', WF.onKey);
   WF.onSceneClick = wfOnSceneClick;
@@ -970,3 +972,10 @@ function wfExitScene() {
   if (WF.onKey) window.removeEventListener('keydown', WF.onKey);
   if (WF.onSceneClick && WF.el) WF.el.removeEventListener('click', WF.onSceneClick);
 }
+
+// The site starts on the game: the scene is on from the first paint, not
+// behind an extra click on #wf-toggle-btn. wfEnterScene() still respects
+// prefers-reduced-motion (crisp scene, no animation loop), and the toggle
+// button remains a normal off switch from here — this only changes the
+// starting state.
+wfSetOn(true);
