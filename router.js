@@ -479,18 +479,18 @@ function setRole(role, fromRoleScreen) {
   try { sessionStorage.setItem('fbt.role', role); } catch(e) { warnFailure('saving fbt.role to sessionStorage', e); }
   document.body.setAttribute('data-role', role);
 
-  // If coming from the role-screen choice, land on the entry screen.
-  // If switching role mid-session, also return to entry if stranded
-  // on a screen the new role cannot see.
+  // If coming from a role-picker (role-screen's own cards, or the header
+  // mode-switch — both pass true), land on entry: that role's own
+  // pathway cards, not just a flag flip. If switching role mid-session
+  // without a picker involved, also return to entry if stranded on a
+  // screen the new role cannot see.
   if (fromRoleScreen) {
-    // Clear hash without triggering hashchange side effects, then route.
-    if (window.location.hash) {
-      try {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      } catch(e) {
-        warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
-        window.location.hash = '';
-      }
+    // Set the hash without triggering hashchange side effects, then route.
+    try {
+      history.replaceState(null, '', window.location.pathname + window.location.search + '#entry');
+    } catch(e) {
+      warnFailure('history.replaceState unavailable, falling back to setting the hash directly', e);
+      window.location.hash = 'entry';
     }
     applyRoute();
   } else {
@@ -509,11 +509,6 @@ function setRole(role, fromRoleScreen) {
     }
     applyRoute();
   }
-  // Header-triggered role toggle (not the role-screen's own cards) counts
-  // as "using the menu" — suspends the backdrop even when applyRoute()
-  // above didn't change screens (e.g. toggling while already on
-  // entry-screen, which is valid for both roles).
-  if (!fromRoleScreen && typeof wfSetDeep === 'function') wfSetDeep(true);
 }
 
 // ─────────────────────────────────────────
