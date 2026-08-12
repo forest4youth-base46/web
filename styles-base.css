@@ -106,19 +106,42 @@ body[data-role="practitioner"] #entry-screen > [data-role-only="practitioner"],
 body[data-role="participant"] #entry-screen > [data-role-only="participant"] { display: block; }
 
 /* ── HEADER ── */
+/* Breaks out of .container's 960px cap — the centered three-section
+   layout below needs more room than that leaves for the nav (measured:
+   title ~254px + controls ~516px out of a 960px container left only
+   ~150px for four nav links, forcing them to wrap vertically instead of
+   sitting centered in a row). .container's own max-width stays 960px for
+   actual page content; only the header gets the wider, independently
+   viewport-centered treatment. On narrow screens 100vw already is
+   .container's width, so this is a no-op there. */
 header {
-  padding: 28px 0 20px;
+  padding: 28px 24px 20px;
   border-bottom: 1px solid var(--forest-mist);
   margin-bottom: 28px;
+  width: 100vw;
+  max-width: 1220px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
+/* Three-section layout — title left, nav centered in the gap between
+   title and controls, controls right — rather than the nav clustering
+   right next to the title. auto/1fr/auto rather than flex +
+   margin-left:auto (still used as the mobile fallback, see
+   styles-responsive.css) because centering a middle flex item between two
+   different-width siblings isn't a flex feature; grid's 1fr middle
+   column is. */
 .header-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  flex-wrap: wrap;
+  column-gap: 16px;
   row-gap: 14px;
-  gap: 16px;
 }
+.header-text { grid-column: 1; }
+.site-nav { grid-column: 2; justify-content: center; }
+.header-controls { grid-column: 3; }
 
 .tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
 
@@ -224,7 +247,6 @@ input:focus-visible,
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-left: auto;
 }
 
 .search-trigger {
@@ -264,6 +286,21 @@ input:focus-visible,
   border-radius: var(--r-pill);
   padding: 3px;
   box-shadow: var(--shadow-sm);
+  animation: modeSwitchCta 1.8s ease-in-out 3;
+}
+/* Brief, not a standing loop (animation-iteration-count:3, no infinite) —
+   a few soft ember pulses on load/first paint to draw the eye to the
+   Practitioner/Exploring choice, then it settles back to plain --shadow-sm
+   and stays there; looping forever would just become visual noise. Layers
+   the pulse ring alongside the base shadow in every keyframe rather than
+   replacing it, since an animated box-shadow value fully overrides the
+   property each frame instead of adding to it. */
+@keyframes modeSwitchCta {
+  0%, 100% { box-shadow: var(--shadow-sm), 0 0 0 0 rgba(184,85,46,0); }
+  50% { box-shadow: var(--shadow-sm), 0 0 0 6px rgba(184,85,46,0.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-switch { animation: none; }
 }
 .mode-btn {
   min-height: 44px;

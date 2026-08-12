@@ -152,6 +152,20 @@
   #site-header {
     transition: transform 0.25s ease, opacity 0.25s ease;
     will-change: transform;
+    /* The desktop breakout (styles-base.css) isn't needed here — .container
+       isn't even constrained below its own 960px cap at these widths — and
+       vw-based centering math gets thrown off by this same breakpoint's
+       own body{zoom:0.75} density pass (confirmed: header rendered at
+       0.75x the expected width, off-center). It also fights the
+       .header-hidden scroll-away transform below, which needs sole
+       ownership of this element's transform on mobile. */
+    width: auto;
+    max-width: none;
+    position: static;
+    left: auto;
+    transform: none;
+    padding-left: 0;
+    padding-right: 0;
   }
   #site-header.header-hidden {
     transform: translateY(-110%);
@@ -164,10 +178,12 @@
   .lang-bar {
     margin-left: auto;
   }
-  /* Nav and controls each take the full row on narrow screens, stacked
-     under the title, rather than fighting it for horizontal space. */
-  .site-nav, .header-controls { flex-basis: 100%; }
-  .header-controls { margin-left: 0; }
+  /* Desktop centers the nav in its own grid column (styles-base.css) —
+     too little width for that on narrow screens, so fall back to the
+     title/nav/controls each taking a full stacked row, wrapping flex
+     rather than grid. */
+  .header-inner { display: flex; flex-wrap: wrap; }
+  .site-nav, .header-controls { flex-basis: 100%; justify-content: flex-start; }
   .search-trigger-label { display: none; }
   .search-trigger-kbd { display: none; }
 
