@@ -38,6 +38,27 @@
 .wf-glow { animation: wfGlow 12s ease-in-out infinite; }
 @keyframes wfGlow2 { 0%,100% { opacity:.06; } 50% { opacity:.16; } }
 .wf-glow2 { animation: wfGlow2 15.5s ease-in-out infinite 3s; }
+/* The funder-logo "sun" (walk-forest.js) drifts a few px on a slow, loose
+   loop rather than sitting pinned in place — its own transform, not the
+   positioning wrapper's, so this doesn't fight the wrapper's inline
+   left:50%/translateX(-50%) centering (a CSS animation targeting the same
+   property on the same element would win the cascade and cancel it). */
+@keyframes wfSunDrift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(6px, -5px); }
+  50%  { transform: translate(-4px, 3px); }
+  75%  { transform: translate(3px, 6px); }
+  100% { transform: translate(0, 0); }
+}
+.wf-sun { animation: wfSunDrift 42s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  /* Not in the shared disable block below — that block sits before most
+     of this file's later rules in source order, so an override placed
+     there for a class defined further down would lose the cascade and
+     silently do nothing (the same bug already hit once this session, on
+     .wf-pin-chip's own reduced-motion override). */
+  .wf-sun { animation: none; }
+}
 /* One-shot, unlike everything else above: the arrival caption chip reads
    for a moment, then drifts up and away like a released balloon rather
    than sitting there occupying the scene indefinitely. Plays once because

@@ -682,7 +682,7 @@ function wfComputeFrame() {
   const sunT = Math.max(0, Math.min(1, (sunScale - 0.08) / (0.6 - 0.08)));
   const sunOpacity = (0.86 + sunT * 0.14).toFixed(2);
   const sunWidth = Math.round((narrow ? 110 : 150) * (0.85 + sunT * 0.5));
-  const sunGlow = (10 + sunT * 22).toFixed(0);
+  const sunGlow = (8 + sunT * 16).toFixed(0);
 
   return {
     trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setLayer,
@@ -858,7 +858,13 @@ function wfRender() {
     // its end (frame.sunOpacity/sunWidth, computed in wfComputeFrame()) —
     // a soft warm drop-shadow (frame.sunGlow) stands in for actual
     // sunlight, since the logo itself is flat art with no glow of its own.
-    '<img src="assets/logo-interreg-forest4youth.png" alt="' + wfEsc(t('walk.funder')) + '" style="position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%);width:' + frame.sunWidth + 'px;height:auto;opacity:' + frame.sunOpacity + ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.6));pointer-events:none" />' +
+    // The centering transform lives on this wrapper, not the <img>, so
+    // .wf-sun's own idle-drift animation (styles-walk-forest.css) can
+    // freely animate the <img>'s transform without a CSS animation and an
+    // inline style fighting over the same property on the same element.
+    '<div style="position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%)">' +
+      '<img src="assets/logo-interreg-forest4youth.png" alt="' + wfEsc(t('walk.funder')) + '" class="wf-sun" style="display:block;width:' + frame.sunWidth + 'px;height:auto;opacity:' + frame.sunOpacity + ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.35));pointer-events:none" />' +
+    '</div>' +
     '<div style="position:absolute;left:0;right:0;top:47%;bottom:0;background:linear-gradient(180deg,#B9BA9C 0%,#A9AA8E 38%,#9B9C79 100%)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:40%;height:7.5%;background:#B4C8BC;opacity:.7;filter:blur(3px)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:44.5%;height:5%;background:#C8D8D0;opacity:.8;filter:blur(2px)"></div>' +
