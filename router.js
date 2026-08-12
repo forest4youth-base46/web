@@ -158,6 +158,9 @@ function updateHeaderChrome() {
     if (match) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
+
+  const backBtn = document.getElementById('wf-back-btn');
+  if (backBtn) backBtn.classList.toggle('wf-back-btn--visible', !!document.querySelector('.screen.active'));
 }
 
 // Nav entry point for "Run". Run Mode itself is unchanged (still the

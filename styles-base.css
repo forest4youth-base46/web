@@ -249,6 +249,31 @@ input:focus-visible,
   gap: 10px;
 }
 
+/* Hidden by default; updateHeaderChrome() (router.js) adds --visible
+   whenever a screen is actually open, so it's never shown redundantly
+   while already on the game — see the comment on #wf-back-btn in
+   index.html for why this exists at all. Ember accent (not the neutral
+   paper/border language the rest of .header-controls uses) so it reads
+   as a distinct "get me out of here" action, not just another nav item. */
+.wf-back-btn {
+  display: none;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--ember-soft);
+  background: var(--paper-pure);
+  color: var(--ember);
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+.wf-back-btn:hover, .wf-back-btn:focus-visible { background: var(--ember); color: var(--paper-pure); }
+.wf-back-btn--visible { display: inline-flex; }
+
 .search-trigger {
   display: inline-flex;
   align-items: center;

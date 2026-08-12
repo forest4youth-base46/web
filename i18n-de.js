@@ -15,6 +15,7 @@ const T_DE = {
     "pathway.implement.title": "In der Praxis umsetzen", "pathway.implement.desc": "Planungstools für Sitzungen, ein Taschenführer für Aktivitäten, Checklisten und Sicherheitsüberlegungen.", "pathway.implement.cta": "Loslegen →",
     "pathway.reflect.title": "Reflektieren und auswerten", "pathway.reflect.desc": "Reflexionsimpulse nach der Sitzung, Ergebniserfassung und Selbstbewertungstools für Praktiker.", "pathway.reflect.cta": "Öffnen →",
     "nav.back": "Zurück",
+    "nav.backtoforest": "← Zurück zum Wald",
     "learn.heading": "Waldbasierte Therapie verstehen", "learn.sub": "Eine theoretische Grundlage, Evidenzbasis und Mechanismen der WBT vor dem praktischen Einsatz.",
     "implement.heading": "Sitzungstools und Aktivitätenleitfäden", "implement.sub": "Praktische Ressourcen zur Planung, Durchführung und Reflexion waldbasierter Sitzungen.",
     "reflect.heading": "Reflexion nach der Sitzung", "reflect.sub": "Impulse und Indikatoren zur Unterstützung der Praktikerreflexion nach jeder Sitzung.",

@@ -22,6 +22,7 @@ const T_EN = {
     "pathway.reflect.desc": "Post-session reflection prompts, outcome tracking, and practitioner self-assessment tools.",
     "pathway.reflect.cta": "Open →",
     "nav.back": "Back",
+    "nav.backtoforest": "← Back to the forest",
 
     // New UI chrome for the persistent header (nav, mode switch, search).
     // EN-only by design: t() already falls back to English for any

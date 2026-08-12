@@ -22,6 +22,7 @@ const T_FR = {
     "pathway.reflect.desc": "Invites de réflexion post-séance, suivi des résultats et outils d'auto-évaluation du praticien.",
     "pathway.reflect.cta": "Ouvrir →",
     "nav.back": "Retour",
+    "nav.backtoforest": "← Retour à la forêt",
     "learn.heading": "Comprendre la thérapie basée sur la forêt",
     "learn.sub": "Une base théorique, des données probantes et les mécanismes de la TBF avant d'entrer en pratique.",
     "implement.heading": "Outils de séance et guides d'activités",
