@@ -92,19 +92,20 @@ function applyRoute() {
     return;
   }
 
-  // Show the requested screen (or entry if hash is empty).
+  // Show the requested screen, or nothing (just the game) if the hash is
+  // empty — the game is the default view now, not entry-screen.
   if (!section) {
-    applyRouteActivateOnly('entry-screen');
+    applyRouteActivateOnly(null);
     return;
   }
   const target = document.getElementById(section + '-screen');
   if (!target) {
-    // Unknown route — fall back to entry.
-    applyRouteActivateOnly('entry-screen');
+    // Unknown route — fall back to just the game.
+    applyRouteActivateOnly(null);
     return;
   }
-  // If the screen is restricted to the other role, redirect to entry
-  // and show entry immediately (don't rely on hashchange firing).
+  // If the screen is restricted to the other role, redirect to just the
+  // game and show it immediately (don't rely on hashchange firing).
   const screenRole = target.getAttribute('data-role-only');
   if (screenRole && screenRole !== currentRole) {
     try {
@@ -113,7 +114,7 @@ function applyRoute() {
       warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
       window.location.hash = '';
     }
-    applyRouteActivateOnly('entry-screen');
+    applyRouteActivateOnly(null);
     return;
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));

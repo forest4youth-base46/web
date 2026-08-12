@@ -433,6 +433,7 @@ function wfStep(now) {
   if (WF.paused && !last && WF.resumeAt !== Infinity && now > WF.resumeAt) {
     WF.paused = false; WF.holdEnd = now + 600;
   }
+  const wasMoving = WF.mode === 'move';
   if (WF.mode === 'move') {
     const span = wfTravelMs();
     const p = Math.min(1, (now - WF.moveStart) / span);
@@ -444,7 +445,16 @@ function wfStep(now) {
     if (at >= ACTIVITIES.length - 1) { WF.cam = 0; WF.holdEnd = now + wfDwellMs(); }
     else { WF.mode = 'move'; WF.from = at; WF.to = at + 1; WF.moveStart = now; }
   }
-  if (now - (WF.lastPaint || 0) > 32) { WF.lastPaint = now; wfRender(); }
+  // Only repaint while the camera is actually moving — holding still
+  // doesn't change anything wfRender() would draw differently (the
+  // character bob and tree sway are pure CSS animations, no JS involved).
+  // Repainting unconditionally every ~32ms was rebuilding the whole
+  // scene's innerHTML ~30x/second even at rest, destroying and recreating
+  // every pin/control/link out from under the pointer — real clicks on
+  // them ranged from unreliable to impossible.
+  if ((wasMoving || WF.mode === 'move') && now - (WF.lastPaint || 0) > 32) {
+    WF.lastPaint = now; wfRender();
+  }
 }
 
 function wfGoBack() {
@@ -909,7 +919,9 @@ function wfSetDeep(on) {
 }
 
 function wfSetDeepFromScreen(screenId) {
-  wfSetDeep(screenId !== 'entry-screen' && screenId !== 'role-screen');
+  // No active screen (the default view — just the game) reads as crisp,
+  // same as role-screen already did.
+  wfSetDeep(!!screenId && screenId !== 'role-screen');
 }
 
 // A click that reaches the scene's own background — anywhere that isn't a
@@ -931,7 +943,7 @@ function wfEnterScene() {
   if (!WF.el) return;
   WF.el.classList.add('wf-scene--visible');
   const activeScreen = document.querySelector('.screen.active');
-  wfSetDeepFromScreen(activeScreen ? activeScreen.id : 'entry-screen');
+  wfSetDeepFromScreen(activeScreen ? activeScreen.id : null);
   if (WF.active) return;
   WF.active = true;
   WF.reduced = typeof window.matchMedia === 'function' &&
