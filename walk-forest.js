@@ -113,7 +113,7 @@ const WF_DAPPLE = (function () {
 // trail — same substitution pbLocalizeVisual() does for the detail panel,
 // just extracted in English rather than duplicated by hand.
 const WF = {
-  el: null, active: false, on: false, focused: false, cam: 0, mode: 'hold',
+  el: null, active: false, on: false, cam: 0, mode: 'hold',
   from: 0, to: 0, moveStart: 0, holdEnd: 0,
   paused: false, resumeAt: 0, manual: false, reduced: false,
   openId: null, sessionDrawerOpen: false,
@@ -741,7 +741,10 @@ function wfPanelHTML(frame) {
   return '' +
     '<div onclick="wfClose()" style="position:absolute;inset:0;background:#14302A;opacity:.28;cursor:pointer"></div>' +
     '<div role="dialog" aria-label="' + wfEsc(o.name) + '" class="wf-panel ' + (frame.narrow ? 'wf-panel--sheet' : 'wf-panel--side') + '">' +
-      '<div style="display:flex;align-items:flex-start;gap:12px;padding:20px 22px 0">' +
+      // padding-top clears the site's own #wf-toggle-btn (top-right,
+      // ~14-48px tall) sitting above the scene at a higher z-index — see
+      // body.wf-scene-on .container in styles-walk-forest.css.
+      '<div style="display:flex;align-items:flex-start;gap:12px;padding:52px 22px 0">' +
         '<div style="flex:1">' +
           '<div style="font:400 9.5px/1 \'Open Sans\',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:' + o.color + '">' + wfEsc(o.groupTitle) + '</div>' +
           '<div style="margin-top:7px;font:600 20px/1.2 \'Montserrat\',sans-serif;color:#14302A;letter-spacing:-0.01em">' + wfEsc(o.name) + '</div>' +
@@ -810,14 +813,7 @@ function wfRender() {
 
   const railHtml = frame.rail.map(rn => '<div title="' + wfEsc(rn.title) + '" style="' + rn.style + '"></div>').join('');
 
-  // Everything but the open detail panel lives inside .wf-blur-layer: a
-  // soft filter:blur() there gives the background a proper out-of-focus
-  // photo feel — atmosphere, not competing foreground UI — while leaving
-  // the panel itself (real content once actually opened) crisp. Blur
-  // doesn't affect hit-testing, so the pins/controls underneath stay
-  // fully clickable even though they read as background texture.
   const html = '' +
-    '<div class="wf-blur-layer">' +
     '<div style="position:absolute;left:0;right:0;top:0;height:47%;background:linear-gradient(180deg,#E7EEE4 0%,#DCE6DE 58%,#D3E0D6 100%)"></div>' +
     '<div class="wf-drift" style="position:absolute;left:-14%;top:-20%;width:70%;height:36%;border-radius:50%;background:#EEF3EB;opacity:.7;filter:blur(1px)"></div>' +
     '<div class="wf-drift2" style="position:absolute;right:-16%;top:-13%;width:78%;height:34%;border-radius:50%;background:#EAF0E8;opacity:.55"></div>' +
@@ -861,7 +857,6 @@ function wfRender() {
     // so this and the title chip above both need to duck under it
     // explicitly rather than assuming they start below it.
     '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:160px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
-    '</div>' +
     (frame.isOpen ? wfPanelHTML(frame) : '');
 
   WF.el.innerHTML = html;
@@ -876,13 +871,13 @@ function wfMeasure() {
 
 // ───────── mount / unmount ─────────
 // ───────── global on/off toggle ─────────
-// Walk the Forest is a persistent background layer behind every screen,
-// not tied to routing — it only ever shows because a visitor switched it
-// on (the header's toggle button, wfToggleGlobal()), and it keeps running
-// continuously (camera position included) across navigation until they
-// switch it off again. body.wf-scene-on is what makes every other
-// screen's cards translucent — see the --paper/--paper-card/--paper-pure
-// override in styles-walk-forest.css.
+// One small button (#wf-toggle-btn, in the header), one state change: off
+// is the plain site; on is the game itself, immediately — full screen,
+// crisp, playable (trail, pins, panel, controls all live from the first
+// frame), not a blurred backdrop you then have to find your way into.
+// body.wf-scene-on (styles-walk-forest.css) hides the rest of the page and
+// the rest of the header down to just this one button, and puts the scene
+// above everything. Escape, or the button again, closes it.
 function wfToggleGlobal() {
   wfSetOn(!WF.on);
 }
@@ -893,34 +888,7 @@ function wfSetOn(on) {
   const btn = document.getElementById('wf-toggle-btn');
   if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   if (on) wfEnterScene(); else wfExitScene();
-  if (!on) wfSetFocus(false);
 }
-
-// ───────── focus mode: actually play it, not just watch it blurred ─────────
-// Switching the background on gives a blurred, textured backdrop behind
-// the real page — there was no way to step INTO it as the thing you're
-// actually looking at. A click on empty space (not any real control, link,
-// or card — anything with an onclick/href, checked via closest() rather
-// than an exhaustive class list) toggles body.wf-scene-on wf-focused:
-// un-blurs the scene, brings it in front of the page, and fades the page
-// back so the scene is what you're interacting with. Clicking empty space
-// again (or Escape) returns to the ambient blurred state.
-function wfIsInteractiveClick(target) {
-  return !!(target && target.closest &&
-    target.closest('a, button, input, textarea, select, [onclick]'));
-}
-function wfSetFocus(on) {
-  WF.focused = on;
-  document.body.classList.toggle('wf-focused', on);
-}
-function wfToggleFocus() {
-  wfSetFocus(!WF.focused);
-}
-document.addEventListener('click', function (e) {
-  if (!WF.on) return;
-  if (wfIsInteractiveClick(e.target)) return;
-  wfToggleFocus();
-});
 
 function wfEnterScene() {
   WF.el = document.getElementById('wf-scene');
@@ -939,8 +907,7 @@ function wfEnterScene() {
     if (!WF.active) return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); wfGoBack(); }
     else if (e.key === 'r' || e.key === 'R') { wfRestart(); }
-    else if (e.key === 'Escape' && WF.openId) { wfClose(); }
-    else if (e.key === 'Escape' && WF.focused) { wfSetFocus(false); }
+    else if (e.key === 'Escape') { if (WF.openId) wfClose(); else wfSetOn(false); }
   };
   window.addEventListener('keydown', WF.onKey);
   if (WF.reduced) return;

@@ -51,15 +51,17 @@
    property (see ui-behaviors.js) for the same reason it's used elsewhere:
    more reliable than raw vh units on mobile browser chrome. */
 .wf-scene {
-  /* A persistent fixed background, not scoped to any one .screen — see
-     the comment on #wf-scene in index.html. Sits at the same layer
-     body::before reserves (z-index:0, styles-base.css) so .container's
-     own z-index:1 content (every screen's cards) floats over it. Hidden
-     by default — walk-forest.js only adds wf-scene--visible while the
-     header's toggle (#wf-toggle-btn / wfToggleGlobal()) is switched on. */
+  /* One small button (#wf-toggle-btn, in the header) turns this on: a
+     full-screen takeover, not a background — crisp, playable, in front
+     of the page from the first frame. Not scoped to any one .screen —
+     see the comment on #wf-scene in index.html. Hidden by default;
+     walk-forest.js adds wf-scene--visible while switched on. z-index
+     high enough to sit above .container's own z-index:1 (styles-base.css)
+     and the header — see body.wf-scene-on .container below, which is
+     what keeps the header's one visible button reachable on top of it. */
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 50;
   overflow: hidden;
   background: #E8EDE7;
   cursor: default;
@@ -69,18 +71,6 @@
 }
 .wf-scene.wf-scene--visible { display: block; }
 .wf-scene svg text { user-select: none; }
-
-/* Soft out-of-focus backdrop feel: blur everything except the detail
-   panel (a sibling outside .wf-blur-layer — see wfPanelHTML() in
-   walk-forest.js), which stays crisp once actually opened. Blur doesn't
-   affect hit-testing, so the pins/controls underneath stay fully
-   clickable even though they read as background texture, not foreground
-   UI, while the panel's real content behind them is closed. */
-.wf-blur-layer {
-  position: absolute;
-  inset: 0;
-  filter: blur(3px);
-}
 
 .wf-title-chip {
   position: absolute; left: 14px; top: 12px;
@@ -223,20 +213,10 @@
 .wf-session-open:hover { color: #B8552E; }
 
 /* ── global on/off toggle ──
-   Walk the Forest is off by default and only ever shows because a
-   visitor switched it on (#wf-toggle-btn / wfToggleGlobal() in
-   walk-forest.js). Once on, it's a single continuous background behind
-   *every* screen, not just one — rather than hand-writing a translucent
-   variant of every card style across the site, this overrides the shared
-   --paper/--paper-card/--paper-pure tokens (tokens.css) that those styles
-   already build on, so the whole site's existing surfaces go translucent
-   in one place instead of dozens. */
-body.wf-scene-on {
-  --paper:      rgba(244,241,234,0.88);
-  --paper-card: rgba(251,249,244,0.88);
-  --paper-pure: rgba(255,255,255,0.92);
-}
-
+   One small button (#wf-toggle-btn, in the header) — off is the plain
+   site, on is the game itself immediately (full screen, crisp, playable
+   from the first frame, not a background you then have to find your way
+   into — see wfSetOn()/wfToggleGlobal() in walk-forest.js). */
 .wf-toggle-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; padding: 0;
@@ -247,27 +227,26 @@ body.wf-scene-on {
 .wf-toggle-btn:hover, .wf-toggle-btn:focus-visible { border-color: var(--forest-soft); color: var(--forest-deep); }
 .wf-toggle-btn[aria-pressed="true"] { background: var(--forest-ink); border-color: var(--forest-ink); color: #FFFFFF; }
 
-/* ── focus mode ──
-   A click on empty background space (see wfIsInteractiveClick() in
-   walk-forest.js — anything that isn't a link/button/[onclick]) steps
-   into the scene: crisp instead of blurred, brought in front of the page
-   instead of sitting behind it, with the page itself fading back rather
-   than competing for attention. Clicking empty space again, or Escape,
-   returns to the ambient blurred backdrop. */
-#main-content { transition: opacity .3s ease; }
-body.wf-focused #wf-scene { z-index: 5; }
-body.wf-focused .wf-blur-layer { filter: none; }
-/* #site-header and #main-content are both inside .container, which has
-   its own z-index (styles-base.css) and so its own stacking context —
-   raising #wf-scene alone put it above .container as a whole, burying
-   the header along with the content instead of just the content
-   (z-index on a descendant can't out-rank a sibling of its own stacking
-   context's root). Raising .container itself keeps the header (and
-   everything else in normal flow above the faded #main-content) on top;
-   #main-content's own pointer-events:none is what actually lets clicks
-   reach the scene beneath it. */
-body.wf-focused .container { z-index: 10; }
-body.wf-focused #main-content {
-  opacity: 0.1;
-  pointer-events: none;
+/* #wf-scene sits at z-index:50 once visible (see .wf-scene above) — .container
+   needs to clear that to keep the header (and specifically the one button
+   that closes this) reachable on top of it, since z-index on a descendant
+   (the header) can't out-rank a sibling of its own stacking-context root
+   (.container, styles-base.css) — raising .container itself is what
+   actually works. Everything in the header except the toggle button hides,
+   and the rest of the page hides completely: this is meant to read as
+   "the game", not "the game plus the site's chrome floating on top of it". */
+body.wf-scene-on .container { z-index: 60; }
+body.wf-scene-on #main-content { display: none; }
+body.wf-scene-on #site-header .header-text,
+body.wf-scene-on #site-header .site-nav,
+body.wf-scene-on #site-header .search-trigger,
+body.wf-scene-on #site-header .mode-switch,
+body.wf-scene-on #site-header .lang-bar {
+  display: none;
 }
+body.wf-scene-on #site-header {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding: 14px 0;
+}
+body.wf-scene-on .header-controls { justify-content: flex-end; width: 100%; }
