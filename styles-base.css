@@ -41,7 +41,18 @@ body::before {
   padding: 0 24px;
   position: relative;
   z-index: 1;
+  /* Passes clicks through wherever neither direct child (header, main —
+     re-enabled below) actually covers a pixel: .container's own box is a
+     solid rectangle from its top to its bottom regardless of gaps in the
+     normal-flow content inside it (e.g. body.wf-scene-deep #main-content's
+     margin-top, below), so without this, a click landing in that "empty"
+     space still hits .container itself rather than falling through to
+     #wf-scene underneath — confirmed directly: margin-top alone did not
+     expose a working hotspot, elementFromPoint() kept resolving to
+     .container. */
+  pointer-events: none;
 }
+.container > * { pointer-events: auto; }
 
 /* ── LANGUAGE TOGGLE ──
    Sits in normal flow inside .header-controls, between the mode switch
@@ -104,6 +115,17 @@ body[data-role="practitioner"] .site-nav-group[data-role-only="practitioner"] { 
 body[data-role="participant"] .site-nav-group[data-role-only="participant"] { display: flex; }
 body[data-role="practitioner"] #entry-screen > [data-role-only="practitioner"],
 body[data-role="participant"] #entry-screen > [data-role-only="participant"] { display: block; }
+
+/* Real, always-present strip of the blurred scene between the header and
+   the active screen's own content — a guaranteed hotspot back to the
+   game (wfOnSceneClick() in walk-forest.js, already wired to
+   appEscapeAction()) that works at every viewport width, not just as a
+   side-effect of .container's 960px cap leaving side margins on wide
+   enough screens. #wf-scene is position:fixed behind everything, so this
+   gap shows the actual live, blurred backdrop, not a placeholder — any
+   click or tap landing here reaches #wf-scene's own background exactly
+   like those margins already do when they happen to be exposed. */
+body.wf-scene-deep #main-content { margin-top: 64px; }
 
 /* ── HEADER ── */
 /* Breaks out of .container's 960px cap — the centered three-section

@@ -167,6 +167,11 @@
     padding-left: 0;
     padding-right: 0;
   }
+  /* No room for this here (it was pushing onto its own row above
+     Practitioner/Exploring) — the blurred-backdrop hotspot
+     (body.wf-scene-deep #main-content margin-top, styles-base.css) is
+     mobile's route back instead. Desktop keeps both. */
+  .wf-back-btn { display: none !important; }
   #site-header.header-hidden {
     transform: translateY(-110%);
     opacity: 0;
