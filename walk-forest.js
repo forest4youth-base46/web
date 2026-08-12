@@ -891,7 +891,11 @@ function wfRender() {
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>' +
       '<div class="wf-status-pill">' + wfEsc(frame.status) + '</div>' +
     '</div>' +
-    '<div class="wf-rail" style="' + (frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:190px' : 'right:20px;bottom:66px') + '">' + railHtml + '</div>' +
+    // Narrow mode: below both the character (whose feet land ~47px above
+    // the viewport bottom) and the control buttons (bottom:16px above) —
+    // sitting in the ~16px margin already unused below them, rather than
+    // mid-screen where it used to cut across the character's body.
+    '<div class="wf-rail" style="' + (frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:2px' : 'right:20px;bottom:66px') + '">' + railHtml + '</div>' +
     // Narrow-mode top offset (160px) clears the site's own persistent
     // header, which wraps to ~150px tall on phone widths — #wf-scene is a
     // fixed viewport-relative layer (see index.html) behind every screen,
