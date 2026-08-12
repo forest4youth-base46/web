@@ -172,6 +172,7 @@ const T_FR = {
 
     "walk.title": "Marcher dans la forêt",
     "walk.toggle": "Marcher dans la forêt",
+    "walk.funder": "Cofinancé par l'Union européenne — Interreg Europe du Nord-Ouest — Forest4Youth",
     "walk.stop": "Étape",
     "walk.of": "sur",
     "walk.back": "Revenir en arrière",

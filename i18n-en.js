@@ -198,6 +198,7 @@ const T_EN = {
 
     "walk.title": "Walk the Forest",
     "walk.toggle": "Walk the Forest",
+    "walk.funder": "Co-funded by the European Union — Interreg North-West Europe — Forest4Youth",
     "walk.stop": "Stop",
     "walk.of": "of",
     "walk.back": "Step back",

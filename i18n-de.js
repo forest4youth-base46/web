@@ -97,6 +97,7 @@ const T_DE = {
 
     "walk.title": "Durch den Wald gehen",
     "walk.toggle": "Durch den Wald gehen",
+    "walk.funder": "Kofinanziert von der Europäischen Union — Interreg North-West Europe — Forest4Youth",
     "walk.stop": "Station",
     "walk.of": "von",
     "walk.back": "Einen Schritt zurück",

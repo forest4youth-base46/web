@@ -669,9 +669,24 @@ function wfComputeFrame() {
   // still legible as the "you are here" marker without competing with the
   // canopy for scale.
   const charH = Math.max(120, Math.min(h * 0.22, 220));
+
+  // Funder credit "sun": grows and brightens as the walk approaches its
+  // final stop, reusing the same distance→scale falloff wfProject() uses
+  // for trees/pins (closer = bigger) — computed directly rather than via
+  // wfProject() itself, since the sun stays fixed in the sky rather than
+  // following the trail's lateral curve or migrating toward the ground
+  // plane the way ground-level objects do as they scale up.
+  const sunD = (ACTIVITIES.length - 1) - WF.cam;
+  const sunZ = 1 + Math.max(sunD, -0.85) * 0.66;
+  const sunScale = 1 / Math.max(sunZ, 0.18);
+  const sunT = Math.max(0, Math.min(1, (sunScale - 0.08) / (0.6 - 0.08)));
+  const sunOpacity = (0.86 + sunT * 0.14).toFixed(2);
+  const sunWidth = Math.round((narrow ? 110 : 150) * (0.85 + sunT * 0.5));
+  const sunGlow = (10 + sunT * 22).toFixed(0);
+
   return {
     trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setLayer,
-    narrow, walking,
+    narrow, walking, sunOpacity, sunWidth, sunGlow,
     stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
     status,
     useArtSlot: false, poseStand: !seated, poseSeated: seated,
@@ -835,6 +850,15 @@ function wfRender() {
     '</svg>' +
     '<div class="wf-glow" style="position:absolute;left:22%;top:-8%;width:6%;height:62%;background:linear-gradient(180deg,rgba(251,249,244,.55),rgba(251,249,244,0));transform:skewX(-9deg);filter:blur(4px);pointer-events:none"></div>' +
     '<div class="wf-glow2" style="position:absolute;left:64%;top:-6%;width:5%;height:58%;background:linear-gradient(180deg,rgba(251,249,244,.5),rgba(251,249,244,0));transform:skewX(-7deg);filter:blur(4px);pointer-events:none"></div>' +
+    // Funder credit (Interreg North-West Europe / Forest4Youth), sitting
+    // up in the sky band like a sun — horizontally fixed regardless of
+    // trail position, painted before the trees so their canopies
+    // naturally sit in front of it where they overlap, same as the
+    // sky/cloud layers above it. Grows and brightens as the walk nears
+    // its end (frame.sunOpacity/sunWidth, computed in wfComputeFrame()) —
+    // a soft warm drop-shadow (frame.sunGlow) stands in for actual
+    // sunlight, since the logo itself is flat art with no glow of its own.
+    '<img src="assets/logo-interreg-forest4youth.png" alt="' + wfEsc(t('walk.funder')) + '" style="position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%);width:' + frame.sunWidth + 'px;height:auto;opacity:' + frame.sunOpacity + ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.6));pointer-events:none" />' +
     '<div style="position:absolute;left:0;right:0;top:47%;bottom:0;background:linear-gradient(180deg,#B9BA9C 0%,#A9AA8E 38%,#9B9C79 100%)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:40%;height:7.5%;background:#B4C8BC;opacity:.7;filter:blur(3px)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:44.5%;height:5%;background:#C8D8D0;opacity:.8;filter:blur(2px)"></div>' +
