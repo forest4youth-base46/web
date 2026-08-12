@@ -784,7 +784,14 @@ function wfRender() {
 
   const railHtml = frame.rail.map(rn => '<div title="' + wfEsc(rn.title) + '" style="' + rn.style + '"></div>').join('');
 
+  // Everything but the open detail panel lives inside .wf-blur-layer: a
+  // soft filter:blur() there gives the background a proper out-of-focus
+  // photo feel — atmosphere, not competing foreground UI — while leaving
+  // the panel itself (real content once actually opened) crisp. Blur
+  // doesn't affect hit-testing, so the pins/controls underneath stay
+  // fully clickable even though they read as background texture.
   const html = '' +
+    '<div class="wf-blur-layer">' +
     '<div style="position:absolute;left:0;right:0;top:0;height:47%;background:linear-gradient(180deg,#E7EEE4 0%,#DCE6DE 58%,#D3E0D6 100%)"></div>' +
     '<div class="wf-drift" style="position:absolute;left:-14%;top:-20%;width:70%;height:36%;border-radius:50%;background:#EEF3EB;opacity:.7;filter:blur(1px)"></div>' +
     '<div class="wf-drift2" style="position:absolute;right:-16%;top:-13%;width:78%;height:34%;border-radius:50%;background:#EAF0E8;opacity:.55"></div>' +
@@ -828,6 +835,7 @@ function wfRender() {
     // so this and the title chip above both need to duck under it
     // explicitly rather than assuming they start below it.
     '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:160px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
+    '</div>' +
     (frame.isOpen ? wfPanelHTML(frame) : '');
 
   WF.el.innerHTML = html;

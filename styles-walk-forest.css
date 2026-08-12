@@ -54,10 +54,9 @@
   /* A persistent fixed background, not scoped to any one .screen — see
      the comment on #wf-scene in index.html. Sits at the same layer
      body::before reserves (z-index:0, styles-base.css) so .container's
-     own z-index:1 content (both screens' cards/bubbles) floats over it.
-     Hidden by default (walk-forest.js toggles wf-scene--visible only
-     while #role-screen or #entry-screen is the active screen) so it
-     never bleeds through on every other screen. */
+     own z-index:1 content (every screen's cards) floats over it. Hidden
+     by default — walk-forest.js only adds wf-scene--visible while the
+     header's toggle (#wf-toggle-btn / wfToggleGlobal()) is switched on. */
   position: fixed;
   inset: 0;
   z-index: 0;
@@ -70,6 +69,18 @@
 }
 .wf-scene.wf-scene--visible { display: block; }
 .wf-scene svg text { user-select: none; }
+
+/* Soft out-of-focus backdrop feel: blur everything except the detail
+   panel (a sibling outside .wf-blur-layer — see wfPanelHTML() in
+   walk-forest.js), which stays crisp once actually opened. Blur doesn't
+   affect hit-testing, so the pins/controls underneath stay fully
+   clickable even though they read as background texture, not foreground
+   UI, while the panel's real content behind them is closed. */
+.wf-blur-layer {
+  position: absolute;
+  inset: 0;
+  filter: blur(3px);
+}
 
 .wf-title-chip {
   position: absolute; left: 14px; top: 12px;
