@@ -113,7 +113,7 @@ const WF_DAPPLE = (function () {
 // trail — same substitution pbLocalizeVisual() does for the detail panel,
 // just extracted in English rather than duplicated by hand.
 const WF = {
-  el: null, active: false, on: false, cam: 0, mode: 'hold',
+  el: null, active: false, on: false, focused: false, cam: 0, mode: 'hold',
   from: 0, to: 0, moveStart: 0, holdEnd: 0,
   paused: false, resumeAt: 0, manual: false, reduced: false,
   openId: null, sessionDrawerOpen: false,
@@ -893,7 +893,34 @@ function wfSetOn(on) {
   const btn = document.getElementById('wf-toggle-btn');
   if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   if (on) wfEnterScene(); else wfExitScene();
+  if (!on) wfSetFocus(false);
 }
+
+// ───────── focus mode: actually play it, not just watch it blurred ─────────
+// Switching the background on gives a blurred, textured backdrop behind
+// the real page — there was no way to step INTO it as the thing you're
+// actually looking at. A click on empty space (not any real control, link,
+// or card — anything with an onclick/href, checked via closest() rather
+// than an exhaustive class list) toggles body.wf-scene-on wf-focused:
+// un-blurs the scene, brings it in front of the page, and fades the page
+// back so the scene is what you're interacting with. Clicking empty space
+// again (or Escape) returns to the ambient blurred state.
+function wfIsInteractiveClick(target) {
+  return !!(target && target.closest &&
+    target.closest('a, button, input, textarea, select, [onclick]'));
+}
+function wfSetFocus(on) {
+  WF.focused = on;
+  document.body.classList.toggle('wf-focused', on);
+}
+function wfToggleFocus() {
+  wfSetFocus(!WF.focused);
+}
+document.addEventListener('click', function (e) {
+  if (!WF.on) return;
+  if (wfIsInteractiveClick(e.target)) return;
+  wfToggleFocus();
+});
 
 function wfEnterScene() {
   WF.el = document.getElementById('wf-scene');
@@ -913,6 +940,7 @@ function wfEnterScene() {
     if (e.key === 'ArrowLeft') { e.preventDefault(); wfGoBack(); }
     else if (e.key === 'r' || e.key === 'R') { wfRestart(); }
     else if (e.key === 'Escape' && WF.openId) { wfClose(); }
+    else if (e.key === 'Escape' && WF.focused) { wfSetFocus(false); }
   };
   window.addEventListener('keydown', WF.onKey);
   if (WF.reduced) return;

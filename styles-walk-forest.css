@@ -246,3 +246,28 @@ body.wf-scene-on {
 }
 .wf-toggle-btn:hover, .wf-toggle-btn:focus-visible { border-color: var(--forest-soft); color: var(--forest-deep); }
 .wf-toggle-btn[aria-pressed="true"] { background: var(--forest-ink); border-color: var(--forest-ink); color: #FFFFFF; }
+
+/* ── focus mode ──
+   A click on empty background space (see wfIsInteractiveClick() in
+   walk-forest.js — anything that isn't a link/button/[onclick]) steps
+   into the scene: crisp instead of blurred, brought in front of the page
+   instead of sitting behind it, with the page itself fading back rather
+   than competing for attention. Clicking empty space again, or Escape,
+   returns to the ambient blurred backdrop. */
+#main-content { transition: opacity .3s ease; }
+body.wf-focused #wf-scene { z-index: 5; }
+body.wf-focused .wf-blur-layer { filter: none; }
+/* #site-header and #main-content are both inside .container, which has
+   its own z-index (styles-base.css) and so its own stacking context —
+   raising #wf-scene alone put it above .container as a whole, burying
+   the header along with the content instead of just the content
+   (z-index on a descendant can't out-rank a sibling of its own stacking
+   context's root). Raising .container itself keeps the header (and
+   everything else in normal flow above the faded #main-content) on top;
+   #main-content's own pointer-events:none is what actually lets clicks
+   reach the scene beneath it. */
+body.wf-focused .container { z-index: 10; }
+body.wf-focused #main-content {
+  opacity: 0.1;
+  pointer-events: none;
+}
