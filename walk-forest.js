@@ -11,8 +11,12 @@
 //     router.js. ───
 'use strict';
 
-const WF_DWELL_MS = 14000;
-const WF_TRAVEL_MS = 14000;
+// Pacing tuned down from the original design's 14s/14s: this now runs
+// continuously as a background behind ordinary browsing rather than being
+// the thing someone sits and watches, so a bit more visible movement per
+// unit time reads as "alive" instead of static without feeling frantic.
+const WF_DWELL_MS = 10000;
+const WF_TRAVEL_MS = 12000;
 const WF_MANUAL_TRAVEL_MS = 2000;
 const WF_BACK_PAUSE_MS = 20000;
 const WF_CLOSE_PAUSE_MS = 4000;
@@ -131,7 +135,10 @@ function wfWords(activityId) {
 }
 
 // ───────── projection ─────────
-function wfPathLat(t) { return 0.6 * Math.sin(t * 0.72) + 0.16 * Math.sin(t * 1.9 + 1.1); }
+// Amplitude/frequency softened from the original design (0.6/0.72, 0.16/1.9)
+// — at full strength the trail swung noticeably per stop, reading more like
+// a synthetic wave than a forest path's gentle, irregular bend.
+function wfPathLat(t) { return 0.38 * Math.sin(t * 0.6) + 0.1 * Math.sin(t * 1.7 + 1.1); }
 
 function wfProject(at, lat) {
   const w = WF.w, h = WF.h;
@@ -632,7 +639,12 @@ function wfComputeFrame() {
     status = t('walk.status.resuming').replace('{n}', String(Math.max(1, Math.ceil((WF.resumeAt - now) / 1000))));
   }
 
-  const charH = Math.max(180, Math.min(h * 0.36, 320));
+  // Shrunk from the original 0.36/320 cap, which put the walker at ~60%+
+  // of a near tree's height — too close to tree scale to read as a person
+  // among mature trees. This lands closer to 35-45% depending on viewport,
+  // still legible as the "you are here" marker without competing with the
+  // canopy for scale.
+  const charH = Math.max(120, Math.min(h * 0.22, 220));
   return {
     trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setLayer,
     narrow, walking,
