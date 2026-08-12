@@ -39,10 +39,17 @@ const WF_GROUP_META = {
 
 // [centre lateral, span factor] — a prop's own width, compressed about its
 // place on the verge, so a hammock is ~3m of fabric rather than 8m across.
+// Centre-lateral values pulled in from the original design's — several
+// (hammock/tinyworld/fire/bivouac/project/campfire) placed their set
+// dressing far enough off-centre that it rendered mostly or entirely
+// outside the viewport at normal camera framing (fire and campfire were
+// the worst: 2.3 and 3.6 lateral units put them well past a full
+// viewport-width beyond screen centre). Reined in so every stop's set
+// piece is actually on screen while it's the active stop.
 const WF_SPAN = {
-  hammock: [1.25, 0.55], palette: [0, 0.45], sofa: [0.73, 0.7], bivouac: [-1.08, 0.7],
-  project: [-0.94, 0.7], fire: [2.3, 0.6], campfire: [3.6, 0.75], roles: [0.72, 0.7],
-  checkin: [-0.7, 0.75], tinyworld: [-0.78, 0.8], naming: [0, 0.9],
+  hammock: [0.5, 0.85], palette: [0, 0.45], sofa: [0.73, 0.7], bivouac: [-0.6, 0.4],
+  project: [-0.55, 0.5], fire: [0.65, 0.6], campfire: [0.4, 0.75], roles: [0.72, 0.7],
+  checkin: [-0.7, 0.75], tinyworld: [-0.55, 0.8], naming: [0, 0.9],
 };
 
 // [along trail, lateral, pose, height, facing, up] — group sizes follow
@@ -50,8 +57,8 @@ const WF_SPAN = {
 // group work is three or four together.
 const WF_CAST = {
   introduce: [[0.42, -0.66, 'kneel', 0.95, 'r']],
-  hammock: [[0.11, 1.25, 'lie', 0.95, 'r', 0.52]],
-  soundscape: [[0.34, 1.15, 'sit', 0.92], [-0.2, -1.35, 'sit', 0.92, 'l']],
+  hammock: [[0.11, 0.65, 'lie', 0.95, 'r', 0.52]],
+  soundscape: [[0.34, 0.9, 'sit', 0.92], [-0.2, -0.95, 'sit', 0.92, 'l']],
   naming: [[0.06, 0.86, 'reach', 0.95, 'l'], [0.2, 1.12, 'stand', 0.9]],
   barefoot: [[0.72, -0.16, 'stand', 0.95], [0.95, 0.2, 'stand', 0.93]],
   palette: [[0.1, -0.62, 'reach', 0.95, 'r'], [0.18, 0.6, 'stand', 0.92]],
@@ -283,14 +290,16 @@ function wfBuildProps(s, i) {
       return o;
     }
     case 'hammock': {
-      const A = P(-0.12, 0.6, 0.8), B = P(0.34, 1.9, 0.8), M = P(0.11, 1.25, 0.5);
+      // l=1.9 for the far post put it well past a full viewport width off
+      // the right edge — pulled the whole span in (0.6/1.25/1.9 -> 0.3/0.65/1.0).
+      const A = P(-0.12, 0.3, 0.8), B = P(0.34, 1.0, 0.8), M = P(0.11, 0.65, 0.5);
       if (!A || !B || !M) return '';
-      o += post(-0.12, 0.6, 1.15, 0.05, '#5B4636') + post(0.34, 1.9, 1.15, 0.05, '#5B4636');
+      o += post(-0.12, 0.3, 1.15, 0.05, '#5B4636') + post(0.34, 1.0, 1.15, 0.05, '#5B4636');
       o += '<g class="wfHang">';
       o += '<path d="M' + R(A.x) + ' ' + R(A.y) + ' Q' + R(M.x) + ' ' + R(M.y + 0.12 * M.u) + ' ' + R(B.x) + ' ' + R(B.y) + ' Q' + R(M.x) + ' ' + R(M.y - 0.16 * M.u) + ' ' + R(A.x) + ' ' + R(A.y) + ' Z" fill="#D87B4F" opacity="0.9"/>';
       o += '<path d="M' + R(A.x) + ' ' + R(A.y) + ' Q' + R(M.x) + ' ' + R(M.y + 0.12 * M.u) + ' ' + R(B.x) + ' ' + R(B.y) + '" fill="none" stroke="#B8552E" stroke-width="' + R(Math.max(1.5, 0.022 * M.u)) + '"/>';
       o += '</g>';
-      o += label(0.11, 1.25, 0.34, W(0), 0.042);
+      o += label(0.11, 0.65, 0.34, W(0), 0.042);
       return o;
     }
     case 'barefoot': {
@@ -322,10 +331,15 @@ function wfBuildProps(s, i) {
       return o;
     }
     case 'senses':
+      // wfWords('senses') resolves to VISUAL.senses's own <text> node
+      // order: the 5-4-3-2-1 countdown first (indices 0-4), then the
+      // sense words see/touch/hear/smell/taste (indices 5-9) — the
+      // reverse of what this originally assumed, which put a number
+      // ("2") where a sense word ("smell") belonged and vice versa.
       for (let k = 0; k < 5; k++) {
         const a = -0.44 + k * 0.22, l = k % 2 ? 0.6 : -0.6;
         o += shade(a, l, 0.11) + stone(a, l, 0.1, '#A8A08C');
-        o += label(a, l, 0.13, W(k), 0.05) + label(a, l, 0.27, W(5 + k), 0.038);
+        o += label(a, l, 0.13, W(5 + k), 0.05) + label(a, l, 0.27, W(k), 0.038);
       }
       return o;
     case 'tinyworld':
