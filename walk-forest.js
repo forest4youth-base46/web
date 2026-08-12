@@ -507,6 +507,17 @@ function wfComputeFrame() {
   const narrow = w < 768;
   const camIndex = Math.round(WF.cam);
 
+  // Desktop-only: the title/logo chip drifts a little as the camera sweeps
+  // the trail's own curve (wfPathLat — the same signal every foreground
+  // element reads for its lateral position), but at a small fraction of
+  // the amplitude, so it reads as a distant layer moving with the
+  // landscape rather than pinned dead still against everything else in
+  // motion — a sun tracking slowly overhead, not a HUD label. Left at 0 on
+  // narrow widths, where the chip keeps its current fixed placement (see
+  // the ≤768px rule in styles-walk-forest.css) — mobile tuning is for a
+  // separate pass.
+  const logoDriftX = narrow ? 0 : -wfPathLat(WF.cam) * w * 0.05;
+
   const trailPts = [];
   for (let t = WF.cam - 0.7; t < WF.cam + 7.2; t += 0.22) {
     const p = wfProject(t, 0);
@@ -671,7 +682,7 @@ function wfComputeFrame() {
   const charH = Math.max(120, Math.min(h * 0.22, 220));
   return {
     trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setLayer,
-    narrow, walking,
+    narrow, walking, logoDriftX,
     stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
     status,
     useArtSlot: false, poseStand: !seated, poseSeated: seated,
@@ -850,7 +861,7 @@ function wfRender() {
       '<div class="wf-bob" style="width:100%;height:100%;position:relative">' + wfCharacterSVG(frame) + '</div>' +
     '</div>' +
     pinsHtml +
-    '<div class="wf-title-chip"><div class="wf-title-chip-main">' + wfEsc(t('walk.title')) + '</div><div class="wf-title-chip-sub">' + wfEsc(frame.stepLabel) + '</div></div>' +
+    '<div class="wf-title-chip"' + (frame.narrow ? '' : ' style="transform:translateX(' + frame.logoDriftX.toFixed(1) + 'px)"') + '><div class="wf-title-chip-main">' + wfEsc(t('walk.title')) + '</div><div class="wf-title-chip-sub">' + wfEsc(frame.stepLabel) + '</div></div>' +
     (frame.narrow ? '<div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:rgba(244,241,234,0.92);border-top:1px solid #DCD6C8;pointer-events:none"></div>' : '') +
     '<div class="wf-controls" style="left:20px;bottom:' + (frame.narrow ? 16 : 20) + 'px">' +
       '<button type="button" class="wf-ctrl-btn" onclick="wfGoBack()" aria-label="' + wfEsc(t('walk.back')) + '" title="' + wfEsc(t('walk.back')) + '">' +
