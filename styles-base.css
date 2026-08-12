@@ -43,14 +43,12 @@ body::before {
   z-index: 1;
 }
 
-/* ── LANGUAGE TOGGLE ── */
+/* ── LANGUAGE TOGGLE ──
+   Sits in normal flow inside .header-controls, between the mode switch
+   and the Walk the Forest toggle — see index.html's header-controls order. */
 .lang-bar {
-  position: fixed;
-  top: 16px;
-  right: 24px;
   display: flex;
   gap: 4px;
-  z-index: 100;
   background: var(--paper-pure);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-pill);

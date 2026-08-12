@@ -158,11 +158,11 @@
     opacity: 0;
     pointer-events: none;
   }
-  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
+  /* Lang-bar lives in the header flex row at every width; on narrow
+     screens header-controls wraps to its own line, so push lang-bar to
+     that line's right edge. */
   .lang-bar {
-    position: static;
     margin-left: auto;
-    top: auto; right: auto;
   }
   /* Nav and controls each take the full row on narrow screens, stacked
      under the title, rather than fighting it for horizontal space. */

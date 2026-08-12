@@ -31,14 +31,24 @@
 
 <a class="skip-link" href="#main-content" data-i18n="nav.skip">Skip to main content</a>
 
-<!-- Walk the Forest — persistent animated background (walk-forest.js).
-     Lives here, not inside any single .screen, so it can keep running
-     continuously behind both #role-screen and #entry-screen as you move
-     between them — wfEnterScene()/wfExitScene() (called from router.js)
-     just show/hide and start/stop it, never tear it down. Fixed behind
-     .container (z-index:0 vs .container's z-index:1 — see styles-base.css)
-     so both screens' own content can float over it in translucent panels. -->
+<!-- Walk the Forest — persistent animated backdrop (walk-forest.js). Lives
+     here, not inside any single .screen, so it keeps running behind the
+     whole site (header, nav, every screen), not just one of them.
+     wfSetOn() (via #wf-toggle-btn) shows/hides and starts/stops it, never
+     tears it down. wfSetDeepFromScreen() (called from router.js on every
+     navigation) applies body.wf-scene-deep to blur it once you've actually
+     navigated into functional content — crisp on the entry/role landing
+     pair. Fixed behind .container (z-index:0 vs .container's z-index:1 —
+     see styles-base.css) so the real site always floats over it. -->
 <div id="wf-scene" class="wf-scene" aria-label="An animated illustration of a forest trail" role="img"></div>
+
+<!-- The open stop panel (walk-forest.js wfPanelHTML(), rendered here by
+     wfRender()) needs to sit above the header — #wf-scene has to stay
+     below .container so the ambient backdrop never covers the header, but
+     a descendant's z-index can't out-rank that ancestor rule, so the panel
+     gets its own root instead. See the #wf-panel-root comment in
+     styles-walk-forest.css. -->
+<div id="wf-panel-root"></div>
 
 <template id="__bundler_thumbnail" data-bg-color="#F4F1EA">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
@@ -89,19 +99,19 @@
           <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant')" data-i18n="role.bar.participant">Exploring</button>
         </div>
 
-        <!-- Walk the Forest (walk-forest.js): the one button that opens
-             it — full screen, playable immediately, not a background.
-             See wfToggleGlobal()/wfSetOn() and body.wf-scene-on in
-             styles-walk-forest.css. -->
-        <button type="button" class="wf-toggle-btn" id="wf-toggle-btn" onclick="wfToggleGlobal()" aria-pressed="false" aria-label="Walk the Forest" title="Walk the Forest" data-i18n-attr="aria-label,title:walk.toggle">
-          <svg viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 26C6 14 14 6 26 6c0 12-8 20-20 20Z"/><path d="M6 26 18 14"/></svg>
-        </button>
-
         <div class="lang-bar">
           <button class="lang-btn active" onclick="setLang('en')">EN</button>
           <button class="lang-btn" onclick="setLang('fr')">FR</button>
           <button class="lang-btn" onclick="setLang('de')">DE</button>
         </div>
+
+        <!-- Walk the Forest (walk-forest.js): toggles the backdrop on/off
+             ("clean mode" when off). It never hides the header or any
+             screen — see wfToggleGlobal()/wfSetOn() and body.wf-scene-on
+             in styles-walk-forest.css. -->
+        <button type="button" class="wf-toggle-btn" id="wf-toggle-btn" onclick="wfToggleGlobal()" aria-pressed="false" aria-label="Walk the Forest" title="Walk the Forest" data-i18n-attr="aria-label,title:walk.toggle">
+          <svg viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 26C6 14 14 6 26 6c0 12-8 20-20 20Z"/><path d="M6 26 18 14"/></svg>
+        </button>
       </div>
     </div>
   </header>

@@ -29,6 +29,7 @@ function applyRouteActivateOnly(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(screenId);
   if (el) el.classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen(screenId);
   updateHeaderChrome();
 }
 
@@ -117,6 +118,7 @@ function applyRoute() {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   target.classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen(target.id);
 
   applyRouteOpenModule(target, moduleId);
   if (activityId) applyRouteHighlightActivity(activityId);
@@ -506,6 +508,11 @@ function setRole(role, fromRoleScreen) {
     }
     applyRoute();
   }
+  // Header-triggered role toggle (not the role-screen's own cards) counts
+  // as "using the menu" — suspends the backdrop even when applyRoute()
+  // above didn't change screens (e.g. toggling while already on
+  // entry-screen, which is valid for both roles).
+  if (!fromRoleScreen && typeof wfSetDeep === 'function') wfSetDeep(true);
 }
 
 // ─────────────────────────────────────────
@@ -568,6 +575,7 @@ function goToRoleScreen() {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('role-screen').classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen('role-screen');
   updateHeaderChrome();
 }
 

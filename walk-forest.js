@@ -118,7 +118,7 @@ const WF = {
   paused: false, resumeAt: 0, manual: false, reduced: false,
   openId: null, sessionDrawerOpen: false,
   w: 1200, h: 640, raf: null, lastPaint: 0,
-  onResize: null, onKey: null,
+  onResize: null, onKey: null, onSceneClick: null,
   _wordsEnCache: {},
 };
 
@@ -814,6 +814,7 @@ function wfRender() {
   const railHtml = frame.rail.map(rn => '<div title="' + wfEsc(rn.title) + '" style="' + rn.style + '"></div>').join('');
 
   const html = '' +
+    '<div class="wf-blur-layer">' +
     '<div style="position:absolute;left:0;right:0;top:0;height:47%;background:linear-gradient(180deg,#E7EEE4 0%,#DCE6DE 58%,#D3E0D6 100%)"></div>' +
     '<div class="wf-drift" style="position:absolute;left:-14%;top:-20%;width:70%;height:36%;border-radius:50%;background:#EEF3EB;opacity:.7;filter:blur(1px)"></div>' +
     '<div class="wf-drift2" style="position:absolute;right:-16%;top:-13%;width:78%;height:34%;border-radius:50%;background:#EAF0E8;opacity:.55"></div>' +
@@ -856,10 +857,16 @@ function wfRender() {
     // fixed viewport-relative layer (see index.html) behind every screen,
     // so this and the title chip above both need to duck under it
     // explicitly rather than assuming they start below it.
-    '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:160px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
-    (frame.isOpen ? wfPanelHTML(frame) : '');
+    '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:220px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
+    '</div>';
 
   WF.el.innerHTML = html;
+
+  // Rendered into its own body-level root, not inside #wf-scene — see the
+  // #wf-panel-root comment in styles-walk-forest.css for why (z-index on a
+  // descendant of #wf-scene can't out-rank .container/the header).
+  const panelRoot = document.getElementById('wf-panel-root');
+  if (panelRoot) panelRoot.innerHTML = frame.isOpen ? wfPanelHTML(frame) : '';
 }
 
 function wfMeasure() {
@@ -871,13 +878,14 @@ function wfMeasure() {
 
 // ───────── mount / unmount ─────────
 // ───────── global on/off toggle ─────────
-// One small button (#wf-toggle-btn, in the header), one state change: off
-// is the plain site; on is the game itself, immediately — full screen,
-// crisp, playable (trail, pins, panel, controls all live from the first
-// frame), not a blurred backdrop you then have to find your way into.
-// body.wf-scene-on (styles-walk-forest.css) hides the rest of the page and
-// the rest of the header down to just this one button, and puts the scene
-// above everything. Escape, or the button again, closes it.
+// Two-layer UI: the scene is a persistent, always-playable backdrop; the
+// site itself (header, nav, search, mode switch, lang bar, every screen) is
+// the foreground and is never hidden or taken over. #wf-toggle-btn just
+// switches the backdrop between off ("clean mode", plain paper site) and on
+// (scene visible behind everything, menu tones darkened for legibility —
+// see body.wf-scene-on in styles-walk-forest.css). It does not gate
+// playability: the trail, pins, panel and controls are all live the moment
+// the scene is on, with no separate "enter" step.
 function wfToggleGlobal() {
   wfSetOn(!WF.on);
 }
@@ -890,10 +898,39 @@ function wfSetOn(on) {
   if (on) wfEnterScene(); else wfExitScene();
 }
 
+// Contextual blur: crisp while the visible screen is the entry/role landing
+// pair (the scene reads as a clear hero there), blurred once the user has
+// actually navigated into functional practitioner/participant content — see
+// body.wf-scene-deep .wf-blur-layer in styles-walk-forest.css. Called from
+// router.js on every navigation; the panel (a sibling of .wf-blur-layer, not
+// inside it) is never blurred regardless of this state.
+function wfSetDeep(on) {
+  document.body.classList.toggle('wf-scene-deep', on);
+}
+
+function wfSetDeepFromScreen(screenId) {
+  wfSetDeep(screenId !== 'entry-screen' && screenId !== 'role-screen');
+}
+
+// Suspension is otherwise only lifted by navigating back to entry/role —
+// which can't happen if you never left (e.g. the mode-switch toggled deep
+// on while already sitting on entry-screen). Without this, blur can get
+// stuck with no way back short of switching the whole backdrop off and on.
+// Reaching directly into the scene — anywhere that isn't a pin/control/link
+// (all real buttons/anchors) — hands control back immediately, the same
+// way it did before contextual blur existed.
+function wfOnSceneClick(e) {
+  if (!WF.on || !e.target.closest) return;
+  if (e.target.closest('button, a')) return;
+  wfSetDeep(false);
+}
+
 function wfEnterScene() {
   WF.el = document.getElementById('wf-scene');
   if (!WF.el) return;
   WF.el.classList.add('wf-scene--visible');
+  const activeScreen = document.querySelector('.screen.active');
+  wfSetDeepFromScreen(activeScreen ? activeScreen.id : 'entry-screen');
   if (WF.active) return;
   WF.active = true;
   WF.reduced = typeof window.matchMedia === 'function' &&
@@ -907,9 +944,11 @@ function wfEnterScene() {
     if (!WF.active) return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); wfGoBack(); }
     else if (e.key === 'r' || e.key === 'R') { wfRestart(); }
-    else if (e.key === 'Escape') { if (WF.openId) wfClose(); else wfSetOn(false); }
+    else if (e.key === 'Escape') { if (WF.openId) wfClose(); }
   };
   window.addEventListener('keydown', WF.onKey);
+  WF.onSceneClick = wfOnSceneClick;
+  WF.el.addEventListener('click', WF.onSceneClick);
   if (WF.reduced) return;
   const loop = (now) => {
     if (!WF.active) return;
@@ -921,10 +960,13 @@ function wfEnterScene() {
 
 function wfExitScene() {
   if (WF.el) WF.el.classList.remove('wf-scene--visible');
+  const panelRoot = document.getElementById('wf-panel-root');
+  if (panelRoot) panelRoot.innerHTML = '';
   if (!WF.active) return;
   WF.active = false;
   if (WF.raf) cancelAnimationFrame(WF.raf);
   WF.raf = null;
   if (WF.onResize) window.removeEventListener('resize', WF.onResize);
   if (WF.onKey) window.removeEventListener('keydown', WF.onKey);
+  if (WF.onSceneClick && WF.el) WF.el.removeEventListener('click', WF.onSceneClick);
 }
