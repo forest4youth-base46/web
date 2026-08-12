@@ -38,6 +38,17 @@
 .wf-glow { animation: wfGlow 12s ease-in-out infinite; }
 @keyframes wfGlow2 { 0%,100% { opacity:.06; } 50% { opacity:.16; } }
 .wf-glow2 { animation: wfGlow2 15.5s ease-in-out infinite 3s; }
+/* One-shot, unlike everything else above: the arrival caption chip reads
+   for a moment, then drifts up and away like a released balloon rather
+   than sitting there occupying the scene indefinitely. Plays once because
+   the chip <div> is only ever freshly inserted into the DOM on arrival
+   (wfRender() doesn't repaint again until the camera next moves — see
+   wfStep() in walk-forest.js) — forwards keeps it gone (opacity:0) for
+   the rest of that hold, even though showChip likely still reads true. */
+@keyframes wfChipFloat {
+  0%, 28% { opacity: 1; transform: translateY(0) translateX(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(-56px) translateX(8px) rotate(3deg); }
+}
 @media (prefers-reduced-motion: reduce) {
   .wf-bob,.wf-ping,.wf-mote,.wf-sway,.wfThighA,.wfThighB,.wfShinA,.wfShinB,
   .wfFlick,.wfSmoke,.wfHang,.wfBreath,.wfLift,.wfPeg,.wf-drift,.wf-drift2,
@@ -145,6 +156,15 @@ body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
   padding: 9px 12px; background: #FBF9F4; border: 1px solid #C8D8D0;
   border-radius: 10px; box-shadow: 0 6px 18px rgba(20,48,42,0.14);
   pointer-events: none;
+  animation: wfChipFloat 3.6s ease-in forwards;
+}
+/* Placed here, not in the shared reduced-motion block up top (styles-walk-
+   forest.css:41-45) — that block sits before every class it disables, but
+   .wf-pin-chip's own animation is declared below it in source order, so
+   putting the override there too would lose the cascade (later same-
+   specificity rule wins) and silently do nothing. */
+@media (prefers-reduced-motion: reduce) {
+  .wf-pin-chip { animation: none; }
 }
 .wf-pin-chip-name { font: 600 12.5px/1.3 'Montserrat', sans-serif; color: #14302A; }
 .wf-pin-chip-sub { margin-top: 2px; font: 400 10px/1.3 'Open Sans', sans-serif; color: #7C8E85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
