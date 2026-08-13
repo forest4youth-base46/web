@@ -135,8 +135,17 @@ body.wf-scene-deep #main-content { margin-top: 64px; }
    sitting centered in a row). .container's own max-width stays 960px for
    actual page content; only the header gets the wider, independently
    viewport-centered treatment. On narrow screens 100vw already is
-   .container's width, so this is a no-op there. */
-header {
+   .container's width, so this is a no-op there.
+   Scoped to #site-header, not the bare `header` tag: two other elements
+   in this app are also literal <header> tags for unrelated reasons
+   (.pb-builder-header, the Session Builder's own header, and
+   .pb-group-header, generated per activity group) — a bare `header {}`
+   selector here pulled both of them out to this same 100vw/max-width/
+   translateX(-50%) full-bleed treatment too, displacing them from their
+   actual containers (the 320px Session Builder sidebar column, and the
+   activity-list column) and overlapping them with sibling content.
+   #site-header is the one and only element this rule is meant for. */
+#site-header {
   padding: 28px 24px 20px;
   border-bottom: 1px solid var(--forest-mist);
   margin-bottom: 28px;
