@@ -140,8 +140,53 @@ async function testQrShareRoundTrip(browser) {
   await page.close();
 }
 
+// The header must be one straight line: title, nav and controls on a
+// single row with their centres level, at every desktop width, in every
+// language, in both roles. It regressed exactly once already — the nav
+// wrapped to 2-4 rows (FR/DE participant labels are ~800px wide), which
+// pushed the header from 101px to 237px tall and left the title and the
+// language bar floating at different heights than the row they belong to.
+async function testHeaderSingleLine(browser) {
+  const WIDTHS = [1900, 1440, 1280, 1100, 900];
+  for (const width of WIDTHS) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    await page.goto(BASE, { waitUntil: 'networkidle' });
+    for (const role of ['practitioner', 'participant']) {
+      for (const lang of ['en', 'fr', 'de']) {
+        await page.evaluate(({ role, lang }) => { setRole(role, true); setLang(lang); }, { role, lang });
+        await page.waitForTimeout(80);
+        const m = await page.evaluate(() => {
+          const mid = el => { const b = el.getBoundingClientRect(); return b.top + b.height / 2; };
+          const group = document.querySelector('.site-nav-group[data-role-only="' + document.body.dataset.role + '"]');
+          const tops = [...group.querySelectorAll('a')].map(a => Math.round(a.getBoundingClientRect().top));
+          return {
+            navRows: new Set(tops).size,
+            title: mid(document.querySelector('.header-text h1')),
+            nav: mid(document.querySelector('.site-nav')),
+            controls: mid(document.querySelector('.header-controls')),
+            headerHeight: document.getElementById('site-header').getBoundingClientRect().height,
+            docOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          };
+        });
+        const where = `${width}px / ${role} / ${lang}`;
+        assert.strictEqual(m.navRows, 1, `${where}: nav links must stay on one row, got ${m.navRows}`);
+        assert.ok(Math.abs(m.title - m.controls) <= 2,
+          `${where}: title and controls must share the header's line (${m.title} vs ${m.controls})`);
+        assert.ok(Math.abs(m.nav - m.controls) <= 2,
+          `${where}: nav and controls must share the header's line (${m.nav} vs ${m.controls})`);
+        assert.ok(m.headerHeight < 130,
+          `${where}: single-line header should stay near 101px tall, got ${m.headerHeight}`);
+        assert.strictEqual(m.docOverflow, 0,
+          `${where}: the full-bleed header must not overhang the viewport (${m.docOverflow}px)`);
+      }
+    }
+    await page.close();
+  }
+}
+
 const TESTS = [
   ['footer is absent, role switch still present', testFooterAbsent],
+  ['header is a single straight line at every width/lang/role', testHeaderSingleLine],
   ['What is FBT? — accordion + single column', (b) => testAccordionScreen(b, '#pwhat', 'participant', ['pw-def', 'pw-vs', 'pw-works'])],
   ['Before your first session — accordion + single column', (b) => testAccordionScreen(b, '#pbefore', 'participant', ['pb-share', 'pb-normal'])],
   ['Learn More — accordion + single column', (b) => testAccordionScreen(b, '#learn', 'practitioner', ['mod-what', 'mod-evidence'])],

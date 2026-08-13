@@ -144,13 +144,28 @@ body.wf-scene-deep #main-content { margin-top: 64px; }
    translateX(-50%) full-bleed treatment too, displacing them from their
    actual containers (the 320px Session Builder sidebar column, and the
    activity-list column) and overlapping them with sibling content.
-   #site-header is the one and only element this rule is meant for. */
+   #site-header is the one and only element this rule is meant for.
+
+   max-width is 1800px, not the earlier 1220px: at 1220 the nav column was
+   left ~380px for four links that need ~700-800px in FR/DE, so it wrapped
+   to 2-4 rows at EVERY desktop width (measured at 1900px too) and the
+   header grew from 141px to 237px tall. The three sections stay on one
+   line instead, with the controls pushed further right on wide screens —
+   page content is unaffected, .container keeps its own 960px cap.
+
+   The width subtracts --sbw (the vertical scrollbar's width, measured
+   once per resize in ui-behaviors.js, 0px if the browser overlays its
+   scrollbars): 100vw counts the scrollbar, so a plain `width: 100vw` on a
+   centered breakout element is that much wider than the space it is
+   centred in and hangs off the right edge — measured as 45-60px of
+   document overflow between 769px and 1220px. body{overflow-x:hidden}
+   was silently clipping that instead of scrolling, which is why it never
+   showed up as a scrollbar. */
 #site-header {
   padding: 28px 24px 20px;
   border-bottom: 1px solid var(--forest-mist);
   margin-bottom: 28px;
-  width: 100vw;
-  max-width: 1220px;
+  width: min(calc(100vw - var(--sbw, 0px)), 1800px);
   position: relative;
   left: 50%;
   transform: translateX(-50%);
@@ -165,14 +180,25 @@ body.wf-scene-deep #main-content { margin-top: 64px; }
    column is. */
 .header-inner {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   column-gap: 16px;
-  row-gap: 14px;
 }
-.header-text { grid-column: 1; }
-.site-nav { grid-column: 2; justify-content: center; }
-.header-controls { grid-column: 3; }
+/* min-width:0 on the middle column (via minmax(0,1fr) above) is what lets
+   the nav actually be narrower than its content and scroll internally
+   instead of shoving the controls off the line — a bare 1fr floors at
+   min-content. The outer two columns are auto and never shrink, so the
+   title stays put on the left and the controls (search / mode / lang /
+   Walk the Forest) stay flush right at the end of the same line. */
+.header-text { grid-column: 1; min-width: 0; }
+.header-text h1 { white-space: nowrap; }
+/* `safe center` — centred while the links fit, but falling back to
+   flex-start the moment they don't. Plain `center` on an overflowing
+   flex row overflows in BOTH directions, and the part that spills past
+   the start edge is unreachable by scrolling; it also meant the row
+   opened mid-word on both sides. */
+.site-nav { grid-column: 2; justify-content: safe center; min-width: 0; }
+.header-controls { grid-column: 3; flex-wrap: nowrap; }
 
 .tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
 
@@ -240,22 +266,53 @@ input:focus-visible,
 /* Persistent, role-aware nav. Practitioner mode shows Plan/Run/Reflect/
    Reference; participant mode shows the 4 orientation steps. Only the
    group matching data-role-only is visible (existing rule, reused
-   as-is: body[data-role="…"] […] { display:none }). */
+   as-is: body[data-role="…"] […] { display:none }).
+
+   nowrap, not wrap: wrapping is what broke the header's single line. The
+   participant labels ("What happens in a session?", and longer still in
+   FR/DE) need ~700-800px between them, so a wrapping nav spilled onto 2-4
+   rows at every desktop width and the header grew to 237px tall with the
+   title and controls floating in the middle of it. One row that scrolls
+   horizontally when it genuinely does not fit (below ~1300px, and in the
+   participant path in FR/DE) keeps every section on the same baseline;
+   the scrollbar itself is hidden and replaced by the edge fade below,
+   since a visible native scrollbar inside a 44px-tall header reads as
+   breakage. Every destination stays reachable — tabbing scrolls a focused
+   link into view, wheel/trackpad swipe scrolls the row, and
+   updateHeaderChrome() (router.js) centres the active link on each route
+   change. */
 .site-nav {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 4px;
   overflow-x: auto;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  /* Fades the cut-off end(s) so a scrolled-past link doesn't just stop
+     dead at the column edge. Both edges are faded unconditionally rather
+     than tracking scroll position in JS — at rest the nav is centred and
+     fully visible, so the fade only ever bites on content that really is
+     running off the edge. */
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%);
 }
-.site-nav-group { display: flex; flex-wrap: wrap; gap: 4px; }
+.site-nav::-webkit-scrollbar { display: none; }
+/* The mask above would clip the focus ring of the first/last link; drop
+   it while anything inside the nav has keyboard focus. */
+.site-nav:focus-within {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.site-nav-group { display: flex; flex-wrap: nowrap; gap: 4px; }
 
 .site-nav-link {
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
   min-height: 44px;
-  padding: 0 14px;
+  padding: 0 clamp(9px, 0.85vw, 14px);
   border-radius: var(--r-pill);
   font-size: 12.5px;
   font-weight: 500;

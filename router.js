@@ -159,6 +159,22 @@ function updateHeaderChrome() {
     else a.removeAttribute('aria-current');
   });
 
+  // The nav is a single non-wrapping row that scrolls horizontally when
+  // the labels don't fit (styles-base.css) — which they don't in the
+  // participant path below ~1440px, or in FR/DE. Pull whichever link is
+  // current back into view so the active state is never scrolled off the
+  // edge, unseen. inline:'center' rather than 'nearest' so the links on
+  // either side of it stay visible as context.
+  const activeLink = document.querySelector('.site-nav-link.active');
+  if (activeLink && typeof activeLink.scrollIntoView === 'function') {
+    try {
+      activeLink.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    } catch (e) {
+      // Older engines only accept the boolean form, and scrolling the
+      // whole page to the header is worse than not scrolling at all.
+    }
+  }
+
   const backBtn = document.getElementById('wf-back-btn');
   if (backBtn) backBtn.classList.toggle('wf-back-btn--visible', !!document.querySelector('.screen.active'));
 }
