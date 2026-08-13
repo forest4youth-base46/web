@@ -288,9 +288,17 @@ function pbPackBlocks(root, blocks, firstPageBudget, restPageBudget, measureWrap
   return pages;
 }
 
+// Shared by every html2canvas call in this file. Three of the five call
+// sites (the two below plus exportRunPNG/exportSessionReportPNG) append a
+// QR-code DOM node to `root` *after* their innerHTML is set and *before*
+// rasterizing — routing them through pbRasterizePage() would re-assign
+// innerHTML and silently wipe that node, so this constant exists to remove
+// the literal duplication without touching that DOM-mutation order.
+const PEXPORT_RASTER_OPTS = { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true };
+
 async function pbRasterizePage(root, html) {
   root.innerHTML = html;
-  return html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true });
+  return html2canvas(root, PEXPORT_RASTER_OPTS);
 }
 
 function pbSavePDFFromCanvases(canvases, filenamePrefix) {
@@ -377,7 +385,7 @@ async function pbBuildSessionPaginatedCanvases(root) {
       const slot = root.querySelector('#print-qr-slot');
       if (qrNode && slot) slot.appendChild(qrNode);
     }
-    canvases.push(await html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true }));
+    canvases.push(await html2canvas(root, PEXPORT_RASTER_OPTS));
   }
 
   if (!tailFitsOnLastPage) {
@@ -385,7 +393,7 @@ async function pbBuildSessionPaginatedCanvases(root) {
       d.headerHTML +
       '<div class="pexport-tail-anchor">' + d.tailBlockHTML + footerForPage(totalPages) + '</div>' +
     '</div>';
-    canvases.push(await html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true }));
+    canvases.push(await html2canvas(root, PEXPORT_RASTER_OPTS));
   }
   return canvases;
 }
@@ -420,13 +428,7 @@ async function exportRunPNG() {
   document.body.classList.add('is-exporting-png');
   try {
     const node = document.getElementById('print-session');
-    const canvas = await html2canvas(node, {
-      width: 794,
-      windowWidth: 794,
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-    });
+    const canvas = await html2canvas(node, PEXPORT_RASTER_OPTS);
     const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const link = document.createElement('a');
     link.download = 'forest4youth-session-' + ts + '.png';
@@ -660,13 +662,7 @@ async function exportSessionReportPNG() {
   document.body.classList.add('is-exporting-png');
   try {
     const node = document.getElementById('print-report');
-    const canvas = await html2canvas(node, {
-      width: 794,
-      windowWidth: 794,
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-    });
+    const canvas = await html2canvas(node, PEXPORT_RASTER_OPTS);
     const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const link = document.createElement('a');
     link.download = 'forest4youth-reflection-' + ts + '.png';

@@ -1,8 +1,23 @@
 // Small, self-contained UI behaviors that don't belong to any single
-// screen/module — currently just the mobile header hide-on-scroll-down /
-// show-on-scroll-up. Nothing here is called from other files (this whole
-// file is one self-invoking closure); add unrelated small behaviors here
-// rather than bolting them onto router.js or a pocketbook-*.js file.
+// screen/module — currently the mobile header hide-on-scroll-down /
+// show-on-scroll-up, the viewport-height fix, and the keyboard-activation
+// helper below. The two IIFEs are self-contained; add unrelated small
+// behaviors as their own IIFE here rather than bolting them onto router.js
+// or a pocketbook-*.js file.
+
+// ───────── KEYBOARD ACTIVATION HELPER ─────────
+// Shared by every div-based control styled/behaving like a button
+// (role="button" tabindex="0" onclick="..." onkeydown="activateOnKey(event,
+// () => ...)"). Kept as a bare global — same convention as navigate(),
+// toggleModule(), etc. in router.js/content.js — since it's called from
+// onclick/onkeydown attributes across index.html.
+function activateOnKey(e, fn) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    fn();
+  }
+}
+
 // ───────── HEADER SCROLL HIDE/SHOW (≤768px) ─────────
 (function () {
   const THRESHOLD = 50;
