@@ -388,7 +388,7 @@ body.no-scroll { overflow: hidden; }
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--forest-soft);
+  color: var(--forest-soft-text);
   padding: 10px 10px 4px;
 }
 .search-result {
