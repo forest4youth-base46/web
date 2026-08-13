@@ -23,6 +23,7 @@
 <link rel="stylesheet" href="styles-screens-reflect.css">
 <link rel="stylesheet" href="styles-screens-reference.css">
 <link rel="stylesheet" href="styles-pocketbook.css">
+<link rel="stylesheet" href="styles-trail.css">
 <link rel="stylesheet" href="styles-export.css">
 <link rel="stylesheet" href="styles-responsive.css">
 </head>
@@ -1483,6 +1484,18 @@
                 <div class="pb-filter-row pb-filter-tags" id="pb-filter-tags" hidden></div>
                 <div class="pb-filter-summary" id="pb-filter-summary" aria-live="polite"></div>
               </div>
+              <!-- The trail: the 17 activities as places along one
+                   continuous path. Decorative in itself — the station name
+                   reaches assistive tech through #trail-status, and every
+                   activity remains reachable through the list below. -->
+              <section class="trail-panel" aria-labelledby="trail-heading">
+                <header class="trail-panel-head">
+                  <h3 id="trail-heading" data-i18n="trail.title">Walk the trail</h3>
+                  <p class="trail-hint" data-i18n="trail.hint">W march · S walk back · A/D previous or next activity</p>
+                </header>
+                <div id="trail-band" class="trail-band-mount"></div>
+                <div id="trail-status" class="trail-status" aria-live="polite"></div>
+              </section>
               <div id="pb-groups"></div>
             </div>
             <div class="pb-builder-backdrop" id="pb-builder-backdrop" onclick="pbToggleBuilderMobile()"></div>
@@ -1921,6 +1934,10 @@
 <script src="render.js"></script>
 <script src="router.js"></script>
 <script src="pocketbook-data.js"></script>
+<!-- Trail world. trail-data.js is pure geometry and must precede the
+     engine that renders from it; both need ACTIVITIES from above. -->
+<script src="trail-data.js"></script>
+<script src="trail-engine.js"></script>
 <script src="pocketbook-i18n.js"></script>
 <!-- pocketbook.js split into six concern-based files (still plain classic
      scripts sharing one global scope, same as before — this is a size/

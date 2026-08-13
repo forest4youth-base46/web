@@ -51,6 +51,10 @@ function pbInit() {
   pbRefreshAddButtons();
   pbRestoreReflectState();
   pbRenderReflectSummary();
+  // The trail world renders into #trail-band on the Pocketbook screen.
+  // Guarded because test/unit.js loads this file without trail-engine.js,
+  // and trailInit() itself no-ops when the mount is absent.
+  if (typeof trailInit === 'function') trailInit();
 }
 
 

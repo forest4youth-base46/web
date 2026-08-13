@@ -573,6 +573,8 @@ const T_FR = {
     "export.pdf": "Exporter en PDF",
     "export.png": "Exporter en PNG",
     "export.qr.label": "Scannez pour rouvrir",
+    "trail.title": "Parcourir le sentier",
+    "trail.hint": "W avancer · S revenir · A/D activité précédente ou suivante",
 
     "pbui.howto.title": "Comment utiliser cette section",
     "pbui.howto.p1": "Les activités sont regroupées en cinq thèmes qui correspondent à l'arc thérapeutique : <strong>Arriver</strong> ; <strong>Réveiller ses sens</strong> ; <strong>Se découvrir</strong> ; <strong>Se relier aux autres</strong> ; et <strong>Revenir à soi</strong>. Au sein de chaque groupe, les activités vont d'une exigence faible à plus élevée. Choisissez en fonction de l'état du groupe ce jour-là, non de ce que prévoit le plan de séance.",

@@ -619,6 +619,8 @@ const T_EN = {
     "export.pdf": "Export to PDF",
     "export.png": "Export to PNG",
     "export.qr.label": "Scan to reopen",
+    "trail.title": "Walk the trail",
+    "trail.hint": "W march · S walk back · A/D previous or next activity",
 
     "pbui.howto.title": "How to use this section",
     "pbui.howto.p1": "Activities are grouped under five themes that map onto the therapeutic arc: <strong>Getting There</strong>; <strong>Waking Up Your Senses</strong>; <strong>Discovering Yourself</strong>; <strong>Connecting with Others</strong>; and <strong>Coming Back to Yourself</strong>. Within each group, activities range from lower to higher demand. Select based on where the group is on a given day, not on where the session plan says they should be.",

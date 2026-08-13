@@ -334,6 +334,22 @@ function pbToggleActivity(id) {
   }
 }
 
+// Open an activity, rather than toggling it. The trail's A/D navigation
+// needs this: arriving at a station should always reveal that activity, and
+// pressing D twice on the same one must not close it. Delegates to
+// pbToggleActivity so the SMIL re-injection above stays in one place.
+function pbOpenActivity(id) {
+  const item = document.getElementById('pb-act-' + id);
+  if (!item) return;
+  if (!item.classList.contains('open')) pbToggleActivity(id);
+  if (typeof item.scrollIntoView === 'function') {
+    item.scrollIntoView({
+      block: 'nearest',
+      behavior: pbPrefersReducedMotion() ? 'auto' : 'smooth',
+    });
+  }
+}
+
 // Keyboard equivalent for the trigger's role="button" (a plain div, not a
 // <button>, because it also hosts two nested real <button> elements —
 // the timer and add-to-session actions — and <button> cannot contain

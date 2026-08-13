@@ -498,6 +498,8 @@ const T_DE = {
     "export.pdf": "Als PDF exportieren",
     "export.png": "Als PNG exportieren",
     "export.qr.label": "Zum erneuten Öffnen scannen",
+    "trail.title": "Den Pfad entlanggehen",
+    "trail.hint": "W vorwärts · S zurück · A/D vorherige oder nächste Aktivität",
 
     "pbui.howto.title": "So verwenden Sie diesen Abschnitt",
     "pbui.howto.p1": "Die Aktivitäten sind in fünf Themen gegliedert, die dem therapeutischen Verlauf entsprechen: <strong>Ankommen</strong>; <strong>Die Sinne wecken</strong>; <strong>Sich selbst entdecken</strong>; <strong>Sich mit anderen verbinden</strong>; und <strong>Zu sich zurückkehren</strong>. Innerhalb jeder Gruppe reichen die Aktivitäten von geringerer zu höherer Anforderung. Wählen Sie danach, wo die Gruppe an diesem Tag steht, nicht danach, was der Sitzungsplan vorsieht.",

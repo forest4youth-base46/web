@@ -5,6 +5,8 @@
   "scripts": {
     "test": "node test/smoke.js",
     "test:unit": "node test/unit.js",
+    "test:trail": "node test/trail-lint.js && node test/trail-frames.js",
+    "lint:trail": "node test/trail-lint.js",
     "check:i18n": "node scripts/check-i18n-sync.js"
   },
   "devDependencies": {

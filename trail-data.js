@@ -110,9 +110,28 @@ const TRAIL_RIG = {
   torsoLength:   2.4,
   armLength:     3.0,
   legLength:     3.6,
+  // Limbs are two-segment, so they can bend at knee and elbow instead of
+  // stretching. Drawing a leg as one line from hip to foot changes its
+  // length through the cycle, which is the other half of why a walk reads
+  // as wrong even when the feet do not slide.
+  thigh:         1.8,
+  shank:         1.8,
+  upperArm:      1.4,
+  foreArm:       1.6,
   // Stride as a fraction of leg length. Drives cadence via law W1.
-  strideFactor:  0.85,
+  //
+  // Bounded from above by reach, not taste: over a stance the planted foot
+  // travels 2 * stride * stanceFraction through the body frame, and at the
+  // extremes the hip must still be within leg length of the foot. Longer
+  // than this and the leg cannot reach without the hip dropping so far that
+  // the walk turns into a crouch.
+  strideFactor:  0.66,
 };
+
+// Hip height while walking, as a fraction of leg length. Below 1 so the
+// knee carries a permanent slight bend — a fully extended leg has no
+// solution to bend toward and snaps straight.
+const TRAIL_HIP_HEIGHT_FACTOR = 0.86;
 
 // Acceptable proportion band for any figure claiming to be this rig.
 const TRAIL_RIG_HEADS_MIN = 6.0;
@@ -133,13 +152,136 @@ function trailStrideLength(headDiameter) {
 // Marching forward (W) and walking back (S) are different gaits, not the
 // same one mirrored: walking backward uses a visibly shorter stride and a
 // lower top speed, which is why each carries its own factor.
-const TRAIL_MARCH_SPEED = 96;        // view units per second, at depth 1
+// Paired with strideFactor to land the cadence in a human walking range;
+// the linter checks the resulting steps/min, since a gait can satisfy the
+// no-slide law perfectly and still scurry.
+const TRAIL_MARCH_SPEED = 70;        // view units per second, at depth 1
 const TRAIL_BACK_SPEED_FACTOR = 0.6; // walking back is slower
 const TRAIL_BACK_STRIDE_FACTOR = 0.62;
 
 // Ramps. W eases up to march speed; releasing decays back to a stand.
 const TRAIL_ACCEL_TIME = 0.35; // seconds, 0 -> full march
 const TRAIL_DECEL_TIME = 0.45; // seconds, full march -> 0
+
+// Fraction of the gait cycle each foot spends planted. Real walking sits
+// near 0.6, which gives two double-support windows per cycle and never
+// leaves both feet off the ground. Lives here rather than in the engine
+// because the reach law below is computed from it.
+const TRAIL_STANCE_FRACTION = 0.6;
+// How high a swinging foot lifts, in head diameters.
+const TRAIL_FOOT_LIFT = 0.22;
+
+// ─── REACH (law P3) ──────────────────────────────────────────────────────
+// How far a planted foot travels through the body frame during one stance.
+// Over a full cycle the body advances two strides, and the foot is down for
+// `stanceFraction` of it, so the foot sweeps 2 * stride * stanceFraction.
+function trailFootExcursion(headDiameter) {
+  return 2 * trailStrideLength(headDiameter) * TRAIL_STANCE_FRACTION;
+}
+
+// How much of the leg's length is usable; the last sliver is left alone
+// because at full extension a two-bone solve has no bend direction and the
+// knee pops between solutions.
+const TRAIL_REACH_MARGIN = 0.985;
+
+// The highest the hip can sit and still be within leg length of a foot
+// standing `footX` from it.
+function trailMaxHipHeight(headDiameter, footX) {
+  const legLen = TRAIL_RIG.legLength * headDiameter;
+  const reach = legLen * TRAIL_REACH_MARGIN;
+  const dx = footX || 0;
+  return Math.sqrt(Math.max(0, reach * reach - dx * dx));
+}
+
+// ─── THE GAIT, AS PURE GEOMETRY ──────────────────────────────────────────
+// The whole walk lives here rather than in the renderer, so test/trail-lint
+// can sweep it phase by phase without a browser. trail-engine.js draws what
+// these return and solves nothing itself.
+
+// Horizontal offset of a foot from the body (law W1). A foot alternates
+// between stance and swing; during stance it is planted, so it must travel
+// backward through the body frame at exactly the ground speed. That is why
+// stance is strictly linear — a sinusoid slides the whole way through, and
+// is the most common reason a walk cycle looks wrong.
+function trailFootOffsetAt(phase, stride) {
+  const p = ((phase % 1) + 1) % 1;
+  const sigma = TRAIL_STANCE_FRACTION;
+  const excursion = 2 * stride * sigma;
+  if (p < sigma) {
+    // Derivative is -excursion / (sigma * cycle) = -speed exactly.
+    return excursion / 2 - excursion * (p / sigma);
+  }
+  // Swing: ease the foot back to the front so it does not snap at hand-off.
+  const u = (p - sigma) / (1 - sigma);
+  return -excursion / 2 + excursion * (1 - Math.cos(Math.PI * u)) / 2;
+}
+
+// Height of a foot above the ground. Zero through stance — a planted foot
+// that hovers is the other half of looking wrong.
+function trailFootLiftAt(phase, headDiameter) {
+  const p = ((phase % 1) + 1) % 1;
+  if (p < TRAIL_STANCE_FRACTION) return 0;
+  const u = (p - TRAIL_STANCE_FRACTION) / (1 - TRAIL_STANCE_FRACTION);
+  return TRAIL_FOOT_LIFT * headDiameter * Math.sin(Math.PI * u);
+}
+
+// W3: the body rises at mid-stance and drops through each hand-off, twice
+// per gait cycle. Returned as a non-positive offset in SVG coordinates, so
+// the base hip height is the LOW point of the walk and the bob only ever
+// lifts from there — the hip never rises above where the legs can hold it.
+function trailBodyBobAt(phase, figureHeight) {
+  const p = ((phase % 1) + 1) % 1;
+  return -TRAIL_BOB_AMPLITUDE * figureHeight *
+    Math.abs(Math.sin(Math.PI * TRAIL_BOB_CYCLES_PER_GAIT * p));
+}
+
+// Both feet at a given phase, in body-frame coordinates.
+function trailFeetAt(phase, headDiameter, stride) {
+  return {
+    right: {
+      x: trailFootOffsetAt(phase + TRAIL_LIMB_PHASE.legRight, stride),
+      y: -trailFootLiftAt(phase + TRAIL_LIMB_PHASE.legRight, headDiameter),
+    },
+    left: {
+      x: trailFootOffsetAt(phase + TRAIL_LIMB_PHASE.legLeft, stride),
+      y: -trailFootLiftAt(phase + TRAIL_LIMB_PHASE.legLeft, headDiameter),
+    },
+  };
+}
+
+// Where the hip sits at a given phase (law P3). Walking height plus the
+// bob, then lowered if either leg would otherwise have to stretch to reach
+// its own foot. The clamp is a safety net, not the mechanism: if it engages
+// during normal walking the stride is too long, and trail-lint says so.
+function trailHipYAt(phase, headDiameter, stride) {
+  const legLen = TRAIL_RIG.legLength * headDiameter;
+  const feet = trailFeetAt(phase, headDiameter, stride);
+  let hipY = -legLen * TRAIL_HIP_HEIGHT_FACTOR +
+    trailBodyBobAt(phase, trailFigureHeight(headDiameter));
+  ['right', 'left'].forEach(function (side) {
+    const f = feet[side];
+    const lowest = f.y - trailMaxHipHeight(headDiameter, f.x);
+    if (hipY < lowest) hipY = lowest;
+  });
+  return hipY;
+}
+
+// Slack left in the legs at a given phase: the smallest gap between what a
+// leg must span and what it can. Negative means the rig is over-extending.
+function trailReachSlackAt(phase, headDiameter, stride) {
+  const legLen = TRAIL_RIG.legLength * headDiameter;
+  const reach = legLen * TRAIL_REACH_MARGIN;
+  const feet = trailFeetAt(phase, headDiameter, stride);
+  const hipY = -legLen * TRAIL_HIP_HEIGHT_FACTOR +
+    trailBodyBobAt(phase, trailFigureHeight(headDiameter));
+  let worst = Infinity;
+  ['right', 'left'].forEach(function (side) {
+    const f = feet[side];
+    const need = Math.sqrt(f.x * f.x + (f.y - hipY) * (f.y - hipY));
+    worst = Math.min(worst, reach - need);
+  });
+  return worst;
+}
 
 // W1/W2: cadence is DERIVED from current speed, never hardcoded. A fixed
 // cycle duration looks right at exactly one speed and slides at every other

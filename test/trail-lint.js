@@ -177,6 +177,47 @@ check('P1', 'character fits between baseline and horizon',
   run(`trailFigureHeight(${headD})`) < baselineY - horizonY,
   `figure ${run(`trailFigureHeight(${headD})`)} vs span ${baselineY - horizonY}`);
 
+// ─── P3: the stride must be reachable ────────────────────────────────────
+// A two-bone limb cannot stretch. If the stride sweeps the foot further
+// than the hip can reach, the leg either detaches from the foot or the
+// figure sinks into a crouch to compensate — both of which look wrong in
+// ways that no other law here would catch.
+const hipFactor = run('TRAIL_HIP_HEIGHT_FACTOR');
+const strideForReach = run(`trailStrideLength(${headD})`);
+// Swept by phase rather than checked against a worst case, because the
+// worst cases do not co-occur: the hip peaks at mid-stance, exactly when
+// the legs are together and reach is least constrained. Combining the two
+// extremes rejects rigs that are in fact fine.
+for (let i = 0; i < 120; i++) {
+  const p = i / 120;
+  const slack = run(`trailReachSlackAt(${p}, ${headD}, ${strideForReach})`);
+  check('P3', `legs reach their feet at phase ${p.toFixed(3)}`,
+    slack >= 0, `over-extended by ${(-slack).toFixed(3)} view units`);
+}
+// If the clamp inside trailHipYAt ever engages during a normal cycle, the
+// stride is too long: the figure would sink instead of walking, and the
+// bob it is supposed to have would be quietly eaten.
+for (let i = 0; i < 120; i++) {
+  const p = i / 120;
+  const clamped = run(`trailHipYAt(${p}, ${headD}, ${strideForReach})`);
+  const unclamped = run(
+    `-TRAIL_RIG.legLength * ${headD} * TRAIL_HIP_HEIGHT_FACTOR + trailBodyBobAt(${p}, trailFigureHeight(${headD}))`);
+  check('P3', `hip is not clamped down at phase ${p.toFixed(3)}`,
+    near(clamped, unclamped, 1e-6),
+    `clamp lowered the hip by ${(clamped - unclamped).toFixed(3)}`);
+}
+check('P3', 'the knee keeps a bend at walking height',
+  hipFactor < 1, `hip factor ${hipFactor} leaves the leg fully extended`);
+check('P3', 'thigh and shank sum to leg length',
+  near(rig.thigh + rig.shank, rig.legLength, 1e-9),
+  `${rig.thigh} + ${rig.shank} != ${rig.legLength}`);
+check('P3', 'upper arm and forearm sum to arm length',
+  near(rig.upperArm + rig.foreArm, rig.armLength, 1e-9),
+  `${rig.upperArm} + ${rig.foreArm} != ${rig.armLength}`);
+check('P3', 'stance fraction keeps a foot on the ground at all times',
+  run('TRAIL_STANCE_FRACTION') > 0.5,
+  `${run('TRAIL_STANCE_FRACTION')} would leave both feet airborne`);
+
 // ─── W1/W2: no foot slide, at every speed ────────────────────────────────
 // The planted foot must have zero world-space velocity. Equivalently
 // stride x cadence must equal ground speed exactly — swept across the full
