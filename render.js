@@ -17,7 +17,7 @@ function renderModuleHeader(m) {
 
   return `<div class="module-header" onclick="${onclick}">
           <div class="module-header-left">
-            ${m.icon}
+            <span aria-hidden="true">${m.icon}</span>
             <div>
               <div class="module-title" data-i18n="${m.titleKey}">${m.titleText}</div>
               <div class="module-tag" data-i18n="${m.tagKey}">${m.tagText}</div>
