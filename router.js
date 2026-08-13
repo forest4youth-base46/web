@@ -339,6 +339,14 @@ function applyFocusMode(screenEl, modId) {
 
   refreshFocusModeLabels();
   window.scrollToViewTop();
+  // Move keyboard focus into the newly-focused module, not just the
+  // scroll position — otherwise keyboard/screen-reader users land wherever
+  // focus happened to be before navigation, with no cue anything changed.
+  // The back-link is the natural landing point: it's the first element in
+  // the module and already labeled with where "back" goes. Deferred one
+  // tick for the same reason search.js defers its dialog focus — the
+  // module just went from hidden to visible in this tick.
+  requestAnimationFrame(function() { back.focus(); });
 }
 
 // Fills in (or, on a later language switch, refreshes) the text of the
@@ -444,8 +452,15 @@ function swapVisual(visualId, src, altText) {
 // open/close toggle (one implementation each, kept in sync by hand) —
 // now one shared implementation under both call-site names, so the two
 // screens that use them (#psession-screen, #pforme-screen) can't drift.
+// Shared by both exp-card (Is it for me?) and timeline-item (session
+// timeline) accordions — toggleTimeline just delegates here. Single point
+// of truth for aria-expanded so every call site (keyboard or click) stays
+// in sync without each of the 8 header elements managing it separately.
 function toggleExp(id) {
-  document.getElementById(id).classList.toggle('open');
+  const card = document.getElementById(id);
+  const isOpen = card.classList.toggle('open');
+  const header = card.querySelector('.exp-header, .timeline-header');
+  if (header) header.setAttribute('aria-expanded', String(isOpen));
 }
 function toggleTimeline(id) {
   toggleExp(id);

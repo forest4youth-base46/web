@@ -4,6 +4,17 @@
 'use strict';
 
 // ───────── KEY HANDLERS ─────────
+// Scoped to #pb-runMode, same shape as search.js's getFocusable() for its
+// dialog — kept as a same-file helper (not shared) since the two dialogs'
+// focusable-element sets differ and there's nowhere natural to share it.
+function pbRunGetFocusable() {
+  const dialog = document.getElementById('pb-runMode');
+  if (!dialog) return [];
+  return Array.prototype.slice.call(
+    dialog.querySelectorAll('input, button, textarea, [href], [tabindex]:not([tabindex="-1"])')
+  ).filter(function(el) { return el.offsetParent !== null && !el.disabled; });
+}
+
 document.addEventListener('keydown', e => {
   const runActive = document.getElementById('pb-runMode').classList.contains('active');
   // Run Mode's own notes field is a <textarea> inside the same overlay —
@@ -21,6 +32,24 @@ document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') pbRunPrev();
     else if (e.key === 'ArrowRight') pbRunNext();
   }
+  // Focus trap: Run Mode is a full-screen modal (role="dialog"
+  // aria-modal="true") — Tab must cycle within it, not escape to whatever
+  // was behind the overlay. Same wrap-at-the-ends approach as search.js's
+  // dialog trap, added to this file's single keydown listener rather than
+  // a second one, keeping one source of truth for Run Mode's key handling.
+  if (runActive && e.key === 'Tab') {
+    const focusable = pbRunGetFocusable();
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 });
 
 // ───────── RUN MODE ─────────
@@ -28,14 +57,24 @@ let pbRunIndex = 0;
 // Per-step note + actual elapsed seconds, keyed by index into pbSession
 // at the moment the run started. Reset each time a run finishes/closes.
 let pbRunLog = {};
+// Whatever had focus before Run Mode opened — restored on close, same
+// trigger-restore pattern as search.js's closeSearchDialog().
+let pbRunTriggerEl = null;
 
 function pbStartRunMode() {
   if (!pbSession.length) return;
   pbRunIndex = 0;
   pbRunLog = {};
+  pbRunTriggerEl = document.activeElement;
   document.getElementById('pb-runMode').classList.add('active');
   document.body.classList.add('pb-run-active', 'no-scroll');
   pbRenderRunStep();
+  // rAF, not a synchronous focus() call — the overlay just became visible
+  // in this same tick, same reasoning as search.js's openSearchDialog().
+  requestAnimationFrame(function() {
+    const finish = document.getElementById('pb-runFinishReflect');
+    if (finish) finish.focus();
+  });
 }
 
 // Closing Run Mode — by the × button, Esc, or Next past the last activity
@@ -61,6 +100,14 @@ function pbCloseRunMode() {
   // actually navigating there, leaving the practitioner on whatever screen
   // was behind the overlay (usually Plan).
   navigate('reflect');
+  const trigger = pbRunTriggerEl;
+  pbRunTriggerEl = null;
+  if (trigger && typeof trigger.focus === 'function') {
+    trigger.focus();
+    requestAnimationFrame(function() {
+      if (document.activeElement !== trigger) trigger.focus();
+    });
+  }
 }
 function pbRunPrev() { if (pbRunIndex > 0) { pbRunCaptureStep(); pbRunIndex--; pbRenderRunStep(); } }
 function pbRunNext() {

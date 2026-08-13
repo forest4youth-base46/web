@@ -56,6 +56,38 @@ CI-only, push-time check.
    log on `redesign-redesigned` for the convention this repo has been
    using.
 
+## Accessibility conventions
+
+Three patterns are established in this codebase — follow them for any new
+interactive element rather than inventing a fourth:
+
+1. **A `<div>`/`<span>` acting as a button** (click-to-navigate cards,
+   custom controls that can't be a real `<button>` for layout reasons):
+   add `role="button" tabindex="0"`, keep the existing `onclick`, and add
+   `onkeydown="activateOnKey(event, () => yourFunction())"` —
+   `activateOnKey()` (in `ui-behaviors.js`) fires on Enter/Space so it
+   behaves like a real button. See `.role-card`/`.pathway-card` in
+   `index.html` for the reference usage. Prefer an actual `<button>` when
+   layout allows it — `.check-item-v2` and the Session Builder's
+   move-up/down controls do, and need none of this.
+2. **Accordion/disclosure headers**: same `role="button" tabindex="0"
+   onkeydown="activateOnKey(...)"` as above, plus `aria-expanded` (kept in
+   sync with the `.open` class) and `aria-controls` pointing at the
+   body's `id`. See `toggleExp()` in `router.js`, which updates
+   `aria-expanded` centrally for every `.exp-header`/`.timeline-header` —
+   add new accordions through that same function rather than toggling
+   `aria-expanded` at each call site.
+3. **Overlays/dialogs**: `search.js`'s `openSearchDialog()`/
+   `closeSearchDialog()` is the reference implementation — deferred
+   `requestAnimationFrame(() => el.focus())` on open (the overlay just
+   became visible in the same tick, so a synchronous `.focus()` can silently
+   no-op in some browsers), a `getFocusable()`-scoped Tab/Shift+Tab trap
+   inside the dialog's own keydown handler, and focus restored to
+   whatever triggered the dialog on close. `pocketbook-run.js`'s Run Mode
+   follows the same shape (`pbRunGetFocusable()`,
+   `pbRunTriggerEl`) — copy that pattern for the next full-screen overlay
+   rather than reinventing it.
+
 ## Splitting a file that's grown too large
 
 `pocketbook.js` and `styles.css` were both split this way (see

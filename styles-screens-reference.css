@@ -36,7 +36,7 @@
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--forest-soft);
+  color: var(--forest-soft-text);
   margin: 22px 0 10px;
 }
 .tier-header:first-child { margin-top: 0; }
@@ -225,7 +225,7 @@
 .exp-body .sub-label {
   font-size: 10px; font-weight: 500;
   letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--forest-soft); margin-bottom: 5px;
+  color: var(--forest-soft-text); margin-bottom: 5px;
 }
 .exp-body .sub-text { font-size: 13px; color: var(--ink); line-height: 1.65; font-weight: 300; }
 
@@ -302,7 +302,7 @@
 .guide-part-roman {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 28px;
-  color: var(--forest-soft);
+  color: var(--forest-soft-text);
   font-weight: 400;
   font-style: italic;
   line-height: 1;
@@ -436,6 +436,7 @@
   --pb-r-pill: 999px;
   --pb-bark: #6B5240;
   --pb-ember: #B8552E;
+  --pb-ember-text: #9A481F; /* see --ember-text in tokens.css */
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
   gap: 32px;
