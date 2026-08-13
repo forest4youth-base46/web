@@ -53,8 +53,21 @@ assertion in the same change.
 | W2 | Cadence tracks speed | cadence is derived from current speed, so W1 also holds mid-ramp |
 | W3 | Vertical bob | 2 oscillations per gait cycle, amplitude 2–3% of figure height, peak at mid-stance |
 | W4 | Counter-phase limbs | left arm shares phase with right leg; each pair is π apart |
+| P3 | **Limbs reach without stretching** | swept by phase: the hip is always within leg length of both feet |
 | C1 | **Trail corridor is clear** | no station prop intrudes into the walkable corridor band |
 | C2 | Station integrity | exactly 17 stations, ids match `ACTIVITIES`, spacing ≥ minimum separation |
+
+### P3 is the one that bites
+
+A stride is bounded from above by what the leg can actually reach. Draw a leg
+as a single hip-to-foot line and it silently changes length through the cycle;
+give it a knee and the limit becomes visible.
+
+Check it **swept by phase**, never against worst cases. The hip peaks at
+mid-stance, exactly when the legs are together and reach is least
+constrained, so combining "longest stride" with "highest bob" rejects rigs
+that are fine. The case that actually binds is a *partial* bob coinciding
+with maximum foot sweep.
 
 ### C1 has exactly one exception
 
@@ -99,21 +112,29 @@ Work in this order. Do not skip to the art.
 
 1. **Write the criterion before the code.** A new behavior gets its linter
    assertion first, failing, then the implementation.
-2. **`node test/trail-lint.js`** — pure math and data, no browser. Fast enough
-   to run on every edit. It sweeps speeds from 0 to march speed for W1, which
-   catches ramp-time slide that eyeballing never does.
-3. **`node test/trail-frames.js`** — Playwright captures every station and the
-   gait keyframes, and asserts planted-foot world X is unchanged between
-   consecutive frames via `TrailDebug`.
-4. **Look at every frame.** The linter cannot tell you whether a scene reads
-   well. Open each PNG. One at a time.
-5. **Fill in the table below** and report it. A scene with no row is a scene
+2. **Prove the check fails.** Break the law on purpose, confirm the linter
+   catches it, then restore. A check that has never gone red is not a check.
+   Both linters here shipped bugs that this step caught and nothing else
+   would have — one regex read a rect's `y` as its `x` and reported a clean
+   file while a hand-drawn figure sat in it.
+3. **`npm run lint:trail` and `npm run lint:art`** — pure math and data, no
+   browser, fast enough to run on every edit. The trail linter sweeps speeds
+   from 0 to march speed for W1 and phases 0..1 for P3, which is where slide
+   and over-extension hide.
+4. **`npm run test:trail` and `npm run test:art`** — Playwright captures every
+   station, the gait keyframes and all 17 illustrations, and asserts
+   planted-foot world X is unchanged between consecutive frames via
+   `TrailDebug`.
+5. **Look at every frame.** The linter cannot tell you whether a scene reads
+   well, and on this work it passed 14/14 while the render was a solid green
+   wall. Open each PNG. One at a time.
+6. **Fill in the table below** and report it. A scene with no row is a scene
    nobody checked.
-6. **`npm test && npm run test:unit && npm run check:i18n`** — the Pocketbook
+7. **`npm test && npm run test:unit && npm run check:i18n`** — the Pocketbook
    screen is covered by the existing smoke suite; keep it green.
 
-Chromium is preinstalled at `PLAYWRIGHT_BROWSERS_PATH`. Do not run
-`playwright install`.
+If Playwright cannot find a browser, set `PLAYWRIGHT_CHROMIUM_PATH` to the
+preinstalled one rather than running `playwright install`.
 
 ## Pass/fail table
 

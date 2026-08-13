@@ -103,39 +103,27 @@ function trailPropClearsCorridor(depth) {
 //
 // The head/torso/leg ratios sum to exactly the total height (1.0 + 2.4 + 3.6
 // = 7.0), so the figure closes without a fudge factor.
-const TRAIL_RIG = {
-  totalHeight:   7.0,
-  headDiameter:  1.0,
-  shoulderWidth: 1.6,
-  torsoLength:   2.4,
-  armLength:     3.0,
-  legLength:     3.6,
-  // Limbs are two-segment, so they can bend at knee and elbow instead of
-  // stretching. Drawing a leg as one line from hip to foot changes its
-  // length through the cycle, which is the other half of why a walk reads
-  // as wrong even when the feet do not slide.
-  thigh:         1.8,
-  shank:         1.8,
-  upperArm:      1.4,
-  foreArm:       1.6,
-  // Stride as a fraction of leg length. Drives cadence via law W1.
-  //
-  // Bounded from above by reach, not taste: over a stance the planted foot
-  // travels 2 * stride * stanceFraction through the body frame, and at the
-  // extremes the hip must still be within leg length of the foot. Longer
-  // than this and the leg cannot reach without the hip dropping so far that
-  // the walk turns into a crouch.
-  strideFactor:  0.66,
-};
+// The body itself comes from figure-rig.js, so the walker on the trail and
+// the people in the 17 illustrations cannot drift apart — one spec, one
+// person. Only the locomotion-specific factor is added here.
+//
+// strideFactor is bounded from above by reach, not taste: over a stance the
+// planted foot travels 2 * stride * stanceFraction through the body frame,
+// and at the extremes the hip must still be within leg length of the foot.
+// Longer than this and the leg cannot reach without the hip dropping so far
+// that the walk turns into a crouch. trail-lint sweeps the cycle to check.
+const TRAIL_RIG = Object.assign({}, RIG, {
+  strideFactor: 0.66,
+});
 
 // Hip height while walking, as a fraction of leg length. Below 1 so the
 // knee carries a permanent slight bend — a fully extended leg has no
 // solution to bend toward and snaps straight.
 const TRAIL_HIP_HEIGHT_FACTOR = 0.86;
 
-// Acceptable proportion band for any figure claiming to be this rig.
-const TRAIL_RIG_HEADS_MIN = 6.0;
-const TRAIL_RIG_HEADS_MAX = 8.0;
+// Acceptable proportion band, shared with figure-rig.js.
+const TRAIL_RIG_HEADS_MIN = RIG_HEADS_MIN;
+const TRAIL_RIG_HEADS_MAX = RIG_HEADS_MAX;
 
 // Head diameter in view units for the trail character, giving a figure
 // 7 x 16 = 112px tall against the 172px ground-to-horizon span.

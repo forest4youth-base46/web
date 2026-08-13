@@ -35,7 +35,7 @@ function load(files) {
   return (expr) => vm.runInContext(expr, context);
 }
 
-const run = load(['trail-data.js', 'pocketbook-data.js']);
+const run = load(['figure-rig.js', 'trail-data.js', 'pocketbook-data.js']);
 
 // ─── harness ─────────────────────────────────────────────────────────────
 const failures = [];

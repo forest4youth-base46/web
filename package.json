@@ -6,6 +6,8 @@
     "test": "node test/smoke.js",
     "test:unit": "node test/unit.js",
     "test:trail": "node test/trail-lint.js && node test/trail-frames.js",
+    "test:art": "node test/illustration-lint.js && node test/illustration-frames.js",
+    "lint:art": "node test/illustration-lint.js",
     "lint:trail": "node test/trail-lint.js",
     "check:i18n": "node scripts/check-i18n-sync.js"
   },

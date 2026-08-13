@@ -66,7 +66,7 @@ function loadContext() {
   };
   vm.createContext(context);
 
-  for (const file of ['pocketbook-data.js', 'pocketbook-builder.js', 'pocketbook-export.js', 'pocketbook-init.js']) {
+  for (const file of ['figure-rig.js', 'pocketbook-data.js', 'pocketbook-builder.js', 'pocketbook-export.js', 'pocketbook-init.js']) {
     const src = fs.readFileSync(path.join(root, file), 'utf8');
     vm.runInContext(src, context, { filename: file });
   }

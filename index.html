@@ -1933,6 +1933,9 @@
 <script src="modules-data.js"></script>
 <script src="render.js"></script>
 <script src="router.js"></script>
+<!-- The shared figure rig. Must precede pocketbook-data.js, whose
+     illustrations call figureSVG() as they are defined. -->
+<script src="figure-rig.js"></script>
 <script src="pocketbook-data.js"></script>
 <!-- Trail world. trail-data.js is pure geometry and must precede the
      engine that renders from it; both need ACTIVITIES from above. -->

@@ -59,8 +59,7 @@ const VISUAL = {
     <g>
       <g opacity="0">
         <animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.2s" fill="freeze"/>
-        <circle cx="120" cy="92" r="5" fill="#14302A"/>
-        <rect x="115" y="97" width="10" height="18" rx="2" fill="#14302A"/>
+        ${figureSVG({ x: 120, y: 130, h: 10, pose: 'crouch', facing: 1 })}
       </g>
     </g>
     <!-- letter R appears stick by stick -->
@@ -143,32 +142,26 @@ const VISUAL = {
       <ellipse cx="412" cy="125" rx="5" ry="3" fill="#3A6B5A"/>
       <ellipse cx="420" cy="128" rx="5" ry="3" fill="#7FA396"/>
     </g>
-    <!-- two figures making, bent over -->
+    <!-- two figures making, bent over their work -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.8s" fill="freeze"/>
-      <circle cx="180" cy="78" r="5" fill="#14302A"/>
-      <path d="M175 82 Q175 95 185 95 L188 100" stroke="#14302A" stroke-width="3" stroke-linecap="round" fill="none"/>
-      <circle cx="320" cy="78" r="5" fill="#14302A"/>
-      <path d="M325 82 Q325 95 315 95 L312 100" stroke="#14302A" stroke-width="3" stroke-linecap="round" fill="none"/>
+      ${figureSVG({ x: 150, y: 140, h: 10, pose: 'bend', facing: 1 })}
+      ${figureSVG({ x: 344, y: 140, h: 10, pose: 'bend', facing: -1 })}
     </g>
     <text x="240" y="40" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#7C8E85">an imaginary world from what's underfoot</text>
   </svg>`,
 
   soundscape: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
-    <ellipse cx="240" cy="160" rx="200" ry="8" fill="#C8D8D0" opacity="0.6"/>
+    <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
     <!-- bg trees -->
     <g opacity="0.3">
       <rect x="40" y="70" width="6" height="70" fill="#6B5240"/><polygon points="43,30 28,75 58,75" fill="#3A6B5A"/>
       <rect x="420" y="60" width="6" height="80" fill="#6B5240"/><polygon points="423,20 408,68 438,68" fill="#234A3E"/>
       <rect x="380" y="80" width="5" height="60" fill="#6B5240"/><polygon points="382,45 370,82 395,82" fill="#3A6B5A"/>
     </g>
-    <!-- person seated, eyes closed, listening -->
-    <g transform="translate(240 95)">
-      <ellipse cx="0" cy="50" rx="28" ry="6" fill="#14302A" opacity="0.18"/>
-      <path d="M-18 48 L-10 14 L10 14 L18 48 Z" fill="#234A3E"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.1s" fill="freeze"/></path>
-      <circle cx="0" cy="6" r="9" fill="#3A6B5A"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.1s" fill="freeze"/></circle>
-      <line x1="-3" y1="5" x2="-1" y2="5" stroke="#14302A" stroke-width="1" stroke-linecap="round"/>
-      <line x1="1" y1="5" x2="3" y2="5" stroke="#14302A" stroke-width="1" stroke-linecap="round"/>
+    <!-- person seated on the ground, eyes closed, listening -->
+    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.1s" fill="freeze"/>
+      ${figureSVG({ x: 240, y: 148, h: 11, pose: 'ground', facing: 1 })}
     </g>
     <!-- expanding awareness rings -->
     <circle cx="240" cy="100" r="40" fill="none" stroke="#7FA396" stroke-width="0.7" opacity="0">
@@ -204,17 +197,10 @@ const VISUAL = {
 
   naming: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
-    <ellipse cx="240" cy="160" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
+    <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
     <line x1="40" y1="155" x2="450" y2="155" stroke="#6B5240" stroke-width="0.5" opacity="0.4"/>
-    <!-- guide walking with arm extended -->
-    <g transform="translate(70 100)">
-      <ellipse cx="0" cy="55" rx="15" ry="3" fill="#14302A" opacity="0.18"/>
-      <circle cx="0" cy="0" r="8" fill="#3A6B5A"/>
-      <path d="M-8 8 L-10 38 L10 38 L8 8 Z" fill="#234A3E"/>
-      <line x1="-9" y1="40" x2="-9" y2="55" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-      <line x1="9" y1="40" x2="9" y2="55" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-      <line x1="8" y1="14" x2="28" y2="6" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-    </g>
+    <!-- guide walking, one arm extended to name what is there -->
+    ${figureSVG({ x: 70, y: 155, h: 11, pose: 'reach', facing: 1 })}
     <!-- tree 1: oak (revealed first) -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.4s" fill="freeze"/>
       <ellipse cx="170" cy="78" rx="22" ry="16" fill="#3A6B5A" opacity="0.65"/>
@@ -264,11 +250,9 @@ const VISUAL = {
     <g stroke="#234A3E" stroke-width="0.4" opacity="0"><animate attributeName="opacity" from="0" to="0.5" dur="0.6s" begin="1.0s" fill="freeze"/>
       <path d="M115 85 Q240 132 365 85"/><path d="M115 85 Q240 138 365 85"/>
     </g>
-    <!-- person resting -->
+    <!-- person resting, lying back in the fabric -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="1.7s" fill="freeze"/>
-      <ellipse cx="240" cy="118" rx="60" ry="7" fill="#14302A" opacity="0.85"/>
-      <circle cx="305" cy="115" r="7" fill="#14302A"/>
-      <line x1="170" y1="118" x2="160" y2="124" stroke="#14302A" stroke-width="3" stroke-linecap="round"/>
+      ${figureSVG({ x: 288, y: 122, h: 10, pose: 'recline', facing: -1, shadow: false })}
     </g>
     <!-- gentle sway -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="0.6" dur="0.6s" begin="2.4s" fill="freeze"/>
@@ -317,15 +301,7 @@ const VISUAL = {
     <rect width="480" height="180" fill="#F4F1EA"/>
     <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
     <!-- person holding palette card -->
-    <g transform="translate(110 95)">
-      <ellipse cx="0" cy="55" rx="18" ry="3" fill="#14302A" opacity="0.18"/>
-      <circle cx="0" cy="-2" r="9" fill="#3A6B5A"/>
-      <path d="M-12 8 L-14 42 L14 42 L12 8 Z" fill="#234A3E"/>
-      <line x1="-12" y1="44" x2="-14" y2="60" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-      <line x1="12" y1="44" x2="14" y2="60" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-      <line x1="-11" y1="14" x2="-30" y2="32" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-      <line x1="11" y1="14" x2="30" y2="32" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-    </g>
+    ${figureSVG({ x: 110, y: 150, h: 12, pose: 'stand', facing: 1 })}
     <!-- palette card in hand -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.3s" fill="freeze"/>
       <rect x="50" y="120" width="120" height="42" rx="3" fill="#FBF9F4" stroke="#234A3E" stroke-width="1"/>
@@ -361,15 +337,8 @@ const VISUAL = {
   senses: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
     <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
-    <!-- person seated, hand to chest -->
-    <g transform="translate(60 100)">
-      <ellipse cx="0" cy="50" rx="18" ry="3" fill="#14302A" opacity="0.18"/>
-      <circle cx="0" cy="0" r="9" fill="#3A6B5A"/>
-      <path d="M-12 10 L-14 44 L14 44 L12 10 Z" fill="#234A3E"/>
-      <line x1="-13" y1="46" x2="-15" y2="60" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-      <line x1="13" y1="46" x2="15" y2="60" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-      <line x1="11" y1="14" x2="0" y2="22" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-    </g>
+    <!-- person standing still, attention inward -->
+    ${figureSVG({ x: 62, y: 150, h: 12, pose: 'stand', facing: 1 })}
     <!-- countdown ladder -->
     <g font-family="Montserrat, sans-serif" font-size="26" fill="#234A3E">
       <text x="130" y="80" opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.3s" fill="freeze"/>5</text>
@@ -397,21 +366,24 @@ const VISUAL = {
       <ellipse cx="240" cy="125" rx="100" ry="8" fill="#6B5240"/>
       <rect x="140" y="115" width="200" height="15" fill="#6B5240"/>
       <ellipse cx="240" cy="115" rx="100" ry="8" fill="#8B6B52"/>
-      <g stroke="#4D3324" stroke-width="0.5" opacity="0.6"><circle cx="240" cy="115" r="80" fill="none"/><circle cx="240" cy="115" r="55" fill="none"/><circle cx="240" cy="115" r="30" fill="none"/></g>
+      <!-- Growth rings sit on the foreshortened top of the log, so they are
+           ellipses in the same 100:8 ratio as it. Drawn as true circles they
+           stood 80 units proud of a seat 8 units deep and read as loose
+           rings floating over the whole scene. -->
+      <g stroke="#4D3324" stroke-width="0.5" opacity="0.6" fill="none"><ellipse cx="240" cy="115" rx="80" ry="6.4"/><ellipse cx="240" cy="115" rx="55" ry="4.4"/><ellipse cx="240" cy="115" rx="30" ry="2.4"/></g>
     </g>
-    <!-- people working then sitting -->
+    <!-- people gather to the seat they built, and sit -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.2s" fill="freeze"/>
-      <circle cx="160" cy="85" r="7" fill="#3A6B5A"/><rect x="154" y="92" width="12" height="18" rx="2" fill="#234A3E"/>
-      <line x1="166" y1="98" x2="190" y2="105" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
+      ${figureSVG({ x: 152, y: 138, h: 11, pose: 'sit', facing: 1 })}
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.6s" fill="freeze"/>
-      <circle cx="200" cy="80" r="7" fill="#3A6B5A"/><rect x="194" y="87" width="12" height="22" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 200, y: 138, h: 11, pose: 'sit', facing: 1 })}
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.0s" fill="freeze"/>
-      <circle cx="280" cy="80" r="7" fill="#3A6B5A"/><rect x="274" y="87" width="12" height="22" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 282, y: 138, h: 11, pose: 'sit', facing: -1 })}
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.4s" fill="freeze"/>
-      <circle cx="320" cy="85" r="7" fill="#3A6B5A"/><rect x="314" y="92" width="12" height="18" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 330, y: 138, h: 11, pose: 'sit', facing: -1 })}
     </g>
     <text x="240" y="40" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#7C8E85">a place the group has built — together</text>
   </svg>`,
@@ -474,12 +446,10 @@ const VISUAL = {
       <polygon points="60,145 56,150 64,150" fill="#14302A"/>
       <polygon points="420,145 416,150 424,150" fill="#14302A"/>
     </g>
-    <!-- two figures sitting under -->
+    <!-- two figures sitting under the tarp -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.6s" fill="freeze"/>
-      <circle cx="180" cy="120" r="5" fill="#14302A"/>
-      <rect x="175" y="124" width="10" height="20" rx="2" fill="#14302A"/>
-      <circle cx="300" cy="120" r="5" fill="#14302A"/>
-      <rect x="295" y="124" width="10" height="20" rx="2" fill="#14302A"/>
+      ${figureSVG({ x: 182, y: 145, h: 9, pose: 'ground', facing: 1 })}
+      ${figureSVG({ x: 300, y: 145, h: 9, pose: 'ground', facing: -1 })}
     </g>
     <!-- annotations -->
     <line x1="106" y1="60" x2="80" y2="40" stroke="#7C8E85" stroke-width="0.5" stroke-dasharray="2 2"/>
@@ -494,33 +464,27 @@ const VISUAL = {
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.3s" fill="freeze"/>
       <ellipse cx="80" cy="120" rx="32" ry="7" fill="#7FA396" opacity="0.45"/>
       <circle cx="80" cy="100" r="14" fill="none" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2" opacity="0.5"/>
-      <circle cx="80" cy="100" r="5" fill="#3A6B5A"/>
-      <rect x="74" y="105" width="12" height="18" rx="2" fill="#234A3E"/>
-      <line x1="74" y1="123" x2="72" y2="135" stroke="#234A3E" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="86" y1="123" x2="88" y2="135" stroke="#234A3E" stroke-width="2.5" stroke-linecap="round"/>
+      ${figureSVG({ x: 80, y: 128, h: 9, pose: 'ground', facing: 1 })}
       <text x="80" y="150" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">by the stream</text>
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.9s" fill="freeze"/>
       <rect x="170" y="118" width="50" height="9" rx="3" fill="#6B5240"/>
       <circle cx="195" cy="103" r="14" fill="none" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2" opacity="0.5"/>
-      <circle cx="195" cy="100" r="5" fill="#3A6B5A"/>
-      <rect x="189" y="105" width="12" height="14" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 195, y: 127, h: 9, pose: 'sit', facing: 1 })}
       <text x="195" y="150" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">on the log</text>
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.5s" fill="freeze"/>
       <ellipse cx="295" cy="120" rx="24" ry="14" fill="#6B5240" opacity="0.25"/>
       <ellipse cx="295" cy="120" rx="24" ry="14" fill="none" stroke="#6B5240" stroke-width="0.6"/>
       <circle cx="295" cy="103" r="14" fill="none" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2" opacity="0.5"/>
-      <circle cx="295" cy="103" r="5" fill="#3A6B5A"/>
-      <rect x="289" y="108" width="12" height="14" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 295, y: 128, h: 9, pose: 'ground', facing: 1 })}
       <text x="295" y="150" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">in the hollow</text>
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.1s" fill="freeze"/>
       <path d="M395 50 L395 115" stroke="#6B5240" stroke-width="3"/>
       <ellipse cx="395" cy="46" rx="24" ry="13" fill="#3A6B5A" opacity="0.6"/>
       <circle cx="395" cy="103" r="14" fill="none" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2" opacity="0.5"/>
-      <circle cx="395" cy="103" r="5" fill="#3A6B5A"/>
-      <rect x="389" y="108" width="12" height="14" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 395, y: 128, h: 9, pose: 'ground', facing: 1 })}
       <text x="395" y="150" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">under the pine</text>
     </g>
     <text x="240" y="35" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#7C8E85">a place to return to, week after week</text>
@@ -531,22 +495,19 @@ const VISUAL = {
     <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.3s" fill="freeze"/>
       <circle cx="100" cy="80" r="38" fill="#FBF9F4" stroke="#234A3E" stroke-width="1.2"/>
-      <circle cx="100" cy="65" r="5" fill="#3A6B5A"/>
-      <rect x="94" y="70" width="12" height="14" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 100, y: 90, h: 8, pose: 'stand', facing: 1, shadow: false })}
       <text x="100" y="100" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">water</text>
       <text x="100" y="112" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">carrier</text>
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.9s" fill="freeze"/>
       <circle cx="240" cy="80" r="38" fill="#FBF9F4" stroke="#234A3E" stroke-width="1.2"/>
-      <circle cx="240" cy="65" r="5" fill="#3A6B5A"/>
-      <rect x="234" y="70" width="12" height="14" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 240, y: 90, h: 8, pose: 'stand', facing: 1, shadow: false })}
       <text x="240" y="100" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">fire</text>
       <text x="240" y="112" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">tender</text>
     </g>
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.5s" fill="freeze"/>
       <circle cx="380" cy="80" r="38" fill="#FBF9F4" stroke="#234A3E" stroke-width="1.2"/>
-      <circle cx="380" cy="65" r="5" fill="#3A6B5A"/>
-      <rect x="374" y="70" width="12" height="14" rx="2" fill="#234A3E"/>
+      ${figureSVG({ x: 380, y: 90, h: 8, pose: 'stand', facing: 1, shadow: false })}
       <text x="380" y="100" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">time</text>
       <text x="380" y="112" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">keeper</text>
     </g>
@@ -667,22 +628,24 @@ const VISUAL = {
         <animate attributeName="d" values="M240 126 Q235 118 240 110 Q245 118 240 126;M240 126 Q233 116 240 106 Q247 116 240 126;M240 126 Q235 118 240 110 Q245 118 240 126" dur="2s" repeatCount="indefinite"/>
       </path>
     </g>
-    <!-- figures gather one by one -->
-    <g fill="#14302A">
+    <!-- figures gather one by one, seated in a ring around the fire.
+         Those further round the circle sit higher and smaller: the ring
+         recedes, so the same body reads at the depth it is sitting at. -->
+    <g>
       <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.0s" fill="freeze"/>
-        <circle cx="130" cy="118" r="6"/><rect x="125" y="123" width="10" height="14" rx="2"/>
+        ${figureSVG({ x: 138, y: 141, h: 10, pose: 'ground', facing: 1 })}
       </g>
       <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.4s" fill="freeze"/>
-        <circle cx="180" cy="98" r="6"/><rect x="175" y="103" width="10" height="14" rx="2"/>
+        ${figureSVG({ x: 182, y: 125, h: 8.6, pose: 'ground', facing: 1, opacity: 0.92 })}
       </g>
       <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.8s" fill="freeze"/>
-        <circle cx="240" cy="92" r="6"/><rect x="235" y="97" width="10" height="14" rx="2"/>
+        ${figureSVG({ x: 212, y: 116, h: 8, pose: 'ground', facing: 1, opacity: 0.88 })}
       </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.2s" fill="freeze"/>
-        <circle cx="300" cy="98" r="6"/><rect x="295" y="103" width="10" height="14" rx="2"/>
+      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.0s" fill="freeze"/>
+        ${figureSVG({ x: 268, y: 116, h: 8, pose: 'ground', facing: -1, opacity: 0.88 })}
       </g>
       <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.6s" fill="freeze"/>
-        <circle cx="350" cy="118" r="6"/><rect x="345" y="123" width="10" height="14" rx="2"/>
+        ${figureSVG({ x: 342, y: 141, h: 10, pose: 'ground', facing: -1 })}
       </g>
     </g>
     <!-- ember sparks -->
