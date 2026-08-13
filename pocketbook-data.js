@@ -252,7 +252,7 @@ const VISUAL = {
     </g>
     <!-- person resting, lying back in the fabric -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="1.7s" fill="freeze"/>
-      ${figureSVG({ x: 288, y: 122, h: 10, pose: 'recline', facing: -1, shadow: false })}
+      ${figureSVG({ x: 252, y: 104, h: 11, pose: 'recline', facing: -1, shadow: false })}
     </g>
     <!-- gentle sway -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="0.6" dur="0.6s" begin="2.4s" fill="freeze"/>
