@@ -41,16 +41,25 @@ body::before {
   padding: 0 24px;
   position: relative;
   z-index: 1;
+  /* Passes clicks through wherever neither direct child (header, main —
+     re-enabled below) actually covers a pixel: .container's own box is a
+     solid rectangle from its top to its bottom regardless of gaps in the
+     normal-flow content inside it (e.g. body.wf-scene-deep #main-content's
+     margin-top, below), so without this, a click landing in that "empty"
+     space still hits .container itself rather than falling through to
+     #wf-scene underneath — confirmed directly: margin-top alone did not
+     expose a working hotspot, elementFromPoint() kept resolving to
+     .container. */
+  pointer-events: none;
 }
+.container > * { pointer-events: auto; }
 
-/* ── LANGUAGE TOGGLE ── */
+/* ── LANGUAGE TOGGLE ──
+   Sits in normal flow inside .header-controls, between the mode switch
+   and the Walk the Forest toggle — see index.html's header-controls order. */
 .lang-bar {
-  position: fixed;
-  top: 16px;
-  right: 24px;
   display: flex;
   gap: 4px;
-  z-index: 100;
   background: var(--paper-pure);
   border: 1px solid var(--forest-mist);
   border-radius: var(--r-pill);
@@ -107,20 +116,54 @@ body[data-role="participant"] .site-nav-group[data-role-only="participant"] { di
 body[data-role="practitioner"] #entry-screen > [data-role-only="practitioner"],
 body[data-role="participant"] #entry-screen > [data-role-only="participant"] { display: block; }
 
+/* Real, always-present strip of the blurred scene between the header and
+   the active screen's own content — a guaranteed hotspot back to the
+   game (wfOnSceneClick() in walk-forest.js, already wired to
+   appEscapeAction()) that works at every viewport width, not just as a
+   side-effect of .container's 960px cap leaving side margins on wide
+   enough screens. #wf-scene is position:fixed behind everything, so this
+   gap shows the actual live, blurred backdrop, not a placeholder — any
+   click or tap landing here reaches #wf-scene's own background exactly
+   like those margins already do when they happen to be exposed. */
+body.wf-scene-deep #main-content { margin-top: 64px; }
+
 /* ── HEADER ── */
+/* Breaks out of .container's 960px cap — the centered three-section
+   layout below needs more room than that leaves for the nav (measured:
+   title ~254px + controls ~516px out of a 960px container left only
+   ~150px for four nav links, forcing them to wrap vertically instead of
+   sitting centered in a row). .container's own max-width stays 960px for
+   actual page content; only the header gets the wider, independently
+   viewport-centered treatment. On narrow screens 100vw already is
+   .container's width, so this is a no-op there. */
 header {
-  padding: 28px 0 20px;
+  padding: 28px 24px 20px;
   border-bottom: 1px solid var(--forest-mist);
   margin-bottom: 28px;
+  width: 100vw;
+  max-width: 1220px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
+/* Three-section layout — title left, nav centered in the gap between
+   title and controls, controls right — rather than the nav clustering
+   right next to the title. auto/1fr/auto rather than flex +
+   margin-left:auto (still used as the mobile fallback, see
+   styles-responsive.css) because centering a middle flex item between two
+   different-width siblings isn't a flex feature; grid's 1fr middle
+   column is. */
 .header-inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  flex-wrap: wrap;
+  column-gap: 16px;
   row-gap: 14px;
-  gap: 16px;
 }
+.header-text { grid-column: 1; }
+.site-nav { grid-column: 2; justify-content: center; }
+.header-controls { grid-column: 3; }
 
 .tree-mark { width: 40px; height: 40px; flex-shrink: 0; }
 
@@ -226,8 +269,32 @@ input:focus-visible,
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-left: auto;
 }
+
+/* Hidden by default; updateHeaderChrome() (router.js) adds --visible
+   whenever a screen is actually open, so it's never shown redundantly
+   while already on the game — see the comment on #wf-back-btn in
+   index.html for why this exists at all. Ember accent (not the neutral
+   paper/border language the rest of .header-controls uses) so it reads
+   as a distinct "get me out of here" action, not just another nav item. */
+.wf-back-btn {
+  display: none;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--ember-soft);
+  background: var(--paper-pure);
+  color: var(--ember);
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+.wf-back-btn:hover, .wf-back-btn:focus-visible { background: var(--ember); color: var(--paper-pure); }
+.wf-back-btn--visible { display: inline-flex; }
 
 .search-trigger {
   display: inline-flex;
@@ -266,6 +333,21 @@ input:focus-visible,
   border-radius: var(--r-pill);
   padding: 3px;
   box-shadow: var(--shadow-sm);
+  animation: modeSwitchCta 1.8s ease-in-out 3;
+}
+/* Brief, not a standing loop (animation-iteration-count:3, no infinite) —
+   a few soft ember pulses on load/first paint to draw the eye to the
+   Practitioner/Exploring choice, then it settles back to plain --shadow-sm
+   and stays there; looping forever would just become visual noise. Layers
+   the pulse ring alongside the base shadow in every keyframe rather than
+   replacing it, since an animated box-shadow value fully overrides the
+   property each frame instead of adding to it. */
+@keyframes modeSwitchCta {
+  0%, 100% { box-shadow: var(--shadow-sm), 0 0 0 0 rgba(184,85,46,0); }
+  50% { box-shadow: var(--shadow-sm), 0 0 0 6px rgba(184,85,46,0.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-switch { animation: none; }
 }
 .mode-btn {
   min-height: 44px;
@@ -388,7 +470,7 @@ body.no-scroll { overflow: hidden; }
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--forest-soft);
+  color: var(--forest-soft-text);
   padding: 10px 10px 4px;
 }
 .search-result {

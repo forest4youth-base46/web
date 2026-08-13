@@ -23,12 +23,32 @@
 <link rel="stylesheet" href="styles-screens-reflect.css">
 <link rel="stylesheet" href="styles-screens-reference.css">
 <link rel="stylesheet" href="styles-pocketbook.css">
+<link rel="stylesheet" href="styles-walk-forest.css">
 <link rel="stylesheet" href="styles-export.css">
 <link rel="stylesheet" href="styles-responsive.css">
 </head>
 <body>
 
 <a class="skip-link" href="#main-content" data-i18n="nav.skip">Skip to main content</a>
+
+<!-- Walk the Forest — persistent animated backdrop (walk-forest.js). Lives
+     here, not inside any single .screen, so it keeps running behind the
+     whole site (header, nav, every screen), not just one of them.
+     wfSetOn() (via #wf-toggle-btn) shows/hides and starts/stops it, never
+     tears it down. wfSetDeepFromScreen() (called from router.js on every
+     navigation) applies body.wf-scene-deep to blur it once you've actually
+     navigated into functional content — crisp on the entry/role landing
+     pair. Fixed behind .container (z-index:0 vs .container's z-index:1 —
+     see styles-base.css) so the real site always floats over it. -->
+<div id="wf-scene" class="wf-scene" aria-label="An animated illustration of a forest trail" role="img"></div>
+
+<!-- The open stop panel (walk-forest.js wfPanelHTML(), rendered here by
+     wfRender()) needs to sit above the header — #wf-scene has to stay
+     below .container so the ambient backdrop never covers the header, but
+     a descendant's z-index can't out-rank that ancestor rule, so the panel
+     gets its own root instead. See the #wf-panel-root comment in
+     styles-walk-forest.css. -->
+<div id="wf-panel-root"></div>
 
 <template id="__bundler_thumbnail" data-bg-color="#F4F1EA">
   <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
@@ -68,6 +88,14 @@
       </nav>
 
       <div class="header-controls">
+        <!-- The other two ways back to the game (Escape, clicking the
+             scene's own open space — appEscapeAction() in router.js) are
+             both real but easy to never discover. This is the visible,
+             unmissable version of the exact same action: shown only when
+             a screen is actually open, via updateHeaderChrome() toggling
+             wf-back-btn--visible (styles-base.css) whenever
+             document.querySelector('.screen.active') is non-null. -->
+        <button type="button" class="wf-back-btn" id="wf-back-btn" onclick="appEscapeAction()" data-i18n="nav.backtoforest">← Back to the forest</button>
         <button type="button" class="search-trigger" id="search-trigger" onclick="openSearchDialog(this)" aria-label="Search (Ctrl+K)" data-i18n-attr="aria-label:nav.search.aria">
           <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg>
           <span class="search-trigger-label" data-i18n="nav.search">Search</span>
@@ -75,8 +103,8 @@
         </button>
 
         <div class="mode-switch" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label">
-          <button type="button" class="mode-btn" data-role="practitioner" aria-pressed="true" onclick="setRole('practitioner')" data-i18n="role.bar.practitioner">Practitioner</button>
-          <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant')" data-i18n="role.bar.participant">Exploring</button>
+          <button type="button" class="mode-btn" data-role="practitioner" aria-pressed="true" onclick="setRole('practitioner', true)" data-i18n="role.bar.practitioner">Practitioner</button>
+          <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant', true)" data-i18n="role.bar.participant">Exploring</button>
         </div>
 
         <div class="lang-bar">
@@ -84,6 +112,14 @@
           <button class="lang-btn" onclick="setLang('fr')">FR</button>
           <button class="lang-btn" onclick="setLang('de')">DE</button>
         </div>
+
+        <!-- Walk the Forest (walk-forest.js): toggles the backdrop on/off
+             ("clean mode" when off). It never hides the header or any
+             screen — see wfToggleGlobal()/wfSetOn() and body.wf-scene-on
+             in styles-walk-forest.css. -->
+        <button type="button" class="wf-toggle-btn" id="wf-toggle-btn" onclick="wfToggleGlobal()" aria-pressed="true" aria-label="Walk the Forest" title="Walk the Forest" data-i18n-attr="aria-label,title:walk.toggle">
+          <svg viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 26C6 14 14 6 26 6c0 12-8 20-20 20Z"/><path d="M6 26 18 14"/></svg>
+        </button>
       </div>
     </div>
   </header>
@@ -102,14 +138,14 @@
       <h1 class="entry-title" data-i18n="role.title">Who is this for?</h1>
       <p class="entry-sub" data-i18n="role.sub">Choose the perspective that fits your current need. You can switch at any time using the toggle in the corner.</p>
       <div class="role-cards">
-        <div class="role-card" onclick="setRole('participant', true)">
+        <div class="role-card" role="button" tabindex="0" onclick="setRole('participant', true)" onkeydown="activateOnKey(event, () => setRole('participant', true))">
           <div class="role-card-sub" data-i18n="role.part.sub">Exploring FBT</div>
           <h2 data-i18n="role.part.title">I'm exploring forest-based therapy</h2>
           <p data-i18n="role.part.desc">Plain-language information about what FBT is, how sessions work, and whether it might be useful for your situation or someone you care about.</p>
           <div class="role-examples" data-i18n="role.part.eg">Participant · carer · referrer · curious person</div>
           <span class="role-card-arrow" data-i18n="role.part.cta">Continue →</span>
         </div>
-        <div class="role-card" onclick="setRole('practitioner', true)">
+        <div class="role-card" role="button" tabindex="0" onclick="setRole('practitioner', true)" onkeydown="activateOnKey(event, () => setRole('practitioner', true))">
           <div class="role-card-sub" data-i18n="role.prac.sub">Practising FBT</div>
           <h2 data-i18n="role.prac.title">I'm a practitioner</h2>
           <p data-i18n="role.prac.desc">Clinical reference, session tools, pocket guide to activities, indications and contraindications, integration with other modalities, and reflection prompts.</p>
@@ -129,31 +165,31 @@
       <h1 class="entry-title" data-i18n="entry.title">What brings you here today?</h1>
       <p class="entry-sub" data-i18n="entry.sub">Select a pathway to access resources tailored to your current need.</p>
       <div class="pathways">
-        <div class="pathway-card" onclick="navigate('learn')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('learn')" onkeydown="activateOnKey(event, () => navigate('learn'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24v-8"/><path d="M6 17c0-5 3.5-9 8-11 4.5 2 8 6 8 11"/><path d="M10 24h8"/></svg></span>
           <h2 data-i18n="pathway.learn.title">Learn More</h2>
           <p data-i18n="pathway.learn.desc">Understand the theoretical basis of forest-based therapy, the evidence, and the key principles behind it.</p>
           <span class="pathway-arrow" data-i18n="pathway.learn.cta">Explore →</span>
         </div>
-        <div class="pathway-card" onclick="navigate('implement')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('implement')" onkeydown="activateOnKey(event, () => navigate('implement'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="10"/><path d="M14 5v2M14 21v2M5 14h2M21 14h2"/><path d="M17 10l-5 5M11 18l4-4"/><circle cx="14" cy="14" r="1.5" fill="currentColor" stroke="none"/></svg></span>
           <h2 data-i18n="pathway.implement.title">Implement in Practice</h2>
           <p data-i18n="pathway.implement.desc">Session planning tools, a pocket guide to activities, pre/post checklists, and safety considerations.</p>
           <span class="pathway-arrow" data-i18n="pathway.implement.cta">Get started →</span>
         </div>
-        <div class="pathway-card" onclick="navigate('reflect')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('reflect')" onkeydown="activateOnKey(event, () => navigate('reflect'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="5" width="14" height="18" rx="2"/><path d="M11 5V3h6v2"/><path d="M10 12h8M10 16h8M10 20h5"/></svg></span>
           <h2 data-i18n="pathway.reflect.title">Reflect & Evaluate</h2>
           <p data-i18n="pathway.reflect.desc">Post-session reflection prompts, outcome tracking, and practitioner self-assessment tools.</p>
           <span class="pathway-arrow" data-i18n="pathway.reflect.cta">Open →</span>
         </div>
-        <div class="pathway-card" onclick="navigate('reference')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('reference')" onkeydown="activateOnKey(event, () => navigate('reference'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 22V8"/><path d="M5 22V8a1 1 0 0 1 1-1h8v15H6a1 1 0 0 1-1-1z"/><path d="M23 22V8a1 1 0 0 0-1-1h-8v15h8a1 1 0 0 0 1-1z"/><path d="M5 8a3 3 0 0 1 3-3h6M23 8a3 3 0 0 0-3-3h-6"/></svg></span>
           <h2 data-i18n="pathway.reference.title">Clinical Reference</h2>
           <p data-i18n="pathway.reference.desc">Indications, contraindications, population-specific guidance, dosage reference, and integration with other modalities.</p>
           <span class="pathway-arrow" data-i18n="pathway.reference.cta">Open →</span>
         </div>
-        <div class="pathway-card" onclick="navigate('guide')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('guide')" onkeydown="activateOnKey(event, () => navigate('guide'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l10-4 10 4-10 4z"/><path d="M4 14l10-4 10 4"/><path d="M4 20l10-4 10 4"/></svg></span>
           <h2 data-i18n="pathway.guide.title">Companion Guide</h2>
           <p data-i18n="pathway.guide.desc">The full Forest4Youth practitioner handbook. Theory, practice, clinical application, and professional context across 14 chapters.</p>
@@ -168,25 +204,25 @@
       <h1 class="entry-title" data-i18n="pentry.title">What would be helpful today?</h1>
       <p class="entry-sub" data-i18n="pentry.sub">Plain information about forest-based therapy — what it is, what a session looks like, whether it might fit your situation, and how to prepare.</p>
       <div class="pathways">
-        <div class="pathway-card" onclick="navigate('pwhat')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('pwhat')" onkeydown="activateOnKey(event, () => navigate('pwhat'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24v-8"/><path d="M6 17c0-5 3.5-9 8-11 4.5 2 8 6 8 11"/><path d="M10 24h8"/></svg></span>
           <h2 data-i18n="ppath.what.title">What is FBT?</h2>
           <p data-i18n="ppath.what.desc">A plain explanation — what forest-based therapy is, what it isn't, and how it differs from forest bathing.</p>
           <span class="pathway-arrow" data-i18n="ppath.what.cta">Read →</span>
         </div>
-        <div class="pathway-card" onclick="navigate('psession')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('psession')" onkeydown="activateOnKey(event, () => navigate('psession'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="15" r="9"/><path d="M14 10v5l3 3"/><path d="M10 3h8"/><path d="M14 3v3"/></svg></span>
           <h2 data-i18n="ppath.session.title">What happens in a session?</h2>
           <p data-i18n="ppath.session.desc">A walk through a typical 60–90 minute session — what your practitioner does, what you might feel.</p>
           <span class="pathway-arrow" data-i18n="ppath.session.cta">See the timeline →</span>
         </div>
-        <div class="pathway-card" onclick="navigate('pforme')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('pforme')" onkeydown="activateOnKey(event, () => navigate('pforme'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="10"/><path d="M14 5v2M14 21v2M5 14h2M21 14h2"/><path d="M17 10l-5 5M11 18l4-4"/><circle cx="14" cy="14" r="1.5" fill="currentColor" stroke="none"/></svg></span>
           <h2 data-i18n="ppath.forme.title">Is it for me?</h2>
           <p data-i18n="ppath.forme.desc">Experience-based guidance — what the research suggests for situations like yours, and what a realistic engagement looks like.</p>
           <span class="pathway-arrow" data-i18n="ppath.forme.cta">Explore →</span>
         </div>
-        <div class="pathway-card" onclick="navigate('pbefore')">
+        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('pbefore')" onkeydown="activateOnKey(event, () => navigate('pbefore'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="5" width="14" height="18" rx="2"/><path d="M11 5V3h6v2"/><path d="M10 12h8M10 16h8M10 20h5"/></svg></span>
           <h2 data-i18n="ppath.before.title">Before your first session</h2>
           <p data-i18n="ppath.before.desc">What to share with your practitioner, what's normal to feel, signs it may be helping, and questions you can ask.</p>
@@ -290,12 +326,12 @@
     <div class="timeline">
 
       <div class="timeline-item" id="ts-1">
-        <div class="timeline-header" onclick="toggleTimeline('ts-1')">
+        <div class="timeline-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ts-1-body" onclick="toggleTimeline('ts-1')" onkeydown="activateOnKey(event, () => toggleTimeline('ts-1'))">
           <div class="timeline-phase">1</div>
           <div class="timeline-title" data-i18n="psession.t1.title">Arrival & grounding</div>
           <div class="timeline-duration" data-i18n="psession.t1.dur">10–15 min</div>
         </div>
-        <div class="timeline-body">
+        <div class="timeline-body" id="ts-1-body">
           <div class="sub-section">
             <div class="sub-label" data-i18n="psession.t1.prac.label">What your practitioner might do</div>
             <div class="sub-text" data-i18n="psession.t1.prac.text">Welcome you at the site. Brief check-in — how you are, how the journey was, anything that changed since last contact. Walk with you for a few minutes at an easy pace. Help you orient to the place without an immediate agenda.</div>
@@ -308,12 +344,12 @@
       </div>
 
       <div class="timeline-item" id="ts-2">
-        <div class="timeline-header" onclick="toggleTimeline('ts-2')">
+        <div class="timeline-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ts-2-body" onclick="toggleTimeline('ts-2')" onkeydown="activateOnKey(event, () => toggleTimeline('ts-2'))">
           <div class="timeline-phase">2</div>
           <div class="timeline-title" data-i18n="psession.t2.title">Core activity</div>
           <div class="timeline-duration" data-i18n="psession.t2.dur">30–45 min</div>
         </div>
-        <div class="timeline-body">
+        <div class="timeline-body" id="ts-2-body">
           <div class="sub-section">
             <div class="sub-label" data-i18n="psession.t2.prac.label">What your practitioner might do</div>
             <div class="sub-text" data-i18n="psession.t2.prac.text">Introduce an activity chosen for your situation — sitting quietly in one spot, walking a defined route, making something from what you find, working with a specific tree, or something else. Explain it briefly, then step back. They stay close enough to be available but far enough to give you space.</div>
@@ -326,12 +362,12 @@
       </div>
 
       <div class="timeline-item" id="ts-3">
-        <div class="timeline-header" onclick="toggleTimeline('ts-3')">
+        <div class="timeline-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ts-3-body" onclick="toggleTimeline('ts-3')" onkeydown="activateOnKey(event, () => toggleTimeline('ts-3'))">
           <div class="timeline-phase">3</div>
           <div class="timeline-title" data-i18n="psession.t3.title">Reflection & integration</div>
           <div class="timeline-duration" data-i18n="psession.t3.dur">10–15 min</div>
         </div>
-        <div class="timeline-body">
+        <div class="timeline-body" id="ts-3-body">
           <div class="sub-section">
             <div class="sub-label" data-i18n="psession.t3.prac.label">What your practitioner might do</div>
             <div class="sub-text" data-i18n="psession.t3.prac.text">Sit with you somewhere quiet. Ask open questions: what did you notice, what surprised you, what stayed with you. They won't try to interpret everything — holding the space matters more than analysing it. They may make a brief note, with your knowledge, for continuity between sessions.</div>
@@ -344,12 +380,12 @@
       </div>
 
       <div class="timeline-item" id="ts-4">
-        <div class="timeline-header" onclick="toggleTimeline('ts-4')">
+        <div class="timeline-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ts-4-body" onclick="toggleTimeline('ts-4')" onkeydown="activateOnKey(event, () => toggleTimeline('ts-4'))">
           <div class="timeline-phase">4</div>
           <div class="timeline-title" data-i18n="psession.t4.title">Transition back</div>
           <div class="timeline-duration" data-i18n="psession.t4.dur">5–10 min</div>
         </div>
-        <div class="timeline-body">
+        <div class="timeline-body" id="ts-4-body">
           <div class="sub-section">
             <div class="sub-label" data-i18n="psession.t4.prac.label">What your practitioner might do</div>
             <div class="sub-text" data-i18n="psession.t4.prac.text">Walk you back toward the edge of the site. Mark a clear end point — sometimes a small gesture, sometimes just standing still and breathing once together. Agree on the next step. Check whether you have a safe return journey.</div>
@@ -374,12 +410,12 @@
     </div>
 
     <div class="exp-card" id="exp-anxiety">
-      <div class="exp-header" onclick="toggleExp('exp-anxiety')">
+      <div class="exp-header" role="button" tabindex="0" aria-expanded="false" aria-controls="exp-anxiety-body" onclick="toggleExp('exp-anxiety')" onkeydown="activateOnKey(event, () => toggleExp('exp-anxiety'))">
         <div class="exp-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--forest-deep);"><path d="M4 10c2-2.5 3.5-2.5 5.5 0s3.5 2.5 5.5 0 3.5-2.5 5.5 0 3.5 2.5 5.5 0"/><path d="M4 15c2-2.5 3.5-2.5 5.5 0s3.5 2.5 5.5 0 3.5-2.5 5.5 0 3.5 2.5 5.5 0"/><path d="M4 20c2-2.5 3.5-2.5 5.5 0s3.5 2.5 5.5 0 3.5-2.5 5.5 0 3.5 2.5 5.5 0"/></svg></div>
         <div class="exp-title" data-i18n="pforme.anx.title">Feeling anxious or overwhelmed</div>
         <div class="exp-toggle">+</div>
       </div>
-      <div class="exp-body">
+      <div class="exp-body" id="exp-anxiety-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
           <div class="sub-text" data-i18n="pforme.anx.research">For generalised anxiety and chronic stress, forest-based therapy has some of the strongest evidence. Most people report meaningful reduction in anxiety symptoms within 4–6 sessions. The effect is not just psychological — measurable changes in the nervous system (heart rate variability, cortisol) occur alongside.</div>
@@ -396,12 +432,12 @@
     </div>
 
     <div class="exp-card" id="exp-burnout">
-      <div class="exp-header" onclick="toggleExp('exp-burnout')">
+      <div class="exp-header" role="button" tabindex="0" aria-expanded="false" aria-controls="exp-burnout-body" onclick="toggleExp('exp-burnout')" onkeydown="activateOnKey(event, () => toggleExp('exp-burnout'))">
         <div class="exp-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--forest-deep);"><path d="M5 10h18"/><path d="M3 15h22"/><path d="M5 20h18"/></svg></div>
         <div class="exp-title" data-i18n="pforme.bo.title">Exhaustion and disconnection</div>
         <div class="exp-toggle">+</div>
       </div>
-      <div class="exp-body">
+      <div class="exp-body" id="exp-burnout-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
           <div class="sub-text" data-i18n="pforme.bo.research">For burnout and exhaustion — the kind that doesn't lift after a weekend off — FBT has consistent results. The combination of reduced sensory load, sustained attention to something outside yourself, and permission to do very little in early sessions seems to be what helps.</div>
@@ -418,12 +454,12 @@
     </div>
 
     <div class="exp-card" id="exp-transition">
-      <div class="exp-header" onclick="toggleExp('exp-transition')">
+      <div class="exp-header" role="button" tabindex="0" aria-expanded="false" aria-controls="exp-transition-body" onclick="toggleExp('exp-transition')" onkeydown="activateOnKey(event, () => toggleExp('exp-transition'))">
         <div class="exp-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--forest-deep);"><path d="M3 20c0-7 5-13 11-13s11 6 11 13"/><path d="M3 20h22"/><path d="M8 20v-5M20 20v-5"/></svg></div>
         <div class="exp-title" data-i18n="pforme.tr.title">Going through a big change</div>
         <div class="exp-toggle">+</div>
       </div>
-      <div class="exp-body">
+      <div class="exp-body" id="exp-transition-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
           <div class="sub-text" data-i18n="pforme.tr.research">For life transitions — a relationship ending, a job change, a move, an identity shift, a new chapter of life — FBT is particularly well suited. The forest gives change a physical scale: thresholds, paths, clearings, seasons. Many people find it easier to work with change when it has somewhere to exist outside their own head.</div>
@@ -440,12 +476,12 @@
     </div>
 
     <div class="exp-card" id="exp-child">
-      <div class="exp-header" onclick="toggleExp('exp-child')">
+      <div class="exp-header" role="button" tabindex="0" aria-expanded="false" aria-controls="exp-child-body" onclick="toggleExp('exp-child')" onkeydown="activateOnKey(event, () => toggleExp('exp-child'))">
         <div class="exp-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--forest-deep);"><path d="M14 24v-9"/><path d="M14 15C13 10 8 7 4 6c0 5.5 3.5 9 10 9z"/><path d="M14 15c1-5 6-8 10-9 0 5.5-3.5 9-10 9z"/></svg></div>
         <div class="exp-title" data-i18n="pforme.ch.title">My child is struggling</div>
         <div class="exp-toggle">+</div>
       </div>
-      <div class="exp-body">
+      <div class="exp-body" id="exp-child-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
           <div class="sub-text" data-i18n="pforme.ch.research">For young people — especially adolescents — FBT often works when indoor talking therapy hasn't. The outdoor setting reduces the pressure of being examined, the walking makes silence feel less awkward, and many young people find it easier to talk about difficult things side by side than face to face. Evidence is emerging but consistent.</div>
@@ -462,12 +498,12 @@
     </div>
 
     <div class="exp-card" id="exp-loss">
-      <div class="exp-header" onclick="toggleExp('exp-loss')">
+      <div class="exp-header" role="button" tabindex="0" aria-expanded="false" aria-controls="exp-loss-body" onclick="toggleExp('exp-loss')" onkeydown="activateOnKey(event, () => toggleExp('exp-loss'))">
         <div class="exp-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--forest-deep);"><path d="M20 6C10 8 6 14 6 22"/><path d="M20 6C18 13 14 18 6 22"/><path d="M6 22l7-7"/></svg></div>
         <div class="exp-title" data-i18n="pforme.ls.title">Dealing with loss</div>
         <div class="exp-toggle">+</div>
       </div>
-      <div class="exp-body">
+      <div class="exp-body" id="exp-loss-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
           <div class="sub-text" data-i18n="pforme.ls.research">For grief — especially once the acute phase has passed and you are beginning to rebuild — forests can offer something that rooms cannot: the visible presence of cycles. Decay as habitat. Seasons returning. Nothing of this removes loss. But many people find it easier to grieve in a setting that acknowledges, structurally, that endings are part of living systems.</div>
@@ -1934,6 +1970,12 @@
 <script src="pocketbook-run.js"></script>
 <script src="pocketbook-reflect.js"></script>
 <script src="pocketbook-init.js"></script>
+<!-- Role-screen hero: the animated trail scene behind the two role
+     bubbles. Loaded after pocketbook-init.js since it calls into
+     ACTIVITIES/GROUPS/VISUAL/PB_I18N/pbT()/pbTagT()/pbGroupT()/
+     pbFmtDuration()/pbLocalizeVisual()/pbSession/pbToggleInSession()/
+     exportRunPDF()/exportRunPNG() — all defined by then. -->
+<script src="walk-forest.js"></script>
 <script src="ui-behaviors.js"></script>
 
 <!-- Search dialog (⌘K / Ctrl+K). Loaded last so ACTIVITIES, pbT(), t(),

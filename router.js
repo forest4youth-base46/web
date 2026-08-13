@@ -29,6 +29,7 @@ function applyRouteActivateOnly(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById(screenId);
   if (el) el.classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen(screenId);
   updateHeaderChrome();
 }
 
@@ -91,19 +92,20 @@ function applyRoute() {
     return;
   }
 
-  // Show the requested screen (or entry if hash is empty).
+  // Show the requested screen, or nothing (just the game) if the hash is
+  // empty — the game is the default view now, not entry-screen.
   if (!section) {
-    applyRouteActivateOnly('entry-screen');
+    applyRouteActivateOnly(null);
     return;
   }
   const target = document.getElementById(section + '-screen');
   if (!target) {
-    // Unknown route — fall back to entry.
-    applyRouteActivateOnly('entry-screen');
+    // Unknown route — fall back to just the game.
+    applyRouteActivateOnly(null);
     return;
   }
-  // If the screen is restricted to the other role, redirect to entry
-  // and show entry immediately (don't rely on hashchange firing).
+  // If the screen is restricted to the other role, redirect to just the
+  // game and show it immediately (don't rely on hashchange firing).
   const screenRole = target.getAttribute('data-role-only');
   if (screenRole && screenRole !== currentRole) {
     try {
@@ -112,11 +114,12 @@ function applyRoute() {
       warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
       window.location.hash = '';
     }
-    applyRouteActivateOnly('entry-screen');
+    applyRouteActivateOnly(null);
     return;
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   target.classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen(target.id);
 
   applyRouteOpenModule(target, moduleId);
   if (activityId) applyRouteHighlightActivity(activityId);
@@ -155,6 +158,9 @@ function updateHeaderChrome() {
     if (match) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
+
+  const backBtn = document.getElementById('wf-back-btn');
+  if (backBtn) backBtn.classList.toggle('wf-back-btn--visible', !!document.querySelector('.screen.active'));
 }
 
 // Nav entry point for "Run". Run Mode itself is unchanged (still the
@@ -333,6 +339,14 @@ function applyFocusMode(screenEl, modId) {
 
   refreshFocusModeLabels();
   window.scrollToViewTop();
+  // Move keyboard focus into the newly-focused module, not just the
+  // scroll position — otherwise keyboard/screen-reader users land wherever
+  // focus happened to be before navigation, with no cue anything changed.
+  // The back-link is the natural landing point: it's the first element in
+  // the module and already labeled with where "back" goes. Deferred one
+  // tick for the same reason search.js defers its dialog focus — the
+  // module just went from hidden to visible in this tick.
+  requestAnimationFrame(function() { back.focus(); });
 }
 
 // Fills in (or, on a later language switch, refreshes) the text of the
@@ -438,8 +452,15 @@ function swapVisual(visualId, src, altText) {
 // open/close toggle (one implementation each, kept in sync by hand) —
 // now one shared implementation under both call-site names, so the two
 // screens that use them (#psession-screen, #pforme-screen) can't drift.
+// Shared by both exp-card (Is it for me?) and timeline-item (session
+// timeline) accordions — toggleTimeline just delegates here. Single point
+// of truth for aria-expanded so every call site (keyboard or click) stays
+// in sync without each of the 8 header elements managing it separately.
 function toggleExp(id) {
-  document.getElementById(id).classList.toggle('open');
+  const card = document.getElementById(id);
+  const isOpen = card.classList.toggle('open');
+  const header = card.querySelector('.exp-header, .timeline-header');
+  if (header) header.setAttribute('aria-expanded', String(isOpen));
 }
 function toggleTimeline(id) {
   toggleExp(id);
@@ -476,18 +497,18 @@ function setRole(role, fromRoleScreen) {
   try { sessionStorage.setItem('fbt.role', role); } catch(e) { warnFailure('saving fbt.role to sessionStorage', e); }
   document.body.setAttribute('data-role', role);
 
-  // If coming from the role-screen choice, land on the entry screen.
-  // If switching role mid-session, also return to entry if stranded
-  // on a screen the new role cannot see.
+  // If coming from a role-picker (role-screen's own cards, or the header
+  // mode-switch — both pass true), land on entry: that role's own
+  // pathway cards, not just a flag flip. If switching role mid-session
+  // without a picker involved, also return to entry if stranded on a
+  // screen the new role cannot see.
   if (fromRoleScreen) {
-    // Clear hash without triggering hashchange side effects, then route.
-    if (window.location.hash) {
-      try {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
-      } catch(e) {
-        warnFailure('history.replaceState unavailable, falling back to clearing the hash directly', e);
-        window.location.hash = '';
-      }
+    // Set the hash without triggering hashchange side effects, then route.
+    try {
+      history.replaceState(null, '', window.location.pathname + window.location.search + '#entry');
+    } catch(e) {
+      warnFailure('history.replaceState unavailable, falling back to setting the hash directly', e);
+      window.location.hash = 'entry';
     }
     applyRoute();
   } else {
@@ -568,6 +589,7 @@ function goToRoleScreen() {
   }
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('role-screen').classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen('role-screen');
   updateHeaderChrome();
 }
 
@@ -575,3 +597,45 @@ function goToRoleScreen() {
 // blocks on a role choice: ensureRole() (called from inside applyRoute)
 // defaults to practitioner if no role is stored yet.
 applyRoute();
+
+// ─────────────────────────────────────────
+// UNIVERSAL ESCAPE / "OPEN SPACE" HOTSPOT
+// ─────────────────────────────────────────
+// The site starts on the game (walk-forest.js turns the scene on by
+// default) and both Escape and a click on open space should always get
+// you back to it, cascading inward-out: close whichever overlay is
+// topmost first, and only once nothing is left open does it actually
+// revert to the game (entry screen, scene crisp). search.js and
+// pocketbook-run.js already own Escape for their own overlays (the search
+// dialog, run mode, run mode's timer) and close themselves via their own
+// listeners — this checks their DOM state and steps aside rather than
+// double-handling the same keypress.
+function appEscapeAction() {
+  const searchOverlay = document.getElementById('search-overlay');
+  if (searchOverlay && searchOverlay.classList.contains('active')) return;
+  const runMode = document.getElementById('pb-runMode');
+  if (runMode && runMode.classList.contains('active')) return;
+  const timerModal = document.getElementById('pb-timerModal');
+  if (timerModal && timerModal.classList.contains('active')) return;
+
+  if (typeof WF !== 'undefined' && WF.openId) { wfClose(); return; }
+
+  const focusedScreen = document.querySelector('.screen.focus-mode');
+  if (focusedScreen) {
+    const back = focusedScreen.querySelector('.module-back-link.injected');
+    if (back) { back.click(); return; }
+  }
+
+  // Nothing left open — this is the fallback the cascade always bottoms
+  // out at: back to the game itself.
+  if (window.location.hash) navigate('');
+  if (typeof wfSetDeep === 'function') wfSetDeep(false);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape') return;
+  // Same guard pocketbook-run.js uses for its own Escape handling — don't
+  // hijack Esc out of a text field the user is actively typing in.
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  appEscapeAction();
+});

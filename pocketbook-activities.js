@@ -282,7 +282,7 @@ function pbRenderActivity(a) {
         </div>
       </div>
       <div class="pb-activity-detail" id="${detailId}">
-        <div class="pb-activity-visual" data-visual="${a.visual || ''}">
+        <div class="pb-activity-visual" data-visual="${a.visual || ''}" aria-hidden="true">
           <div class="pb-visual-caption">${pbT(a, 'caption')}</div>
         </div>
         <div class="pb-detail-grid">

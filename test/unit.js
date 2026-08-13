@@ -120,13 +120,14 @@ test('pbComputeGroupTime ignores an id not present in ACTIVITIES', () => {
   assert.deepStrictEqual(run(`pbComputeGroupTime(['__not_a_real_activity__'])`), [0, 0, 0, 0, 0, 0]);
 });
 
-test('exportBuildSessionURL / pbRestoreSharedSession round-trip: order, timing, language', () => {
+test('exportBuildSessionURL / pbRestoreSharedSession round-trip: order, timing, language, session details', () => {
   const { run } = loadContext();
   const ids = run('ACTIVITIES.slice(0, 3).map(a => a.id)');
 
   run(`pbSession = ${JSON.stringify(ids)};`);
   run(`pbSessionMins = ${JSON.stringify({ [ids[0]]: 62, [ids[2]]: 8 })};`);
   run(`currentLang = 'fr';`);
+  run(`pbSessionMeta = ${JSON.stringify({ startTime: '09:30', site: 'Riverside Camp', practitioner: 'A. Dubois' })};`);
 
   const url = run('exportBuildSessionURL()');
   assert.ok(url.includes('#implement/mod-pocket'), 'URL should target the Session Builder screen');
@@ -136,7 +137,7 @@ test('exportBuildSessionURL / pbRestoreSharedSession round-trip: order, timing, 
   // browser opening the share link does.
   const [, query] = url.split('?');
   const [queryString] = query.split('#');
-  run(`pbSession = []; pbSessionMins = {}; currentLang = 'en';`);
+  run(`pbSession = []; pbSessionMins = {}; currentLang = 'en'; pbSessionMeta = { startTime: '', site: '', practitioner: '' };`);
   run(`window.location.search = ${JSON.stringify('?' + queryString)};`);
 
   run('pbRestoreSharedSession()');
@@ -146,6 +147,17 @@ test('exportBuildSessionURL / pbRestoreSharedSession round-trip: order, timing, 
   assert.strictEqual(mins[ids[0]], 62, 'timing override should round-trip');
   assert.strictEqual(mins[ids[2]], 8, 'timing override should round-trip');
   assert.strictEqual(run('currentLang'), 'fr', 'language should round-trip via setLang()');
+  const meta = run('pbSessionMeta');
+  assert.strictEqual(meta.startTime, '09:30', 'start time should round-trip');
+  assert.strictEqual(meta.site, 'Riverside Camp', 'site should round-trip');
+  assert.strictEqual(meta.practitioner, 'A. Dubois', 'practitioner should round-trip');
+});
+
+test('pbRestoreSharedSession leaves session details blank when the share link has none', () => {
+  const { run } = loadContext();
+  run(`window.location.search = '?s=0';`);
+  run('pbRestoreSharedSession()');
+  assert.deepStrictEqual(run('pbSessionMeta'), { startTime: '', site: '', practitioner: '' });
 });
 
 test('pbRestoreSharedSession ignores a malformed ?s= without throwing', () => {

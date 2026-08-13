@@ -1,0 +1,321 @@
+/* ── WALK THE FOREST — animated role-screen scene ──
+   Keyframes ported verbatim from the design prototype ("Walk the Forest
+   v2.dc.html"); everything else (scene container, pins, panel, controls,
+   role-screen bubbles) is new, written to this app's own conventions.
+   See walk-forest.js for the JS that renders into #wf-scene. */
+
+@keyframes wfBob { 0%,100% { transform:translateY(0) rotate(-0.25deg); } 50% { transform:translateY(-1.1%) rotate(0.25deg); } }
+@keyframes wfPing { 0% { transform:scale(.62); opacity:.75; } 100% { transform:scale(2.5); opacity:0; } }
+@keyframes wfMote { 0% { transform:translate3d(0,0,0); opacity:0; } 20% { opacity:.7; } 100% { transform:translate3d(70px,-38px,0); opacity:0; } }
+@keyframes wfSway { 0%,100% { transform:rotate(-0.55deg); } 50% { transform:rotate(0.55deg); } }
+.wf-bob { animation: wfBob 6.5s ease-in-out infinite; }
+.wf-ping { transform-box: fill-box; transform-origin: center; animation: wfPing 4.6s ease-out infinite; }
+.wf-mote { animation: wfMote 19s linear infinite; }
+.wf-sway { transform-box: fill-box; transform-origin: bottom center; animation: wfSway 13s ease-in-out infinite; }
+@keyframes wfThigh { 0%,100% { transform:rotate(12deg); } 50% { transform:rotate(-12deg); } }
+.wfThighA { transform-box: fill-box; transform-origin: top center; animation: wfThigh 1.9s ease-in-out infinite; }
+.wfThighB { transform-box: fill-box; transform-origin: top center; animation: wfThigh 1.9s ease-in-out infinite reverse; }
+@keyframes wfShin { 0% { transform:rotate(-5deg); } 22% { transform:rotate(-5deg); } 44% { transform:rotate(28deg); } 62% { transform:rotate(6deg); } 100% { transform:rotate(-5deg); } }
+.wfShinA { transform-box: fill-box; transform-origin: top center; animation: wfShin 1.9s ease-in-out infinite; }
+.wfShinB { transform-box: fill-box; transform-origin: top center; animation: wfShin 1.9s ease-in-out infinite reverse; }
+@keyframes wfFlick { 0%,100% { transform:scale(1,1); opacity:.95; } 40% { transform:scale(.9,1.24); opacity:1; } 70% { transform:scale(1.08,.88); opacity:.82; } }
+.wfFlick { transform-box: fill-box; transform-origin: bottom center; animation: wfFlick 2.6s ease-in-out infinite; }
+@keyframes wfSmoke { 0% { opacity:0; transform:translateY(0) scale(.6); } 30% { opacity:.4; } 100% { opacity:0; transform:translateY(-42px) scale(1.7); } }
+.wfSmoke { transform-box: fill-box; transform-origin: center; animation: wfSmoke 7.5s linear infinite; }
+@keyframes wfHang { 0%,100% { transform:rotate(-2.6deg); } 50% { transform:rotate(2.6deg); } }
+.wfHang { transform-box: fill-box; transform-origin: top center; animation: wfHang 8.5s ease-in-out infinite; }
+@keyframes wfBreath { 0%,100% { transform:scale(.94); opacity:.5; } 50% { transform:scale(1.14); opacity:.85; } }
+.wfBreath { transform-box: fill-box; transform-origin: center; animation: wfBreath 9.5s ease-in-out infinite; }
+@keyframes wfLift { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
+.wfLift { transform-box: fill-box; animation: wfLift 6.5s ease-in-out infinite; }
+@keyframes wfPeg { 0%,100% { transform:rotate(-3deg); } 50% { transform:rotate(3deg); } }
+.wfPeg { transform-box: fill-box; transform-origin: top center; animation: wfPeg 6.5s ease-in-out infinite; }
+@keyframes wfDrift { 0%,100% { transform:translateX(0); } 50% { transform:translateX(3.5%); } }
+.wf-drift { animation: wfDrift 75s ease-in-out infinite; }
+@keyframes wfDrift2 { 0%,100% { transform:translateX(0); } 50% { transform:translateX(-2.6%); } }
+.wf-drift2 { animation: wfDrift2 92s ease-in-out infinite; }
+@keyframes wfGlow { 0%,100% { opacity:.09; } 50% { opacity:.24; } }
+.wf-glow { animation: wfGlow 12s ease-in-out infinite; }
+@keyframes wfGlow2 { 0%,100% { opacity:.06; } 50% { opacity:.16; } }
+.wf-glow2 { animation: wfGlow2 15.5s ease-in-out infinite 3s; }
+/* The funder-logo "sun" (walk-forest.js) drifts a few px on a slow, loose
+   loop rather than sitting pinned in place — its own transform, not the
+   positioning wrapper's, so this doesn't fight the wrapper's inline
+   left:50%/translateX(-50%) centering (a CSS animation targeting the same
+   property on the same element would win the cascade and cancel it). */
+@keyframes wfSunDrift {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(6px, -5px); }
+  50%  { transform: translate(-4px, 3px); }
+  75%  { transform: translate(3px, 6px); }
+  100% { transform: translate(0, 0); }
+}
+.wf-sun { animation: wfSunDrift 42s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  /* Not in the shared disable block below — that block sits before most
+     of this file's later rules in source order, so an override placed
+     there for a class defined further down would lose the cascade and
+     silently do nothing (the same bug already hit once this session, on
+     .wf-pin-chip's own reduced-motion override). */
+  .wf-sun { animation: none; }
+}
+/* One-shot, unlike everything else above: the arrival caption chip reads
+   for a moment, then drifts up and away like a released balloon rather
+   than sitting there occupying the scene indefinitely. Plays once because
+   the chip <div> is only ever freshly inserted into the DOM on arrival
+   (wfRender() doesn't repaint again until the camera next moves — see
+   wfStep() in walk-forest.js) — forwards keeps it gone (opacity:0) for
+   the rest of that hold, even though showChip likely still reads true. */
+@keyframes wfChipFloat {
+  0%, 28% { opacity: 1; transform: translateY(0) translateX(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(-56px) translateX(8px) rotate(3deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wf-bob,.wf-ping,.wf-mote,.wf-sway,.wfThighA,.wfThighB,.wfShinA,.wfShinB,
+  .wfFlick,.wfSmoke,.wfHang,.wfBreath,.wfLift,.wfPeg,.wf-drift,.wf-drift2,
+  .wf-glow,.wf-glow2 { animation: none; }
+}
+
+/* ── scene container ──
+   Capped/fluid height rather than raw 100vh: this app embeds in an
+   auto-height iframe (see README "Embedding on the Odoo site") — 100vh of
+   an auto-sizing iframe is circular. Uses the site's own --vh custom
+   property (see ui-behaviors.js) for the same reason it's used elsewhere:
+   more reliable than raw vh units on mobile browser chrome. */
+.wf-scene {
+  /* Two-layer UI: this is the backdrop — a persistent, always-functional
+     scene (pins/panel/controls, never stripped down) behind the real
+     site, which is the foreground "menu, with function inside" (every
+     screen, not just one — see .container below). One button
+     (#wf-toggle-btn) switches it on/off; it never takes the page over —
+     z-index stays under .container's own z-index:1 (styles-base.css) so
+     the header and every screen's content sit above it exactly as
+     before. Hidden by default; walk-forest.js adds wf-scene--visible
+     while switched on. */
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #E8EDE7;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
+  display: none;
+}
+.wf-scene.wf-scene--visible { display: block; }
+.wf-scene svg text { user-select: none; }
+
+/* The open stop panel renders into #wf-panel-root (a body-level sibling of
+   #wf-scene — see index.html), not inside #wf-scene itself. z-index on
+   .wf-panel alone couldn't out-rank .container — it's only ranked against
+   other #wf-scene children, since z-index on a descendant can never escape
+   its own ancestor's stacking context, and #wf-scene has to stay under
+   .container (z-index 0 vs 1) so the ambient/crisp backdrop never covers
+   the header. Giving the panel its own root sidesteps that: #wf-panel-root
+   sits above .container (z-index 2) without dragging the rest of the
+   scene's full-bleed layers up with it. pointer-events:none by default so
+   it's a no-op when no panel is open; the panel itself re-enables them
+   (below). Still well under every real modal/overlay in the app (search
+   dialog 2500, run mode 2000+, etc. — see the z-index survey across
+   styles-*.css). */
+#wf-panel-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Blurred only once you're actually inside functional content (any
+   screen but the entry/role landing pair) — see wfSetDeepFromScreen()
+   in walk-forest.js, called from router.js on every navigation. Crisp
+   by default so the landing screens read as a clear hero; the panel (a
+   sibling of .wf-blur-layer, not inside it — see wfPanelHTML() in
+   walk-forest.js) always stays crisp regardless, since its real content
+   needs to be legible the moment it's open. */
+.wf-blur-layer { position: absolute; inset: 0; }
+body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
+
+.wf-title-chip {
+  position: absolute; left: 14px; top: 12px;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 8px 14px 9px; border-radius: 14px;
+  background: rgba(251,249,244,0.82);
+  pointer-events: none; z-index: 400;
+}
+.wf-title-chip-main { font: 600 15px/1.2 'Montserrat', sans-serif; color: #14302A; letter-spacing: -0.01em; }
+.wf-title-chip-sub { font: 400 10.5px/1.3 'Open Sans', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #4D6359; }
+@media (max-width: 768px) {
+  /* #wf-scene is a fixed viewport-relative layer (see index.html), so on
+     narrow widths — where the site's own persistent header wraps to
+     ~150px tall — this needs to duck below it explicitly rather than
+     assuming it starts below the header the way it did when nested
+     inside #role-screen. 220px, not ~150px, because this same breakpoint
+     (matched to styles-responsive.css's own ≤768px "phone density pass")
+     also puts `body { zoom: 0.75 }` on everything below it, including this
+     element — so a raw offset has to target 150/0.75 ≈ 200px to land at
+     the header's real 150px rendered height, plus a bit of clearance. */
+  .wf-title-chip { top: 220px; }
+}
+
+/* Trail stop pins */
+.wf-pin-btn {
+  position: absolute;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: none; padding: 0; border-radius: 999px;
+  cursor: pointer; transition: transform .18s;
+}
+.wf-pin-btn:hover, .wf-pin-btn:focus-visible { transform: scale(1.09); }
+.wf-pin-btn:focus-visible { outline: 2px solid #234A3E; outline-offset: 2px; }
+.wf-pin-disc {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 999px; border: 2px solid #FBF9F4; background: #FBF9F4;
+  box-shadow: 0 4px 12px rgba(20,48,42,0.18);
+  transition: border-color .18s;
+}
+.wf-pin-chip {
+  padding: 9px 12px; background: #FBF9F4; border: 1px solid #C8D8D0;
+  border-radius: 10px; box-shadow: 0 6px 18px rgba(20,48,42,0.14);
+  pointer-events: none;
+  animation: wfChipFloat 3.6s ease-in forwards;
+}
+/* Placed here, not in the shared reduced-motion block up top (styles-walk-
+   forest.css:41-45) — that block sits before every class it disables, but
+   .wf-pin-chip's own animation is declared below it in source order, so
+   putting the override there too would lose the cascade (later same-
+   specificity rule wins) and silently do nothing. */
+@media (prefers-reduced-motion: reduce) {
+  .wf-pin-chip { animation: none; }
+}
+.wf-pin-chip-name { font: 600 12.5px/1.3 'Montserrat', sans-serif; color: #14302A; }
+.wf-pin-chip-sub { margin-top: 2px; font: 400 10px/1.3 'Open Sans', sans-serif; color: #7C8E85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Controls (back / restart / next) */
+.wf-controls { position: absolute; display: flex; align-items: center; gap: 10px; z-index: 400; }
+.wf-ctrl-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; border-radius: 999px;
+  border: 1px solid #C8D8D0; background: #FFFFFF; color: #4D6359;
+  cursor: pointer; box-shadow: 0 1px 2px rgba(20,48,42,0.06);
+  transition: border-color .15s, color .15s;
+}
+.wf-ctrl-btn:hover, .wf-ctrl-btn:focus-visible { border-color: #7FA396; color: #234A3E; }
+.wf-status-pill {
+  font: 400 10.5px/1.4 'Open Sans', sans-serif; color: #4D6359;
+  background: rgba(251,249,244,0.82); border-radius: 999px; padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.wf-rail {
+  position: absolute; display: flex; align-items: flex-end; height: 12px;
+  padding: 8px 12px; background: rgba(251,249,244,0.82); border-radius: 999px;
+  z-index: 400;
+}
+
+.wf-list-link {
+  position: absolute; z-index: 400;
+  font: 400 10.5px/1.4 'Open Sans', sans-serif; color: #4D6359;
+  text-decoration: none; border-bottom: 1px dotted #7FA396;
+  background: rgba(251,249,244,0.82); padding: 4px 7px; border-radius: 4px;
+}
+.wf-list-link:hover { color: #B8552E; }
+
+/* Detail panel */
+.wf-panel {
+  position: absolute; display: flex; flex-direction: column;
+  background: #FBF9F4; z-index: 500;
+  pointer-events: auto;
+}
+.wf-panel--side {
+  right: 0; top: 0; bottom: 0; width: min(430px, 42%);
+  box-shadow: -12px 0 32px rgba(20,48,42,0.14);
+}
+.wf-panel--sheet {
+  left: 0; right: 0; bottom: 0; max-height: 78%;
+  border-top-left-radius: 16px; border-top-right-radius: 16px;
+  box-shadow: 0 -12px 32px rgba(20,48,42,0.18);
+}
+.wf-panel-close {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; margin: -8px -8px 0 0;
+  border: none; background: none; color: #7C8E85;
+  font: 300 22px/1 'Open Sans', sans-serif; cursor: pointer; border-radius: 6px;
+}
+.wf-panel-close:hover, .wf-panel-close:focus-visible { color: #1B2A24; background: #F4F1EA; }
+.wf-tag-chip {
+  font: 500 9.5px/1 'Open Sans', sans-serif; letter-spacing: .08em; text-transform: uppercase;
+  color: #4D6359; background: #F4F1EA; border-radius: 999px; padding: 7px 11px;
+}
+.wf-panel-label { font: 600 9.5px/1 'Open Sans', sans-serif; letter-spacing: .13em; text-transform: uppercase; color: #7FA396; }
+.wf-panel-text { margin-top: 6px; font: 300 13.5px/1.62 'Open Sans', sans-serif; color: #1B2A24; }
+.wf-panel-text-example {
+  margin-top: 8px; padding: 12px 14px; background: #F4F1EA; border-radius: 10px;
+  font: 300 italic 13.5px/1.6 'Open Sans', sans-serif; color: #234A3E;
+}
+.wf-panel-foot {
+  padding: 12px 22px 18px; font: 400 10.5px/1.5 'Open Sans', sans-serif; color: #7C8E85;
+}
+
+/* Session strip — progression (add-to-session) + export, collapsed by
+   default: the "clever trick" is keeping the real Session Builder state
+   (pbSession/pbToggleInSession) and the real export pipeline
+   (exportRunPDF/exportRunPNG) reachable from inside the scene's own panel
+   without duplicating either, via a one-line summary that expands. */
+.wf-session-strip { margin: 4px 22px 0; border-top: 1px solid #EDEAE0; }
+.wf-session-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; padding: 12px 0; border: none; background: none; cursor: pointer;
+  font: 500 11.5px/1.3 'Open Sans', sans-serif; color: #234A3E; text-align: left;
+}
+.wf-session-toggle:hover, .wf-session-toggle:focus-visible { color: #B8552E; }
+.wf-session-drawer { display: flex; flex-direction: column; gap: 8px; padding-bottom: 12px; }
+.wf-session-add {
+  align-self: flex-start; padding: 7px 14px; border-radius: 999px;
+  border: 1px solid #7FA396; background: #FFFFFF; color: #234A3E;
+  font: 500 11px/1 'Open Sans', sans-serif; cursor: pointer;
+}
+.wf-session-add.in-pbSession { background: #234A3E; border-color: #234A3E; color: #FFFFFF; }
+.wf-session-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wf-session-export {
+  padding: 7px 12px; border-radius: 8px; border: 1px solid #C8D8D0; background: #FFFFFF;
+  color: #4D6359; font: 600 10.5px/1 'Open Sans', sans-serif; letter-spacing: .04em;
+  cursor: pointer;
+}
+.wf-session-export:hover:not(:disabled), .wf-session-export:focus-visible:not(:disabled) { border-color: #7FA396; color: #234A3E; }
+.wf-session-export:disabled { opacity: .4; cursor: not-allowed; }
+.wf-session-open {
+  font: 500 10.5px/1 'Open Sans', sans-serif; color: #4D6359; text-decoration: none;
+  border-bottom: 1px dotted #7FA396; padding-bottom: 1px;
+}
+.wf-session-open:hover { color: #B8552E; }
+
+/* ── global on/off toggle ──
+   One small button (#wf-toggle-btn, in the header) — off is "clean
+   mode" (no scene at all); on brings the backdrop up behind the site,
+   which stays exactly as functional as it always was: header, nav,
+   search, mode switch, language bar all keep working untouched (see
+   wfSetOn()/wfToggleGlobal() in walk-forest.js). */
+.wf-toggle-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; padding: 0;
+  border-radius: 999px; border: 1px solid var(--forest-mist);
+  background: var(--paper-pure); color: var(--ink-soft);
+  cursor: pointer; transition: border-color .15s, color .15s, background .15s;
+}
+.wf-toggle-btn:hover, .wf-toggle-btn:focus-visible { border-color: var(--forest-soft); color: var(--forest-deep); }
+.wf-toggle-btn[aria-pressed="true"] { background: var(--forest-ink); border-color: var(--forest-ink); color: #FFFFFF; }
+
+/* Once the backdrop is on, every screen's cards go translucent (same
+   token-override trick as before: --paper/--paper-card/--paper-pure
+   feed dozens of existing card styles across every stylesheet, so
+   overriding them here is one change instead of dozens), and the
+   header's muted text tokens darken — --ink-soft/--ink-faint default to
+   fairly light grays, fine over solid paper but too low-contrast once
+   there's a busy scene behind them instead. */
+body.wf-scene-on {
+  --paper:      rgba(244,241,234,0.88);
+  --paper-card: rgba(251,249,244,0.88);
+  --paper-pure: rgba(255,255,255,0.92);
+  --ink-soft:   #14302A;
+  --ink-faint:  #234A3E;
+}

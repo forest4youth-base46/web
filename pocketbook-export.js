@@ -21,6 +21,14 @@ function exportBuildSessionURL() {
   params.set('s', order.join('.'));
   if (mins.length) params.set('m', mins.map(pair => pair[0] + ':' + pair[1]).join('.'));
   params.set('l', typeof currentLang === 'string' ? currentLang : 'en');
+  // Session details — same fields the PDF/PNG export already reads from
+  // pbSessionMeta (see the header meta block in pbBuildSessionExportData
+  // below) — carried through the share link too, so scanning/opening it
+  // shows the same start time/site/practitioner the plan was built with,
+  // not blank defaults. Optional, same as the PDF: only set when filled in.
+  if (pbSessionMeta.startTime) params.set('t', pbSessionMeta.startTime);
+  if (pbSessionMeta.site) params.set('g', pbSessionMeta.site);
+  if (pbSessionMeta.practitioner) params.set('p', pbSessionMeta.practitioner);
   return window.location.origin + window.location.pathname + '?' + params.toString() + '#implement/mod-pocket';
 }
 function exportGenerateSessionQRNode() {
@@ -97,8 +105,11 @@ function pbBuildSessionExportData() {
   // Checkbox markup, not <ul>/<li> — html2canvas doesn't reliably render
   // native list markers (missing/misaligned bullet glyphs), so this avoids
   // that entirely; also matches the Canva concept's checklist treatment.
-  const materialsHTML = pbAggregateMaterials(pbSession)
-    .map(m => '<div class="pexport-materials-row"><span class="pexport-checkbox"></span>' + pbEscapeHtml(m) + '</div>').join('');
+  // Kept as an array (not joined yet) — the paginated PDF path below needs
+  // to measure and, if necessary, split this list block-by-block the same
+  // way it already does for the row timeline.
+  const materialsRowBlocks = pbAggregateMaterials(pbSession)
+    .map(m => '<div class="pexport-materials-row"><span class="pexport-checkbox"></span>' + pbEscapeHtml(m) + '</div>');
 
   const checklistHTML = [1, 2, 3, 4, 5, 6].map(i =>
     '<div class="pexport-check-item"><span class="pexport-checkbox"></span>' +
@@ -138,29 +149,45 @@ function pbBuildSessionExportData() {
   const colHeadersHTML =
     '<div class="pexport-col-headers"><span>' + pbEscapeHtml(t('pbui.planexport.col.clock')) + '</span><span>' + pbEscapeHtml(t('pbui.planexport.col.activity')) + '</span></div>';
 
-  const sidebarHTML =
-    '<div class="pexport-sidebar">' +
-      '<div class="pexport-stats-eyebrow">' + pbEscapeHtml(t('pbui.planexport.stats.eyebrow')) + '</div>' +
-      '<div class="pexport-arc-block">' +
-        '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.arc.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.arc.sub')) + '</div>' +
-        '<div class="pexport-arc-row">' +
-          '<div class="pexport-arc-donut">' + pbBuildArcDonutSVG(groupTime, items.length) + '</div>' +
-          '<div class="pexport-arc-legend">' + pbBuildArcLegendHTML(groupTime) + '</div>' +
-        '</div>' +
+  // Split into three pieces rather than one opaque string: a fixed-height
+  // head (charts + the materials section label — doesn't grow with the
+  // session), the materials rows themselves (the one part of the sidebar
+  // whose height actually grows with activity count, up to 17), and the QR
+  // block (also fixed height, and must always stay directly under
+  // whichever materials rows land on page 1). The paginated PDF path
+  // (pbBuildSessionPaginatedCanvases) measures and packs the materials rows
+  // against the room actually left after the fixed parts, the same
+  // principle it already applies to the row timeline — a long materials
+  // list can no longer push the QR code/footer off the page. The
+  // continuous/PNG render below has no page-height limit, so it just joins
+  // all three back together exactly as before.
+  const sidebarHeadHTML =
+    '<div class="pexport-stats-eyebrow">' + pbEscapeHtml(t('pbui.planexport.stats.eyebrow')) + '</div>' +
+    '<div class="pexport-arc-block">' +
+      '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.arc.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.arc.sub')) + '</div>' +
+      '<div class="pexport-arc-row">' +
+        '<div class="pexport-arc-donut">' + pbBuildArcDonutSVG(groupTime, items.length) + '</div>' +
+        '<div class="pexport-arc-legend">' + pbBuildArcLegendHTML(groupTime) + '</div>' +
       '</div>' +
-      '<div class="pexport-shape-block">' +
-        '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.shape.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.shape.sub')) + '</div>' +
-        pbBuildSessionShapeSVG(pbSession, clockTimes) +
-      '</div>' +
-      '<div class="pexport-materials-block">' +
-        '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.materials.title')) + '</div>' +
-        '<div class="pexport-materials-list">' + materialsHTML + '</div>' +
-      '</div>' +
-      '<div class="pexport-qr-block">' +
-        '<div id="print-qr-slot"></div>' +
-        '<div class="pexport-qr-caption">' + pbEscapeHtml(t('pbui.planexport.qr.caption')) + '</div>' +
-      '</div>' +
+    '</div>' +
+    '<div class="pexport-shape-block">' +
+      '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.shape.title')) + ' · ' + pbEscapeHtml(t('pbui.planexport.shape.sub')) + '</div>' +
+      pbBuildSessionShapeSVG(pbSession, clockTimes) +
+    '</div>' +
+    '<div class="pexport-materials-block">' +
+      '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.materials.title')) + '</div>' +
+      '<div class="pexport-materials-list">';
+  // Closes .pexport-materials-list then .pexport-materials-block — left
+  // open above so the paginated path can insert only however many
+  // materials rows fit before closing it.
+  const materialsListCloseHTML = '</div></div>';
+  const sidebarQrHTML =
+    '<div class="pexport-qr-block">' +
+      '<div id="print-qr-slot"></div>' +
+      '<div class="pexport-qr-caption">' + pbEscapeHtml(t('pbui.planexport.qr.caption')) + '</div>' +
     '</div>';
+  const sidebarHTML =
+    '<div class="pexport-sidebar">' + sidebarHeadHTML + materialsRowBlocks.join('') + materialsListCloseHTML + sidebarQrHTML + '</div>';
 
   const totalLine = t('pbui.planexport.total').replace('{mins}', String(totalMin)).replace('{n}', String(items.length));
   const tailBlockHTML =
@@ -188,7 +215,11 @@ function pbBuildSessionExportData() {
       '<span>' + pbEscapeHtml(generated) + ' · ' + lang.toUpperCase() + ' · __PEXPORT_PAGE__</span>' +
     '</div>';
 
-  return { headerHTML, titleHTML, colHeadersHTML, rowBlocks, sidebarHTML, tailBlockHTML, footerBottomHTML };
+  return {
+    headerHTML, titleHTML, colHeadersHTML, rowBlocks, sidebarHTML,
+    sidebarHeadHTML, materialsRowBlocks, materialsListCloseHTML, sidebarQrHTML,
+    tailBlockHTML, footerBottomHTML,
+  };
 }
 
 // Builds the session-plan export — a two-column A4 page (activity timeline
@@ -288,9 +319,17 @@ function pbPackBlocks(root, blocks, firstPageBudget, restPageBudget, measureWrap
   return pages;
 }
 
+// Shared by every html2canvas call in this file. Three of the five call
+// sites (the two below plus exportRunPNG/exportSessionReportPNG) append a
+// QR-code DOM node to `root` *after* their innerHTML is set and *before*
+// rasterizing — routing them through pbRasterizePage() would re-assign
+// innerHTML and silently wipe that node, so this constant exists to remove
+// the literal duplication without touching that DOM-mutation order.
+const PEXPORT_RASTER_OPTS = { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true };
+
 async function pbRasterizePage(root, html) {
   root.innerHTML = html;
-  return html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true });
+  return html2canvas(root, PEXPORT_RASTER_OPTS);
 }
 
 function pbSavePDFFromCanvases(canvases, filenamePrefix) {
@@ -314,10 +353,18 @@ function pbSavePDFFromCanvases(canvases, filenamePrefix) {
 
 // Page 1 carries the title + column headers above its rows, plus the
 // sidebar (charts/materials/QR) alongside them. Continuation pages repeat
-// just the topbar + column headers (no title, no sidebar — a session long
-// enough to spill onto more than one page always has far more row content
-// than the sidebar is tall, so the sidebar never competes for page-2+
-// space). Every page shares the same repeating footer.
+// just the topbar + column headers (no title, no sidebar). Every page
+// shares the same repeating footer.
+//
+// The sidebar's charts + QR are fixed height regardless of activity count,
+// but its materials list grows with the session (one entry per activity,
+// up to 17) — long enough and it can push the QR code, and the footer
+// beneath it, clean off the page. So the materials rows are measured and
+// packed against whatever room is actually left after the sidebar's fixed
+// parts, the same principle already applied to the row timeline below;
+// whatever doesn't fit continues on its own dedicated page directly after
+// page 1 (kept separate from the row-continuation pages so it can never
+// perturb their own, already-correct budget).
 //
 // The trailing banner+checklist (tailBlockHTML) always renders full-width,
 // as a sibling of .pexport-body — never squeezed into the narrower row
@@ -335,10 +382,35 @@ async function pbBuildSessionPaginatedCanvases(root) {
 
   const firstPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - page1ChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
   const restPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - restChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
+
+  // Sidebar width is fixed by CSS (240px, flex-shrink:0) regardless of the
+  // (here, empty) timeline beside it, so measuring with an empty timeline
+  // still yields the real wrap width for the materials text.
+  const sidebarWrapPrefix = '<div class="pexport-body"><div class="pexport-timeline"></div><div class="pexport-sidebar">';
+  const sidebarWrapSuffix = '</div></div>';
+  const sidebarHeadHeight = pbMeasureHeight(root, sidebarWrapPrefix + d.sidebarHeadHTML + d.materialsListCloseHTML + sidebarWrapSuffix);
+  const qrHeight = pbMeasureHeight(root, sidebarWrapPrefix + d.sidebarQrHTML + sidebarWrapSuffix);
+  const materialsBudget = firstPageBudget - sidebarHeadHeight - qrHeight - PEXPORT_PAGE_GAP_CSS_PX;
+  // Only ever splitting into "fits on page 1" vs. "everything else" — the
+  // Infinity rest-budget means pbPackBlocks never further splits the
+  // overflow, it just collects all of it into materialsPacked[1].
+  const materialsPacked = pbPackBlocks(
+    root, d.materialsRowBlocks, materialsBudget, Infinity,
+    sidebarWrapPrefix + d.sidebarHeadHTML,
+    d.materialsListCloseHTML + sidebarWrapSuffix
+  );
+  const materialsOnPage1 = materialsPacked[0];
+  const materialsOverflow = materialsPacked.length > 1 ? materialsPacked[1] : [];
+  const sidebarPage1HTML =
+    '<div class="pexport-sidebar">' + d.sidebarHeadHTML + materialsOnPage1.join('') + d.materialsListCloseHTML + d.sidebarQrHTML + '</div>';
+  const materialsContinuedHTML = materialsOverflow.length
+    ? '<div class="pexport-materials-block"><div class="pexport-section-label">' + pbEscapeHtml(t('pbui.planexport.materials.continued')) + '</div><div class="pexport-materials-list">' + materialsOverflow.join('') + '</div></div>'
+    : '';
+
   const rowPages = pbPackBlocks(
     root, d.rowBlocks, firstPageBudget, restPageBudget,
     '<div class="pexport-body"><div class="pexport-timeline">',
-    '</div>' + d.sidebarHTML + '</div>'
+    '</div>' + sidebarPage1HTML + '</div>'
   );
 
   // Does the tail block fit under whatever rows landed on the last page?
@@ -352,23 +424,24 @@ async function pbBuildSessionPaginatedCanvases(root) {
         root,
         (lastIsFirst ? '<div class="pexport-body"><div class="pexport-timeline">' : '') +
         rowPages[lastIdx].join('') +
-        (lastIsFirst ? ('</div>' + d.sidebarHTML + '</div>') : '')
+        (lastIsFirst ? ('</div>' + sidebarPage1HTML + '</div>') : '')
       )
     : 0;
   const tailFitsOnLastPage = (lastRowsHeight + tailHeight) <= lastBudget;
-  const totalPages = rowPages.length + (tailFitsOnLastPage ? 0 : 1);
+  const totalPages = rowPages.length + (materialsContinuedHTML ? 1 : 0) + (tailFitsOnLastPage ? 0 : 1);
   const footerForPage = pageNum => d.footerBottomHTML.replace('__PEXPORT_PAGE__', pageNum + '/' + totalPages);
 
   const canvases = [];
+  let pageNum = 0;
   for (let i = 0; i < rowPages.length; i++) {
     const isFirst = i === 0;
     const isLast = i === lastIdx;
     const hasRows = rowPages[i].length > 0;
     const colHeaders = hasRows ? d.colHeadersHTML : '';
     const bodyHTML = isFirst
-      ? '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + rowPages[i].join('') + '</div>' + d.sidebarHTML + '</div>'
+      ? '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + rowPages[i].join('') + '</div>' + sidebarPage1HTML + '</div>'
       : '<div class="pexport-body"><div class="pexport-timeline">' + colHeaders + rowPages[i].join('') + '</div></div>';
-    const tailAnchorHTML = '<div class="pexport-tail-anchor">' + (isLast && tailFitsOnLastPage ? d.tailBlockHTML : '') + footerForPage(i + 1) + '</div>';
+    const tailAnchorHTML = '<div class="pexport-tail-anchor">' + (isLast && tailFitsOnLastPage ? d.tailBlockHTML : '') + footerForPage(++pageNum) + '</div>';
     root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
       d.headerHTML + (isFirst ? d.titleHTML : '') + bodyHTML + tailAnchorHTML +
     '</div>';
@@ -377,17 +450,60 @@ async function pbBuildSessionPaginatedCanvases(root) {
       const slot = root.querySelector('#print-qr-slot');
       if (qrNode && slot) slot.appendChild(qrNode);
     }
-    canvases.push(await html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true }));
+    canvases.push(await html2canvas(root, PEXPORT_RASTER_OPTS));
+
+    if (isFirst && materialsContinuedHTML) {
+      root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
+        d.headerHTML +
+        '<div class="pexport-body"><div class="pexport-timeline">' + materialsContinuedHTML + '</div></div>' +
+        '<div class="pexport-tail-anchor">' + footerForPage(++pageNum) + '</div>' +
+      '</div>';
+      canvases.push(await html2canvas(root, PEXPORT_RASTER_OPTS));
+    }
   }
 
   if (!tailFitsOnLastPage) {
     root.innerHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
       d.headerHTML +
-      '<div class="pexport-tail-anchor">' + d.tailBlockHTML + footerForPage(totalPages) + '</div>' +
+      '<div class="pexport-tail-anchor">' + d.tailBlockHTML + footerForPage(++pageNum) + '</div>' +
     '</div>';
-    canvases.push(await html2canvas(root, { width: 794, windowWidth: 794, scale: 2, backgroundColor: '#ffffff', useCORS: true }));
+    canvases.push(await html2canvas(root, PEXPORT_RASTER_OPTS));
   }
   return canvases;
+}
+
+// Waits for web fonts (Caveat/Playfair Display/etc., loaded via the Google
+// Fonts <link> in index.html) to finish loading before any html2canvas
+// capture — capturing mid font-swap is a known source of mis-kerned/
+// garbled glyphs, most likely on a slow or cold-cache mobile connection.
+// Races against a short timeout so a stalled font load can never block an
+// export indefinitely.
+function pbWaitFontsReady() {
+  if (!document.fonts || !document.fonts.ready) return Promise.resolve();
+  return Promise.race([
+    document.fonts.ready,
+    new Promise(resolve => setTimeout(resolve, 2000)),
+  ]);
+}
+
+// The phone-only density pass (styles-responsive.css, ≤768px) puts a
+// `zoom: 0.75` on <body>. #print-session/#print-report are direct children
+// of <body> and print-native fixed-width regardless of viewport, so they'd
+// inherit it on phones — desyncing the export's own height measurements
+// (taken against this live, zoomed DOM) from what html2canvas rasterizes
+// (its own clone is always 794px wide, past the 768px breakpoint, so the
+// zoom rule never applies there). A counter-zoom on the templates
+// themselves does restore their true on-screen size, but nested/cancelled
+// zoom still confuses html2canvas's own text-layout pass — confirmed: the
+// rasterized text stays garbled even once the measured size is correct
+// again. Turning body's zoom off entirely for the brief span of measuring
+// + rasterizing sidesteps that — one zoom context, not a nested one — then
+// restores it immediately after. A no-op on desktop, where body has no
+// zoom rule to begin with.
+function pbResetBodyZoom() {
+  const prev = document.body.style.zoom;
+  document.body.style.zoom = '1';
+  return () => { document.body.style.zoom = prev; };
 }
 
 async function exportRunPDF() {
@@ -398,7 +514,9 @@ async function exportRunPDF() {
   }
   const root = document.getElementById('print-session');
   if (!root) return;
+  await pbWaitFontsReady();
   document.body.classList.add('is-exporting-png');
+  const restoreZoom = pbResetBodyZoom();
   try {
     const canvases = await pbBuildSessionPaginatedCanvases(root);
     pbSavePDFFromCanvases(canvases, 'forest4youth-session');
@@ -406,6 +524,7 @@ async function exportRunPDF() {
     console.error('PDF export failed', err);
     alert('PDF export failed. Try Export to PNG instead.');
   } finally {
+    restoreZoom();
     document.body.classList.remove('is-exporting-png');
   }
 }
@@ -417,16 +536,12 @@ async function exportRunPNG() {
     return;
   }
   exportRenderPrintSession();
+  await pbWaitFontsReady();
   document.body.classList.add('is-exporting-png');
+  const restoreZoom = pbResetBodyZoom();
   try {
     const node = document.getElementById('print-session');
-    const canvas = await html2canvas(node, {
-      width: 794,
-      windowWidth: 794,
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-    });
+    const canvas = await html2canvas(node, PEXPORT_RASTER_OPTS);
     const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const link = document.createElement('a');
     link.download = 'forest4youth-session-' + ts + '.png';
@@ -436,6 +551,7 @@ async function exportRunPNG() {
     console.error('PNG export failed', err);
     alert('PNG export failed. Try Export to PDF instead.');
   } finally {
+    restoreZoom();
     document.body.classList.remove('is-exporting-png');
   }
 }
@@ -629,7 +745,9 @@ async function exportSessionReportPDF() {
   }
   const root = document.getElementById('print-report');
   if (!root) return;
+  await pbWaitFontsReady();
   document.body.classList.add('is-exporting-png');
+  const restoreZoom = pbResetBodyZoom();
   try {
     const canvases = await pbBuildReportPaginatedCanvases(root);
     if (!canvases.length) return;
@@ -638,6 +756,7 @@ async function exportSessionReportPDF() {
     console.error('PDF export failed', err);
     alert('PDF export failed. Try Export to PNG instead.');
   } finally {
+    restoreZoom();
     document.body.classList.remove('is-exporting-png');
   }
 }
@@ -657,16 +776,12 @@ async function exportSessionReportPNG() {
     return;
   }
   exportRenderPrintReport();
+  await pbWaitFontsReady();
   document.body.classList.add('is-exporting-png');
+  const restoreZoom = pbResetBodyZoom();
   try {
     const node = document.getElementById('print-report');
-    const canvas = await html2canvas(node, {
-      width: 794,
-      windowWidth: 794,
-      scale: 2,
-      backgroundColor: '#ffffff',
-      useCORS: true,
-    });
+    const canvas = await html2canvas(node, PEXPORT_RASTER_OPTS);
     const ts = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
     const link = document.createElement('a');
     link.download = 'forest4youth-reflection-' + ts + '.png';
@@ -676,6 +791,7 @@ async function exportSessionReportPNG() {
     console.error('PNG export failed', err);
     alert('PNG export failed. Try Export to PDF instead.');
   } finally {
+    restoreZoom();
     document.body.classList.remove('is-exporting-png');
   }
 }

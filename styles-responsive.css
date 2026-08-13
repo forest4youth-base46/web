@@ -28,15 +28,26 @@
   /* Builder on mobile: popup that grows OUT of the FAB. Ironclad hide
      when not .expanded — visibility:hidden + opacity:0 + scale near 0 +
      pointer-events:none. The visibility transition is delayed so the
-     element only becomes hittable AFTER it has finished animating in. */
+     element only becomes hittable AFTER it has finished animating in.
+     80vh (was 70) — a bit more headroom before the activity list needs to
+     scroll at all, and a taller scroll region once it does.
+     The popup itself is a fixed-size flex column that never scrolls as a
+     whole (overflow:hidden) — only #pb-builder-list (flex:1, min-height:0,
+     its own overflow-y:auto below) scrolls internally. Everything else —
+     header, stats, arc balance, the "Session details" panel, and the
+     action buttons — is flex-shrink:0, so it's always rendered at full
+     size below the last activity, footer-style, never mid-scroll content
+     the practitioner has to hunt for. */
   .pb-builder {
     position: fixed !important;
     bottom: 96px !important;          /* clears the 64px circular FAB */
     left: 16px !important;
     right: 16px !important;
     top: auto !important;
-    max-height: calc(var(--vh, 1vh) * 70);
-    overflow-y: auto;
+    max-height: calc(var(--vh, 1vh) * 80);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
     border-radius: var(--pb-r-lg);
     transform-origin: bottom right;
     transform: scale(0.05);
@@ -55,6 +66,9 @@
     pointer-events: auto;
   }
   .pb-builder-header { cursor: pointer; }
+  .pb-builder-header, .pb-builder-stats, .pb-arc-balance,
+  .pb-session-meta, .pb-builder-actions, .pb-builder-hint { flex-shrink: 0; }
+  .pb-builder-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 
   /* Dims and separates the page content behind the popup so it reads as
      a modal rather than a box floating on top of the activity list. */
@@ -138,22 +152,43 @@
   #site-header {
     transition: transform 0.25s ease, opacity 0.25s ease;
     will-change: transform;
+    /* The desktop breakout (styles-base.css) isn't needed here — .container
+       isn't even constrained below its own 960px cap at these widths — and
+       vw-based centering math gets thrown off by this same breakpoint's
+       own body{zoom:0.75} density pass (confirmed: header rendered at
+       0.75x the expected width, off-center). It also fights the
+       .header-hidden scroll-away transform below, which needs sole
+       ownership of this element's transform on mobile. */
+    width: auto;
+    max-width: none;
+    position: static;
+    left: auto;
+    transform: none;
+    padding-left: 0;
+    padding-right: 0;
   }
+  /* No room for this here (it was pushing onto its own row above
+     Practitioner/Exploring) — the blurred-backdrop hotspot
+     (body.wf-scene-deep #main-content margin-top, styles-base.css) is
+     mobile's route back instead. Desktop keeps both. */
+  .wf-back-btn { display: none !important; }
   #site-header.header-hidden {
     transform: translateY(-110%);
     opacity: 0;
     pointer-events: none;
   }
-  /* Lang-bar scrolls with the page on mobile (now lives inside the header flex row) */
+  /* Lang-bar lives in the header flex row at every width; on narrow
+     screens header-controls wraps to its own line, so push lang-bar to
+     that line's right edge. */
   .lang-bar {
-    position: static;
     margin-left: auto;
-    top: auto; right: auto;
   }
-  /* Nav and controls each take the full row on narrow screens, stacked
-     under the title, rather than fighting it for horizontal space. */
-  .site-nav, .header-controls { flex-basis: 100%; }
-  .header-controls { margin-left: 0; }
+  /* Desktop centers the nav in its own grid column (styles-base.css) —
+     too little width for that on narrow screens, so fall back to the
+     title/nav/controls each taking a full stacked row, wrapping flex
+     rather than grid. */
+  .header-inner { display: flex; flex-wrap: wrap; }
+  .site-nav, .header-controls { flex-basis: 100%; justify-content: flex-start; }
   .search-trigger-label { display: none; }
   .search-trigger-kbd { display: none; }
 
@@ -188,7 +223,32 @@
      effectively every mobile browser this size range targets. Scoped to
      this existing ≤768px breakpoint only, so nothing above it changes. */
   body { zoom: 0.75; }
+
+  /* Run Mode entered by scanning a shared QR code/link (pocketbook-init.js
+     sets .pb-qr-launch on <body> for that path only) counter-zooms back to
+     native scale. That entry is always a phone, often outdoors, glanced at
+     rather than browsed — the density pass is the wrong tradeoff there,
+     unlike the rest of the app where it stays on. Same reciprocal-zoom
+     technique as the export templates below; safe here since this is a
+     live on-screen render, not an html2canvas capture. */
+  body.pb-qr-launch .pb-run-mode { zoom: calc(1 / 0.75); }
 }
+/* The off-screen export templates (#print-session/#print-report) are direct
+   children of <body> and render at a fixed, print-native 794px width
+   regardless of viewport — but with no reset they'd inherit the 0.75 zoom
+   above on phones. That desyncs the export pipeline's own height
+   measurements (taken against this zoomed, live DOM) from what html2canvas
+   actually rasterizes (its internal clone is 794px wide, wider than the
+   768px breakpoint, so the zoom rule never applies there) — producing
+   overlapping rows/columns and mis-kerned text on phones only. A CSS-only
+   counter-zoom on the templates (their own zoom set to the reciprocal,
+   e.g. 1/0.75) does restore their true on-screen *size*, but nested/
+   cancelled zoom still confuses html2canvas's own text-layout pass —
+   confirmed: the rasterized text stays garbled even once the element's
+   measured size is correct again. Resetting body's zoom to 1 for the
+   brief span of measuring + rasterizing (pbWaitFontsReady() callers in
+   pocketbook-export.js) sidesteps that entirely — one zoom context, not a
+   nested one — then restores it immediately after. */
 @media (max-width: 640px) {
   .pb-host .pb-activity-detail { padding: 4px 14px 18px; }
   .pb-detail-grid { grid-template-columns: 1fr; gap: 4px 0; }
