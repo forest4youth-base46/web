@@ -135,8 +135,13 @@
 .wf-blur-layer { position: absolute; inset: 0; }
 body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
 
+/* top clears the site header rather than starting at the viewport's top
+   edge: the header now spans the full viewport width (styles-base.css),
+   so its title sits at x≈28px — exactly where this chip used to be, and
+   the two overlapped as unreadable stacked text. Same reasoning as the
+   ≤768px override below, just for the desktop header's ~101px height. */
 .wf-title-chip {
-  position: absolute; left: 14px; top: 12px;
+  position: absolute; left: 14px; top: 112px;
   display: flex; flex-direction: column; gap: 3px;
   padding: 8px 14px 9px; border-radius: 14px;
   background: rgba(251,249,244,0.82);

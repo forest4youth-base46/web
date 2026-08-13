@@ -69,3 +69,26 @@ function activateOnKey(e, fn) {
   window.addEventListener('resize', setVH);
   window.addEventListener('orientationchange', setVH);
 })();
+
+// ───────── SCROLLBAR WIDTH (--sbw) ─────────
+// #site-header breaks out of .container to the full viewport width, and
+// 100vw *includes* the vertical scrollbar — so a 100vw breakout is always
+// scrollbar-width too wide for the space it is centred in, hanging off the
+// right edge (body{overflow-x:hidden} was clipping it rather than showing
+// a scrollbar, which is why it went unnoticed). --sbw is that difference,
+// 0px on platforms with overlay scrollbars; styles-base.css subtracts it.
+(function () {
+  function setSBW() {
+    const sbw = window.innerWidth - document.documentElement.clientWidth;
+    document.documentElement.style.setProperty('--sbw', (sbw > 0 ? sbw : 0) + 'px');
+  }
+  setSBW();
+  window.addEventListener('resize', setSBW);
+  window.addEventListener('orientationchange', setSBW);
+  // Content that arrives after first paint can add/remove the scrollbar
+  // (screens render into #main-content, Run Mode toggles body.no-scroll).
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(setSBW);
+    ro.observe(document.documentElement);
+  }
+})();
