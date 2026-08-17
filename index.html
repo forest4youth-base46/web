@@ -27,7 +27,13 @@
 <link rel="stylesheet" href="styles-export.css">
 <link rel="stylesheet" href="styles-responsive.css">
 </head>
-<body>
+<!-- wf-scene-on is in the markup, not left to walk-forest.js, because the
+     scene is unconditionally on at load (wfSetOn(true) at the foot of that
+     file) and the class re-points --paper*/--ink-* at their over-the-scene
+     values. Set from JS it landed ~200ms after first paint, so the header
+     and cards painted once in the opaque-paper palette and then visibly
+     re-painted in the translucent one. wfSetOn() still toggles it. -->
+<body class="wf-scene-on">
 
 <a class="skip-link" href="#main-content" data-i18n="nav.skip">Skip to main content</a>
 
@@ -39,8 +45,12 @@
      navigation) applies body.wf-scene-deep to blur it once you've actually
      navigated into functional content — crisp on the entry/role landing
      pair. Fixed behind .container (z-index:0 vs .container's z-index:1 —
-     see styles-base.css) so the real site always floats over it. -->
-<div id="wf-scene" class="wf-scene" aria-label="An animated illustration of a forest trail" role="img"></div>
+     see styles-base.css) so the real site always floats over it.
+       wf-scene--visible ships in the markup for the same reason as
+     body.wf-scene-on above: the scene starts on, and its sky/ground
+     gradient (styles-walk-forest.css) is what stands in for the finished
+     illustration until walk-forest.js has drawn it. -->
+<div id="wf-scene" class="wf-scene wf-scene--visible" aria-label="An animated illustration of a forest trail" role="img"></div>
 
 <!-- The open stop panel (walk-forest.js wfPanelHTML(), rendered here by
      wfRender()) needs to sit above the header — #wf-scene has to stay

@@ -119,6 +119,9 @@ const WF = {
   openId: null, sessionDrawerOpen: false,
   w: 1200, h: 640, raf: null, lastPaint: 0,
   onResize: null, onKey: null, onSceneClick: null,
+  // Cached handles on the scene's persistent nodes, plus the last value
+  // written to each — see wfBuildScene(). Null until the scene is built.
+  dom: null,
   _wordsEnCache: {},
 };
 
@@ -811,34 +814,30 @@ function wfPanelHTML(frame) {
     '</div>';
 }
 
-function wfRender() {
-  if (!WF.el) return;
-  wfMeasure();
-  const frame = wfComputeFrame();
-
-  const sceneSvg = '' +
-    '<g>' + frame.farTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>' +
-    '<g>' + frame.shrubs.map(sh => '<g opacity="' + sh.op + '"><ellipse cx="' + sh.cx + '" cy="' + sh.cy + '" rx="' + sh.rx + '" ry="' + sh.ry + '" fill="' + sh.fill + '"/><ellipse cx="' + sh.cx2 + '" cy="' + sh.cy2 + '" rx="' + sh.rx2 + '" ry="' + sh.ry2 + '" fill="' + sh.fill + '"/></g>').join('') + '</g>' +
-    '<path d="' + frame.trailD + '" fill="#D8CDAF"/>' +
-    '<g>' + frame.dapples.map(dp => '<ellipse cx="' + dp.cx + '" cy="' + dp.cy + '" rx="' + dp.rx + '" ry="' + dp.ry + '" fill="#F2EBD8" opacity="' + dp.op + '"/>').join('') + '</g>' +
-    '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
-
-  const pinsHtml = frame.stops.map(st => '' +
-    '<div style="position:absolute;left:' + st.pinLeft + 'px;top:' + st.pinTop + 'px;width:0;height:0;z-index:' + st.z + '">' +
-      '<button type="button" class="wf-pin-btn" aria-label="' + wfEsc(st.aria) + '" aria-expanded="' + st.expanded + '" onclick="wfOpenStop(\'' + st.id + '\')" ' +
-        'style="left:' + (-st.hit / 2).toFixed(1) + 'px;top:' + (-st.size / 2 - st.hit / 2).toFixed(1) + 'px;width:' + st.hit.toFixed(1) + 'px;height:' + st.hit.toFixed(1) + 'px">' +
-        '<div class="wf-pin-disc" style="width:' + st.size.toFixed(1) + 'px;height:' + st.size.toFixed(1) + 'px;border-color:' + (st.armed ? '#B8552E' : '#FBF9F4') + '">' +
-          '<svg viewBox="0 0 32 32" style="width:' + (st.size * 0.56).toFixed(1) + 'px;height:' + (st.size * 0.56).toFixed(1) + 'px;display:block" fill="none" stroke="' + st.color + '" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + st.glyph + '"/></svg>' +
-          (st.armed ? '<svg viewBox="0 0 40 40" style="position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);pointer-events:none" aria-hidden="true"><circle class="wf-ping" cx="20" cy="20" r="16" fill="none" stroke="#B8552E" stroke-width="2"/></svg>' : '') +
-        '</div>' +
-      '</button>' +
-      (st.showChip ? '<div class="wf-pin-chip" style="' + st.chipStyle + '"><div class="wf-pin-chip-name">' + wfEsc(st.name) + '</div><div class="wf-pin-chip-sub">' + wfEsc(st.sub) + '</div></div>' : '') +
-    '</div>'
-  ).join('');
-
-  const railHtml = frame.rail.map(rn => '<div title="' + wfEsc(rn.title) + '" style="' + rn.style + '"></div>').join('');
-
-  const html = '' +
+// ───────── persistent scene DOM ─────────
+// The scene used to be rebuilt with a single `WF.el.innerHTML = html` per
+// painted frame. That is what made the graphics flash. While the camera is
+// moving wfStep() repaints ~30x/second, and a wholesale innerHTML write
+// throws away and re-creates every element in the scene — including every
+// element carrying a CSS animation. A CSS animation restarts from its 0%
+// keyframe whenever its element is newly inserted, so across the whole 12s
+// of a move the drifting clouds, light shafts, dust motes, sun drift, pin
+// pings, arrival chips and the walker's own leg cycle never advanced past
+// their first frame: they were reset ~30x/second and strobed in place
+// instead of animating. (The funder logo <img> was re-created at that rate
+// too, and every pin was destroyed out from under the pointer mid-move —
+// the same class of breakage the "only repaint while moving" guard in
+// wfStep() already works around while the camera is at rest.)
+//
+// So the scene is built once, into stable nodes cached on WF.dom, and each
+// painted frame writes only the values that actually changed. The two
+// geometry <svg>s — the trail/tree projection and the per-stop set
+// dressing — genuinely differ every frame and still have their innards
+// replaced wholesale; the only CSS animation inside either is the tree
+// sway, which is imperceptible while the trees are being re-projected and
+// runs uninterrupted at rest, when no repaints happen at all.
+function wfSkeletonHTML() {
+  return '' +
     '<div class="wf-blur-layer">' +
     '<div style="position:absolute;left:0;right:0;top:0;height:47%;background:linear-gradient(180deg,#E7EEE4 0%,#DCE6DE 58%,#D3E0D6 100%)"></div>' +
     '<div class="wf-drift" style="position:absolute;left:-14%;top:-20%;width:70%;height:36%;border-radius:50%;background:#EEF3EB;opacity:.7;filter:blur(1px)"></div>' +
@@ -862,55 +861,282 @@ function wfRender() {
     // .wf-sun's own idle-drift animation (styles-walk-forest.css) can
     // freely animate the <img>'s transform without a CSS animation and an
     // inline style fighting over the same property on the same element.
-    '<div style="position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%)">' +
-      '<img src="assets/logo-interreg-forest4youth.png" alt="' + wfEsc(t('walk.funder')) + '" class="wf-sun" style="display:block;width:' + frame.sunWidth + 'px;height:auto;opacity:' + frame.sunOpacity + ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.35));pointer-events:none" />' +
+    '<div data-wf="sun-wrap" style="position:absolute;left:50%;transform:translateX(-50%)">' +
+      '<img src="assets/logo-interreg-forest4youth.png" alt="" data-wf="sun" class="wf-sun" style="display:block;height:auto;pointer-events:none" />' +
     '</div>' +
     '<div style="position:absolute;left:0;right:0;top:47%;bottom:0;background:linear-gradient(180deg,#B9BA9C 0%,#A9AA8E 38%,#9B9C79 100%)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:40%;height:7.5%;background:#B4C8BC;opacity:.7;filter:blur(3px)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:44.5%;height:5%;background:#C8D8D0;opacity:.8;filter:blur(2px)"></div>' +
-    '<svg style="position:absolute;inset:0;width:100%;height:100%;display:block" role="img" aria-label="' + wfEsc(t('walk.title')) + '">' + sceneSvg + '</svg>' +
+    '<svg data-wf="geo" style="position:absolute;inset:0;width:100%;height:100%;display:block" role="img" aria-label=""></svg>' +
     '<div style="position:absolute;left:-4%;bottom:-6%;width:26%;height:22%;background:#22463A;opacity:.82;clip-path:ellipse(58% 54% at 26% 92%);pointer-events:none;z-index:200"></div>' +
     '<div style="position:absolute;left:6%;bottom:-8%;width:15%;height:15%;background:#2E5A4A;opacity:.8;clip-path:ellipse(52% 52% at 44% 90%);pointer-events:none;z-index:200"></div>' +
     '<div style="position:absolute;right:-4%;bottom:-6%;width:22%;height:19%;background:#22463A;opacity:.8;clip-path:ellipse(56% 54% at 72% 94%);pointer-events:none;z-index:200"></div>' +
     '<div class="wf-mote" style="position:absolute;left:32%;top:52%;width:5px;height:5px;border-radius:50%;background:#FBF9F4;opacity:.6;pointer-events:none"></div>' +
     '<div class="wf-mote" style="position:absolute;left:58%;top:60%;width:4px;height:4px;border-radius:50%;background:#FBF9F4;opacity:.5;animation-delay:3.4s;pointer-events:none"></div>' +
     '<div class="wf-mote" style="position:absolute;left:71%;top:47%;width:6px;height:6px;border-radius:50%;background:#FBF9F4;opacity:.45;animation-delay:6.8s;pointer-events:none"></div>' +
-    '<svg style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:150" aria-hidden="true">' + frame.setLayer + '</svg>' +
-    '<div style="position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform:translateX(-58%);width:' + (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) + 'px;z-index:320;pointer-events:none;transition:opacity .6s;opacity:' + (frame.hidden ? 0 : 1) + '">' +
-      '<div class="wf-bob" style="width:100%;height:100%;position:relative">' + wfCharacterSVG(frame) + '</div>' +
+    '<svg data-wf="set" style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:150" aria-hidden="true"></svg>' +
+    '<div data-wf="char-wrap" style="position:absolute;left:50%;transform:translateX(-58%);z-index:320;pointer-events:none;transition:opacity .6s">' +
+      '<div class="wf-bob" data-wf="char-bob" style="width:100%;height:100%;position:relative"></div>' +
     '</div>' +
-    pinsHtml +
-    '<div class="wf-title-chip"><div class="wf-title-chip-main">' + wfEsc(t('walk.title')) + '</div><div class="wf-title-chip-sub">' + wfEsc(frame.stepLabel) + '</div></div>' +
-    (frame.narrow ? '<div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:rgba(244,241,234,0.92);border-top:1px solid #DCD6C8;pointer-events:none"></div>' : '') +
-    '<div class="wf-controls" style="left:20px;bottom:' + (frame.narrow ? 16 : 20) + 'px">' +
-      '<button type="button" class="wf-ctrl-btn" onclick="wfGoBack()" aria-label="' + wfEsc(t('walk.back')) + '" title="' + wfEsc(t('walk.back')) + '">' +
+    // Zero-size, statically positioned host: the pins inside it are
+    // absolute and this box establishes neither a containing block nor a
+    // stacking context, so each pin still resolves its left/top and its
+    // z-index against .wf-blur-layer exactly as it did when they were
+    // emitted as loose siblings here.
+    '<div data-wf="pins"></div>' +
+    '<div class="wf-title-chip"><div class="wf-title-chip-main" data-wf="title-main"></div><div class="wf-title-chip-sub" data-wf="title-sub"></div></div>' +
+    '<div data-wf="narrow-bar" style="position:absolute;left:0;right:0;bottom:0;height:70px;background:rgba(244,241,234,0.92);border-top:1px solid #DCD6C8;pointer-events:none;display:none"></div>' +
+    '<div class="wf-controls" data-wf="controls" style="left:20px">' +
+      '<button type="button" class="wf-ctrl-btn" data-wf="btn-back" onclick="wfGoBack()">' +
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3L5 8l5 5"/></svg></button>' +
-      '<button type="button" class="wf-ctrl-btn" onclick="wfRestart()" aria-label="' + wfEsc(t('walk.restart')) + '" title="' + wfEsc(t('walk.restart')) + '">' +
+      '<button type="button" class="wf-ctrl-btn" data-wf="btn-restart" onclick="wfRestart()">' +
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.5V5h-2.5"/></svg></button>' +
-      '<button type="button" class="wf-ctrl-btn" onclick="wfGoNext()" aria-label="' + wfEsc(t('walk.next')) + '" title="' + wfEsc(t('walk.next')) + '">' +
+      '<button type="button" class="wf-ctrl-btn" data-wf="btn-next" onclick="wfGoNext()">' +
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>' +
-      '<div class="wf-status-pill">' + wfEsc(frame.status) + '</div>' +
+      '<div class="wf-status-pill" data-wf="status"></div>' +
     '</div>' +
     // Narrow mode: below both the character (whose feet land ~47px above
     // the viewport bottom) and the control buttons (bottom:16px above) —
     // sitting in the ~16px margin already unused below them, rather than
     // mid-screen where it used to cut across the character's body.
-    '<div class="wf-rail" style="' + (frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:2px' : 'right:20px;bottom:66px') + '">' + railHtml + '</div>' +
+    '<div class="wf-rail" data-wf="rail"></div>' +
     // Narrow-mode top offset (160px) clears the site's own persistent
     // header, which wraps to ~150px tall on phone widths — #wf-scene is a
     // fixed viewport-relative layer (see index.html) behind every screen,
     // so this and the title chip above both need to duck under it
     // explicitly rather than assuming they start below it.
-    '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:220px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
+    '<a href="#implement/mod-pocket" class="wf-list-link" data-wf="list-link"></a>' +
     '</div>';
+}
 
-  WF.el.innerHTML = html;
+function wfBuildScene() {
+  if (WF.dom && WF.dom.root === WF.el && WF.el.firstChild) return;
+  WF.el.innerHTML = wfSkeletonHTML();
+  const q = (name) => WF.el.querySelector('[data-wf="' + name + '"]');
+  WF.dom = {
+    root: WF.el,
+    geo: q('geo'), set: q('set'),
+    sunWrap: q('sun-wrap'), sun: q('sun'),
+    charWrap: q('char-wrap'), charBob: q('char-bob'),
+    pins: q('pins'), pinById: new Map(),
+    titleMain: q('title-main'), titleSub: q('title-sub'),
+    narrowBar: q('narrow-bar'),
+    controls: q('controls'), status: q('status'),
+    btnBack: q('btn-back'), btnRestart: q('btn-restart'), btnNext: q('btn-next'),
+    rail: q('rail'), listLink: q('list-link'),
+    // Last value written for each keyed slot below. Re-writing an
+    // identical attribute still costs a style recalc, and this runs
+    // ~30x/second, so every write goes through wfSet().
+    last: {},
+  };
+}
+
+function wfSet(key, value, apply) {
+  const last = WF.dom.last;
+  if (last[key] === value) return;
+  last[key] = value;
+  apply(value);
+}
+
+const WF_SVG_NS = 'http://www.w3.org/2000/svg';
+
+function wfMakePin(id) {
+  const wrap = document.createElement('div');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'wf-pin-btn';
+  btn.onclick = () => wfOpenStop(id);
+  const disc = document.createElement('div');
+  disc.className = 'wf-pin-disc';
+  const glyph = document.createElementNS(WF_SVG_NS, 'svg');
+  glyph.setAttribute('viewBox', '0 0 32 32');
+  glyph.setAttribute('fill', 'none');
+  glyph.setAttribute('stroke-width', '1.9');
+  glyph.setAttribute('stroke-linecap', 'round');
+  glyph.setAttribute('stroke-linejoin', 'round');
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.style.display = 'block';
+  const path = document.createElementNS(WF_SVG_NS, 'path');
+  glyph.appendChild(path);
+  disc.appendChild(glyph);
+  btn.appendChild(disc);
+  wrap.appendChild(btn);
+  return { wrap, btn, disc, glyph, path, ping: null, chip: null, chipName: null, chipSub: null, last: {} };
+}
+
+function wfMakePing() {
+  const svg = document.createElementNS(WF_SVG_NS, 'svg');
+  svg.setAttribute('viewBox', '0 0 40 40');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('style', 'position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);pointer-events:none');
+  const circle = document.createElementNS(WF_SVG_NS, 'circle');
+  circle.setAttribute('class', 'wf-ping');
+  circle.setAttribute('cx', '20');
+  circle.setAttribute('cy', '20');
+  circle.setAttribute('r', '16');
+  circle.setAttribute('fill', 'none');
+  circle.setAttribute('stroke', '#B8552E');
+  circle.setAttribute('stroke-width', '2');
+  svg.appendChild(circle);
+  return svg;
+}
+
+function wfMakeChip() {
+  const chip = document.createElement('div');
+  chip.className = 'wf-pin-chip';
+  const name = document.createElement('div');
+  name.className = 'wf-pin-chip-name';
+  const sub = document.createElement('div');
+  sub.className = 'wf-pin-chip-sub';
+  chip.appendChild(name);
+  chip.appendChild(sub);
+  return { chip, name, sub };
+}
+
+// Pins are reconciled by stop id rather than re-emitted, so a pin that is
+// on screen for several seconds is the *same* element throughout. That is
+// what lets .wf-ping keep looping and .wf-pin-chip play its one-shot
+// wfChipFloat exactly once — and it keeps the button under the pointer
+// alive across a move, so a click on a pin lands even mid-walk.
+function wfSyncPins(frame) {
+  const byId = WF.dom.pinById;
+  const seen = new Set();
+  frame.stops.forEach(st => {
+    seen.add(st.id);
+    let p = byId.get(st.id);
+    if (!p) {
+      p = wfMakePin(st.id);
+      byId.set(st.id, p);
+      WF.dom.pins.appendChild(p.wrap);
+    }
+    const L = p.last;
+    const wrapCss = 'position:absolute;left:' + st.pinLeft + 'px;top:' + st.pinTop + 'px;width:0;height:0;z-index:' + st.z;
+    if (L.wrap !== wrapCss) { p.wrap.setAttribute('style', wrapCss); L.wrap = wrapCss; }
+    const btnCss = 'left:' + (-st.hit / 2).toFixed(1) + 'px;top:' + (-st.size / 2 - st.hit / 2).toFixed(1) +
+      'px;width:' + st.hit.toFixed(1) + 'px;height:' + st.hit.toFixed(1) + 'px';
+    if (L.btn !== btnCss) { p.btn.setAttribute('style', btnCss); L.btn = btnCss; }
+    if (L.aria !== st.aria) { p.btn.setAttribute('aria-label', st.aria); L.aria = st.aria; }
+    const expanded = String(st.expanded);
+    if (L.expanded !== expanded) { p.btn.setAttribute('aria-expanded', expanded); L.expanded = expanded; }
+    const discCss = 'width:' + st.size.toFixed(1) + 'px;height:' + st.size.toFixed(1) +
+      'px;border-color:' + (st.armed ? '#B8552E' : '#FBF9F4');
+    if (L.disc !== discCss) { p.disc.setAttribute('style', discCss); L.disc = discCss; }
+    const glyphSize = (st.size * 0.56).toFixed(1) + 'px';
+    if (L.glyphSize !== glyphSize) {
+      p.glyph.style.width = glyphSize;
+      p.glyph.style.height = glyphSize;
+      L.glyphSize = glyphSize;
+    }
+    if (L.color !== st.color) { p.glyph.setAttribute('stroke', st.color); L.color = st.color; }
+    if (L.glyph !== st.glyph) { p.path.setAttribute('d', st.glyph); L.glyph = st.glyph; }
+
+    if (st.armed && !p.ping) { p.ping = wfMakePing(); p.disc.appendChild(p.ping); }
+    else if (!st.armed && p.ping) { p.ping.remove(); p.ping = null; }
+
+    if (st.showChip && !p.chip) {
+      const made = wfMakeChip();
+      p.chip = made.chip; p.chipName = made.name; p.chipSub = made.sub;
+      L.chipCss = L.chipName = L.chipSub = null;
+      p.wrap.appendChild(p.chip);
+    } else if (!st.showChip && p.chip) {
+      p.chip.remove();
+      p.chip = p.chipName = p.chipSub = null;
+    }
+    if (p.chip) {
+      if (L.chipCss !== st.chipStyle) { p.chip.setAttribute('style', st.chipStyle); L.chipCss = st.chipStyle; }
+      if (L.chipName !== st.name) { p.chipName.textContent = st.name; L.chipName = st.name; }
+      if (L.chipSub !== st.sub) { p.chipSub.textContent = st.sub; L.chipSub = st.sub; }
+    }
+  });
+  byId.forEach((p, id) => {
+    if (seen.has(id)) return;
+    p.wrap.remove();
+    byId.delete(id);
+  });
+}
+
+function wfSyncRail(frame) {
+  const host = WF.dom.rail;
+  while (host.children.length > frame.rail.length) host.lastChild.remove();
+  while (host.children.length < frame.rail.length) host.appendChild(document.createElement('div'));
+  for (let i = 0; i < frame.rail.length; i++) {
+    const el = host.children[i];
+    const rn = frame.rail[i];
+    if (el.getAttribute('style') !== rn.style) el.setAttribute('style', rn.style);
+    if (el.getAttribute('title') !== rn.title) el.setAttribute('title', rn.title);
+  }
+}
+
+function wfRender() {
+  if (!WF.el) return;
+  wfBuildScene();
+  wfMeasure();
+  const frame = wfComputeFrame();
+  const d = WF.dom;
+
+  const sceneSvg = '' +
+    '<g>' + frame.farTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>' +
+    '<g>' + frame.shrubs.map(sh => '<g opacity="' + sh.op + '"><ellipse cx="' + sh.cx + '" cy="' + sh.cy + '" rx="' + sh.rx + '" ry="' + sh.ry + '" fill="' + sh.fill + '"/><ellipse cx="' + sh.cx2 + '" cy="' + sh.cy2 + '" rx="' + sh.rx2 + '" ry="' + sh.ry2 + '" fill="' + sh.fill + '"/></g>').join('') + '</g>' +
+    '<path d="' + frame.trailD + '" fill="#D8CDAF"/>' +
+    '<g>' + frame.dapples.map(dp => '<ellipse cx="' + dp.cx + '" cy="' + dp.cy + '" rx="' + dp.rx + '" ry="' + dp.ry + '" fill="#F2EBD8" opacity="' + dp.op + '"/>').join('') + '</g>' +
+    '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
+
+  wfSet('geo', sceneSvg, v => { d.geo.innerHTML = v; });
+  wfSet('setLayer', frame.setLayer, v => { d.set.innerHTML = v; });
+  wfSet('geoLabel', t('walk.title'), v => d.geo.setAttribute('aria-label', v));
+  wfSet('sunAlt', t('walk.funder'), v => d.sun.setAttribute('alt', v));
+
+  wfSet('sunWrap',
+    'position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%)',
+    v => d.sunWrap.setAttribute('style', v));
+  wfSet('sunImg',
+    'display:block;width:' + frame.sunWidth + 'px;height:auto;opacity:' + frame.sunOpacity +
+    ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.35));pointer-events:none',
+    v => d.sun.setAttribute('style', v));
+
+  wfSet('charWrap',
+    'position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform:translateX(-58%);width:' +
+    (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) +
+    'px;z-index:320;pointer-events:none;transition:opacity .6s;opacity:' + (frame.hidden ? 0 : 1),
+    v => d.charWrap.setAttribute('style', v));
+  // Re-draw the walker only when its pose actually changes. The leg cycle
+  // is a CSS animation on the <g>s inside this SVG, so re-emitting it every
+  // frame is precisely what used to freeze the walk mid-stride.
+  wfSet('char', (frame.poseSeated ? 'sit' : 'stand') + '|' + frame.walking + '|' + frame.footFill,
+    () => { d.charBob.innerHTML = wfCharacterSVG(frame); });
+
+  wfSyncPins(frame);
+
+  wfSet('titleMain', t('walk.title'), v => { d.titleMain.textContent = v; });
+  wfSet('titleSub', frame.stepLabel, v => { d.titleSub.textContent = v; });
+  wfSet('narrowBar', frame.narrow, v => { d.narrowBar.style.display = v ? 'block' : 'none'; });
+  wfSet('controls', 'left:20px;bottom:' + (frame.narrow ? 16 : 20) + 'px',
+    v => d.controls.setAttribute('style', v));
+  wfSet('status', frame.status, v => { d.status.textContent = v; });
+  wfSet('backLabel', t('walk.back'), v => {
+    d.btnBack.setAttribute('aria-label', v); d.btnBack.setAttribute('title', v);
+  });
+  wfSet('restartLabel', t('walk.restart'), v => {
+    d.btnRestart.setAttribute('aria-label', v); d.btnRestart.setAttribute('title', v);
+  });
+  wfSet('nextLabel', t('walk.next'), v => {
+    d.btnNext.setAttribute('aria-label', v); d.btnNext.setAttribute('title', v);
+  });
+
+  wfSyncRail(frame);
+  wfSet('rail', frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:2px' : 'right:20px;bottom:66px',
+    v => d.rail.setAttribute('style', v));
+  wfSet('listLink', frame.narrow ? 'right:14px;top:220px' : 'right:20px;bottom:22px',
+    v => d.listLink.setAttribute('style', v));
+  wfSet('listLinkText', t('walk.listlink'), v => { d.listLink.textContent = v; });
 
   // Rendered into its own body-level root, not inside #wf-scene — see the
   // #wf-panel-root comment in styles-walk-forest.css for why (z-index on a
   // descendant of #wf-scene can't out-rank .container/the header).
-  const panelRoot = document.getElementById('wf-panel-root');
-  if (panelRoot) panelRoot.innerHTML = frame.isOpen ? wfPanelHTML(frame) : '';
+  wfSet('panel', frame.isOpen ? wfPanelHTML(frame) : '', v => {
+    const panelRoot = document.getElementById('wf-panel-root');
+    if (panelRoot) panelRoot.innerHTML = v;
+  });
 }
 
 function wfMeasure() {
@@ -1010,6 +1236,11 @@ function wfExitScene() {
   if (WF.el) WF.el.classList.remove('wf-scene--visible');
   const panelRoot = document.getElementById('wf-panel-root');
   if (panelRoot) panelRoot.innerHTML = '';
+  // The scene's nodes survive an off/on cycle, but the panel root above is
+  // emptied behind wfRender()'s back, so drop the memo of what was last
+  // written — otherwise switching back on with a stop still open would see
+  // an unchanged panel string and skip re-rendering it.
+  if (WF.dom) WF.dom.last = {};
   if (!WF.active) return;
   WF.active = false;
   if (WF.raf) cancelAnimationFrame(WF.raf);

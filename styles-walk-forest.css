@@ -90,13 +90,32 @@
      (#wf-toggle-btn) switches it on/off; it never takes the page over —
      z-index stays under .container's own z-index:1 (styles-base.css) so
      the header and every screen's content sit above it exactly as
-     before. Hidden by default; walk-forest.js adds wf-scene--visible
-     while switched on. */
+     before. wf-scene--visible marks the switched-on state; index.html
+     ships it in the markup (the scene starts on — see wfSetOn(true) at
+     the foot of walk-forest.js) so there is no frame without it, and
+     wfSetOn() takes it from there. */
   position: fixed;
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: #E8EDE7;
+  /* The same sky and ground bands wfRender() draws as two absolutely
+     positioned <div>s (walk-forest.js), restated here as one gradient so
+     they are already on screen at the very first paint — before any of
+     this site's ~500KB of scripts has run, let alone walk-forest.js,
+     which loads near the end of that chain.
+       Without this the page painted plain browser white for a couple of
+     hundred milliseconds and then cut hard to the full forest scene, which
+     is the load flash. The stops are the JS bands' own values: sky runs
+     0→47% (#E7EEE4 → #DCE6DE at 58% of the band, i.e. 27.3% → #D3E0D6),
+     ground runs 47%→100% (#B9BA9C → #A9AA8E at 38% of the band, i.e.
+     67.1% → #9B9C79). Keep the two in step if either is ever retuned. */
+  background: linear-gradient(180deg,
+    #E7EEE4 0%,
+    #DCE6DE 27.3%,
+    #D3E0D6 47%,
+    #B9BA9C 47%,
+    #A9AA8E 67.1%,
+    #9B9C79 100%);
   cursor: default;
   -webkit-user-select: none;
   user-select: none;
