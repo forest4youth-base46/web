@@ -30,6 +30,41 @@
 .wfLift { transform-box: fill-box; animation: wfLift 6.5s ease-in-out infinite; }
 @keyframes wfPeg { 0%,100% { transform:rotate(-3deg); } 50% { transform:rotate(3deg); } }
 .wfPeg { transform-box: fill-box; transform-origin: top center; animation: wfPeg 6.5s ease-in-out infinite; }
+/* A log still being adjusted into place (sofa) — slower and smaller than
+   wfPeg's rocking, which reads as a freely-hanging object, not a settling
+   one. */
+@keyframes wfSettle { 0%,100% { transform:rotate(-1deg); } 50% { transform:rotate(1deg); } }
+.wfSettle { transform-box: fill-box; transform-origin: center; animation: wfSettle 11s ease-in-out infinite; }
+/* A tarp's near corner catching a breath of wind (bivouac) — a corner
+   flutter, not a whole-object sway like wfHang, so it skews rather than
+   rotates about a center. */
+@keyframes wfFlap { 0%,100% { transform:skewX(0) rotate(0deg); } 50% { transform:skewX(-2deg) rotate(-1.2deg); } }
+.wfFlap { transform-box: fill-box; transform-origin: top right; animation: wfFlap 7s ease-in-out infinite; }
+/* A quieter wfBreath for spots that want a bare hint of life rather than
+   a visible pulse (checkin's sign board) — same shape, damped amplitude.
+   Always paired with .wfBreath in markup; overriding just animation-name
+   here (not the full shorthand) lets wfBreath's own duration/easing carry
+   over unless prefers-reduced-motion's wfBreath { animation: none } rule
+   further down zeroes the duration too, which still yields no visible
+   motion — so this needs no separate reduced-motion entry of its own. */
+@keyframes wfBreathSoft { 0%,100% { transform:scale(.98); opacity:.4; } 50% { transform:scale(1.04); opacity:.55; } }
+.wfBreath.wf-breath-soft { animation-name: wfBreathSoft; }
+/* Cast-figure gestures (placing a stone, pointing at a tree, lifting a
+   pole, ...) — one shared class reused everywhere a figure's arm gets a
+   small looping rotation, per-instance character coming entirely from
+   animation-duration/delay set inline (walk-forest.js castGesture()),
+   the same idiom naming's staggered tree-sway already uses, not from a
+   separate keyframe per station.
+     Deliberately NOT transform-box:fill-box, unlike every other animated
+   class in this file — the pivot needs to be the figure's actual
+   shoulder point (an absolute coordinate in the scene's own SVG user
+   space, recomputed every frame as the figure moves), not a box derived
+   from the limb path's own bounding box, which for a diagonal arm
+   segment doesn't sit at any of its corners. Leaving transform-box at
+   its SVG default (view-box) makes the inline transform-origin px value
+   walk-forest.js sets resolve directly in that same coordinate space. */
+@keyframes wfGesture { 0%,100% { transform:rotate(-9deg); } 50% { transform:rotate(9deg); } }
+.wfGesture { animation: wfGesture 3.2s ease-in-out infinite; }
 @keyframes wfDrift { 0%,100% { transform:translateX(0); } 50% { transform:translateX(3.5%); } }
 .wf-drift { animation: wfDrift 75s ease-in-out infinite; }
 @keyframes wfDrift2 { 0%,100% { transform:translateX(0); } 50% { transform:translateX(-2.6%); } }
@@ -73,7 +108,7 @@
 @media (prefers-reduced-motion: reduce) {
   .wf-bob,.wf-ping,.wf-mote,.wf-sway,.wfThighA,.wfThighB,.wfShinA,.wfShinB,
   .wfFlick,.wfSmoke,.wfHang,.wfBreath,.wfLift,.wfPeg,.wf-drift,.wf-drift2,
-  .wf-glow,.wf-glow2 { animation: none; }
+  .wf-glow,.wf-glow2,.wfSettle,.wfFlap,.wfGesture { animation: none; }
 }
 
 /* ── scene container ──

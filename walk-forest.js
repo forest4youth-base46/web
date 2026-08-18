@@ -52,25 +52,31 @@ const WF_SPAN = {
   checkin: [-0.7, 0.75], tinyworld: [-0.55, 0.8], naming: [0, 0.9],
 };
 
-// [along trail, lateral, pose, height, facing, up] — group sizes follow
-// each activity's own description: individual work is one figure apart,
-// group work is three or four together.
+// [along trail, lateral, pose, height, facing, up, gesture] — group sizes
+// follow each activity's own description: individual work is one figure
+// apart, group work is three or four together.
+//   gesture, where present, is [durationS, delayS] for that figure's arm
+// — see castGesture() / wfBuildCast()'s use of it below. Only on the
+// figure that's the station's actual "doing something" moment (per its
+// own pocketbook-data.js purpose text); stations whose purpose is
+// stillness (soundscape, sitspot, checkin, campfire) carry none, same
+// reasoning as the prop side (wfBuildProps()) leaving those untouched.
 const WF_CAST = {
-  introduce: [[0.42, -0.66, 'kneel', 0.95, 'r']],
+  introduce: [[0.42, -0.66, 'kneel', 0.95, 'r', 0, [3.4, 0]]],
   hammock: [[0.11, 0.65, 'lie', 0.95, 'r', 0.52]],
   soundscape: [[0.34, 0.9, 'sit', 0.92], [-0.2, -0.95, 'sit', 0.92, 'l']],
-  naming: [[0.06, 0.86, 'reach', 0.95, 'l'], [0.2, 1.12, 'stand', 0.9]],
+  naming: [[0.06, 0.86, 'reach', 0.95, 'l', 0, [4.2, 0]], [0.2, 1.12, 'stand', 0.9]],
   barefoot: [[0.72, -0.16, 'stand', 0.95], [0.95, 0.2, 'stand', 0.93]],
-  palette: [[0.1, -0.62, 'reach', 0.95, 'r'], [0.18, 0.6, 'stand', 0.92]],
+  palette: [[0.1, -0.62, 'reach', 0.95, 'r', 0, [2.8, 0]], [0.18, 0.6, 'stand', 0.92]],
   senses: [[0.5, -0.8, 'stand', 0.95]],
-  tinyworld: [[-0.06, -0.92, 'kneel', 0.95, 'r'], [0.12, -0.62, 'kneel', 0.92, 'l']],
-  sofa: [[0.1, 0.62, 'sit', 0.95], [0.26, 0.96, 'sit', 0.93], [-0.16, 0.3, 'carry', 0.95, 'r']],
-  fire: [[-0.12, -0.42, 'kneel', 0.95, 'r'], [0.24, 0.4, 'kneel', 0.93, 'l'], [0.02, 0.62, 'sit', 0.92]],
-  bivouac: [[0.06, -1.5, 'reach', 0.95, 'r'], [0.24, -0.66, 'carry', 0.93, 'l']],
+  tinyworld: [[-0.06, -0.92, 'kneel', 0.95, 'r', 0, [3.6, 0]], [0.12, -0.62, 'kneel', 0.92, 'l']],
+  sofa: [[0.1, 0.62, 'sit', 0.95], [0.26, 0.96, 'sit', 0.93], [-0.16, 0.3, 'carry', 0.95, 'r', 0, [3.0, 0]]],
+  fire: [[-0.12, -0.42, 'kneel', 0.95, 'r', 0, [1.9, 0]], [0.24, 0.4, 'kneel', 0.93, 'l'], [0.02, 0.62, 'sit', 0.92]],
+  bivouac: [[0.06, -1.5, 'reach', 0.95, 'r', 0, [3.2, 0]], [0.24, -0.66, 'carry', 0.93, 'l']],
   sitspot: [[0.62, -1.25, 'sit', 0.95], [1.15, 1.3, 'sit', 0.92]],
-  roles: [[-0.06, 0.42, 'carry', 0.95, 'r'], [0.18, 0.9, 'stand', 0.93], [0.34, 1.2, 'carry', 0.92, 'l']],
-  project: [[0.05, -1.05, 'kneel', 0.95, 'r']],
-  object: [[0.02, 0.86, 'kneel', 0.95, 'l']],
+  roles: [[-0.06, 0.42, 'carry', 0.95, 'r', 0, [3.0, 0]], [0.18, 0.9, 'stand', 0.93], [0.34, 1.2, 'carry', 0.92, 'l', 0, [3.0, -1.5]]],
+  project: [[0.05, -1.05, 'kneel', 0.95, 'r', 0, [4.0, 0]]],
+  object: [[0.02, 0.86, 'kneel', 0.95, 'l', 0, [3.8, 0]]],
   checkin: [[0.1, -0.6, 'reach', 0.95, 'l'], [0.26, -0.3, 'stand', 0.93]],
   campfire: [[-0.18, -0.5, 'sit', 0.95], [0.28, -0.36, 'sit', 0.93], [0.3, 0.5, 'sit', 0.94], [-0.14, 0.52, 'sit', 0.92]],
 };
@@ -117,6 +123,10 @@ const WF = {
   from: 0, to: 0, moveStart: 0, holdEnd: 0,
   paused: false, resumeAt: 0, manual: false, reduced: false,
   openId: null, sessionDrawerOpen: false,
+  // Timestamp the walker arrived at the barefoot station, for the one
+  // scripted crouch/shoe-off/resume sequence — see wfComputeFrame()'s
+  // barefootPhase. null whenever the camera isn't currently there.
+  barefootAt: null,
   w: 1200, h: 640, raf: null, lastPaint: 0,
   onResize: null, onKey: null, onSceneClick: null,
   // Cached handles on the scene's persistent nodes, plus the last value
@@ -162,10 +172,49 @@ function wfProject(at, lat) {
   return { x, y, scale, d };
 }
 
+// Shared human-figure scale, used by both the walker (wfComputeFrame(),
+// always called with scale=1 — the walker never projects through
+// wfProject(), it's drawn at a fixed screen position/size representing
+// "right where the camera is looking") and every WF_CAST figure (via
+// wfBuildCast(), called with that figure's own projected scale). Before
+// this, the two had separate, uncalibrated formulas: the walker's height
+// was clamp(h*0.22, 120, 220) — driven by viewport HEIGHT — while a
+// WF_CAST figure's was driven by viewport WIDTH (c[3]*0.42*(w*0.42*scale)
+// = c[3]*0.1764*w*scale). At the same effective distance from camera —
+// which happens exactly when a station is held, the moment both are
+// actually on screen together — the two disagreed by roughly 20%, taller
+// or shorter depending on aspect ratio. Routing both through this one
+// function (linear in scale, same convention every other sized element in
+// the scene already follows) makes a WF_CAST figure standing where the
+// walker would be read as the same height as the walker, by construction.
+function wfPersonHeight(scale) {
+  return Math.max(120, Math.min(WF.h * 0.22, 220)) * scale;
+}
+
+// Rough size guide for wfBuildProps()/wfBuildCast(), in fractions of
+// wfPersonHeight() at the same scale — a reusable reference for tuning
+// new or existing prop sizes by eye against a person, rather than
+// guessing fresh each time. Not enforced anywhere in code.
+//   seat-height object (log, sofa frame, low stone) ......... 0.35–0.45H
+//   hand-sized stone / marker / peg .......................... 0.05–0.08H
+//   standing post / ridge pole / sign board .................. 1.6–2.0H
+//   waist-to-chest prop (fire ring, table stone) .............. 0.5–0.7H
+//   tree trunk width at person's height (for scale reference) . 0.08–0.15H
+
 // ───────── in-world cast (the activity as people doing it) ─────────
-function wfBuildCast(s, i) {
+// Every helper below pushes a shape *descriptor* — {key, tag, cls, attrs}
+// — into the caller-supplied `out` array, instead of returning an SVG
+// string. `key` is stable across frames for a given figure/call site (a
+// static, frame-independent table drives which figures/parts exist, so the
+// same sequence of descriptors comes out every call) — that's what lets
+// wfSyncSet() (below wfSyncPins) reconcile the persistent DOM node for
+// "figure 2's left arm" in place, frame after frame, rather than tearing
+// down and recreating it, which is what reset any per-figure animation
+// while the camera moved. See the wfSyncSet()/wfSyncShapes() comment for
+// the reconciliation side of this.
+function wfBuildCast(s, i, out) {
   const cast = WF_CAST[s.id];
-  if (!cast || !cast.length) return '';
+  if (!cast || !cast.length) return;
   const w = WF.w;
   const R = (v) => Math.round(v * 10) / 10;
   const SP = WF_SPAN[s.id] || [0, 1];
@@ -174,50 +223,88 @@ function wfBuildCast(s, i) {
     const pr = wfProject(i + a, lat * 1.2);
     if (!pr) return null;
     const u = w * 0.42 * pr.scale;
-    return { x: pr.x, y: pr.y - (up || 0) * 0.42 * u, u: u };
+    return { x: pr.x, y: pr.y - (up || 0) * 0.42 * u, u: u, scale: pr.scale };
   };
-  let out = '';
-  cast.forEach((c) => {
+  cast.forEach((c, fi) => {
     const b = P(c[0], c[1], c[5] || 0);
     if (!b) return;
-    const H = (c[3] || 0.95) * 0.42 * b.u;
+    // wfPersonHeight(), not the old c[3]*0.42*b.u — see that function's
+    // comment for why: b.u alone (width-based) put a WF_CAST figure at a
+    // different height than the walker at the same distance.
+    const H = (c[3] || 0.95) * wfPersonHeight(b.scale);
     if (H < 8) return;
     const pose = c[2], face = c[4] === 'l' ? -1 : 1;
     const fill = '#14302A', op = 0.74;
-    let g = c[5] ? '' : '<ellipse cx="' + R(b.x) + '" cy="' + R(b.y) + '" rx="' + R(H * 0.2) + '" ry="' + R(H * 0.06) + '" fill="#3A2E22" opacity="0.16"/>';
-    const head = (cx, cy, r) => '<circle cx="' + R(cx) + '" cy="' + R(cy) + '" r="' + R(r) + '" fill="' + fill + '" opacity="' + op + '"/>';
-    const limb = (x1, y1, x2, y2, t) => '<path d="M' + R(x1) + ' ' + R(y1) + ' L' + R(x2) + ' ' + R(y2) + '" stroke="' + fill + '" stroke-width="' + R(t) + '" stroke-linecap="round" opacity="' + op + '"/>';
+    const kp = 'c' + fi + '-';
+    if (!c[5]) {
+      out.push({ key: kp + 'shadow', tag: 'ellipse', attrs: {
+        cx: R(b.x), cy: R(b.y), rx: R(H * 0.2), ry: R(H * 0.06), fill: '#3A2E22', opacity: 0.16,
+      } });
+    }
+    const head = (key, cx, cy, r) => out.push({ key: kp + key, tag: 'circle', attrs: {
+      cx: R(cx), cy: R(cy), r: R(r), fill, opacity: op,
+    } });
+    const limb = (key, x1, y1, x2, y2, tw) => out.push({ key: kp + key, tag: 'path', attrs: {
+      d: 'M' + R(x1) + ' ' + R(y1) + ' L' + R(x2) + ' ' + R(y2), stroke: fill, 'stroke-width': R(tw), 'stroke-linecap': 'round', opacity: op,
+    } });
+    // The one arm that reads as "this figure is doing something" for
+    // stations that got a gesture assigned in WF_CAST (c[6] = [durationS,
+    // delayS]) — same path as limb('arm', ...) would draw, wrapped in a
+    // persistent <g> pivoted on the shoulder point (x1,y1) rather than
+    // drawn as a bare stroke, so wfGesture (styles-walk-forest.css) can
+    // rotate it there. Every other limb stays a plain limb() call —
+    // static, same as before.
+    const armLimb = (x1, y1, x2, y2, tw) => {
+      if (!c[6]) { limb('arm', x1, y1, x2, y2, tw); return; }
+      const [dur, delay] = c[6];
+      out.push({ key: kp + 'arm', tag: 'path',
+        group: {
+          key: kp + 'arm-grp', cls: 'wfGesture',
+          style: 'transform-origin:' + R(x1) + 'px ' + R(y1) + 'px;animation-duration:' + dur + 's;animation-delay:' + delay + 's',
+        },
+        attrs: { d: 'M' + R(x1) + ' ' + R(y1) + ' L' + R(x2) + ' ' + R(y2), stroke: fill, 'stroke-width': R(tw), 'stroke-linecap': 'round', opacity: op },
+      });
+    };
+    const torso = (key, d) => out.push({ key: kp + key, tag: 'path', attrs: { d, fill, opacity: op } });
     if (pose === 'stand' || pose === 'carry' || pose === 'reach') {
       const top = b.y - H;
-      g += limb(b.x - H * 0.06, b.y - H * 0.44, b.x - H * 0.07, b.y, H * 0.075);
-      g += limb(b.x + H * 0.06, b.y - H * 0.44, b.x + H * 0.07, b.y, H * 0.075);
-      g += '<path d="M' + R(b.x) + ' ' + R(top + H * 0.2) + ' q' + R(-H * 0.15) + ' ' + R(H * 0.07) + ' ' + R(-H * 0.15) + ' ' + R(H * 0.36) + ' l' + R(H * 0.3) + ' 0 q0 ' + R(-H * 0.29) + ' ' + R(-H * 0.15) + ' ' + R(-H * 0.36) + ' Z" fill="' + fill + '" opacity="' + op + '"/>';
-      if (pose === 'carry') g += limb(b.x, b.y - H * 0.6, b.x + face * H * 0.3, b.y - H * 0.5, H * 0.065);
-      if (pose === 'reach') g += limb(b.x, b.y - H * 0.62, b.x + face * H * 0.34, b.y - H * 0.78, H * 0.06);
-      g += head(b.x, top + H * 0.11, H * 0.115);
+      limb('legL', b.x - H * 0.06, b.y - H * 0.44, b.x - H * 0.07, b.y, H * 0.075);
+      limb('legR', b.x + H * 0.06, b.y - H * 0.44, b.x + H * 0.07, b.y, H * 0.075);
+      torso('torso', 'M' + R(b.x) + ' ' + R(top + H * 0.2) + ' q' + R(-H * 0.15) + ' ' + R(H * 0.07) + ' ' + R(-H * 0.15) + ' ' + R(H * 0.36) + ' l' + R(H * 0.3) + ' 0 q0 ' + R(-H * 0.29) + ' ' + R(-H * 0.15) + ' ' + R(-H * 0.36) + ' Z');
+      if (pose === 'carry') armLimb(b.x, b.y - H * 0.6, b.x + face * H * 0.3, b.y - H * 0.5, H * 0.065);
+      if (pose === 'reach') armLimb(b.x, b.y - H * 0.62, b.x + face * H * 0.34, b.y - H * 0.78, H * 0.06);
+      head('head', b.x, top + H * 0.11, H * 0.115);
     } else if (pose === 'sit') {
       const top = b.y - H * 0.72;
-      g += limb(b.x + face * H * 0.02, b.y - H * 0.1, b.x + face * H * 0.2, b.y - H * 0.03, H * 0.07);
-      g += '<path d="M' + R(b.x) + ' ' + R(top + H * 0.18) + ' q' + R(-H * 0.12) + ' ' + R(H * 0.06) + ' ' + R(-H * 0.12) + ' ' + R(H * 0.4) + ' l' + R(H * 0.24) + ' 0 q0 ' + R(-H * 0.34) + ' ' + R(-H * 0.12) + ' ' + R(-H * 0.4) + ' Z" fill="' + fill + '" opacity="' + op + '"/>';
-      g += limb(b.x + face * H * 0.09, b.y - H * 0.42, b.x + face * H * 0.16, b.y - H * 0.16, H * 0.05);
-      g += head(b.x, top + H * 0.1, H * 0.105);
+      limb('legL', b.x + face * H * 0.02, b.y - H * 0.1, b.x + face * H * 0.2, b.y - H * 0.03, H * 0.07);
+      torso('torso', 'M' + R(b.x) + ' ' + R(top + H * 0.18) + ' q' + R(-H * 0.12) + ' ' + R(H * 0.06) + ' ' + R(-H * 0.12) + ' ' + R(H * 0.4) + ' l' + R(H * 0.24) + ' 0 q0 ' + R(-H * 0.34) + ' ' + R(-H * 0.12) + ' ' + R(-H * 0.4) + ' Z');
+      armLimb(b.x + face * H * 0.09, b.y - H * 0.42, b.x + face * H * 0.16, b.y - H * 0.16, H * 0.05);
+      head('head', b.x, top + H * 0.1, H * 0.105);
     } else if (pose === 'kneel') {
       const top = b.y - H * 0.58;
-      g += '<ellipse cx="' + R(b.x + face * H * 0.05) + '" cy="' + R(b.y - H * 0.06) + '" rx="' + R(H * 0.17) + '" ry="' + R(H * 0.08) + '" fill="' + fill + '" opacity="' + op + '"/>';
-      g += '<path d="M' + R(b.x) + ' ' + R(top + H * 0.14) + ' q' + R(face * H * 0.1) + ' ' + R(H * 0.16) + ' ' + R(face * H * 0.04) + ' ' + R(H * 0.3) + ' l' + R(-H * 0.2) + ' ' + R(-H * 0.04) + ' q' + R(-H * 0.02) + ' ' + R(-H * 0.16) + ' ' + R(H * 0.16) + ' ' + R(-H * 0.26) + ' Z" fill="' + fill + '" opacity="' + op + '"/>';
-      g += limb(b.x + face * H * 0.05, b.y - H * 0.3, b.x + face * H * 0.24, b.y - H * 0.08, H * 0.055);
-      g += head(b.x + face * H * 0.02, top + H * 0.06, H * 0.095);
+      out.push({ key: kp + 'shin', tag: 'ellipse', attrs: {
+        cx: R(b.x + face * H * 0.05), cy: R(b.y - H * 0.06), rx: R(H * 0.17), ry: R(H * 0.08), fill, opacity: op,
+      } });
+      torso('torso', 'M' + R(b.x) + ' ' + R(top + H * 0.14) + ' q' + R(face * H * 0.1) + ' ' + R(H * 0.16) + ' ' + R(face * H * 0.04) + ' ' + R(H * 0.3) + ' l' + R(-H * 0.2) + ' ' + R(-H * 0.04) + ' q' + R(-H * 0.02) + ' ' + R(-H * 0.16) + ' ' + R(H * 0.16) + ' ' + R(-H * 0.26) + ' Z');
+      armLimb(b.x + face * H * 0.05, b.y - H * 0.3, b.x + face * H * 0.24, b.y - H * 0.08, H * 0.055);
+      head('head', b.x + face * H * 0.02, top + H * 0.06, H * 0.095);
     } else if (pose === 'lie') {
-      g += '<ellipse cx="' + R(b.x) + '" cy="' + R(b.y - H * 0.08) + '" rx="' + R(H * 0.48) + '" ry="' + R(H * 0.11) + '" fill="' + fill + '" opacity="' + op + '"/>';
-      g += head(b.x - face * H * 0.46, b.y - H * 0.16, H * 0.105);
+      out.push({ key: kp + 'body', tag: 'ellipse', attrs: {
+        cx: R(b.x), cy: R(b.y - H * 0.08), rx: R(H * 0.48), ry: R(H * 0.11), fill, opacity: op,
+      } });
+      head('head', b.x - face * H * 0.46, b.y - H * 0.16, H * 0.105);
     }
-    out += g;
   });
-  return out;
 }
 
 // ───────── in-world set dressing (materials/structures/signs) ─────────
-function wfBuildProps(s, i) {
+// Descriptor-pushing, same rationale as wfBuildCast() above: each shape
+// helper pushes {key, tag, cls, attrs} into `out` rather than returning a
+// string, keyed by call order (`n`, reset to 0 per station) — stable
+// because every station's switch case runs the exact same sequence of
+// helper calls every frame (all loop bounds below are static literals,
+// never frame-dependent), so call order is a valid, stable identity.
+function wfBuildProps(s, i, out) {
   const w = WF.w;
   const R = (v) => Math.round(v * 10) / 10;
   const OUT = 1.2;
@@ -231,44 +318,99 @@ function wfBuildProps(s, i) {
     const u = w * 0.42 * pr.scale;
     return { x: pr.x, y: pr.y - (up || 0) * UP * u, u: u, s: pr.scale };
   };
-  const esc = (t) => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // No HTML-escaping here (unlike wfEsc() elsewhere in this file) — label()
+  // below sets this via a shape descriptor's `text` field, which
+  // wfSyncShapes() applies through el.textContent, not innerHTML. That's
+  // the safe DOM API already; escaping into HTML entities first would
+  // make textContent display the literal entity text (e.g. "Tom &amp;
+  // Jerry" instead of "Tom & Jerry") instead of un-escaping it.
   const words = wfWords(s.id) || [];
-  const W = (k) => esc(words[k] || '');
-  const stone = (a, l, r, f, o, cls) => { const q = P(a, l); if (!q) return ''; return '<ellipse ' + (cls ? 'class="' + cls + '" ' : '') + 'cx="' + R(q.x) + '" cy="' + R(q.y) + '" rx="' + R(r * SZ * q.u) + '" ry="' + R(r * SZ * q.u * 0.5) + '" fill="' + f + '"' + (o != null ? ' opacity="' + o + '"' : '') + '/>'; };
-  const shade = (a, l, r) => stone(a, l, r, '#3A2E22', 0.14);
-  const ring = (a, l, r, cls, col) => { const q = P(a, l); if (!q) return ''; return '<ellipse ' + (cls ? 'class="' + cls + '" ' : '') + 'cx="' + R(q.x) + '" cy="' + R(q.y) + '" rx="' + R(r * SZ * q.u) + '" ry="' + R(r * SZ * q.u * 0.4) + '" fill="none" stroke="' + (col || '#7FA396') + '" stroke-width="' + R(Math.max(1, 0.012 * q.u)) + '"/>'; };
-  const post = (a, l, hgt, th, f) => { const b = P(a, l), t = P(a, l, hgt); if (!b || !t) return ''; const tw = Math.max(1.2, th * SZ * b.u); return '<rect x="' + R(b.x - tw / 2) + '" y="' + R(t.y) + '" width="' + R(tw) + '" height="' + R(Math.max(1, b.y - t.y)) + '" rx="' + R(tw / 2) + '" fill="' + f + '"/>'; };
-  const beam = (a1, l1, u1, a2, l2, u2, th, f, cls) => { const A = P(a1, l1, u1), B = P(a2, l2, u2); if (!A || !B) return ''; return '<path ' + (cls ? 'class="' + cls + '" ' : '') + 'd="M' + R(A.x) + ' ' + R(A.y) + ' L' + R(B.x) + ' ' + R(B.y) + '" stroke="' + f + '" stroke-width="' + R(Math.max(1.2, th * SZ * Math.max(A.u, B.u))) + '" stroke-linecap="round" fill="none"/>'; };
-  const quad = (c, f, o) => { const pts = c.map(v => P(v[0], v[1], v[2] || 0)); if (pts.some(v => !v)) return ''; return '<path d="M' + pts.map(v => R(v.x) + ' ' + R(v.y)).join(' L') + ' Z" fill="' + f + '"' + (o != null ? ' opacity="' + o + '"' : '') + '/>'; };
-  const band = (a0, a1, f, o) => { const A = wfProject(i + a0, 0), B = wfProject(i + a1, 0); if (!A || !B) return ''; const hA = w * 0.235 * A.scale, hB = w * 0.235 * B.scale; return '<path d="M' + R(A.x - hA) + ' ' + R(A.y) + ' L' + R(A.x + hA) + ' ' + R(A.y) + ' L' + R(B.x + hB) + ' ' + R(B.y) + ' L' + R(B.x - hB) + ' ' + R(B.y) + ' Z" fill="' + f + '" opacity="' + (o == null ? 1 : o) + '"/>'; };
-  const bush = (a, l, r, f, cls) => { const q = P(a, l); if (!q) return ''; const k = r * SZ * q.u; return '<path ' + (cls ? 'class="' + cls + '" ' : '') + 'd="M' + R(q.x - k) + ' ' + R(q.y) + ' q' + R(k * 0.3) + ' ' + R(-k * 1.4) + ' ' + R(k) + ' ' + R(-k * 0.55) + ' q' + R(k * 0.7) + ' ' + R(-k * 0.85) + ' ' + R(k) + ' ' + R(k * 0.55) + ' Z" fill="' + f + '"/>'; };
-  const near = Math.abs(WF.cam - i);
-  const label = (a, l, up, txt, k) => {
-    if (near > 0.42 || !txt || txt.length > 26) return '';
-    const q = P(a, l, up || 0);
-    if (!q || q.y > WF.h - 104) return '';
-    const fs = Math.min(15, (k || 0.058) * 0.62 * q.u);
-    if (fs < 8) return '';
-    const fade = (1 - near / 0.42).toFixed(2);
-    return '<text x="' + R(q.x) + '" y="' + R(q.y) + '" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="500" font-size="' + R(fs) + '" fill="#2C4F44" opacity="' + fade + '" stroke="#E7E0CE" stroke-opacity="0.8" stroke-width="' + R(fs * 0.3) + '" paint-order="stroke">' + txt + '</text>';
+  const W = (k) => words[k] || '';
+  let n = 0;
+  const key = () => 'p' + (n++);
+  const stone = (a, l, r, f, o, cls, style) => {
+    const k = key(); const q = P(a, l); if (!q) return;
+    out.push({ key: k, tag: 'ellipse', cls, style, attrs: {
+      cx: R(q.x), cy: R(q.y), rx: R(r * SZ * q.u), ry: R(r * SZ * q.u * 0.5), fill: f,
+      ...(o != null ? { opacity: o } : {}),
+    } });
   };
-  let o = '';
+  const shade = (a, l, r) => stone(a, l, r, '#3A2E22', 0.14);
+  const ring = (a, l, r, cls, col) => {
+    const k = key(); const q = P(a, l); if (!q) return;
+    out.push({ key: k, tag: 'ellipse', cls, attrs: {
+      cx: R(q.x), cy: R(q.y), rx: R(r * SZ * q.u), ry: R(r * SZ * q.u * 0.4),
+      fill: 'none', stroke: col || '#7FA396', 'stroke-width': R(Math.max(1, 0.012 * q.u)),
+    } });
+  };
+  const post = (a, l, hgt, th, f, cls) => {
+    const k = key(); const b = P(a, l), t = P(a, l, hgt); if (!b || !t) return;
+    const tw = Math.max(1.2, th * SZ * b.u);
+    out.push({ key: k, tag: 'rect', cls, attrs: {
+      x: R(b.x - tw / 2), y: R(t.y), width: R(tw), height: R(Math.max(1, b.y - t.y)), rx: R(tw / 2), fill: f,
+    } });
+  };
+  const beam = (a1, l1, u1, a2, l2, u2, th, f, cls) => {
+    const k = key(); const A = P(a1, l1, u1), B = P(a2, l2, u2); if (!A || !B) return;
+    out.push({ key: k, tag: 'path', cls, attrs: {
+      d: 'M' + R(A.x) + ' ' + R(A.y) + ' L' + R(B.x) + ' ' + R(B.y),
+      stroke: f, 'stroke-width': R(Math.max(1.2, th * SZ * Math.max(A.u, B.u))), 'stroke-linecap': 'round', fill: 'none',
+    } });
+  };
+  const quad = (c, f, o, cls) => {
+    const k = key(); const pts = c.map(v => P(v[0], v[1], v[2] || 0)); if (pts.some(v => !v)) return;
+    out.push({ key: k, tag: 'path', cls, attrs: {
+      d: 'M' + pts.map(v => R(v.x) + ' ' + R(v.y)).join(' L') + ' Z', fill: f,
+      ...(o != null ? { opacity: o } : {}),
+    } });
+  };
+  const band = (a0, a1, f, o, cls) => {
+    const k = key(); const A = wfProject(i + a0, 0), B = wfProject(i + a1, 0); if (!A || !B) return;
+    const hA = w * 0.235 * A.scale, hB = w * 0.235 * B.scale;
+    out.push({ key: k, tag: 'path', cls, attrs: {
+      d: 'M' + R(A.x - hA) + ' ' + R(A.y) + ' L' + R(A.x + hA) + ' ' + R(A.y) + ' L' + R(B.x + hB) + ' ' + R(B.y) + ' L' + R(B.x - hB) + ' ' + R(B.y) + ' Z',
+      fill: f, opacity: (o == null ? 1 : o),
+    } });
+  };
+  const bush = (a, l, r, f, cls) => {
+    const k = key(); const q = P(a, l); if (!q) return;
+    const kk = r * SZ * q.u;
+    out.push({ key: k, tag: 'path', cls, attrs: {
+      d: 'M' + R(q.x - kk) + ' ' + R(q.y) + ' q' + R(kk * 0.3) + ' ' + R(-kk * 1.4) + ' ' + R(kk) + ' ' + R(-kk * 0.55) +
+         ' q' + R(kk * 0.7) + ' ' + R(-kk * 0.85) + ' ' + R(kk) + ' ' + R(kk * 0.55) + ' Z', fill: f,
+    } });
+  };
+  const near = Math.abs(WF.cam - i);
+  const label = (a, l, up, txt, ksz) => {
+    const k = key();
+    if (near > 0.42 || !txt || txt.length > 26) return;
+    const q = P(a, l, up || 0);
+    if (!q || q.y > WF.h - 104) return;
+    const fs = Math.min(15, (ksz || 0.058) * 0.62 * q.u);
+    if (fs < 8) return;
+    const fade = (1 - near / 0.42).toFixed(2);
+    out.push({ key: k, tag: 'text', text: txt, attrs: {
+      x: R(q.x), y: R(q.y), 'text-anchor': 'middle', 'font-family': 'Open Sans, sans-serif',
+      'font-weight': 500, 'font-size': R(fs), fill: '#2C4F44', opacity: fade,
+      stroke: '#E7E0CE', 'stroke-opacity': 0.8, 'stroke-width': R(fs * 0.3), 'paint-order': 'stroke',
+    } });
+  };
   switch (s.id) {
     case 'introduce':
-      o += shade(0.42, -0.62, 0.34);
-      o += beam(0.28, -0.78, 0, 0.46, -0.72, 0, 0.026, '#6B5240');
-      o += beam(0.46, -0.72, 0, 0.41, -0.54, 0, 0.026, '#6B5240');
-      o += beam(0.41, -0.54, 0, 0.56, -0.48, 0, 0.026, '#6B5240');
-      o += stone(0.35, -0.44, 0.045, '#A8A08C') + stone(0.45, -0.37, 0.038, '#8F8877') + stone(0.55, -0.42, 0.032, '#A8A08C');
-      o += bush(0.75, -1.15, 0.3, '#3A6B5A');
-      o += label(0.42, -0.62, 0.3, W(0), 0.042);
-      return o;
+      shade(0.42, -0.62, 0.34);
+      beam(0.28, -0.78, 0, 0.46, -0.72, 0, 0.026, '#6B5240');
+      beam(0.46, -0.72, 0, 0.41, -0.54, 0, 0.026, '#6B5240');
+      beam(0.41, -0.54, 0, 0.56, -0.48, 0, 0.026, '#6B5240');
+      stone(0.35, -0.44, 0.045, '#A8A08C'); stone(0.45, -0.37, 0.038, '#8F8877'); stone(0.55, -0.42, 0.032, '#A8A08C');
+      bush(0.75, -1.15, 0.3, '#3A6B5A', 'wf-sway');
+      label(0.42, -0.62, 0.3, W(0), 0.042);
+      return;
     case 'soundscape':
-      o += shade(0.02, -0.95, 0.3) + stone(0.02, -0.95, 0.24, '#9A9382') + stone(0.01, -0.97, 0.18, '#B0A992');
-      o += ring(0.02, -0.95, 0.34, 'wfBreath') + ring(0.02, -0.95, 0.52, 'wfBreath', '#8FAEA0');
-      o += label(1.3, -1.5, 0.62, W(0), 0.036) + label(1.1, 1.5, 0.72, W(1), 0.036);
-      o += label(0.7, 1.7, 0.42, W(2), 0.036) + label(0.9, -1.9, 0.46, W(3), 0.036);
-      return o;
+      shade(0.02, -0.95, 0.3); stone(0.02, -0.95, 0.24, '#9A9382'); stone(0.01, -0.97, 0.18, '#B0A992');
+      ring(0.02, -0.95, 0.34, 'wfBreath'); ring(0.02, -0.95, 0.52, 'wfBreath', '#8FAEA0');
+      label(1.3, -1.5, 0.62, W(0), 0.036); label(1.1, 1.5, 0.72, W(1), 0.036);
+      label(0.7, 1.7, 0.42, W(2), 0.036); label(0.9, -1.9, 0.46, W(3), 0.036);
+      return;
     case 'naming': {
       const spots = [[-0.32, -0.95], [0.06, 1], [0.44, -1.1]];
       const barks = ['#6B5240', '#5B4636', '#6B5240'];
@@ -281,57 +423,82 @@ function wfBuildProps(s, i) {
         const tw = Math.max(1.6, 0.05 * base.u);
         const R2 = Math.max(8, 0.36 * base.u);
         const topY = top.y, midY = topY + R2 * 0.4, cx = base.x;
-        o += '<ellipse cx="' + R(cx) + '" cy="' + R(base.y) + '" rx="' + R(tw * 3.2) + '" ry="' + R(tw * 1.1) + '" fill="#3A2E22" opacity="0.15"/>';
-        o += '<path d="M' + R(cx - tw) + ' ' + R(base.y) + ' L' + R(cx - tw * 0.4) + ' ' + R(topY) + ' L' + R(cx + tw * 0.4) + ' ' + R(topY) + ' L' + R(cx + tw) + ' ' + R(base.y) + ' Z" fill="' + barks[k] + '"/>';
-        o += '<g class="wf-sway" style="animation-duration:' + (9 + k * 2.4) + 's;animation-delay:-' + (k * 3.1) + 's">';
-        o += '<ellipse cx="' + R(cx - R2 * 0.55) + '" cy="' + R(midY) + '" rx="' + R(R2 * 0.6) + '" ry="' + R(R2 * 0.48) + '" fill="' + crown2s[k] + '"/>';
-        o += '<ellipse cx="' + R(cx + R2 * 0.58) + '" cy="' + R(midY - R2 * 0.05) + '" rx="' + R(R2 * 0.54) + '" ry="' + R(R2 * 0.44) + '" fill="' + crown2s[k] + '"/>';
-        o += '<ellipse cx="' + R(cx) + '" cy="' + R(topY + R2 * 0.12) + '" rx="' + R(R2 * 0.9) + '" ry="' + R(R2 * 0.7) + '" fill="' + crowns[k] + '"/>';
-        o += '</g>';
-        o += label(a, l, 1.55, W(k * 2), 0.048);
+        const kt = key();
+        out.push({ key: kt + 'sh', tag: 'ellipse', attrs: {
+          cx: R(cx), cy: R(base.y), rx: R(tw * 3.2), ry: R(tw * 1.1), fill: '#3A2E22', opacity: 0.15,
+        } });
+        out.push({ key: kt + 'tr', tag: 'path', attrs: {
+          d: 'M' + R(cx - tw) + ' ' + R(base.y) + ' L' + R(cx - tw * 0.4) + ' ' + R(topY) + ' L' + R(cx + tw * 0.4) + ' ' + R(topY) + ' L' + R(cx + tw) + ' ' + R(base.y) + ' Z',
+          fill: barks[k],
+        } });
+        // The three crown ellipses share one wf-sway group (a wrapping <g>,
+        // not a shape descriptor) so they sway as one rigid unit — see
+        // wfSyncShapes()'s `group` handling for how descriptors that share
+        // a `group.key` get one persistent <g> wrapper between them.
+        const swayStyle = 'animation-duration:' + (9 + k * 2.4) + 's;animation-delay:-' + (k * 3.1) + 's';
+        const grp = { key: kt + 'crown', cls: 'wf-sway', style: swayStyle };
+        out.push({ key: kt + 'c2', tag: 'ellipse', group: grp, attrs: {
+          cx: R(cx - R2 * 0.55), cy: R(midY), rx: R(R2 * 0.6), ry: R(R2 * 0.48), fill: crown2s[k],
+        } });
+        out.push({ key: kt + 'c3', tag: 'ellipse', group: grp, attrs: {
+          cx: R(cx + R2 * 0.58), cy: R(midY - R2 * 0.05), rx: R(R2 * 0.54), ry: R(R2 * 0.44), fill: crown2s[k],
+        } });
+        out.push({ key: kt + 'c1', tag: 'ellipse', group: grp, attrs: {
+          cx: R(cx), cy: R(topY + R2 * 0.12), rx: R(R2 * 0.9), ry: R(R2 * 0.7), fill: crowns[k],
+        } });
+        label(a, l, 1.55, W(k * 2), 0.048);
       }
-      return o;
+      return;
     }
     case 'hammock': {
       // l=1.9 for the far post put it well past a full viewport width off
       // the right edge — pulled the whole span in (0.6/1.25/1.9 -> 0.3/0.65/1.0).
       const A = P(-0.12, 0.3, 0.8), B = P(0.34, 1.0, 0.8), M = P(0.11, 0.65, 0.5);
-      if (!A || !B || !M) return '';
-      o += post(-0.12, 0.3, 1.15, 0.05, '#5B4636') + post(0.34, 1.0, 1.15, 0.05, '#5B4636');
-      o += '<g class="wfHang">';
-      o += '<path d="M' + R(A.x) + ' ' + R(A.y) + ' Q' + R(M.x) + ' ' + R(M.y + 0.12 * M.u) + ' ' + R(B.x) + ' ' + R(B.y) + ' Q' + R(M.x) + ' ' + R(M.y - 0.16 * M.u) + ' ' + R(A.x) + ' ' + R(A.y) + ' Z" fill="#D87B4F" opacity="0.9"/>';
-      o += '<path d="M' + R(A.x) + ' ' + R(A.y) + ' Q' + R(M.x) + ' ' + R(M.y + 0.12 * M.u) + ' ' + R(B.x) + ' ' + R(B.y) + '" fill="none" stroke="#B8552E" stroke-width="' + R(Math.max(1.5, 0.022 * M.u)) + '"/>';
-      o += '</g>';
-      o += label(0.11, 0.65, 0.34, W(0), 0.042);
-      return o;
+      if (!A || !B || !M) return;
+      post(-0.12, 0.3, 1.15, 0.05, '#5B4636'); post(0.34, 1.0, 1.15, 0.05, '#5B4636');
+      const kh = key();
+      const grp = { key: kh + 'hang', cls: 'wfHang' };
+      out.push({ key: kh + 'cloth', tag: 'path', group: grp, attrs: {
+        d: 'M' + R(A.x) + ' ' + R(A.y) + ' Q' + R(M.x) + ' ' + R(M.y + 0.12 * M.u) + ' ' + R(B.x) + ' ' + R(B.y) + ' Q' + R(M.x) + ' ' + R(M.y - 0.16 * M.u) + ' ' + R(A.x) + ' ' + R(A.y) + ' Z',
+        fill: '#D87B4F', opacity: 0.9,
+      } });
+      out.push({ key: kh + 'edge', tag: 'path', group: grp, attrs: {
+        d: 'M' + R(A.x) + ' ' + R(A.y) + ' Q' + R(M.x) + ' ' + R(M.y + 0.12 * M.u) + ' ' + R(B.x) + ' ' + R(B.y),
+        fill: 'none', stroke: '#B8552E', 'stroke-width': R(Math.max(1.5, 0.022 * M.u)),
+      } });
+      label(0.11, 0.65, 0.34, W(0), 0.042);
+      return;
     }
     case 'barefoot': {
       const mat = ['#7FA396', '#6B5240', '#9A7B57', '#3F6B54', '#A8A08C'];
       const speck = ['#5E8C77', '#4A3A2C', '#B08A5E', '#2F5A46', '#BDB6A4'];
       for (let k = 0; k < 5; k++) {
         const a0 = -0.62 + k * 0.26;
-        o += band(a0, a0 + 0.24, mat[k], 0.55);
+        band(a0, a0 + 0.24, mat[k], 0.55);
         for (let j = 0; j < 9; j++) {
           const t = a0 + 0.03 + (j % 3) * 0.08, lat = -0.62 + ((j * 7) % 9) * 0.16;
-          o += stone(t, lat / OUT, 0.05, speck[k], 0.85);
+          stone(t, lat / OUT, 0.05, speck[k], 0.85);
         }
-        o += label(a0 + 0.12, 0.62, 0.16, W(k), 0.05);
+        label(a0 + 0.12, 0.62, 0.16, W(k), 0.05);
       }
-      o += shade(-0.78, -0.58, 0.12) + stone(-0.8, -0.6, 0.1, '#4A3A2C') + stone(-0.72, -0.5, 0.1, '#4A3A2C');
-      for (let k = 0; k < 5; k++) o += stone(-0.5 + k * 0.26, (k % 2 ? 0.07 : -0.07) / OUT, 0.05, '#3A2E22', 0.22);
-      return o;
+      shade(-0.78, -0.58, 0.12); stone(-0.8, -0.6, 0.1, '#4A3A2C'); stone(-0.72, -0.5, 0.1, '#4A3A2C');
+      for (let k = 0; k < 5; k++) stone(-0.5 + k * 0.26, (k % 2 ? 0.07 : -0.07) / OUT, 0.05, '#3A2E22', 0.22);
+      return;
     }
     case 'palette': {
       const cols = ['#3F6B54', '#7FA396', '#8A6C52', '#B8552E'];
-      o += post(-0.04, -0.72, 0.5, 0.022, '#6B5240') + post(0.16, 0.72, 0.5, 0.022, '#6B5240');
-      o += beam(-0.04, -0.72, 0.48, 0.16, 0.72, 0.48, 0.008, '#C8BFA6');
+      post(-0.04, -0.72, 0.5, 0.022, '#6B5240'); post(0.16, 0.72, 0.5, 0.022, '#6B5240');
+      beam(-0.04, -0.72, 0.48, 0.16, 0.72, 0.48, 0.008, '#C8BFA6');
       for (let k = 0; k < 4; k++) {
         const l = -0.46 + k * 0.3, q = P(0.06, l, 0.44);
+        const kp = key();
         if (!q) continue;
-        o += '<g class="wfPeg"><rect x="' + R(q.x - 0.035 * q.u) + '" y="' + R(q.y) + '" width="' + R(0.07 * q.u) + '" height="' + R(0.1 * q.u) + '" rx="' + R(0.012 * q.u) + '" fill="' + cols[k] + '"/></g>';
+        out.push({ key: kp, tag: 'rect', cls: 'wfPeg', attrs: {
+          x: R(q.x - 0.035 * q.u), y: R(q.y), width: R(0.07 * q.u), height: R(0.1 * q.u), rx: R(0.012 * q.u), fill: cols[k],
+        } });
       }
-      for (let k = 0; k < 3; k++) o += label(0.06, -0.46 + k * 0.3, 0.3, W(k), 0.04);
-      return o;
+      for (let k = 0; k < 3; k++) label(0.06, -0.46 + k * 0.3, 0.3, W(k), 0.04);
+      return;
     }
     case 'senses':
       // wfWords('senses') resolves to VISUAL.senses's own <text> node
@@ -341,91 +508,119 @@ function wfBuildProps(s, i) {
       // ("2") where a sense word ("smell") belonged and vice versa.
       for (let k = 0; k < 5; k++) {
         const a = -0.44 + k * 0.22, l = k % 2 ? 0.6 : -0.6;
-        o += shade(a, l, 0.11) + stone(a, l, 0.1, '#A8A08C');
-        o += label(a, l, 0.13, W(5 + k), 0.05) + label(a, l, 0.27, W(k), 0.038);
+        shade(a, l, 0.11);
+        // Staggered per marker — an "awareness cascade" from one marker
+        // to the next, matching the 5-4-3-2-1 grounding sequence rather
+        // than five rings pulsing in lockstep. Same technique naming's
+        // trees use (inline animation-delay alongside the shared class).
+        stone(a, l, 0.1, '#A8A08C', null, 'wfBreath', 'animation-delay:-' + (k * 1.9).toFixed(1) + 's');
+        label(a, l, 0.13, W(5 + k), 0.05); label(a, l, 0.27, W(k), 0.038);
       }
-      return o;
+      return;
     case 'tinyworld':
-      o += shade(0, -0.78, 0.42) + stone(0, -0.78, 0.36, '#6B5240', 0.5) + stone(0, -0.78, 0.28, '#5B4636', 0.55);
-      o += bush(-0.08, -0.9, 0.1, '#47775F') + bush(0.06, -0.68, 0.08, '#3A6B5A');
-      o += post(-0.02, -0.8, 0.12, 0.012, '#6B5240') + post(0.04, -0.74, 0.16, 0.012, '#6B5240');
-      o += stone(0.1, -0.88, 0.05, '#A8A08C') + stone(-0.06, -0.66, 0.04, '#9A9382');
-      o += label(0, -0.78, 0.46, W(0), 0.044);
-      return o;
+      shade(0, -0.78, 0.42); stone(0, -0.78, 0.36, '#6B5240', 0.5); stone(0, -0.78, 0.28, '#5B4636', 0.55);
+      bush(-0.08, -0.9, 0.1, '#47775F', 'wf-sway'); bush(0.06, -0.68, 0.08, '#3A6B5A', 'wf-sway');
+      post(-0.02, -0.8, 0.12, 0.012, '#6B5240'); post(0.04, -0.74, 0.16, 0.012, '#6B5240');
+      stone(0.1, -0.88, 0.05, '#A8A08C'); stone(-0.06, -0.66, 0.04, '#9A9382');
+      label(0, -0.78, 0.46, W(0), 0.044);
+      return;
     case 'sofa':
-      o += shade(0.1, 0.72, 0.4);
-      o += beam(-0.04, 0.42, 0.09, 0.22, 1.04, 0.09, 0.07, '#6B5240');
-      o += beam(0.06, 0.44, 0.26, 0.32, 1.06, 0.26, 0.05, '#5B4636');
-      o += post(0.06, 0.44, 0.26, 0.035, '#5B4636') + post(0.32, 1.06, 0.26, 0.035, '#5B4636');
-      o += stone(-0.14, 0.36, 0.06, '#9A9382') + stone(0.34, 1.16, 0.06, '#9A9382');
-      return o;
+      shade(0.1, 0.72, 0.4);
+      beam(-0.04, 0.42, 0.09, 0.22, 1.04, 0.09, 0.07, '#6B5240');
+      // Slower/smaller than wfPeg's rocking — a log still being settled
+      // into place, not an object swinging freely.
+      beam(0.06, 0.44, 0.26, 0.32, 1.06, 0.26, 0.05, '#5B4636', 'wfSettle');
+      post(0.06, 0.44, 0.26, 0.035, '#5B4636'); post(0.32, 1.06, 0.26, 0.035, '#5B4636');
+      stone(-0.14, 0.36, 0.06, '#9A9382'); stone(0.34, 1.16, 0.06, '#9A9382');
+      return;
     case 'fire': {
-      for (let k = 0; k < 7; k++) { const ang = k / 7 * Math.PI * 2; o += stone(0.06 + Math.cos(ang) * 0.15, Math.sin(ang) * 0.36, 0.06, '#9A9382'); }
-      o += beam(-0.04, -0.2, 0.02, 0.16, 0.2, 0.2, 0.028, '#6B5240') + beam(0.16, -0.2, 0.02, -0.04, 0.2, 0.2, 0.028, '#6B5240');
+      for (let k = 0; k < 7; k++) { const ang = k / 7 * Math.PI * 2; stone(0.06 + Math.cos(ang) * 0.15, Math.sin(ang) * 0.36, 0.06, '#9A9382'); }
+      beam(-0.04, -0.2, 0.02, 0.16, 0.2, 0.2, 0.028, '#6B5240'); beam(0.16, -0.2, 0.02, -0.04, 0.2, 0.2, 0.028, '#6B5240');
       const f = P(0.06, 0, 0.16);
+      const kf = key();
       if (f) {
-        o += '<path class="wfFlick" d="M' + R(f.x) + ' ' + R(f.y - 0.3 * f.u) + ' q' + R(0.11 * f.u) + ' ' + R(0.18 * f.u) + ' ' + R(0.11 * f.u) + ' ' + R(0.28 * f.u) + ' a' + R(0.11 * f.u) + ' ' + R(0.11 * f.u) + ' 0 0 1 ' + R(-0.22 * f.u) + ' 0 q0 ' + R(-0.1 * f.u) + ' ' + R(0.11 * f.u) + ' ' + R(-0.28 * f.u) + ' Z" fill="#D87B4F"/>';
-        o += '<circle class="wfSmoke" cx="' + R(f.x) + '" cy="' + R(f.y - 0.36 * f.u) + '" r="' + R(0.07 * f.u) + '" fill="#C8D8D0"/>';
+        out.push({ key: kf + 'flame', tag: 'path', cls: 'wfFlick', attrs: {
+          d: 'M' + R(f.x) + ' ' + R(f.y - 0.3 * f.u) + ' q' + R(0.11 * f.u) + ' ' + R(0.18 * f.u) + ' ' + R(0.11 * f.u) + ' ' + R(0.28 * f.u) + ' a' + R(0.11 * f.u) + ' ' + R(0.11 * f.u) + ' 0 0 1 ' + R(-0.22 * f.u) + ' 0 q0 ' + R(-0.1 * f.u) + ' ' + R(0.11 * f.u) + ' ' + R(-0.28 * f.u) + ' Z',
+          fill: '#D87B4F',
+        } });
+        out.push({ key: kf + 'smoke', tag: 'circle', cls: 'wfSmoke', attrs: {
+          cx: R(f.x), cy: R(f.y - 0.36 * f.u), r: R(0.07 * f.u), fill: '#C8D8D0',
+        } });
       }
-      o += label(0.06, 0, 0.85, W(8), 0.044);
-      return o;
+      label(0.06, 0, 0.85, W(8), 0.044);
+      return;
     }
     case 'bivouac':
-      o += post(-0.06, -1.3, 0.4, 0.022, '#5B4636') + post(0.2, -0.86, 0.4, 0.022, '#5B4636');
-      o += beam(-0.06, -1.3, 0.39, 0.2, -0.86, 0.39, 0.014, '#6B5240');
-      o += quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.26, -0.66, 0], [0, -1.12, 0]], '#3F6B54', 0.92);
-      o += quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.14, -1.06, 0], [-0.12, -1.52, 0]], '#47775F', 0.88);
-      o += stone(0.3, -0.6, 0.05, '#9A9382') + stone(-0.16, -1.5, 0.045, '#9A9382');
-      o += label(0.07, -1.08, 0.5, W(0), 0.04);
-      return o;
+      post(-0.06, -1.3, 0.4, 0.022, '#5B4636'); post(0.2, -0.86, 0.4, 0.022, '#5B4636');
+      beam(-0.06, -1.3, 0.39, 0.2, -0.86, 0.39, 0.014, '#6B5240');
+      // Only the near panel flaps — the far/back panel sits behind the
+      // ridge and wouldn't catch a believable gust the same way.
+      quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.26, -0.66, 0], [0, -1.12, 0]], '#3F6B54', 0.92, 'wfFlap');
+      quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.14, -1.06, 0], [-0.12, -1.52, 0]], '#47775F', 0.88);
+      stone(0.3, -0.6, 0.05, '#9A9382'); stone(-0.16, -1.5, 0.045, '#9A9382');
+      label(0.07, -1.08, 0.5, W(0), 0.04);
+      return;
     case 'sitspot':
-      o += shade(0.02, -0.95, 0.3) + stone(0.02, -0.95, 0.25, '#9A9382') + stone(0.03, -0.97, 0.18, '#B0A992');
-      o += ring(0.02, -0.95, 0.32, 'wfBreath') + ring(0.02, -0.95, 0.5, 'wfBreath', '#8FAEA0');
-      o += label(0.55, -1.05, 0.34, W(0), 0.04);
-      return o;
+      shade(0.02, -0.95, 0.3); stone(0.02, -0.95, 0.25, '#9A9382'); stone(0.03, -0.97, 0.18, '#B0A992');
+      ring(0.02, -0.95, 0.32, 'wfBreath'); ring(0.02, -0.95, 0.5, 'wfBreath', '#8FAEA0');
+      label(0.55, -1.05, 0.34, W(0), 0.04);
+      return;
     case 'roles':
-      o += shade(0.06, 0.74, 0.44);
-      o += beam(-0.12, 0.48, 0.07, 0.24, 1.02, 0.07, 0.11, '#6B5240');
-      o += stone(-0.06, 0.58, 0.05, '#B8552E') + stone(0.05, 0.74, 0.05, '#7FA396') + stone(0.16, 0.9, 0.05, '#C8BFA6');
-      o += label(-0.06, 0.58, 0.26, W(0), 0.042) + label(0.05, 0.74, 0.26, W(2), 0.042) + label(0.16, 0.9, 0.26, W(4), 0.042);
-      return o;
+      shade(0.06, 0.74, 0.44);
+      beam(-0.12, 0.48, 0.07, 0.24, 1.02, 0.07, 0.11, '#6B5240');
+      // Role-tokens rock independently — objects actively being handed off.
+      stone(-0.06, 0.58, 0.05, '#B8552E', null, 'wfPeg'); stone(0.05, 0.74, 0.05, '#7FA396', null, 'wfPeg'); stone(0.16, 0.9, 0.05, '#C8BFA6', null, 'wfPeg');
+      label(-0.06, 0.58, 0.26, W(0), 0.042); label(0.05, 0.74, 0.26, W(2), 0.042); label(0.16, 0.9, 0.26, W(4), 0.042);
+      return;
     case 'project': {
       const c = [[-0.26, -1.3], [-0.26, -0.58], [0.36, -0.58], [0.36, -1.3]];
-      for (let k = 0; k < 4; k++) o += post(c[k][0], c[k][1], 0.2, 0.016, '#6B5240');
-      for (let k = 0; k < 4; k++) { const a = c[k], b = c[(k + 1) % 4]; o += beam(a[0], a[1], 0.18, b[0], b[1], 0.18, 0.007, '#C8BFA6'); }
-      o += post(0.05, -0.94, 0.42, 0.02, '#3A6B5A') + bush(0.05, -0.94, 0.17, '#47775F');
-      o += label(0.05, -0.94, 0.62, W(8), 0.044);
-      return o;
+      for (let k = 0; k < 4; k++) post(c[k][0], c[k][1], 0.2, 0.016, '#6B5240');
+      for (let k = 0; k < 4; k++) { const a = c[k], b = c[(k + 1) % 4]; beam(a[0], a[1], 0.18, b[0], b[1], 0.18, 0.007, '#C8BFA6'); }
+      post(0.05, -0.94, 0.42, 0.02, '#3A6B5A'); bush(0.05, -0.94, 0.17, '#47775F', 'wf-sway');
+      label(0.05, -0.94, 0.62, W(8), 0.044);
+      return;
     }
     case 'object': {
-      o += shade(0, 0.7, 0.26) + stone(0, 0.7, 0.22, '#9A9382');
+      shade(0, 0.7, 0.26); stone(0, 0.7, 0.22, '#9A9382');
       const q = P(0, 0.7, 0.24);
-      if (q) o += '<g class="wfLift"><ellipse cx="' + R(q.x) + '" cy="' + R(q.y) + '" rx="' + R(0.09 * q.u) + '" ry="' + R(0.07 * q.u) + '" fill="#8A6C52"/></g>';
-      o += label(0, 0.7, 0.48, W(4), 0.044);
-      return o;
+      const ko = key();
+      if (q) out.push({ key: ko, tag: 'ellipse', cls: 'wfLift', attrs: {
+        cx: R(q.x), cy: R(q.y), rx: R(0.09 * q.u), ry: R(0.07 * q.u), fill: '#8A6C52',
+      } });
+      label(0, 0.7, 0.48, W(4), 0.044);
+      return;
     }
     case 'checkin':
-      o += post(0, -0.92, 0.56, 0.02, '#6B5240') + post(0.1, -0.48, 0.56, 0.02, '#6B5240');
-      o += quad([[0, -0.92, 0.56], [0.1, -0.48, 0.56], [0.1, -0.48, 0.3], [0, -0.92, 0.3]], '#E6DCC4');
-      o += label(0.05, -0.7, 0.5, W(0), 0.044) + label(0.05, -0.7, 0.38, W(1), 0.04);
-      return o;
+      post(0, -0.92, 0.56, 0.02, '#6B5240'); post(0.1, -0.48, 0.56, 0.02, '#6B5240');
+      // Very low-amplitude breathing highlight — reuses wfBreath, damped
+      // via .wf-breath-soft (styles-walk-forest.css) rather than a new
+      // keyframe, since the shape is the same pulse, just quieter.
+      quad([[0, -0.92, 0.56], [0.1, -0.48, 0.56], [0.1, -0.48, 0.3], [0, -0.92, 0.3]], '#E6DCC4', null, 'wfBreath wf-breath-soft');
+      label(0.05, -0.7, 0.5, W(0), 0.044); label(0.05, -0.7, 0.38, W(1), 0.04);
+      return;
     case 'campfire': {
-      for (let k = 0; k < 6; k++) { const ang = k / 6 * Math.PI * 2 + 0.4; o += stone(0.05 + Math.cos(ang) * 0.13, Math.sin(ang) * 0.32, 0.055, '#8F8877'); }
+      for (let k = 0; k < 6; k++) { const ang = k / 6 * Math.PI * 2 + 0.4; stone(0.05 + Math.cos(ang) * 0.13, Math.sin(ang) * 0.32, 0.055, '#8F8877'); }
       const f = P(0.05, 0, 0.08);
+      const kc = key();
       if (f) {
-        o += '<ellipse class="wfBreath" cx="' + R(f.x) + '" cy="' + R(f.y) + '" rx="' + R(0.55 * f.u) + '" ry="' + R(0.22 * f.u) + '" fill="#D87B4F" opacity="0.2"/>';
-        o += '<path class="wfFlick" d="M' + R(f.x) + ' ' + R(f.y - 0.2 * f.u) + ' q' + R(0.08 * f.u) + ' ' + R(0.12 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(0.18 * f.u) + ' a' + R(0.08 * f.u) + ' ' + R(0.08 * f.u) + ' 0 0 1 ' + R(-0.16 * f.u) + ' 0 q0 ' + R(-0.06 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(-0.18 * f.u) + ' Z" fill="#B8552E"/>';
+        out.push({ key: kc + 'glow', tag: 'ellipse', cls: 'wfBreath', attrs: {
+          cx: R(f.x), cy: R(f.y), rx: R(0.55 * f.u), ry: R(0.22 * f.u), fill: '#D87B4F', opacity: 0.2,
+        } });
+        out.push({ key: kc + 'flame', tag: 'path', cls: 'wfFlick', attrs: {
+          d: 'M' + R(f.x) + ' ' + R(f.y - 0.2 * f.u) + ' q' + R(0.08 * f.u) + ' ' + R(0.12 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(0.18 * f.u) + ' a' + R(0.08 * f.u) + ' ' + R(0.08 * f.u) + ' 0 0 1 ' + R(-0.16 * f.u) + ' 0 q0 ' + R(-0.06 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(-0.18 * f.u) + ' Z',
+          fill: '#B8552E',
+        } });
       }
-      o += beam(-0.26, -0.75, 0.05, -0.06, -0.38, 0.05, 0.075, '#6B5240');
-      o += beam(0.28, 0.38, 0.05, 0.48, 0.75, 0.05, 0.075, '#6B5240');
-      o += label(0.05, 0, 0.5, W(0), 0.04);
-      return o;
+      beam(-0.26, -0.75, 0.05, -0.06, -0.38, 0.05, 0.075, '#6B5240');
+      beam(0.28, 0.38, 0.05, 0.48, 0.75, 0.05, 0.075, '#6B5240');
+      label(0.05, 0, 0.5, W(0), 0.04);
+      return;
     }
     default:
-      return '';
+      return;
   }
 }
-function wfBuildSet(s, i) { return wfBuildProps(s, i) + wfBuildCast(s, i); }
+function wfBuildSet(s, i, out) { wfBuildProps(s, i, out); wfBuildCast(s, i, out); }
 
 // ───────── state machine ─────────
 function wfDwellMs() { return WF_DWELL_MS; }
@@ -455,7 +650,19 @@ function wfStep(now) {
   // scene's innerHTML ~30x/second even at rest, destroying and recreating
   // every pin/control/link out from under the pointer — real clicks on
   // them ranged from unreliable to impossible.
-  if ((wasMoving || WF.mode === 'move') && now - (WF.lastPaint || 0) > 32) {
+  //   One exception: the barefoot station's scripted crouch/shoe-off/
+  // resume sequence (wfComputeFrame()'s barefootPhase) is time-driven,
+  // not camera-driven — it plays out entirely while WF.mode is 'hold',
+  // so without this it would never advance past whatever phase happened
+  // to be current on the single render that starts it. barefootTicking
+  // mirrors wfComputeFrame()'s own "are we at this station" check rather
+  // than reading WF.barefootAt directly, since that's only ever set
+  // *inside* the render this is deciding whether to trigger.
+  const camIndex = Math.round(WF.cam);
+  const atStation = Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
+  const barefootTicking = atStation && atStation.id === 'barefoot' &&
+    (WF.barefootAt == null || now - WF.barefootAt < 3300);
+  if ((wasMoving || WF.mode === 'move' || barefootTicking) && now - (WF.lastPaint || 0) > 32) {
     WF.lastPaint = now; wfRender();
   }
 }
@@ -631,17 +838,54 @@ function wfComputeFrame() {
     else { if (d < -0.4) return; t = 1 + d / 0.4; }
     const op = t * t * (3 - 2 * t);
     if (op < 0.02) return;
-    const body = wfBuildSet(s, i);
-    if (body) setPieces.push({ d, html: '<g opacity="' + op.toFixed(2) + '">' + body + '</g>' });
+    const shapes = [];
+    wfBuildSet(s, i, shapes);
+    if (shapes.length) setPieces.push({ id: s.id, d, op: op.toFixed(2), shapes });
   });
   setPieces.sort((a, b) => b.d - a.d);
-  const setLayer = setPieces.map(x => x.html).join('');
 
+  const now = typeof performance !== 'undefined' ? performance.now() : 0;
   const atStop = Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
   const atId = atStop ? atStop.id : '';
   const seated = atId === 'soundscape' || atId === 'sitspot' || atId === 'campfire';
   const hidden = atId === 'hammock';
   const shoeless = atId === 'barefoot';
+
+  // Barefoot's one scripted moment: the walker crouches, a shoe comes
+  // off, then it stands and resumes — not just the instant footFill
+  // colour swap `shoeless` alone gives it. Timed off elapsed time since
+  // arrival (WF.barefootAt), the same convention WF.holdEnd/WF_DWELL_MS
+  // already use elsewhere, so it plays once per visit regardless of
+  // repaint cadence. Cleared (WF.barefootAt = null) the moment the
+  // camera leaves this station — see wfGoBack()/wfGoNext()/wfRestart(),
+  // which all reset WF.cam away from here — so a manual skip mid-
+  // sequence can't leave the walker stuck crouched once the camera has
+  // actually moved on to somewhere else.
+  // null (not the string 'stand') outside barefoot, so wfCharacterSVG()
+  // can tell "standing normally, elsewhere" apart from "standing at
+  // barefoot, sequence finished" — both would otherwise read as the same
+  // 'stand' value, and the walker would show a phantom shoe at every
+  // other station too.
+  let barefootPhase = null;
+  if (shoeless && !WF.reduced) {
+    // wfEnterScene() never starts the rAF loop when WF.reduced is true,
+    // so wfStep() (the only thing that keeps this ticking forward once
+    // the camera stops moving — see its own barefootTicking comment)
+    // never runs either: the sequence would render once, on whatever
+    // single synchronous call happens to trigger it, and then freeze
+    // there indefinitely. Skipping straight to the settled end state
+    // is the same choice wfGoBack()/wfGoNext()/wfRestart() already make
+    // for the camera move itself under reduced motion — jump to the
+    // result, don't play a transition nothing will advance.
+    if (WF.barefootAt == null) WF.barefootAt = now;
+    const elapsed = now - WF.barefootAt;
+    if (elapsed < 900) barefootPhase = 'crouch-in';
+    else if (elapsed < 2400) barefootPhase = 'crouch';
+    else if (elapsed < 3300) barefootPhase = 'crouch-out';
+    else barefootPhase = 'stand';
+  } else {
+    WF.barefootAt = null;
+  }
 
   const rail = ACTIVITIES.map((s, i) => {
     const group = GROUPS.find(g => g.id === s.group);
@@ -659,7 +903,6 @@ function wfComputeFrame() {
 
   const walking = WF.mode === 'move' && !WF.paused && !WF.openId && !WF.reduced;
   const openStop = ACTIVITIES.find(s => s.id === WF.openId) || null;
-  const now = typeof performance !== 'undefined' ? performance.now() : 0;
   let status = t('walk.status.walking');
   if (WF.openId) status = t('walk.status.paused');
   else if (WF.paused && WF.resumeAt !== Infinity) {
@@ -671,7 +914,10 @@ function wfComputeFrame() {
   // among mature trees. This lands closer to 35-45% depending on viewport,
   // still legible as the "you are here" marker without competing with the
   // canopy for scale.
-  const charH = Math.max(120, Math.min(h * 0.22, 220));
+  // wfPersonHeight(1) — the walker is the scale=1 reference every WF_CAST
+  // figure's own height (wfBuildCast()) is now calibrated against; see
+  // that function's comment.
+  const charH = wfPersonHeight(1);
 
   // Funder credit "sun": grows and brightens as the walk approaches its
   // final stop, reusing the same distance→scale falloff wfProject() uses
@@ -688,12 +934,13 @@ function wfComputeFrame() {
   const sunGlow = (8 + sunT * 16).toFixed(0);
 
   return {
-    trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setLayer,
+    trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setPieces,
     narrow, walking, sunOpacity, sunWidth, sunGlow,
     stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
     status,
     useArtSlot: false, poseStand: !seated, poseSeated: seated,
     footFill: shoeless ? '#C9A88A' : '#14302A',
+    barefootPhase,
     charH, hidden,
     isOpen: !!openStop,
     open: openStop ? {
@@ -748,12 +995,28 @@ function wfCharacterSVG(frame) {
   }
   const legA = frame.walking ? 'wfThighA' : '', legB = frame.walking ? 'wfThighB' : '';
   const shinA = frame.walking ? 'wfShinA' : '', shinB = frame.walking ? 'wfShinB' : '';
+  // The barefoot station's one scripted beat: a shoe, set down beside the
+  // left foot, appears once the crouch has settled (not during crouch-in
+  // — it would read as dropping mid-motion) and then just stays there —
+  // a shoe left on the ground once it's off, rather than a shape that
+  // needs to be caught disappearing again on some later frame no one is
+  // forcing a repaint for once WF.mode goes back to a plain 'hold' (see
+  // wfStep()'s barefootTicking window, which stops forcing repaints
+  // shortly after this same boundary). The wrapping <g>'s own crouch
+  // transform (wfRender()'s charWrap style) is what actually lowers the
+  // whole figure to reach it — this shape only needs its own resting
+  // position beside the foot, not a fall/removal arc of its own.
+  const showShoe = frame.barefootPhase === 'crouch' || frame.barefootPhase === 'crouch-out' || frame.barefootPhase === 'stand';
+  const shoe = showShoe
+    ? '<g transform="translate(15 143) rotate(-18)"><ellipse cx="0" cy="0" rx="7.5" ry="4" fill="#6B5240"/><path d="M-6 0 q0 -4.5 5 -4.5 l4 0 q3 0 3 3" fill="none" stroke="#5B4636" stroke-width="1.4" stroke-linecap="round"/></g>'
+    : '';
   return '<svg viewBox="0 0 64 148" style="width:100%;height:100%;display:block;overflow:visible" aria-hidden="true">' +
     '<ellipse cx="32" cy="143" rx="17" ry="4.5" fill="#3A2E22" opacity="0.22"/>' +
     '<g class="' + legB + '"><rect x="12" y="46" width="5.5" height="36" rx="2.75" fill="#14302A" opacity="0.68"/></g>' +
     '<g class="' + legA + '"><rect x="46" y="46" width="5.5" height="36" rx="2.75" fill="#14302A" opacity="0.68"/></g>' +
     '<g class="' + shinA + '"><rect x="23" y="92" width="6.5" height="46" rx="3.25" fill="#14302A" opacity="0.78"/><ellipse cx="26.2" cy="140" rx="5.4" ry="3.4" fill="' + frame.footFill + '"/></g>' +
     '<g class="' + shinB + '"><rect x="34" y="92" width="6.5" height="46" rx="3.25" fill="#14302A" opacity="0.78"/><ellipse cx="37.2" cy="140" rx="5.4" ry="3.4" fill="' + frame.footFill + '"/></g>' +
+    shoe +
     '<path d="M32 34 q-14 6 -14 28 l0 28 q0 6 6 6 l16 0 q6 0 6 -6 l0 -28 q0 -22 -14 -28 Z" fill="#14302A" opacity="0.78"/>' +
     '<circle cx="32" cy="21" r="12.5" fill="#14302A" opacity="0.8"/></svg>';
 }
@@ -919,6 +1182,7 @@ function wfBuildScene() {
     sunWrap: q('sun-wrap'), sun: q('sun'),
     charWrap: q('char-wrap'), charBob: q('char-bob'),
     pins: q('pins'), pinById: new Map(),
+    setById: new Map(),
     titleMain: q('title-main'), titleSub: q('title-sub'),
     narrowBar: q('narrow-bar'),
     controls: q('controls'), status: q('status'),
@@ -1067,6 +1331,136 @@ function wfSyncRail(frame) {
   }
 }
 
+// Per-station set dressing (props via wfBuildProps, figures via
+// wfBuildCast) used to be one string joined into frame.setLayer and
+// written with `d.set.innerHTML = frame.setLayer` — a wholesale replace,
+// same as the rest of the scene used to be before the persistent-DOM
+// refactor. It stayed that way through that refactor because at the time
+// nothing inside it was animated with anything that needed to survive a
+// repaint. Now that stations get real ambient/gesture animation (wfFlick,
+// wfBreath, wfHang, wfPeg, wf-sway, and the new gesture classes), the same
+// bug applies here: frame.setPieces' shape coordinates are a function of
+// WF.cam, so the string changed on nearly every repaint while the camera
+// was travelling, and every CSS animation on every prop/figure reset to
+// 0% on nearly every tick — it only ever played correctly during a
+// station's ~10s hold, never during the 2-12s approach or departure.
+//
+// wfSyncSet() below reconciles the set-dressing SVG exactly the way
+// wfSyncPins() reconciles pins: one persistent <g> per visible station
+// (there's normally exactly one, briefly two during a handoff — see the
+// fade-window comment in wfComputeFrame()), and inside it, one persistent
+// element per shape descriptor, updated in place by wfSyncShapes(). No
+// animated node is ever destroyed and recreated while it's still visible,
+// so its CSS animation timeline keeps running through camera movement.
+function wfMakeShapeNode(desc) {
+  const el = document.createElementNS(WF_SVG_NS, desc.tag);
+  if (desc.cls) el.setAttribute('class', desc.cls);
+  return el;
+}
+
+// Reconciles a flat list of shape descriptors into `host`'s children,
+// keyed by `desc.key`. Descriptors that share the same `desc.group.key`
+// get one shared persistent <g> wrapper between them (for shapes that must
+// move together as one rigid unit — a hammock's cloth + its edge stroke,
+// a tree crown's three lobes) rather than each carrying its own class;
+// `cache` is a Map from shape key to {el, last} and from group key to
+// {g, children: Set, last}, reused across calls so identity survives.
+function wfSyncShapes(host, shapes, cache) {
+  const seenShapes = new Set();
+  const seenGroups = new Set();
+  shapes.forEach(desc => {
+    let parent = host;
+    if (desc.group) {
+      const gk = desc.group.key;
+      seenGroups.add(gk);
+      let gEntry = cache.get(gk);
+      if (!gEntry) {
+        const g = document.createElementNS(WF_SVG_NS, 'g');
+        gEntry = { isGroup: true, el: g, last: {} };
+        cache.set(gk, gEntry);
+        host.appendChild(g);
+      }
+      if (gEntry.last.cls !== desc.group.cls) {
+        if (desc.group.cls) gEntry.el.setAttribute('class', desc.group.cls); else gEntry.el.removeAttribute('class');
+        gEntry.last.cls = desc.group.cls;
+      }
+      if (desc.group.style !== undefined && gEntry.last.style !== desc.group.style) {
+        gEntry.el.setAttribute('style', desc.group.style || '');
+        gEntry.last.style = desc.group.style;
+      }
+      parent = gEntry.el;
+    }
+    seenShapes.add(desc.key);
+    let entry = cache.get(desc.key);
+    if (!entry || entry.el.parentNode !== parent) {
+      if (entry) entry.el.remove();
+      const el = wfMakeShapeNode(desc);
+      entry = { el, last: {} };
+      cache.set(desc.key, entry);
+      parent.appendChild(el);
+    }
+    const el = entry.el, last = entry.last;
+    if (!desc.group && last.cls !== desc.cls) {
+      if (desc.cls) el.setAttribute('class', desc.cls); else el.removeAttribute('class');
+      last.cls = desc.cls;
+    }
+    if (desc.style !== undefined && last.style !== desc.style) {
+      el.setAttribute('style', desc.style || '');
+      last.style = desc.style;
+    }
+    for (const k in desc.attrs) {
+      const v = desc.attrs[k];
+      if (last[k] !== v) { el.setAttribute(k, v); last[k] = v; }
+    }
+    if (desc.text !== undefined && last.text !== desc.text) {
+      el.textContent = desc.text; last.text = desc.text;
+    }
+  });
+  cache.forEach((entry, key) => {
+    if (entry.isGroup) { if (!seenGroups.has(key)) { entry.el.remove(); cache.delete(key); } return; }
+    if (seenShapes.has(key)) return;
+    entry.el.remove();
+    cache.delete(key);
+  });
+}
+
+function wfSyncSet(frame) {
+  const byId = WF.dom.setById;
+  const seen = new Set();
+  let prevG = null;
+  frame.setPieces.forEach(piece => {
+    seen.add(piece.id);
+    let entry = byId.get(piece.id);
+    if (!entry) {
+      const g = document.createElementNS(WF_SVG_NS, 'g');
+      entry = { g, shapes: new Map(), lastOp: null };
+      byId.set(piece.id, entry);
+      WF.dom.set.appendChild(g);
+    } else if (entry.g.previousElementSibling !== prevG) {
+      // Reorder only a piece that's actually out of position — even
+      // re-appendChild-ing an element that's already exactly where it
+      // belongs still counts as a remove-then-insert per the DOM spec,
+      // and that resets any running CSS animation on it (confirmed:
+      // getAnimations()[0].currentTime drops to 0 on a same-parent,
+      // same-position re-append). With normally exactly one piece
+      // visible — see the fade-window comment in wfComputeFrame() — this
+      // check means the overwhelmingly common case never touches the
+      // node at all. It only actually moves something during the brief
+      // handoff window where two stations overlap and their near/far
+      // order has flipped since the last frame.
+      WF.dom.set.appendChild(entry.g);
+    }
+    prevG = entry.g;
+    if (entry.lastOp !== piece.op) { entry.g.setAttribute('opacity', piece.op); entry.lastOp = piece.op; }
+    wfSyncShapes(entry.g, piece.shapes, entry.shapes);
+  });
+  byId.forEach((entry, id) => {
+    if (seen.has(id)) return;
+    entry.g.remove();
+    byId.delete(id);
+  });
+}
+
 function wfRender() {
   if (!WF.el) return;
   wfBuildScene();
@@ -1082,7 +1476,7 @@ function wfRender() {
     '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
 
   wfSet('geo', sceneSvg, v => { d.geo.innerHTML = v; });
-  wfSet('setLayer', frame.setLayer, v => { d.set.innerHTML = v; });
+  wfSyncSet(frame);
   wfSet('geoLabel', t('walk.title'), v => d.geo.setAttribute('aria-label', v));
   wfSet('sunAlt', t('walk.funder'), v => d.sun.setAttribute('alt', v));
 
@@ -1094,15 +1488,29 @@ function wfRender() {
     ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.35));pointer-events:none',
     v => d.sun.setAttribute('style', v));
 
+  // Barefoot's crouch is a CSS *transition* on this wrapper's own
+  // transform (scaleY, anchored bottom-center so the feet stay put and
+  // the figure visibly sinks/rises), not a keyframe loop — it only needs
+  // to play once each way, triggered by the target value actually
+  // changing between two consecutive writes. That only works because
+  // d.charWrap itself is never destroyed and recreated (wfSet() here
+  // only ever calls setAttribute('style', ...) on the same persistent
+  // node) — see wfSyncSet()'s own comment for what happens to a running
+  // animation/transition when a node IS torn down mid-flight instead.
+  const crouched = frame.barefootPhase === 'crouch-in' || frame.barefootPhase === 'crouch';
   wfSet('charWrap',
-    'position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform:translateX(-58%);width:' +
+    'position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform-origin:center bottom;' +
+    'transform:translateX(-58%)' + (crouched ? ' scaleY(0.8)' : '') + ';width:' +
     (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) +
-    'px;z-index:320;pointer-events:none;transition:opacity .6s;opacity:' + (frame.hidden ? 0 : 1),
+    'px;z-index:320;pointer-events:none;transition:opacity .6s, transform .5s ease-in-out;opacity:' + (frame.hidden ? 0 : 1),
     v => d.charWrap.setAttribute('style', v));
   // Re-draw the walker only when its pose actually changes. The leg cycle
   // is a CSS animation on the <g>s inside this SVG, so re-emitting it every
-  // frame is precisely what used to freeze the walk mid-stride.
-  wfSet('char', (frame.poseSeated ? 'sit' : 'stand') + '|' + frame.walking + '|' + frame.footFill,
+  // frame is precisely what used to freeze the walk mid-stride. barefoot
+  // Phase is included so the shoe shape (wfCharacterSVG()) appears/
+  // disappears exactly on the phase boundaries that need a redraw, not
+  // continuously through the sequence.
+  wfSet('char', (frame.poseSeated ? 'sit' : 'stand') + '|' + frame.walking + '|' + frame.footFill + '|' + frame.barefootPhase,
     () => { d.charBob.innerHTML = wfCharacterSVG(frame); });
 
   wfSyncPins(frame);
