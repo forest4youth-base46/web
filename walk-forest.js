@@ -37,20 +37,160 @@ const WF_GROUP_META = {
   5: { color: '#B8552E', glyph: 'M16 6c2 5 6 6 6 11a6 6 0 0 1-12 0c0-2 1-3 2-4 1 2 2 2 3 0 1-2 1-4 1-7Z M6 26h20' },
 };
 
-// [centre lateral, span factor] — a prop's own width, compressed about its
-// place on the verge, so a hammock is ~3m of fabric rather than 8m across.
-// Centre-lateral values pulled in from the original design's — several
-// (hammock/tinyworld/fire/bivouac/project/campfire) placed their set
-// dressing far enough off-centre that it rendered mostly or entirely
-// outside the viewport at normal camera framing (fire and campfire were
-// the worst: 2.3 and 3.6 lateral units put them well past a full
-// viewport-width beyond screen centre). Reined in so every stop's set
-// piece is actually on screen while it's the active stop.
-const WF_SPAN = {
-  hammock: [0.5, 0.85], palette: [0, 0.45], sofa: [0.73, 0.7], bivouac: [-0.6, 0.4],
-  project: [-0.55, 0.5], fire: [0.65, 0.6], campfire: [0.4, 0.75], roles: [0.72, 0.7],
-  checkin: [-0.7, 0.75], tinyworld: [-0.55, 0.8], naming: [0, 0.9],
+// Every activity's own tuned lateral "side" offset from the trail centre —
+// carried over 1:1 from the design prototype (WF_STOPS[].side), keyed by
+// id rather than array index so it stays correct regardless of any future
+// reordering of ACTIVITIES.
+//   This is the SINGLE SOURCE OF TRUTH for which side of the trail a
+// station lives on. wfLatFor() and WF_CLEARINGS below both derive their
+// side from it rather than restating it, because when they were
+// independent hand-tuned tables they silently disagreed — Build a Tiny
+// World's pin sat at +0.7 while its whole scene was authored at negative
+// offsets, so the marker pointed across the path at empty treeline.
+const WF_STOP_SIDE = {
+  introduce: -0.62, soundscape: 0.66, naming: -0.5, hammock: 0.58,
+  barefoot: -0.68, palette: 0.52, senses: -0.55, tinyworld: 0.7,
+  sofa: -0.6, fire: 0.6, bivouac: -0.66, sitspot: 0.55,
+  roles: -0.58, project: 0.68, object: -0.54, checkin: 0.5, campfire: -0.46,
 };
+
+// ── how far off the path anything can sit ──
+// wfProject()'s x is `w/2 + latEffective * w * 0.42 * scale`, and the trail
+// ribbon's own half-width is `w * 0.235 * scale` (wfComputeFrame()'s
+// trailPts). Equate them and the path's edge lands at latEffective =
+// 0.235/0.42 ≈ 0.56 — the same number for every station and every zoom,
+// since scale cancels. Props/cast then multiply their own lateral by
+// WF_OUT before projecting, so in the pre-multiply units the per-station
+// cases are written in, the path edge is 0.56/WF_OUT.
+const WF_OUT = 1.2;
+const WF_TRAIL_EDGE_LAT = 0.235 / 0.42 / WF_OUT;  // ≈ 0.467
+// +0.18, not a hair past the edge: wfLatFor() places a prop's ANCHOR, and
+// the shape drawn there still has its own width, so anchoring exactly on
+// the boundary leaves half of every stone/log lying over the path. This
+// buys roughly a prop-radius of clearance.
+const WF_VERGE = WF_TRAIL_EDGE_LAT + 0.18;        // first safe lateral off the path
+
+// ── how wide a station's scene is on the ground ──
+// The old model was [centre, spanFactor], compressing each raw lateral
+// toward a chosen centre: lat = centre + (l - centre) * spanFactor. Its
+// flaw was that where the resulting interval LANDS depends on where the
+// centre happens to sit relative to the station's own raw values, so
+// nothing stopped the near end from falling back across the path — which
+// is exactly what it did for campfire, tinyworld, sofa and bivouac, and
+// why tuning those two numbers per station never converged.
+//   This replaces it with a mapping that cannot straddle: measure the
+// station's own raw lateral range (wfPrimeLatExtents(), below — measured
+// from the real builders, never declared by hand), then map that range
+// onto the band [verge, verge + width] on the side WF_STOP_SIDE names.
+// Both endpoints are off-path by construction, so "scene sits on the
+// path" stops being a thing that can happen rather than a thing to test
+// for. The only per-station number left is a meaningful one: how many
+// lateral units of ground the scene covers.
+//   The ceiling isn't a matter of taste: at a held station (scale 1) the
+// viewport half-width is w/2, and wfProject turns one lateral unit into
+// w * 0.42 * WF_OUT px, so the furthest lateral still on screen is
+// 0.5 / (0.42 * WF_OUT) ≈ 0.99. Take off WF_VERGE (~0.57, where the path
+// ends) and only ~0.42 of usable ground remains between path edge and
+// screen edge. Widths above that don't make a scene grander, they push
+// its far side out of frame — which is what sent the fire off the right
+// edge on the first attempt at this. Hence the cap below, with the
+// gathering stations spending most of the budget and small single-prop
+// stations (object, sitspot) using little of it.
+const WF_SCENE_MAX_WIDTH = 0.5 / (0.42 * WF_OUT) - WF_VERGE;
+const WF_SCENE_WIDTH = {
+  introduce: 0.26, soundscape: 0.3, naming: 0.4, hammock: 0.38,
+  barefoot: 0.3, palette: 0.3, senses: 0.3, tinyworld: 0.34,
+  sofa: 0.38, fire: 0.4, bivouac: 0.38, sitspot: 0.22,
+  roles: 0.34, project: 0.32, object: 0.18, checkin: 0.26, campfire: 0.42,
+};
+
+// Raw lateral extent per station, filled by wfPrimeLatExtents().
+const WF_LAT_EXTENT = {};
+// When non-null, the builders' P() closures push their raw lateral into
+// this array instead of the frame being used for anything — see
+// wfPrimeLatExtents().
+let WF_RECORD_LAT = null;
+
+// Maps one raw lateral (as written in a station's own case / WF_CAST) to
+// its final lateral in the scene. Orientation is preserved: whichever end
+// of the station's raw range faces the trail ends up nearest the trail.
+function wfLatFor(id, l) {
+  if (WF_RECORD_LAT) { WF_RECORD_LAT.push(l); return 0; }
+  const side = (WF_STOP_SIDE[id] || 0) < 0 ? -1 : 1;
+  const ext = WF_LAT_EXTENT[id];
+  const width = Math.min(WF_SCENE_WIDTH[id] != null ? WF_SCENE_WIDTH[id] : 0.3, WF_SCENE_MAX_WIDTH);
+  if (!ext || ext.max - ext.min < 1e-6) return side * WF_VERGE;
+  const t = (l - ext.min) / (ext.max - ext.min);      // 0..1 across the scene
+  return side * (WF_VERGE + (side > 0 ? t : 1 - t) * width);
+}
+
+// Runs every station's builders once with the recording hook on, to learn
+// each one's raw lateral range from the actual code rather than a
+// hand-maintained table that could drift out of sync with it. Cheap
+// (17 stations, once per scene build) and self-maintaining: edit a
+// station's offsets and its extent updates itself.
+function wfPrimeLatExtents() {
+  const savedCam = WF.cam;
+  ACTIVITIES.forEach((s, i) => {
+    WF_RECORD_LAT = [];
+    WF.cam = i;
+    const sink = [];
+    try { wfBuildProps(s, i, sink); wfBuildCast(s, i, sink); } catch (e) { /* ignore */ }
+    const ls = WF_RECORD_LAT;
+    WF_RECORD_LAT = null;
+    if (ls.length) {
+      let mn = Infinity, mx = -Infinity;
+      for (let k = 0; k < ls.length; k++) { if (ls[k] < mn) mn = ls[k]; if (ls[k] > mx) mx = ls[k]; }
+      WF_LAT_EXTENT[s.id] = { min: mn, max: mx };
+    }
+  });
+  WF.cam = savedCam;
+}
+
+// ── clearings ──
+// Five activities are about occupying open ground: building something,
+// or gathering in a circle around a fire. Squeezing those into the thin
+// strip between path and treeline is what made them read as cluttered and
+// half-hidden. So the forest itself opens up for them — the tree and
+// shrub scatter below skips anything landing inside a clearing, leaving a
+// real glade at that point on the trail for the scene to occupy.
+//   alongR is the glade's radius in trail-index units (1.0 ≈ the spacing
+// between two consecutive stations); latMax is how far back the treeline
+// is pushed on that side. Side is derived, never restated.
+const WF_CLEARING_SPEC = {
+  tinyworld: { alongR: 0.9, latMax: 2.4 },
+  sofa: { alongR: 1.0, latMax: 2.6 },
+  fire: { alongR: 1.05, latMax: 2.8 },
+  bivouac: { alongR: 1.0, latMax: 2.7 },
+  campfire: { alongR: 1.15, latMax: 3.1 },
+};
+
+const WF_CLEARINGS = Object.keys(WF_CLEARING_SPEC).map((id) => {
+  const at = ACTIVITIES.findIndex((a) => a.id === id);
+  const spec = WF_CLEARING_SPEC[id];
+  return {
+    id, at,
+    side: (WF_STOP_SIDE[id] || 0) < 0 ? -1 : 1,
+    alongR: spec.alongR,
+    latMax: spec.latMax,
+  };
+}).filter((c) => c.at >= 0);
+
+// True when (at, lat) falls in a station's glade, i.e. no tree/shrub there.
+// The along-trail falloff is elliptical rather than a hard cylinder so the
+// treeline curves in and out of the glade instead of stopping dead.
+function wfInClearing(at, lat) {
+  for (let i = 0; i < WF_CLEARINGS.length; i++) {
+    const c = WF_CLEARINGS[i];
+    if ((lat < 0 ? -1 : 1) !== c.side) continue;
+    const da = (at - c.at) / c.alongR;
+    if (da < -1 || da > 1) continue;
+    // Half-ellipse: full latMax reach at the glade's centre, tapering to
+    // nothing at its along-trail ends.
+    if (Math.abs(lat) < c.latMax * Math.sqrt(1 - da * da)) return true;
+  }
+  return false;
+}
 
 // [along trail, lateral, pose, height, facing, up, gesture] — group sizes
 // follow each activity's own description: individual work is one figure
@@ -71,24 +211,49 @@ const WF_CAST = {
   senses: [[0.5, -0.8, 'stand', 0.95]],
   tinyworld: [[-0.06, -0.92, 'kneel', 0.95, 'r', 0, [3.6, 0]], [0.12, -0.62, 'kneel', 0.92, 'l']],
   sofa: [[0.1, 0.62, 'sit', 0.95], [0.26, 0.96, 'sit', 0.93], [-0.16, 0.3, 'carry', 0.95, 'r', 0, [3.0, 0]]],
-  fire: [[-0.12, -0.42, 'kneel', 0.95, 'r', 0, [1.9, 0]], [0.24, 0.4, 'kneel', 0.93, 'l'], [0.02, 0.62, 'sit', 0.92]],
+  // Lateral spread tightened (was -0.42/0.4/0.62 — wider than the fire
+  // ring itself) so the whole group, people included, fits into the
+  // path-to-treeline clearing without needing an extreme lateral push.
+  fire: [[-0.12, -0.27, 'kneel', 0.95, 'r', 0, [1.9, 0]], [0.24, 0.26, 'kneel', 0.93, 'l'], [0.02, 0.4, 'sit', 0.92]],
   bivouac: [[0.06, -1.5, 'reach', 0.95, 'r', 0, [3.2, 0]], [0.24, -0.66, 'carry', 0.93, 'l']],
   sitspot: [[0.62, -1.25, 'sit', 0.95], [1.15, 1.3, 'sit', 0.92]],
   roles: [[-0.06, 0.42, 'carry', 0.95, 'r', 0, [3.0, 0]], [0.18, 0.9, 'stand', 0.93], [0.34, 1.2, 'carry', 0.92, 'l', 0, [3.0, -1.5]]],
   project: [[0.05, -1.05, 'kneel', 0.95, 'r', 0, [4.0, 0]]],
   object: [[0.02, 0.86, 'kneel', 0.95, 'l', 0, [3.8, 0]]],
   checkin: [[0.1, -0.6, 'reach', 0.95, 'l'], [0.26, -0.3, 'stand', 0.93]],
-  campfire: [[-0.18, -0.5, 'sit', 0.95], [0.28, -0.36, 'sit', 0.93], [0.3, 0.5, 'sit', 0.94], [-0.14, 0.52, 'sit', 0.92]],
+  // Same tightening as fire, same reason — was spread ±0.52.
+  campfire: [[-0.18, -0.3, 'sit', 0.95], [0.28, -0.22, 'sit', 0.93], [0.3, 0.3, 'sit', 0.94], [-0.14, 0.31, 'sit', 0.92]],
 };
+
+// Three species, matching the three the Naming the Forest panel
+// illustration names and draws (VISUAL.naming in pocketbook-data.js) —
+// so a walker who reads that panel and then looks at the trail sees the
+// same trees. Weighted rather than even: oak stays the commonest (it was
+// the only shape the canopy had), with pine and birch as real variety.
+//   oak   — broad three-lobe crown, brown trunk (the original shape)
+//   pine  — stacked triangular tiers, darkest green, narrow
+//   birch — pale near-white trunk with dark bark scars, slim oval crown
+const WF_SPECIES = ['oak', 'oak', 'oak', 'oak', 'pine', 'pine', 'birch', 'birch'];
 
 const WF_TREES = (function () {
   const out = [];
   let seed = 7;
   const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-  for (let i = 0; i < 150; i++) {
-    const at = -1 + i * 0.19 + rnd() * 0.14;
-    const lat = (rnd() < 0.5 ? -1 : 1) * (1.3 + rnd() * 2.5);
-    out.push({ at, lat, h: 0.85 + rnd() * 0.9, w: 0.8 + rnd() * 0.65, crown: rnd(), lean: rnd() - 0.5, sway: 8.5 + rnd() * 9, swayDelay: rnd() * 12 });
+  // Denser than the original 150 at a 0.19 step: the canopy read as a
+  // thin screen of separate trees rather than a wood. Trees landing in a
+  // station's glade (wfInClearing) are dropped instead of relocated, so
+  // the clearings read as genuinely open ground rather than a suspicious
+  // ring of trees around a gap.
+  for (let i = 0; i < 320; i++) {
+    const at = -1 + i * 0.088 + rnd() * 0.1;
+    const lat = (rnd() < 0.5 ? -1 : 1) * (1.28 + rnd() * 2.7);
+    const species = WF_SPECIES[Math.floor(rnd() * WF_SPECIES.length)];
+    if (wfInClearing(at, lat)) continue;
+    out.push({
+      at, lat, species,
+      h: 0.85 + rnd() * 0.9, w: 0.8 + rnd() * 0.65, crown: rnd(),
+      lean: rnd() - 0.5, sway: 8.5 + rnd() * 9, swayDelay: rnd() * 12,
+    });
   }
   return out;
 })();
@@ -97,9 +262,13 @@ const WF_SHRUBS = (function () {
   const out = [];
   let seed = 53;
   const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-  for (let i = 0; i < 70; i++) {
-    const at = -1 + i * 0.2 + rnd() * 0.14;
-    const lat = (rnd() < 0.5 ? -1 : 1) * (0.62 + rnd() * 1.15);
+  for (let i = 0; i < 165; i++) {
+    const at = -1 + i * 0.085 + rnd() * 0.1;
+    const lat = (rnd() < 0.5 ? -1 : 1) * (0.6 + rnd() * 1.25);
+    // Undergrowth clears the glades too, but only the inner part of them
+    // — a clearing with waist-high scrub right up to the treeline still
+    // reads as open ground you could sit a group down in.
+    if (wfInClearing(at, lat * 0.55)) continue;
     out.push({ at, lat, s: 0.55 + rnd() * 0.85, tone: rnd() });
   }
   return out;
@@ -123,6 +292,9 @@ const WF = {
   from: 0, to: 0, moveStart: 0, holdEnd: 0,
   paused: false, resumeAt: 0, manual: false, reduced: false,
   openId: null, sessionDrawerOpen: false,
+  // Set once wfPrimeLatExtents() has measured every station's raw lateral
+  // range — see wfLatFor().
+  latPrimed: false,
   // Timestamp the walker arrived at the barefoot station, for the one
   // scripted crouch/shoe-off/resume sequence — see wfComputeFrame()'s
   // barefootPhase. null whenever the camera isn't currently there.
@@ -217,10 +389,9 @@ function wfBuildCast(s, i, out) {
   if (!cast || !cast.length) return;
   const w = WF.w;
   const R = (v) => Math.round(v * 10) / 10;
-  const SP = WF_SPAN[s.id] || [0, 1];
   const P = (a, l, up) => {
-    const lat = SP[0] + (l - SP[0]) * SP[1];
-    const pr = wfProject(i + a, lat * 1.2);
+    const lat = wfLatFor(s.id, l);
+    const pr = wfProject(i + a, lat * WF_OUT);
     if (!pr) return null;
     const u = w * 0.42 * pr.scale;
     return { x: pr.x, y: pr.y - (up || 0) * 0.42 * u, u: u, scale: pr.scale };
@@ -307,12 +478,11 @@ function wfBuildCast(s, i, out) {
 function wfBuildProps(s, i, out) {
   const w = WF.w;
   const R = (v) => Math.round(v * 10) / 10;
-  const OUT = 1.2;
+  const OUT = WF_OUT;
   const UP = 0.42;
   const SZ = 0.45;
-  const SP = WF_SPAN[s.id] || [0, 1];
   const P = (a, l, up) => {
-    const lat = SP[0] + (l - SP[0]) * SP[1];
+    const lat = wfLatFor(s.id, l);
     const pr = wfProject(i + a, lat * OUT);
     if (!pr) return null;
     const u = w * 0.42 * pr.scale;
@@ -734,28 +904,69 @@ function wfComputeFrame() {
   WF_TREES.forEach((tr) => {
     const p = wfProject(tr.at, tr.lat);
     if (!p || p.scale < 0.09 || p.scale > 3.2 || p.d > 12) return;
-    const th = h * 0.44 * tr.h * p.scale;
-    const tw = Math.max(1.4, w * 0.019 * tr.w * p.scale);
-    const R = Math.max(5, w * 0.086 * p.scale * tr.w);
+    const sp = tr.species || 'oak';
+    // Per-species proportions: a pine is tall and narrow, a birch taller
+    // still and slimmer again, an oak broad and shorter. Applied to the
+    // shared trunk-height/crown-radius maths rather than each species
+    // re-deriving its own, so depth scaling stays identical across all
+    // three and only the silhouette differs.
+    const hMul = sp === 'pine' ? 1.25 : (sp === 'birch' ? 1.18 : 1);
+    const wMul = sp === 'pine' ? 0.66 : (sp === 'birch' ? 0.52 : 1);
+    const rMul = sp === 'pine' ? 0.72 : (sp === 'birch' ? 0.66 : 1);
+    const th = h * 0.44 * tr.h * p.scale * hMul;
+    const tw = Math.max(1.4, w * 0.019 * tr.w * p.scale * wMul);
+    const R = Math.max(5, w * 0.086 * p.scale * tr.w * rMul);
     const topY = p.y - th;
     const lean = tr.lean * tw * 1.6;
     const far = p.scale < 0.34;
     const item = {
+      species: sp,
       cx: p.x.toFixed(1), by: p.y.toFixed(1),
       shRx: (tw * 2.4).toFixed(1), shRy: (tw * 0.8).toFixed(1),
       trunkD: 'M' + (p.x - tw * 0.72).toFixed(1) + ' ' + p.y.toFixed(1) +
         ' L' + (p.x - tw * 0.3 + lean).toFixed(1) + ' ' + topY.toFixed(1) +
         ' L' + (p.x + tw * 0.3 + lean).toFixed(1) + ' ' + topY.toFixed(1) +
         ' L' + (p.x + tw * 0.72).toFixed(1) + ' ' + p.y.toFixed(1) + ' Z',
-      bark: far ? '#8A7A66' : (tr.crown > 0.5 ? '#6B5240' : '#5B4636'),
+      // Birch bark is the species' whole signature — near-white, never the
+      // brown the other two share, and it keeps its identity into the far
+      // palette (a pale trunk reads paler with distance, not browner).
+      bark: sp === 'birch'
+        ? (far ? '#EDE7DA' : '#F4F1E8')
+        : (far ? '#8A7A66' : (tr.crown > 0.5 ? '#6B5240' : '#5B4636')),
+      // Dark scar marks up the birch trunk, the detail that makes it read
+      // as birch rather than just a pale pole. Skipped on far/small trees
+      // where they'd be sub-pixel noise.
+      barkMarks: sp === 'birch' && !far ? [0.28, 0.46, 0.63, 0.78].map((f) => ({
+        x: (p.x - tw * 0.5 + lean * f).toFixed(1),
+        y: (p.y - th * f).toFixed(1),
+        w: (tw * 0.85).toFixed(1),
+        h: Math.max(0.8, tw * 0.16).toFixed(1),
+      })) : null,
+      // Pine: three stacked tiers, widest at the bottom, drawn as
+      // triangles rather than the oak's ellipse cluster.
+      tiers: sp === 'pine' ? [0, 1, 2].map((k) => {
+        const tierW = R * (1.25 - k * 0.26);
+        const tierTop = topY + th * (k * 0.235) - R * 0.15;
+        const tierBot = tierTop + R * 0.95;
+        const cxk = p.x + lean * (1 - k * 0.28);
+        return 'M' + cxk.toFixed(1) + ' ' + tierTop.toFixed(1) +
+          ' L' + (cxk - tierW).toFixed(1) + ' ' + tierBot.toFixed(1) +
+          ' L' + (cxk + tierW).toFixed(1) + ' ' + tierBot.toFixed(1) + ' Z';
+      }) : null,
       c1x: (p.x + lean).toFixed(1), c1y: (topY + R * 0.1).toFixed(1),
-      c1rx: R.toFixed(1), c1ry: (R * 0.78).toFixed(1),
+      c1rx: R.toFixed(1), c1ry: (R * (sp === 'birch' ? 1.15 : 0.78)).toFixed(1),
       c2x: (p.x + lean - R * 0.62).toFixed(1), c2y: (topY + R * 0.46).toFixed(1),
-      c2rx: (R * 0.66).toFixed(1), c2ry: (R * 0.54).toFixed(1),
+      c2rx: (R * 0.66).toFixed(1), c2ry: (R * (sp === 'birch' ? 0.8 : 0.54)).toFixed(1),
       c3x: (p.x + lean + R * 0.66).toFixed(1), c3y: (topY + R * 0.38).toFixed(1),
-      c3rx: (R * 0.6).toFixed(1), c3ry: (R * 0.5).toFixed(1),
-      crown: far ? '#8FAEA0' : (tr.crown > 0.62 ? '#2E5A4A' : (tr.crown > 0.3 ? '#3A6B5A' : '#47775F')),
-      crown2: far ? '#A3BEB1' : (tr.crown > 0.62 ? '#234A3E' : (tr.crown > 0.3 ? '#31604F' : '#3C6B55')),
+      c3rx: (R * 0.6).toFixed(1), c3ry: (R * (sp === 'birch' ? 0.74 : 0.5)).toFixed(1),
+      // Pine reads darkest, birch lightest — the same tonal separation the
+      // Naming panel's own three trees use.
+      crown: far ? (sp === 'pine' ? '#7E9E92' : '#8FAEA0')
+        : (sp === 'pine' ? '#234A3E' : (sp === 'birch' ? '#5E8C77'
+          : (tr.crown > 0.62 ? '#2E5A4A' : (tr.crown > 0.3 ? '#3A6B5A' : '#47775F')))),
+      crown2: far ? (sp === 'pine' ? '#93AEA4' : '#A3BEB1')
+        : (sp === 'pine' ? '#1B3A31' : (sp === 'birch' ? '#4F7D68'
+          : (tr.crown > 0.62 ? '#234A3E' : (tr.crown > 0.3 ? '#31604F' : '#3C6B55')))),
       op: (Math.min(1, 0.55 + p.scale * 0.8) * (p.d > 9 ? 0.55 : 1)).toFixed(2),
       swayStyle: 'animation-duration:' + tr.sway.toFixed(1) + 's;animation-delay:-' + tr.swayDelay.toFixed(1) + 's',
       _s: p.scale,
@@ -958,29 +1169,33 @@ function wfComputeFrame() {
   };
 }
 
-// Every activity's own tuned lateral "side" offset from the trail centre —
-// carried over 1:1 from the design prototype (WF_STOPS[].side), keyed by
-// id rather than array index so it stays correct regardless of any future
-// reordering of ACTIVITIES.
-const WF_STOP_SIDE = {
-  introduce: -0.62, soundscape: 0.66, naming: -0.5, hammock: 0.58,
-  barefoot: -0.68, palette: 0.52, senses: -0.55, tinyworld: 0.7,
-  sofa: -0.6, fire: 0.6, bivouac: -0.66, sitspot: 0.55,
-  roles: -0.58, project: 0.68, object: -0.54, checkin: 0.5, campfire: -0.46,
-};
+// (WF_STOP_SIDE moved to the top of this file — wfLatFor()/WF_CLEARINGS
+// both derive their side from it, so it has to be defined before them.)
 
 function wfEsc(str) {
   return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 function wfTreeMarkup(tr, hint) {
+  // Trunk, plus birch's dark bark scars where the species calls for them.
+  let trunk = '<path d="' + tr.trunkD + '" fill="' + tr.bark + '"/>';
+  if (tr.barkMarks) {
+    trunk += tr.barkMarks.map(m =>
+      '<rect x="' + m.x + '" y="' + m.y + '" width="' + m.w + '" height="' + m.h + '" fill="#3E4A42" opacity="0.55"/>'
+    ).join('');
+  }
+  // Crown: a pine's stacked triangular tiers, or the broad ellipse cluster
+  // oak and birch share (birch's is stretched tall and narrow by its own
+  // ry multipliers in wfComputeFrame(), giving the slim upright crown
+  // without needing separate geometry here).
+  const crown = tr.tiers
+    ? tr.tiers.map((d, i) => '<path d="' + d + '" fill="' + (i === 2 ? tr.crown : tr.crown2) + '"/>').join('')
+    : '<ellipse cx="' + tr.c2x + '" cy="' + tr.c2y + '" rx="' + tr.c2rx + '" ry="' + tr.c2ry + '" fill="' + tr.crown2 + '"/>' +
+      '<ellipse cx="' + tr.c3x + '" cy="' + tr.c3y + '" rx="' + tr.c3rx + '" ry="' + tr.c3ry + '" fill="' + tr.crown2 + '"/>' +
+      '<ellipse cx="' + tr.c1x + '" cy="' + tr.c1y + '" rx="' + tr.c1rx + '" ry="' + tr.c1ry + '" fill="' + tr.crown + '"/>';
   return '<g opacity="' + tr.op + '"><ellipse cx="' + tr.cx + '" cy="' + tr.by + '" rx="' + tr.shRx + '" ry="' + tr.shRy + '" fill="#3A2E22" opacity="0.13"/>' +
-    '<path d="' + tr.trunkD + '" fill="' + tr.bark + '"/>' +
-    '<g class="wf-sway" style="' + tr.swayStyle + '">' +
-    '<ellipse cx="' + tr.c2x + '" cy="' + tr.c2y + '" rx="' + tr.c2rx + '" ry="' + tr.c2ry + '" fill="' + tr.crown2 + '"/>' +
-    '<ellipse cx="' + tr.c3x + '" cy="' + tr.c3y + '" rx="' + tr.c3rx + '" ry="' + tr.c3ry + '" fill="' + tr.crown2 + '"/>' +
-    '<ellipse cx="' + tr.c1x + '" cy="' + tr.c1y + '" rx="' + tr.c1rx + '" ry="' + tr.c1ry + '" fill="' + tr.crown + '"/>' +
-    '</g></g>';
+    trunk +
+    '<g class="wf-sway" style="' + tr.swayStyle + '">' + crown + '</g></g>';
 }
 
 function wfCharacterSVG(frame) {
@@ -1465,6 +1680,11 @@ function wfRender() {
   if (!WF.el) return;
   wfBuildScene();
   wfMeasure();
+  // Learn each station's raw lateral range from its own builders, once,
+  // before the first frame that positions anything — wfLatFor() needs it
+  // and wfMeasure() above has just established WF.w/WF.h that the
+  // builders project against.
+  if (!WF.latPrimed) { WF.latPrimed = true; wfPrimeLatExtents(); }
   const frame = wfComputeFrame();
   const d = WF.dom;
 
