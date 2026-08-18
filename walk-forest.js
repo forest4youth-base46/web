@@ -17,7 +17,7 @@
 // unit time reads as "alive" instead of static without feeling frantic.
 const WF_DWELL_MS = 10000;
 const WF_TRAVEL_MS = 12000;
-const WF_MANUAL_TRAVEL_MS = 2000;
+const WF_MANUAL_TRAVEL_MS = 4200;
 const WF_BACK_PAUSE_MS = 20000;
 const WF_CLOSE_PAUSE_MS = 4000;
 
@@ -69,6 +69,18 @@ const WF_TRAIL_EDGE_LAT = 0.235 / 0.42 / WF_OUT;  // ≈ 0.467
 // the boundary leaves half of every stone/log lying over the path. This
 // buys roughly a prop-radius of clearance.
 const WF_VERGE = WF_TRAIL_EDGE_LAT + 0.18;        // first safe lateral off the path
+
+// How far up the trail a station's scene sits from the point the camera
+// stops at. Without this the scene straddles the camera: the cases write
+// along-trail offsets either side of zero, so the near half rendered at
+// NEGATIVE distance — behind the viewer — where wfProject's 1/z blows it
+// up huge and drops it off the bottom of the frame. That is what pinned
+// Five Senses Inventory and the Forest Sofa into the bottom corner
+// regardless of how their lateral placement was tuned.
+//   Setting the whole scene ahead of the stopping point puts it on the
+// open plane the glade has cleared, at a scale that reads as a place you
+// are walking up to rather than something you are standing on top of.
+const WF_SCENE_SETBACK = 0.95;
 
 // ── how wide a station's scene is on the ground ──
 // The old model was [centre, spanFactor], compressing each raw lateral
@@ -157,24 +169,32 @@ function wfPrimeLatExtents() {
 //   alongR is the glade's radius in trail-index units (1.0 ≈ the spacing
 // between two consecutive stations); latMax is how far back the treeline
 // is pushed on that side. Side is derived, never restated.
-const WF_CLEARING_SPEC = {
-  tinyworld: { alongR: 0.9, latMax: 2.4 },
-  sofa: { alongR: 1.0, latMax: 2.6 },
-  fire: { alongR: 1.05, latMax: 2.8 },
-  bivouac: { alongR: 1.0, latMax: 2.7 },
-  campfire: { alongR: 1.15, latMax: 3.1 },
-};
+// Gathering stations — the ones whose activity is a group occupying open
+// ground — get a deeper, wider glade than the rest.
+const WF_GATHERING = { tinyworld: 1, sofa: 1, fire: 1, bivouac: 1, campfire: 1, senses: 1, roles: 1 };
 
-const WF_CLEARINGS = Object.keys(WF_CLEARING_SPEC).map((id) => {
-  const at = ACTIVITIES.findIndex((a) => a.id === id);
-  const spec = WF_CLEARING_SPEC[id];
+// EVERY station gets a glade now, not a hand-picked five. A scene sits in
+// the band [WF_VERGE, WF_VERGE + width] (wfLatFor), which in the raw
+// lateral units trees are placed in is (WF_VERGE + width) * WF_OUT — and
+// with the default width that lands at ~1.28, exactly where WF_TREES
+// starts placing trunks. So by default every scene was drawn tight
+// against the treeline with nothing but trees behind it: "in the trees"
+// rather than "in a clearing", which is what Five Senses Inventory and
+// Building the Forest Sofa were showing.
+//   Each glade is therefore sized FROM the scene it has to hold — its own
+// outer edge plus a margin of genuinely open ground behind it — instead
+// of being a number picked per station.
+const WF_CLEARINGS = ACTIVITIES.map((a, i) => {
+  const gathering = !!WF_GATHERING[a.id];
+  const width = WF_SCENE_WIDTH[a.id] != null ? WF_SCENE_WIDTH[a.id] : 0.3;
+  const sceneOuter = (WF_VERGE + width) * WF_OUT;   // where the scene ends
   return {
-    id, at,
-    side: (WF_STOP_SIDE[id] || 0) < 0 ? -1 : 1,
-    alongR: spec.alongR,
-    latMax: spec.latMax,
+    id: a.id, at: i + WF_SCENE_SETBACK,
+    side: (WF_STOP_SIDE[a.id] || 0) < 0 ? -1 : 1,
+    alongR: gathering ? 0.7 : 0.42,
+    latMax: sceneOuter + (gathering ? 1.75 : 1.1),  // + open ground behind
   };
-}).filter((c) => c.at >= 0);
+});
 
 // True when (at, lat) falls in a station's glade, i.e. no tree/shrub there.
 // The along-trail falloff is elliptical rather than a hard cylinder so the
@@ -235,6 +255,15 @@ const WF_CAST = {
 //   birch — pale near-white trunk with dark bark scars, slim oval crown
 const WF_SPECIES = ['oak', 'oak', 'oak', 'oak', 'pine', 'pine', 'birch', 'birch'];
 
+// The empty place in Campfire Close's ring, in the same raw
+// [along-trail, lateral] units as WF_CAST above — so it is positioned by
+// wfLatFor()/wfProject() exactly like the four seated figures, and stays
+// in the circle automatically if the station's layout is ever retuned.
+// Sits on the path side of the fire (a high raw lateral maps nearest the
+// trail — see wfLatFor()), which is the side the walker arrives from, and
+// in the gap the four figures leave between them.
+const WF_CAMPFIRE_SEAT = [0.06, 0.46];
+
 const WF_TREES = (function () {
   const out = [];
   let seed = 7;
@@ -244,8 +273,8 @@ const WF_TREES = (function () {
   // station's glade (wfInClearing) are dropped instead of relocated, so
   // the clearings read as genuinely open ground rather than a suspicious
   // ring of trees around a gap.
-  for (let i = 0; i < 320; i++) {
-    const at = -1 + i * 0.088 + rnd() * 0.1;
+  for (let i = 0; i < 520; i++) {
+    const at = -1 + i * 0.054 + rnd() * 0.07;
     const lat = (rnd() < 0.5 ? -1 : 1) * (1.28 + rnd() * 2.7);
     const species = WF_SPECIES[Math.floor(rnd() * WF_SPECIES.length)];
     if (wfInClearing(at, lat)) continue;
@@ -262,13 +291,13 @@ const WF_SHRUBS = (function () {
   const out = [];
   let seed = 53;
   const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-  for (let i = 0; i < 165; i++) {
-    const at = -1 + i * 0.085 + rnd() * 0.1;
+  for (let i = 0; i < 260; i++) {
+    const at = -1 + i * 0.054 + rnd() * 0.07;
     const lat = (rnd() < 0.5 ? -1 : 1) * (0.6 + rnd() * 1.25);
     // Undergrowth clears the glades too, but only the inner part of them
     // — a clearing with waist-high scrub right up to the treeline still
     // reads as open ground you could sit a group down in.
-    if (wfInClearing(at, lat * 0.55)) continue;
+    if (wfInClearing(at, lat / 0.55)) continue;
     out.push({ at, lat, s: 0.55 + rnd() * 0.85, tone: rnd() });
   }
   return out;
@@ -295,6 +324,10 @@ const WF = {
   // Set once wfPrimeLatExtents() has measured every station's raw lateral
   // range — see wfLatFor().
   latPrimed: false,
+  // Timestamp the walker arrived at Campfire Close, for the walk-over-and-
+  // sit sequence — see wfComputeFrame()'s campfirePhase. null when the
+  // camera is anywhere else.
+  campfireAt: null,
   // Timestamp the walker arrived at the barefoot station, for the one
   // scripted crouch/shoe-off/resume sequence — see wfComputeFrame()'s
   // barefootPhase. null whenever the camera isn't currently there.
@@ -391,7 +424,7 @@ function wfBuildCast(s, i, out) {
   const R = (v) => Math.round(v * 10) / 10;
   const P = (a, l, up) => {
     const lat = wfLatFor(s.id, l);
-    const pr = wfProject(i + a, lat * WF_OUT);
+    const pr = wfProject(i + a + WF_SCENE_SETBACK, lat * WF_OUT);
     if (!pr) return null;
     const u = w * 0.42 * pr.scale;
     return { x: pr.x, y: pr.y - (up || 0) * 0.42 * u, u: u, scale: pr.scale };
@@ -405,11 +438,11 @@ function wfBuildCast(s, i, out) {
     const H = (c[3] || 0.95) * wfPersonHeight(b.scale);
     if (H < 8) return;
     const pose = c[2], face = c[4] === 'l' ? -1 : 1;
-    const fill = '#14302A', op = 0.74;
+    const fill = '#14302A', op = 0.93;
     const kp = 'c' + fi + '-';
     if (!c[5]) {
       out.push({ key: kp + 'shadow', tag: 'ellipse', attrs: {
-        cx: R(b.x), cy: R(b.y), rx: R(H * 0.2), ry: R(H * 0.06), fill: '#3A2E22', opacity: 0.16,
+        cx: R(b.x), cy: R(b.y), rx: R(H * 0.2), ry: R(H * 0.06), fill: '#2A2118', opacity: 0.28,
       } });
     }
     const head = (key, cx, cy, r) => out.push({ key: kp + key, tag: 'circle', attrs: {
@@ -483,7 +516,7 @@ function wfBuildProps(s, i, out) {
   const SZ = 0.45;
   const P = (a, l, up) => {
     const lat = wfLatFor(s.id, l);
-    const pr = wfProject(i + a, lat * OUT);
+    const pr = wfProject(i + a + WF_SCENE_SETBACK, lat * OUT);
     if (!pr) return null;
     const u = w * 0.42 * pr.scale;
     return { x: pr.x, y: pr.y - (up || 0) * UP * u, u: u, s: pr.scale };
@@ -535,7 +568,7 @@ function wfBuildProps(s, i, out) {
     } });
   };
   const band = (a0, a1, f, o, cls) => {
-    const k = key(); const A = wfProject(i + a0, 0), B = wfProject(i + a1, 0); if (!A || !B) return;
+    const k = key(); const A = wfProject(i + a0 + WF_SCENE_SETBACK, 0), B = wfProject(i + a1 + WF_SCENE_SETBACK, 0); if (!A || !B) return;
     const hA = w * 0.235 * A.scale, hB = w * 0.235 * B.scale;
     out.push({ key: k, tag: 'path', cls, attrs: {
       d: 'M' + R(A.x - hA) + ' ' + R(A.y) + ' L' + R(A.x + hA) + ' ' + R(A.y) + ' L' + R(B.x + hB) + ' ' + R(B.y) + ' L' + R(B.x - hB) + ' ' + R(B.y) + ' Z',
@@ -790,7 +823,7 @@ function wfBuildProps(s, i, out) {
       const kc = key();
       if (f) {
         out.push({ key: kc + 'glow', tag: 'ellipse', cls: 'wfBreath', attrs: {
-          cx: R(f.x), cy: R(f.y), rx: R(0.55 * f.u), ry: R(0.22 * f.u), fill: '#D87B4F', opacity: 0.2,
+          cx: R(f.x), cy: R(f.y), rx: R(0.17 * f.u), ry: R(0.07 * f.u), fill: '#D87B4F', opacity: 0.28,
         } });
         out.push({ key: kc + 'flame', tag: 'path', cls: 'wfFlick', attrs: {
           d: 'M' + R(f.x) + ' ' + R(f.y - 0.2 * f.u) + ' q' + R(0.08 * f.u) + ' ' + R(0.12 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(0.18 * f.u) + ' a' + R(0.08 * f.u) + ' ' + R(0.08 * f.u) + ' 0 0 1 ' + R(-0.16 * f.u) + ' 0 q0 ' + R(-0.06 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(-0.18 * f.u) + ' Z',
@@ -848,7 +881,10 @@ function wfStep(now) {
   const atStation = Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
   const barefootTicking = atStation && atStation.id === 'barefoot' &&
     (WF.barefootAt == null || now - WF.barefootAt < 3300);
-  if ((wasMoving || WF.mode === 'move' || barefootTicking) && now - (WF.lastPaint || 0) > 32) {
+  const campfireTicking = atStation && atStation.id === 'campfire' &&
+    (WF.campfireAt == null || now - WF.campfireAt < 2600);
+  if ((wasMoving || WF.mode === 'move' || barefootTicking || campfireTicking) &&
+      now - (WF.lastPaint || 0) > 32) {
     WF.lastPaint = now; wfRender();
   }
 }
@@ -904,10 +940,28 @@ function wfComputeFrame() {
   const camIndex = Math.round(WF.cam);
 
   const trailPts = [];
-  for (let t = WF.cam - 0.7; t < WF.cam + 7.2; t += 0.22) {
+  // The trail used to stop at cam + 7.2, where the projection still puts
+  // it ~55px short of the horizon line (y = horizon + (h-horizon) *
+  // scale^1.12 * 0.9 only reaches the horizon as scale -> 0). That left
+  // the path ending in mid-air against the trees instead of running away
+  // to a vanishing point, which is most of why the distance read as flat.
+  //   Sampling all the way out at the near step would be wasteful — past
+  // a few units the points are a pixel apart — so the step grows with
+  // distance: fine detail where the trail is wide, coarse where it is
+  // converging to a point.
+  // Runs out to +200 rather than +34. The vertical falloff is
+  // (h - horizon) * 0.9 * scale^1.12 with scale = 1/(1 + d*0.66), which
+  // approaches the horizon asymptotically — at d=34 that still leaves a
+  // ~12px lip of visible path end, which reads as the trail stopping just
+  // shy of the skyline. Closing it to a couple of pixels needs distances
+  // in the low hundreds, which cost nothing here because the step widens
+  // with distance: the far half of this loop is a handful of samples
+  // describing a sliver a few pixels wide.
+  for (let t = WF.cam - 0.7, step = 0.22; t < WF.cam + 200; t += step) {
     const p = wfProject(t, 0);
-    if (!p) continue;
-    trailPts.push({ x: p.x, y: p.y, hw: w * 0.235 * p.scale });
+    if (p) trailPts.push({ x: p.x, y: p.y, hw: w * 0.235 * p.scale });
+    const d = t - WF.cam;
+    step = d < 4 ? 0.22 : (d < 10 ? 0.6 : (d < 30 ? 1.8 : 9));
   }
   let trailD = '';
   if (trailPts.length > 1) {
@@ -926,9 +980,9 @@ function wfComputeFrame() {
     // shared trunk-height/crown-radius maths rather than each species
     // re-deriving its own, so depth scaling stays identical across all
     // three and only the silhouette differs.
-    const hMul = sp === 'pine' ? 1.25 : (sp === 'birch' ? 1.18 : 1);
-    const wMul = sp === 'pine' ? 0.66 : (sp === 'birch' ? 0.52 : 1);
-    const rMul = sp === 'pine' ? 0.72 : (sp === 'birch' ? 0.66 : 1);
+    const hMul = sp === 'pine' ? 1.06 : (sp === 'birch' ? 1.1 : 1);
+    const wMul = sp === 'pine' ? 0.72 : (sp === 'birch' ? 0.62 : 1);
+    const rMul = sp === 'pine' ? 1.0 : (sp === 'birch' ? 0.86 : 1);
     const th = h * 0.44 * tr.h * p.scale * hMul;
     const tw = Math.max(1.4, w * 0.019 * tr.w * p.scale * wMul);
     const R = Math.max(5, w * 0.086 * p.scale * tr.w * rMul);
@@ -947,8 +1001,8 @@ function wfComputeFrame() {
       // brown the other two share, and it keeps its identity into the far
       // palette (a pale trunk reads paler with distance, not browner).
       bark: sp === 'birch'
-        ? (far ? '#EDE7DA' : '#F4F1E8')
-        : (far ? '#8A7A66' : (tr.crown > 0.5 ? '#6B5240' : '#5B4636')),
+        ? (far ? '#E4DCCB' : '#F4F1E8')
+        : (far ? '#75604A' : (tr.crown > 0.5 ? '#6B5240' : '#5B4636')),
       // Dark scar marks up the birch trunk, the detail that makes it read
       // as birch rather than just a pale pole. Skipped on far/small trees
       // where they'd be sub-pixel noise.
@@ -961,9 +1015,9 @@ function wfComputeFrame() {
       // Pine: three stacked tiers, widest at the bottom, drawn as
       // triangles rather than the oak's ellipse cluster.
       tiers: sp === 'pine' ? [0, 1, 2].map((k) => {
-        const tierW = R * (1.25 - k * 0.26);
-        const tierTop = topY + th * (k * 0.235) - R * 0.15;
-        const tierBot = tierTop + R * 0.95;
+        const tierW = R * (0.68 + k * 0.18);
+        const tierTop = topY + th * (k * 0.17);
+        const tierBot = tierTop + R * 1.08;
         const cxk = p.x + lean * (1 - k * 0.28);
         return 'M' + cxk.toFixed(1) + ' ' + tierTop.toFixed(1) +
           ' L' + (cxk - tierW).toFixed(1) + ' ' + tierBot.toFixed(1) +
@@ -977,13 +1031,13 @@ function wfComputeFrame() {
       c3rx: (R * 0.6).toFixed(1), c3ry: (R * (sp === 'birch' ? 0.74 : 0.5)).toFixed(1),
       // Pine reads darkest, birch lightest — the same tonal separation the
       // Naming panel's own three trees use.
-      crown: far ? (sp === 'pine' ? '#7E9E92' : '#8FAEA0')
+      crown: far ? (sp === 'pine' ? '#5E8375' : '#6E9384')
         : (sp === 'pine' ? '#234A3E' : (sp === 'birch' ? '#5E8C77'
           : (tr.crown > 0.62 ? '#2E5A4A' : (tr.crown > 0.3 ? '#3A6B5A' : '#47775F')))),
-      crown2: far ? (sp === 'pine' ? '#93AEA4' : '#A3BEB1')
+      crown2: far ? (sp === 'pine' ? '#6C9184' : '#7CA093')
         : (sp === 'pine' ? '#1B3A31' : (sp === 'birch' ? '#4F7D68'
           : (tr.crown > 0.62 ? '#234A3E' : (tr.crown > 0.3 ? '#31604F' : '#3C6B55')))),
-      op: (Math.min(1, 0.55 + p.scale * 0.8) * (p.d > 9 ? 0.55 : 1)).toFixed(2),
+      op: (Math.min(1, 0.74 + p.scale * 0.9) * (p.d > 9 ? 0.74 : 1)).toFixed(2),
       swayStyle: 'animation-duration:' + tr.sway.toFixed(1) + 's;animation-delay:-' + tr.swayDelay.toFixed(1) + 's',
       _s: p.scale,
     };
@@ -1012,16 +1066,19 @@ function wfComputeFrame() {
     shrubs.push({
       cx: p.x.toFixed(1), cy: p.y.toFixed(1), rx: (k * 1.3).toFixed(1), ry: (k * 0.8).toFixed(1),
       cx2: (p.x + k * 0.9).toFixed(1), cy2: (p.y - k * 0.32).toFixed(1), rx2: (k * 0.82).toFixed(1), ry2: (k * 0.52).toFixed(1),
-      fill, op: Math.min(1, 0.42 + p.scale * 0.85).toFixed(2),
+      fill, op: Math.min(1, 0.66 + p.scale * 0.9).toFixed(2),
     });
   });
 
   const stops = [];
   ACTIVITIES.forEach((s, i) => {
     const gMeta = WF_GROUP_META[s.group];
-    const p = wfProject(i, WF_STOP_SIDE[s.id] || 0);
+    const p = wfProject(i + WF_SCENE_SETBACK, WF_STOP_SIDE[s.id] || 0);
     if (!p || p.scale < 0.16 || p.d > 6.4) return;
-    const armed = Math.abs(p.d) < 0.34;
+    // Distance from the CAMERA'S STOP, not from the set-back scene — the
+    // pin arms when you arrive at the station, and with the scene now
+    // sitting ahead of the stopping point p.d never returns to ~0.
+    const armed = Math.abs(WF.cam - i) < 0.34;
     const size = Math.max(narrow ? 26 : 22, Math.min(64, w * (narrow ? 0.085 : 0.052) * p.scale));
     const hit = Math.max(44, size + 18);
     const near = p.scale;
@@ -1074,9 +1131,40 @@ function wfComputeFrame() {
   const now = typeof performance !== 'undefined' ? performance.now() : 0;
   const atStop = Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
   const atId = atStop ? atStop.id : '';
-  const seated = atId === 'soundscape' || atId === 'sitspot' || atId === 'campfire';
   const hidden = atId === 'hammock';
   const shoeless = atId === 'barefoot';
+
+  // ── Campfire Close: the walker joins the circle ──
+  // Every other station leaves the walker standing centre-frame watching
+  // the activity happen to other people. This is the last stop, and the
+  // activity IS the group sitting down together ("a circle. shared
+  // stillness. then leaving." — VISUAL.campfire, which animates its five
+  // figures arriving one at a time), so the walker walks over and takes
+  // the empty place rather than watching from the path.
+  //   WF_CAMPFIRE_SEAT is a spot in the ring's own raw lateral units, fed
+  // through the same wfLatFor()/wfProject() path every cast figure uses,
+  // so the seat lands in the circle by construction instead of being a
+  // screen coordinate that would drift the moment anything else moved.
+  let campfirePhase = null;
+  let campfireSeat = null;
+  if (atId === 'campfire') {
+    if (WF.campfireAt == null) WF.campfireAt = now;
+    const elapsed = WF.reduced ? Infinity : now - WF.campfireAt;
+    // Hold a beat before setting off, walk over, then settle.
+    campfirePhase = elapsed < 500 ? 'arriving' : (elapsed < 2100 ? 'walking' : 'seated');
+    const p = wfProject(camIndex + WF_CAMPFIRE_SEAT[0],
+      wfLatFor('campfire', WF_CAMPFIRE_SEAT[1]) * WF_OUT);
+    if (p) campfireSeat = { x: p.x, y: p.y, scale: p.scale };
+  } else {
+    WF.campfireAt = null;
+  }
+
+  // soundscape/sitspot seat the walker on arrival; campfire only once it
+  // has actually walked over to the circle (before that it's still on its
+  // feet crossing the ground, and a seated pose sliding sideways would
+  // read as the figure being dragged).
+  const seated = atId === 'soundscape' || atId === 'sitspot' ||
+    (atId === 'campfire' && campfirePhase === 'seated');
 
   // Barefoot's one scripted moment: the walker crouches, a shoe comes
   // off, then it stands and resumes — not just the instant footFill
@@ -1167,7 +1255,7 @@ function wfComputeFrame() {
     status,
     useArtSlot: false, poseStand: !seated, poseSeated: seated,
     footFill: shoeless ? '#C9A88A' : '#14302A',
-    barefootPhase,
+    barefootPhase, campfirePhase, campfireSeat,
     charH, hidden,
     isOpen: !!openStop,
     open: openStop ? {
@@ -1217,12 +1305,12 @@ function wfTreeMarkup(tr, hint) {
 function wfCharacterSVG(frame) {
   if (frame.poseSeated) {
     return '<svg viewBox="0 0 64 148" style="width:100%;height:100%;display:block;overflow:visible" aria-hidden="true">' +
-      '<ellipse cx="32" cy="143" rx="19" ry="5" fill="#3A2E22" opacity="0.22"/>' +
-      '<path d="M22 138 q-4 -22 6 -30 l10 0 q10 8 6 30 Z" fill="#14302A" opacity="0.7"/>' +
-      '<rect x="14" y="128" width="36" height="12" rx="6" fill="#14302A" opacity="0.74"/>' +
+      '<ellipse cx="32" cy="143" rx="19" ry="5" fill="#2A2118" opacity="0.34"/>' +
+      '<path d="M22 138 q-4 -22 6 -30 l10 0 q10 8 6 30 Z" fill="#102A24" opacity="0.97"/>' +
+      '<rect x="14" y="128" width="36" height="12" rx="6" fill="#102A24" opacity="0.99"/>' +
       '<ellipse cx="14" cy="134" rx="6" ry="4" fill="' + frame.footFill + '"/>' +
-      '<path d="M32 76 q-11 5 -11 22 l0 22 q0 5 5 5 l12 0 q5 0 5 -5 l0 -22 q0 -17 -11 -22 Z" fill="#14302A" opacity="0.78"/>' +
-      '<circle cx="32" cy="64" r="11.5" fill="#14302A" opacity="0.8"/></svg>';
+      '<path d="M32 76 q-11 5 -11 22 l0 22 q0 5 5 5 l12 0 q5 0 5 -5 l0 -22 q0 -17 -11 -22 Z" fill="#102A24" opacity="0.99"/>' +
+      '<circle cx="32" cy="64" r="11.5" fill="#102A24" opacity="1"/></svg>';
   }
   const legA = frame.walking ? 'wfThighA' : '', legB = frame.walking ? 'wfThighB' : '';
   const shinA = frame.walking ? 'wfShinA' : '', shinB = frame.walking ? 'wfShinB' : '';
@@ -1242,14 +1330,14 @@ function wfCharacterSVG(frame) {
     ? '<g transform="translate(15 143) rotate(-18)"><ellipse cx="0" cy="0" rx="7.5" ry="4" fill="#6B5240"/><path d="M-6 0 q0 -4.5 5 -4.5 l4 0 q3 0 3 3" fill="none" stroke="#5B4636" stroke-width="1.4" stroke-linecap="round"/></g>'
     : '';
   return '<svg viewBox="0 0 64 148" style="width:100%;height:100%;display:block;overflow:visible" aria-hidden="true">' +
-    '<ellipse cx="32" cy="143" rx="17" ry="4.5" fill="#3A2E22" opacity="0.22"/>' +
-    '<g class="' + legB + '"><rect x="12" y="46" width="5.5" height="36" rx="2.75" fill="#14302A" opacity="0.68"/></g>' +
-    '<g class="' + legA + '"><rect x="46" y="46" width="5.5" height="36" rx="2.75" fill="#14302A" opacity="0.68"/></g>' +
-    '<g class="' + shinA + '"><rect x="23" y="92" width="6.5" height="46" rx="3.25" fill="#14302A" opacity="0.78"/><ellipse cx="26.2" cy="140" rx="5.4" ry="3.4" fill="' + frame.footFill + '"/></g>' +
-    '<g class="' + shinB + '"><rect x="34" y="92" width="6.5" height="46" rx="3.25" fill="#14302A" opacity="0.78"/><ellipse cx="37.2" cy="140" rx="5.4" ry="3.4" fill="' + frame.footFill + '"/></g>' +
+    '<ellipse cx="32" cy="143" rx="17" ry="4.5" fill="#2A2118" opacity="0.34"/>' +
+    '<g class="' + legB + '"><rect x="12" y="46" width="5.5" height="36" rx="2.75" fill="#102A24" opacity="0.97"/></g>' +
+    '<g class="' + legA + '"><rect x="46" y="46" width="5.5" height="36" rx="2.75" fill="#102A24" opacity="0.97"/></g>' +
+    '<g class="' + shinA + '"><rect x="23" y="92" width="6.5" height="46" rx="3.25" fill="#102A24" opacity="0.99"/><ellipse cx="26.2" cy="140" rx="5.4" ry="3.4" fill="' + frame.footFill + '"/></g>' +
+    '<g class="' + shinB + '"><rect x="34" y="92" width="6.5" height="46" rx="3.25" fill="#102A24" opacity="0.99"/><ellipse cx="37.2" cy="140" rx="5.4" ry="3.4" fill="' + frame.footFill + '"/></g>' +
     shoe +
-    '<path d="M32 34 q-14 6 -14 28 l0 28 q0 6 6 6 l16 0 q6 0 6 -6 l0 -28 q0 -22 -14 -28 Z" fill="#14302A" opacity="0.78"/>' +
-    '<circle cx="32" cy="21" r="12.5" fill="#14302A" opacity="0.8"/></svg>';
+    '<path d="M32 34 q-14 6 -14 28 l0 28 q0 6 6 6 l16 0 q6 0 6 -6 l0 -28 q0 -22 -14 -28 Z" fill="#102A24" opacity="0.99"/>' +
+    '<circle cx="32" cy="21" r="12.5" fill="#102A24" opacity="1"/></svg>';
 }
 
 function wfPanelHTML(frame) {
@@ -1359,8 +1447,8 @@ function wfSkeletonHTML() {
       '<img src="assets/logo-interreg-forest4youth.png" alt="" data-wf="sun" class="wf-sun" style="display:block;height:auto;pointer-events:none" />' +
     '</div>' +
     '<div style="position:absolute;left:0;right:0;top:47%;bottom:0;background:linear-gradient(180deg,#B9BA9C 0%,#A9AA8E 38%,#9B9C79 100%)"></div>' +
-    '<div style="position:absolute;left:0;right:0;top:40%;height:7.5%;background:#B4C8BC;opacity:.7;filter:blur(3px)"></div>' +
-    '<div style="position:absolute;left:0;right:0;top:44.5%;height:5%;background:#C8D8D0;opacity:.8;filter:blur(2px)"></div>' +
+    '<div style="position:absolute;left:0;right:0;top:40%;height:7.5%;background:#B4C8BC;opacity:.34;filter:blur(3px)"></div>' +
+    '<div style="position:absolute;left:0;right:0;top:44.5%;height:5%;background:#C8D8D0;opacity:.4;filter:blur(2px)"></div>' +
     '<svg data-wf="geo" style="position:absolute;inset:0;width:100%;height:100%;display:block" role="img" aria-label=""></svg>' +
     '<div style="position:absolute;left:-4%;bottom:-6%;width:26%;height:22%;background:#22463A;opacity:.82;clip-path:ellipse(58% 54% at 26% 92%);pointer-events:none;z-index:200"></div>' +
     '<div style="position:absolute;left:6%;bottom:-8%;width:15%;height:15%;background:#2E5A4A;opacity:.8;clip-path:ellipse(52% 52% at 44% 90%);pointer-events:none;z-index:200"></div>' +
@@ -1734,11 +1822,33 @@ function wfRender() {
   // node) — see wfSyncSet()'s own comment for what happens to a running
   // animation/transition when a node IS torn down mid-flight instead.
   const crouched = frame.barefootPhase === 'crouch-in' || frame.barefootPhase === 'crouch';
+  // Campfire Close walks the figure off its fixed centre spot and over to
+  // the empty place in the ring. The walker is a screen-positioned <div>
+  // (left:50% + a translate, deliberately — it represents "where the
+  // camera is looking", not a point in the world), so joining the circle
+  // means offsetting it to where the seat projects to, and scaling it to
+  // that seat's own depth so it matches the four figures already sitting
+  // there rather than looming over them.
+  //   Both the offset and the scale ride the same transform transition
+  // the crouch already uses, so the move plays as a walk-over rather than
+  // a jump — the transition only fires because d.charWrap is a persistent
+  // node that wfSet() writes attributes to, never a re-created one.
+  let seatTransform = '';
+  if (frame.campfireSeat && frame.campfirePhase !== 'arriving') {
+    const seat = frame.campfireSeat;
+    // The wrapper's own horizontal centre after its translateX(-58%).
+    const charW = frame.charH * 0.52;
+    const bodyCx = WF.w / 2 - 0.08 * charW;
+    const feetY = WF.h - WF.h * 0.055;
+    const seatScale = Math.max(0.55, Math.min(1.15, seat.scale * 0.95));
+    seatTransform = ' translate(' + (seat.x - bodyCx).toFixed(1) + 'px,' +
+      (seat.y - feetY).toFixed(1) + 'px) scale(' + seatScale.toFixed(3) + ')';
+  }
   wfSet('charWrap',
     'position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform-origin:center bottom;' +
-    'transform:translateX(-58%)' + (crouched ? ' scaleY(0.8)' : '') + ';width:' +
+    'transform:translateX(-58%)' + seatTransform + (crouched ? ' scaleY(0.8)' : '') + ';width:' +
     (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) +
-    'px;z-index:320;pointer-events:none;transition:opacity .6s, transform .5s ease-in-out;opacity:' + (frame.hidden ? 0 : 1),
+    'px;z-index:320;pointer-events:none;transition:opacity .6s, transform 1.5s ease-in-out;opacity:' + (frame.hidden ? 0 : 1),
     v => d.charWrap.setAttribute('style', v));
   // Re-draw the walker only when its pose actually changes. The leg cycle
   // is a CSS animation on the <g>s inside this SVG, so re-emitting it every
