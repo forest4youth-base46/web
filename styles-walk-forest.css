@@ -65,6 +65,31 @@
    walk-forest.js sets resolve directly in that same coordinate space. */
 @keyframes wfGesture { 0%,100% { transform:rotate(-9deg); } 50% { transform:rotate(9deg); } }
 .wfGesture { animation: wfGesture 3.2s ease-in-out infinite; }
+/* The Sit Spot's rings actually ripple outward now rather than pulsing in
+   place — the station is about attention spreading from where you settle,
+   and the panel illustration (VISUAL.sitspot) draws exactly that: a
+   dashed ring radiating from each seated figure. Three copies at staggered
+   delays (set inline per ring in walk-forest.js) make one travelling
+   wave instead of three rings breathing together. */
+@keyframes wfRipple {
+  0%   { transform: scale(.32); opacity: 0; }
+  12%  { opacity: .6; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+.wfRipple { transform-box: fill-box; transform-origin: center; animation: wfRipple 7s ease-out infinite; }
+/* Build a Tiny World: each piece drops in, holds while the world stands
+   finished, then the cycle restarts — the same element-by-element
+   assembly the panel illustration animates (VISUAL.tinyworld reveals
+   pond, bridge, moss hill, tree, path, hut, garden in sequence). Per-piece
+   animation-delay (inline, walk-forest.js) is what turns one keyframe
+   into that sequence. */
+@keyframes wfPlace {
+  0%   { opacity: 0; transform: translateY(-7px) scale(.55); }
+  7%   { opacity: 1; transform: translateY(0) scale(1); }
+  86%  { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-7px) scale(.55); }
+}
+.wfPlace { transform-box: fill-box; transform-origin: center; animation: wfPlace 16s ease-in-out infinite; }
 @keyframes wfDrift { 0%,100% { transform:translateX(0); } 50% { transform:translateX(3.5%); } }
 .wf-drift { animation: wfDrift 75s ease-in-out infinite; }
 @keyframes wfDrift2 { 0%,100% { transform:translateX(0); } 50% { transform:translateX(-2.6%); } }
@@ -108,7 +133,7 @@
 @media (prefers-reduced-motion: reduce) {
   .wf-bob,.wf-ping,.wf-mote,.wf-sway,.wfThighA,.wfThighB,.wfShinA,.wfShinB,
   .wfFlick,.wfSmoke,.wfHang,.wfBreath,.wfLift,.wfPeg,.wf-drift,.wf-drift2,
-  .wf-glow,.wf-glow2,.wfSettle,.wfFlap,.wfGesture { animation: none; }
+  .wf-glow,.wf-glow2,.wfSettle,.wfFlap,.wfGesture,.wfRipple,.wfPlace { animation: none; }
 }
 
 /* ── scene container ──

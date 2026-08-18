@@ -506,17 +506,17 @@ function wfBuildProps(s, i, out) {
     } });
   };
   const shade = (a, l, r) => stone(a, l, r, '#3A2E22', 0.14);
-  const ring = (a, l, r, cls, col) => {
+  const ring = (a, l, r, cls, col, style) => {
     const k = key(); const q = P(a, l); if (!q) return;
-    out.push({ key: k, tag: 'ellipse', cls, attrs: {
+    out.push({ key: k, tag: 'ellipse', cls, style, attrs: {
       cx: R(q.x), cy: R(q.y), rx: R(r * SZ * q.u), ry: R(r * SZ * q.u * 0.4),
       fill: 'none', stroke: col || '#7FA396', 'stroke-width': R(Math.max(1, 0.012 * q.u)),
     } });
   };
-  const post = (a, l, hgt, th, f, cls) => {
+  const post = (a, l, hgt, th, f, cls, style) => {
     const k = key(); const b = P(a, l), t = P(a, l, hgt); if (!b || !t) return;
     const tw = Math.max(1.2, th * SZ * b.u);
-    out.push({ key: k, tag: 'rect', cls, attrs: {
+    out.push({ key: k, tag: 'rect', cls, style, attrs: {
       x: R(b.x - tw / 2), y: R(t.y), width: R(tw), height: R(Math.max(1, b.y - t.y)), rx: R(tw / 2), fill: f,
     } });
   };
@@ -542,10 +542,10 @@ function wfBuildProps(s, i, out) {
       fill: f, opacity: (o == null ? 1 : o),
     } });
   };
-  const bush = (a, l, r, f, cls) => {
+  const bush = (a, l, r, f, cls, style) => {
     const k = key(); const q = P(a, l); if (!q) return;
     const kk = r * SZ * q.u;
-    out.push({ key: k, tag: 'path', cls, attrs: {
+    out.push({ key: k, tag: 'path', cls, style, attrs: {
       d: 'M' + R(q.x - kk) + ' ' + R(q.y) + ' q' + R(kk * 0.3) + ' ' + R(-kk * 1.4) + ' ' + R(kk) + ' ' + R(-kk * 0.55) +
          ' q' + R(kk * 0.7) + ' ' + R(-kk * 0.85) + ' ' + R(kk) + ' ' + R(kk * 0.55) + ' Z', fill: f,
     } });
@@ -687,13 +687,24 @@ function wfBuildProps(s, i, out) {
         label(a, l, 0.13, W(5 + k), 0.05); label(a, l, 0.27, W(k), 0.038);
       }
       return;
-    case 'tinyworld':
+    case 'tinyworld': {
+      // The mound the world is built on is always there; everything
+      // placed ON it arrives one piece at a time (wfPlace, staggered),
+      // so the station reads as a world being assembled rather than a
+      // finished diorama. Order follows the panel illustration's own
+      // reveal order: ground cover first, then the built pieces, then
+      // the small finishing details.
       shade(0, -0.78, 0.42); stone(0, -0.78, 0.36, '#6B5240', 0.5); stone(0, -0.78, 0.28, '#5B4636', 0.55);
-      bush(-0.08, -0.9, 0.1, '#47775F', 'wf-sway'); bush(0.06, -0.68, 0.08, '#3A6B5A', 'wf-sway');
-      post(-0.02, -0.8, 0.12, 0.012, '#6B5240'); post(0.04, -0.74, 0.16, 0.012, '#6B5240');
-      stone(0.1, -0.88, 0.05, '#A8A08C'); stone(-0.06, -0.66, 0.04, '#9A9382');
+      const place = (n) => 'animation-delay:-' + (16 - n * 1.6).toFixed(2) + 's';
+      bush(-0.08, -0.9, 0.1, '#47775F', 'wfPlace', place(1));
+      bush(0.06, -0.68, 0.08, '#3A6B5A', 'wfPlace', place(2));
+      post(-0.02, -0.8, 0.12, 0.012, '#6B5240', 'wfPlace', place(3));
+      post(0.04, -0.74, 0.16, 0.012, '#6B5240', 'wfPlace', place(4));
+      stone(0.1, -0.88, 0.05, '#A8A08C', null, 'wfPlace', place(5));
+      stone(-0.06, -0.66, 0.04, '#9A9382', null, 'wfPlace', place(6));
       label(0, -0.78, 0.46, W(0), 0.044);
       return;
+    }
     case 'sofa':
       shade(0.1, 0.72, 0.4);
       beam(-0.04, 0.42, 0.09, 0.22, 1.04, 0.09, 0.07, '#6B5240');
@@ -732,7 +743,12 @@ function wfBuildProps(s, i, out) {
       return;
     case 'sitspot':
       shade(0.02, -0.95, 0.3); stone(0.02, -0.95, 0.25, '#9A9382'); stone(0.03, -0.97, 0.18, '#B0A992');
-      ring(0.02, -0.95, 0.32, 'wfBreath'); ring(0.02, -0.95, 0.5, 'wfBreath', '#8FAEA0');
+      // One travelling ripple rather than rings breathing in unison: same
+      // ring at three phases of the same 7s wfRipple cycle.
+      for (let k = 0; k < 3; k++) {
+        ring(0.02, -0.95, 0.42, 'wfRipple', k === 1 ? '#8FAEA0' : '#7FA396',
+          'animation-delay:-' + (k * 2.33).toFixed(2) + 's');
+      }
       label(0.55, -1.05, 0.34, W(0), 0.04);
       return;
     case 'roles':
