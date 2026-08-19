@@ -46,8 +46,12 @@ function startServer() {
 
 // Allows this sandbox's pre-installed browser path to be used without
 // hardcoding it — a real CI runner just uses Playwright's own install.
+// The same sandbox also lacks the kernel namespace privileges Chromium's
+// own sandbox needs, so it's disabled together with the custom path
+// rather than as a separate flag — a real CI runner (actions/setup-node
+// on ubuntu-latest, with its own working sandbox) never sets either.
 const launchOpts = process.env.PLAYWRIGHT_CHROMIUM_PATH
-  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
+  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH, args: ['--no-sandbox', '--disable-setuid-sandbox'] }
   : {};
 
 const BASE = `http://localhost:${PORT}/index.html`;

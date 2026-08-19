@@ -208,28 +208,47 @@ const WF_HAMMOCK_B = [0.34, 1.0, 0.8];
 // own pocketbook-data.js purpose text); stations whose purpose is
 // stillness (soundscape, sitspot, checkin, campfire) carry none, same
 // reasoning as the prop side (wfBuildProps()) leaving those untouched.
+// c[6], where present, is now a single delaySeconds (was [durationSeconds,
+// delaySeconds]) — duration is always the idle grammar's shared beat
+// (styles-walk-forest.css .wfGesture / .wfLift), so only phase varies per
+// figure. See armLimb() above and test/motion-dossier.md for why: ten
+// entries here each used to carry their own duration (1.9s-4.2s), which
+// was the "variety from tempo instead of phase" failure the grammar
+// exists to fix. soundscape/senses/sitspot/campfire/barefoot/hammock stay
+// gesture-free on purpose — each is a station about stillness or
+// watching, not doing (see test/motion-dossier.md's per-station verdicts);
+// adding a gesture there would work against the content, not for it.
 const WF_CAST = {
-  introduce: [[0.42, -0.66, 'kneel', 0.95, 'r', 0, [3.4, 0]]],
+  introduce: [[0.42, -0.66, 'kneel', 0.95, 'r', 0, -0.2]],
   hammock: [[0.11, 0.65, 'lie', 0.95, 'r', 0.52]],
   soundscape: [[0.34, 0.9, 'sit', 0.92], [-0.2, -0.95, 'sit', 0.92, 'l']],
-  naming: [[0.06, 0.86, 'reach', 0.95, 'l', 0, [4.2, 0]], [0.2, 1.12, 'stand', 0.9]],
+  naming: [[0.06, 0.86, 'reach', 0.95, 'l', 0, -0.9], [0.2, 1.12, 'stand', 0.9]],
   barefoot: [[0.72, -0.16, 'stand', 0.95], [0.95, 0.2, 'stand', 0.93]],
-  palette: [[0.1, -0.62, 'reach', 0.95, 'r', 0, [2.8, 0]], [0.18, 0.6, 'stand', 0.92]],
+  palette: [[0.1, -0.62, 'reach', 0.95, 'r', 0, -1.8], [0.18, 0.6, 'stand', 0.92]],
   senses: [[0.5, -0.8, 'stand', 0.95]],
-  tinyworld: [[-0.06, -0.92, 'kneel', 0.95, 'r', 0, [3.6, 0]], [0.12, -0.62, 'kneel', 0.92, 'l']],
-  sofa: [[0.1, 0.62, 'sit', 0.95], [0.26, 0.96, 'sit', 0.93], [-0.16, 0.3, 'carry', 0.95, 'r', 0, [3.0, 0]]],
+  tinyworld: [[-0.06, -0.92, 'kneel', 0.95, 'r', 0, -2.6], [0.12, -0.62, 'kneel', 0.92, 'l']],
+  // The carry figure's gesture is wfLift (a small vertical bob), not
+  // wfGesture — see armLimb()'s comment above.
+  sofa: [[0.1, 0.62, 'sit', 0.95], [0.26, 0.96, 'sit', 0.93], [-0.16, 0.3, 'carry', 0.95, 'r', 0, -0.5]],
   // Positioned ~1.3x further out from the ring's own center (0.06, 0)
   // than the ring's stones themselves, along each figure's own direction
   // from that center — so the group reads as sitting around the fire
   // pit's edge rather than overlapping its footprint (the flame, whose
   // own size was also corrected — see case 'fire' in wfBuildProps()).
-  fire: [[-0.17, -0.35, 'kneel', 0.95, 'r', 0, [1.9, 0]], [0.29, 0.34, 'kneel', 0.93, 'l'], [0.01, 0.52, 'sit', 0.92]],
-  bivouac: [[0.06, -1.5, 'reach', 0.95, 'r', 0, [3.2, 0]], [0.24, -0.66, 'carry', 0.93, 'l']],
+  fire: [[-0.17, -0.35, 'kneel', 0.95, 'r', 0, -1.2], [0.29, 0.34, 'kneel', 0.93, 'l'], [0.01, 0.52, 'sit', 0.92]],
+  bivouac: [[0.06, -1.5, 'reach', 0.95, 'r', 0, -2.1], [0.24, -0.66, 'carry', 0.93, 'l']],
   sitspot: [[0.62, -1.25, 'sit', 0.95], [1.15, 1.3, 'sit', 0.92]],
-  roles: [[-0.06, 0.42, 'carry', 0.95, 'r', 0, [3.0, 0]], [0.18, 0.9, 'stand', 0.93], [0.34, 1.2, 'carry', 0.92, 'l', 0, [3.0, -1.5]]],
-  project: [[0.05, -1.05, 'kneel', 0.95, 'r', 0, [4.0, 0]]],
-  object: [[0.02, 0.86, 'kneel', 0.95, 'l', 0, [3.8, 0]]],
-  checkin: [[0.1, -0.6, 'reach', 0.95, 'l'], [0.26, -0.3, 'stand', 0.93]],
+  // Both carry figures get wfLift, same reasoning as sofa above.
+  roles: [[-0.06, 0.42, 'carry', 0.95, 'r', 0, -0.3], [0.18, 0.9, 'stand', 0.93], [0.34, 1.2, 'carry', 0.92, 'l', 0, -1.9]],
+  project: [[0.05, -1.05, 'kneel', 0.95, 'r', 0, -2.8]],
+  object: [[0.02, 0.86, 'kneel', 0.95, 'l', 0, -1.1]],
+  // checkin's reach figure now carries a gesture (previously static) —
+  // "fill this in before we get on the bus" is exactly the kind of
+  // specific action the existing reach+gesture pattern (palette, bivouac)
+  // already represents elsewhere; this was a real gap, not a station
+  // about stillness like soundscape/senses/sitspot. See
+  // test/motion-dossier.md's "Promote" verdict.
+  checkin: [[0.1, -0.6, 'reach', 0.95, 'l', 0, -0.4], [0.26, -0.3, 'stand', 0.93]],
   // Same tightening as fire, same reason — was spread ±0.52.
   campfire: [[-0.18, -0.3, 'sit', 0.95], [0.28, -0.22, 'sit', 0.93], [0.3, 0.3, 'sit', 0.94], [-0.14, 0.31, 'sit', 0.92]],
 };
@@ -261,7 +280,11 @@ const WF_TREES = (function () {
     out.push({
       at, lat, species,
       h: 0.85 + rnd() * 0.9, w: 0.8 + rnd() * 0.65, crown: rnd(),
-      lean: rnd() - 0.5, sway: 8.5 + rnd() * 9, swayDelay: rnd() * 12,
+      // sway duration is no longer stored per-tree (was 8.5-17.5s,
+      // random) — .wf-sway's CSS rule now supplies one shared duration
+      // (--wf-beat-200) for every swaying tree in the scene, matching the
+      // idle-motion grammar; only swayDelay still varies, for phase.
+      lean: rnd() - 0.5, swayDelay: rnd() * 12,
     });
   }
   return out;
@@ -428,19 +451,34 @@ function wfBuildCast(s, i, out) {
       d: 'M' + R(x1) + ' ' + R(y1) + ' L' + R(x2) + ' ' + R(y2), stroke: fill, 'stroke-width': R(tw), 'stroke-linecap': 'round', opacity: op,
     } });
     // The one arm that reads as "this figure is doing something" for
-    // stations that got a gesture assigned in WF_CAST (c[6] = [durationS,
-    // delayS]) — same path as limb('arm', ...) would draw, wrapped in a
-    // persistent <g> pivoted on the shoulder point (x1,y1) rather than
-    // drawn as a bare stroke, so wfGesture (styles-walk-forest.css) can
-    // rotate it there. Every other limb stays a plain limb() call —
-    // static, same as before.
-    const armLimb = (x1, y1, x2, y2, tw) => {
+    // stations that got a gesture assigned in WF_CAST (c[6] = delaySeconds
+    // — duration is no longer stored per-entry, see below) — same path as
+    // limb('arm', ...) would draw, wrapped in a persistent <g> pivoted on
+    // the shoulder point (x1,y1) rather than drawn as a bare stroke, so a
+    // shared idle class (styles-walk-forest.css) can animate it there.
+    // Every other limb stays a plain limb() call — static, same as before.
+    //   Duration is always the grammar's shared beat now, not a value
+    // read from WF_CAST — ten cast entries previously each carried their
+    // own inline animation-duration (1.9s-4.2s, all different), which was
+    // the exact "variety from tempo instead of phase" failure the idle
+    // grammar exists to fix (test/motion-dossier.md has the full
+    // per-station account). Only the delay (phase) still varies per figure.
+    //   cls defaults to wfGesture (an arm-swing from the shoulder, right
+    // for reach/kneel poses where it reads as reaching/placing/striking)
+    // but the 'carry' pose call below passes 'wfLift' instead — a small
+    // vertical bob, not a swing. wfBuildCast's carry branch draws this arm
+    // fixed and roughly horizontal specifically to read as resting on a
+    // held load; swinging it from the shoulder on a loop reads as waving,
+    // not carrying, which contradicted the pose's own reason for existing
+    // (found on sofa/roles — see test/motion-dossier.md). A gentle bob
+    // reads as the load's weight settling instead, without that conflict.
+    const armLimb = (x1, y1, x2, y2, tw, cls) => {
       if (!c[6]) { limb('arm', x1, y1, x2, y2, tw); return; }
-      const [dur, delay] = c[6];
+      const delay = c[6];
       out.push({ key: kp + 'arm', tag: 'path',
         group: {
-          key: kp + 'arm-grp', cls: 'wfGesture',
-          style: 'transform-origin:' + R(x1) + 'px ' + R(y1) + 'px;animation-duration:' + dur + 's;animation-delay:' + delay + 's',
+          key: kp + 'arm-grp', cls: cls || 'wfGesture',
+          style: 'transform-origin:' + R(x1) + 'px ' + R(y1) + 'px;animation-delay:' + delay + 's',
         },
         attrs: { d: 'M' + R(x1) + ' ' + R(y1) + ' L' + R(x2) + ' ' + R(y2), stroke: fill, 'stroke-width': R(tw), 'stroke-linecap': 'round', opacity: op },
       });
@@ -451,7 +489,7 @@ function wfBuildCast(s, i, out) {
       limb('legL', b.x - H * 0.06, b.y - H * 0.44, b.x - H * 0.07, b.y, H * 0.075);
       limb('legR', b.x + H * 0.06, b.y - H * 0.44, b.x + H * 0.07, b.y, H * 0.075);
       torso('torso', 'M' + R(b.x) + ' ' + R(top + H * 0.2) + ' q' + R(-H * 0.15) + ' ' + R(H * 0.07) + ' ' + R(-H * 0.15) + ' ' + R(H * 0.36) + ' l' + R(H * 0.3) + ' 0 q0 ' + R(-H * 0.29) + ' ' + R(-H * 0.15) + ' ' + R(-H * 0.36) + ' Z');
-      if (pose === 'carry') armLimb(b.x, b.y - H * 0.6, b.x + face * H * 0.3, b.y - H * 0.5, H * 0.065);
+      if (pose === 'carry') armLimb(b.x, b.y - H * 0.6, b.x + face * H * 0.3, b.y - H * 0.5, H * 0.065, 'wfLift');
       if (pose === 'reach') armLimb(b.x, b.y - H * 0.62, b.x + face * H * 0.34, b.y - H * 0.78, H * 0.06);
       head('head', b.x, top + H * 0.11, H * 0.115);
     } else if (pose === 'sit') {
@@ -631,7 +669,13 @@ function wfBuildProps(s, i, out) {
         // not a shape descriptor) so they sway as one rigid unit — see
         // wfSyncShapes()'s `group` handling for how descriptors that share
         // a `group.key` get one persistent <g> wrapper between them.
-        const swayStyle = 'animation-duration:' + (9 + k * 2.4) + 's;animation-delay:-' + (k * 3.1) + 's';
+        // Duration dropped — .wf-sway's CSS rule supplies one shared
+        // duration (--wf-beat-200) for every swaying tree; only phase
+        // (delay) still varies per species index k. (9 + k*2.4)s was
+        // three different tempos for three species, the same "variety
+        // from tempo instead of phase" pattern fixed everywhere else in
+        // this file — see test/motion-dossier.md.
+        const swayStyle = 'animation-delay:-' + (k * 3.1) + 's';
         const grp = { key: kt + 'crown', cls: 'wf-sway', style: swayStyle };
         out.push({ key: kt + 'c2', tag: 'ellipse', group: grp, attrs: {
           cx: R(cx - R2 * 0.55), cy: R(midY), rx: R(R2 * 0.6), ry: R(R2 * 0.48), fill: crown2s[k],
@@ -721,7 +765,11 @@ function wfBuildProps(s, i, out) {
       // reveal order: ground cover first, then the built pieces, then
       // the small finishing details.
       shade(0, -0.78, 0.42); stone(0, -0.78, 0.36, '#6B5240', 0.5); stone(0, -0.78, 0.28, '#5B4636', 0.55);
-      const place = (n) => 'animation-delay:-' + (16 - n * 1.6).toFixed(2) + 's';
+      // wfPlace's duration is now 13s (--wf-beat-200, was 16s — see
+      // styles-walk-forest.css) — spacing scaled down to match (1.3s, was
+      // 1.6s) so the six pieces keep the same proportional stagger within
+      // the shorter cycle.
+      const place = (n) => 'animation-delay:-' + (13 - n * 1.3).toFixed(2) + 's';
       bush(-0.08, -0.9, 0.1, '#47775F', 'wfPlace', place(1));
       bush(0.06, -0.68, 0.08, '#3A6B5A', 'wfPlace', place(2));
       post(-0.02, -0.8, 0.12, 0.012, '#6B5240', 'wfPlace', place(3));
@@ -1018,7 +1066,10 @@ function wfComputeFrame() {
         : (sp === 'pine' ? '#1B3A31' : (sp === 'birch' ? '#4F7D68'
           : (tr.crown > 0.62 ? '#234A3E' : (tr.crown > 0.3 ? '#31604F' : '#3C6B55')))),
       op: (Math.min(1, 0.55 + p.scale * 0.8) * (p.d > 9 ? 0.55 : 1)).toFixed(2),
-      swayStyle: 'animation-duration:' + tr.sway.toFixed(1) + 's;animation-delay:-' + tr.swayDelay.toFixed(1) + 's',
+      // Duration dropped, same reasoning as the case above — .wf-sway's
+      // CSS rule now supplies it (--wf-beat-200) for every tree in the
+      // scene, trail trees included; only phase (delay) still varies.
+      swayStyle: 'animation-delay:-' + tr.swayDelay.toFixed(1) + 's',
       _s: p.scale,
     };
     if (p.scale > 0.62) nearTrees.push(item); else farTrees.push(item);
@@ -1434,6 +1485,15 @@ function wfSkeletonHTML() {
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.5V5h-2.5"/></svg></button>' +
       '<button type="button" class="wf-ctrl-btn" data-wf="btn-next" onclick="wfGoNext()">' +
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>' +
+      // A user-facing override for OS-level prefers-reduced-motion — the
+      // scene previously only ever read that OS setting once on entry,
+      // with no in-app way to ask for it. aria-pressed (kept in sync in
+      // wfRender()) is the toggle's own state; the leaf-in-circle glyph
+      // has no motion of its own regardless of state, deliberately, so
+      // the control itself never becomes the thing needing a
+      // reduced-motion exception.
+      '<button type="button" class="wf-ctrl-btn" data-wf="btn-calm" onclick="wfToggleCalm()">' +
+        '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6c0 2 -1.8 3 -3.4 3.2 .6 1.7 2 2.8 3.4 2.8"/></svg></button>' +
       '<div class="wf-status-pill" data-wf="status"></div>' +
     '</div>' +
     // Narrow mode: below both the character (whose feet land ~47px above
@@ -1464,7 +1524,7 @@ function wfBuildScene() {
     titleMain: q('title-main'), titleSub: q('title-sub'),
     narrowBar: q('narrow-bar'),
     controls: q('controls'), status: q('status'),
-    btnBack: q('btn-back'), btnRestart: q('btn-restart'), btnNext: q('btn-next'),
+    btnBack: q('btn-back'), btnRestart: q('btn-restart'), btnNext: q('btn-next'), btnCalm: q('btn-calm'),
     rail: q('rail'), listLink: q('list-link'),
     // Last value written for each keyed slot below. Re-writing an
     // identical attribute still costs a style recalc, and this runs
@@ -1822,6 +1882,12 @@ function wfRender() {
   wfSet('nextLabel', t('walk.next'), v => {
     d.btnNext.setAttribute('aria-label', v); d.btnNext.setAttribute('title', v);
   });
+  wfSet('calmLabel', t('walk.calm') + '|' + WF.reduced, () => {
+    d.btnCalm.setAttribute('aria-label', t('walk.calm'));
+    d.btnCalm.setAttribute('title', t('walk.calm'));
+    d.btnCalm.setAttribute('aria-pressed', WF.reduced ? 'true' : 'false');
+    d.btnCalm.classList.toggle('wf-ctrl-btn--active', WF.reduced);
+  });
 
   wfSyncRail(frame);
   wfSet('rail', frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:2px' : 'right:20px;bottom:66px',
@@ -1905,6 +1971,55 @@ function wfOnSceneClick(e) {
   if (typeof appEscapeAction === 'function') appEscapeAction();
 }
 
+// Calm mode's default: an explicit in-app choice (persisted below) wins
+// over the OS-level prefers-reduced-motion setting when one has been made;
+// otherwise falls back to the OS preference, same as before this toggle
+// existed. Wrapped in try/catch — localStorage can throw (private
+// browsing, storage disabled) and this is a preference read, not
+// something worth failing scene setup over.
+function wfReadReducedPref() {
+  try {
+    const stored = window.localStorage && localStorage.getItem('wf_calm');
+    if (stored === '1') return true;
+    if (stored === '0') return false;
+  } catch (e) { /* fall through to OS preference */ }
+  return typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+function wfStartLoop() {
+  if (WF.raf) return;
+  const loop = (now) => {
+    if (!WF.active) return;
+    wfStep(now);
+    WF.raf = requestAnimationFrame(loop);
+  };
+  WF.raf = requestAnimationFrame(loop);
+}
+
+// The one function that reassigns WF.reduced — per this codebase's own
+// state-management convention (ARCHITECTURE.md: "one function owns
+// reassigning it, and that function re-establishes every invariant the
+// rest of the app depends on unconditionally"). Persists the choice,
+// then re-establishes exactly the two invariants entering/leaving
+// reduced motion carries: the rAF loop's running state, and the camera
+// sitting on a real station rather than mid-move.
+function wfSetReduced(on) {
+  WF.reduced = on;
+  try { window.localStorage && localStorage.setItem('wf_calm', on ? '1' : '0'); } catch (e) { /* best-effort */ }
+  if (!WF.active) return;
+  if (on) {
+    if (WF.raf) { cancelAnimationFrame(WF.raf); WF.raf = null; }
+    if (WF.mode === 'move') { WF.cam = WF.to; WF.mode = 'hold'; }
+  } else {
+    WF.holdEnd = performance.now() + wfDwellMs();
+    wfStartLoop();
+  }
+  wfRender();
+}
+
+function wfToggleCalm() { wfSetReduced(!WF.reduced); }
+
 function wfEnterScene() {
   WF.el = document.getElementById('wf-scene');
   if (!WF.el) return;
@@ -1913,8 +2028,7 @@ function wfEnterScene() {
   wfSetDeepFromScreen(activeScreen ? activeScreen.id : null);
   if (WF.active) return;
   WF.active = true;
-  WF.reduced = typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  WF.reduced = wfReadReducedPref();
   wfMeasure();
   WF.holdEnd = performance.now() + wfDwellMs();
   wfRender();
@@ -1923,6 +2037,12 @@ function wfEnterScene() {
   WF.onKey = (e) => {
     if (!WF.active) return;
     if (e.key === 'ArrowLeft') { e.preventDefault(); wfGoBack(); }
+    // ArrowRight was missing — a keyboard user could only ever go back or
+    // restart. Matters most for reduced-motion users specifically: there's
+    // no autoplay to fall back on there (wfEnterScene() never starts the
+    // rAF loop under WF.reduced), so manual navigation is the only way
+    // forward through the trail.
+    else if (e.key === 'ArrowRight') { e.preventDefault(); wfGoNext(); }
     else if (e.key === 'r' || e.key === 'R') { wfRestart(); }
     // Escape is handled centrally — see appEscapeAction() in router.js,
     // which closes the panel (among everything else it cascades through).
@@ -1931,12 +2051,7 @@ function wfEnterScene() {
   WF.onSceneClick = wfOnSceneClick;
   WF.el.addEventListener('click', WF.onSceneClick);
   if (WF.reduced) return;
-  const loop = (now) => {
-    if (!WF.active) return;
-    wfStep(now);
-    WF.raf = requestAnimationFrame(loop);
-  };
-  WF.raf = requestAnimationFrame(loop);
+  wfStartLoop();
 }
 
 function wfExitScene() {

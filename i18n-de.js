@@ -104,6 +104,7 @@ const T_DE = {
     "walk.back": "Einen Schritt zurück",
     "walk.next": "Nächste Aktivität",
     "walk.restart": "Zurück zum Anfang",
+    "walk.calm": "Ruhemodus — Bewegung reduzieren",
     "walk.status.walking": "unterwegs",
     "walk.status.paused": "pausiert",
     "walk.status.resuming": "weiter in {n} s",
