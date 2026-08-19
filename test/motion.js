@@ -225,6 +225,42 @@ async function testRailButtonsNavigate(browser) {
   await page.close();
 }
 
+// Birds (.wf-bird-gate) are an event-class element gated by CSS to only
+// senses/soundscape (the two stations whose own text is about noticing
+// things overhead — see test/idle-scene-audit.md Part E) and only while
+// no detail panel is open. Locks in that the gate actually opens/closes
+// correctly rather than just existing in the DOM inert.
+async function testBirdsGatedToRightStations(browser) {
+  const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof WF !== 'undefined' && WF.dom && WF.el);
+  await page.evaluate(() => { wfSetOn(true); });
+
+  const gateOpacity = async () => page.evaluate(() => {
+    const gate = document.querySelector('.wf-bird-gate');
+    return parseFloat(getComputedStyle(gate).opacity);
+  });
+
+  await jumpToStation(page, 'introduce');
+  await page.waitForTimeout(650);
+  assert.ok((await gateOpacity()) < 0.05, 'birds must stay hidden at a station with no reason for them (introduce)');
+
+  await jumpToStation(page, 'senses');
+  await page.waitForTimeout(650);
+  assert.ok((await gateOpacity()) > 0.95, 'birds must be eligible to appear at senses');
+
+  await page.evaluate(() => { wfOpenStop('senses'); });
+  await page.waitForTimeout(650);
+  assert.ok((await gateOpacity()) < 0.05, 'birds must hide again while senses\' own detail panel is open');
+
+  await page.evaluate(() => { WF.openId = null; wfRender(); });
+  await jumpToStation(page, 'soundscape');
+  await page.waitForTimeout(650);
+  assert.ok((await gateOpacity()) > 0.95, 'birds must also be eligible to appear at soundscape');
+
+  await page.close();
+}
+
 const TESTS = [
   ['every idle animation is on the shared beat grammar or a named exception', testSharedBeatGrammar],
   ['carry-pose figures use wfLift, never wfGesture', testCarryPoseUsesLiftNotGesture],
@@ -232,6 +268,7 @@ const TESTS = [
   ['every station stays reachable via wfGoNext under reduced motion', testStationsReachableUnderReducedMotion],
   ['pins container node identity survives a camera move (no subtree replacement)', testNoSubtreeReplacementDuringMove],
   ['every rail button navigates to its own station, instantly under reduced motion', testRailButtonsNavigate],
+  ['birds only become visible at senses/soundscape, and hide while a panel is open', testBirdsGatedToRightStations],
 ];
 
 async function main() {

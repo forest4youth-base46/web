@@ -18,8 +18,45 @@
    a deliberately eye-catching ping) are labelled as such at their
    declaration, not silently left looking like an oversight. */
 @keyframes wfBob { 0%,100% { transform:translateY(0) rotate(-0.25deg); } 50% { transform:translateY(-1.1%) rotate(0.25deg); } }
-@keyframes wfPing { 0% { transform:scale(.62); opacity:.75; } 100% { transform:scale(2.5); opacity:0; } }
+@keyframes wfPing { 0% { transform:scale(.62); opacity:.75; } 100% { transform:scale(2.15); opacity:0; } }
 @keyframes wfMote { 0% { transform:translate3d(0,0,0); opacity:0; } 20% { opacity:.7; } 100% { transform:translate3d(70px,-38px,0); opacity:0; } }
+/* A falling leaf tumbles, it doesn't just drop — rotation alongside the
+   fall reads as "leaf" rather than "falling object." One-way travel like
+   wfMote/wfSmoke (linear, opacity ramp at both ends hides the wrap), not
+   an oscillation. All three .wf-leaf instances share this one keyframe,
+   so every leaf drifts the same direction as it falls — a small, honest
+   piece of "one wind vector" (the idle-motion grammar's own coherence
+   rule): not a claim that the whole scene's wind is fully reconciled yet
+   (.wf-drift and .wf-drift2 still lean opposite ways, a pre-existing
+   quirk this doesn't attempt to fix), just that these three leaves don't
+   contradict each other. */
+@keyframes wfLeafFall {
+  0%   { transform:translate(0,0) rotate(-8deg); opacity:0; }
+  10%  { opacity:.55; }
+  55%  { transform:translate(22px,72px) rotate(120deg); }
+  88%  { opacity:.3; }
+  100% { transform:translate(38px,136px) rotate(255deg); opacity:0; }
+}
+/* Event class (per the scene's own admission rule), not ambient idle —
+   gated to appear only at the two stations whose own text is literally
+   about noticing things overhead (senses: "find five things you can
+   see"; soundscape: "mark where sounds come from" — see
+   test/idle-scene-audit.md's Part E for the full reasoning), and only
+   while no detail panel is open. --wf-beat-1200 (78s) reused as-is, not
+   a new token — most of each cycle the ring is off-frame/invisible
+   (0-91%), so it crosses roughly once a minute rather than continuously,
+   which is what makes it a rare thing to notice rather than a tic.
+   ease-in-out (not linear, unlike every other one-way-travel loop above)
+   is deliberate: a glide that eases in and out of its crossing reads as
+   a living thing choosing to move, not a particle drifting at constant
+   velocity. */
+@keyframes wfBirdCross {
+  0%, 91% { transform:translate(0,0); opacity:0; }
+  93%     { opacity:.55; }
+  95.5%   { transform:translate(45vw,-3vh); opacity:.55; }
+  98%     { transform:translate(80vw,-1vh); opacity:.35; }
+  100%    { transform:translate(94vw,1vh); opacity:0; }
+}
 @keyframes wfSway { 0%,100% { transform:rotate(-0.55deg); } 50% { transform:rotate(0.55deg); } }
 .wf-bob { animation: wfBob var(--wf-beat-100) var(--ease-idle) infinite; }
 /* Named exception (armed-pin ping): deliberately allowed to draw the eye
@@ -33,6 +70,21 @@
    ramp at both ends rather than by easing. 19s was already almost exactly
    this rung (--wf-beat-300, 19.5s). */
 .wf-mote { animation: wfMote var(--wf-beat-300) linear infinite; }
+.wf-leaf { opacity:0; animation: wfLeafFall var(--wf-beat-300) linear infinite; }
+/* Base opacity 0 on the class itself (not an inline starting value, the
+   way .wf-mote uses) is deliberate: under reduced motion (disabled
+   below), a mote frozen at its own static opacity still reads fine as
+   ambient dust, but a leaf frozen mid-tumble at a random angle reads as
+   broken, not restful — so it should go fully absent, not freeze. */
+.wf-bird { opacity:0; animation: wfBirdCross var(--wf-beat-1200) ease-in-out infinite; }
+.wf-bird-gate {
+  position:absolute; opacity:0; pointer-events:none;
+  transition: opacity .6s var(--ease-idle);
+}
+#wf-scene[data-wf-station="senses"]:not(.wf-panel-open) .wf-bird-gate,
+#wf-scene[data-wf-station="soundscape"]:not(.wf-panel-open) .wf-bird-gate {
+  opacity:1;
+}
 .wf-sway { transform-box: fill-box; transform-origin: bottom center; animation: wfSway var(--wf-beat-200) var(--ease-idle) infinite; }
 /* Locomotion, not ambient idle — tied to the walker's own travel speed
    (only runs while WF.mode is 'move'), so it's exempt from the shared
@@ -199,7 +251,8 @@
 @media (prefers-reduced-motion: reduce) {
   .wf-bob,.wf-ping,.wf-mote,.wf-sway,.wfThighA,.wfThighB,.wfShinA,.wfShinB,
   .wfFlick,.wfSmoke,.wfHang,.wfBreath,.wfLift,.wfPeg,.wf-drift,.wf-drift2,
-  .wf-glow,.wf-glow2,.wfSettle,.wfFlap,.wfGesture,.wfRipple,.wfPlace { animation: none; }
+  .wf-glow,.wf-glow2,.wfSettle,.wfFlap,.wfGesture,.wfRipple,.wfPlace,
+  .wf-leaf,.wf-bird { animation: none; }
 }
 
 /* ── scene container ──

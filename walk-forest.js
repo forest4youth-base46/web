@@ -1262,6 +1262,7 @@ function wfComputeFrame() {
 
   return {
     trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setPieces,
+    stationId: (ACTIVITIES[camIndex] || {}).id || '',
     narrow, walking, sunOpacity, sunWidth, sunGlow,
     stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
     status,
@@ -1481,6 +1482,26 @@ function wfSkeletonHTML() {
     '<div class="wf-mote" style="position:absolute;left:32%;top:52%;width:5px;height:5px;border-radius:50%;background:#FBF9F4;opacity:.6;pointer-events:none"></div>' +
     '<div class="wf-mote" style="position:absolute;left:58%;top:60%;width:4px;height:4px;border-radius:50%;background:#FBF9F4;opacity:.5;animation-delay:3.4s;pointer-events:none"></div>' +
     '<div class="wf-mote" style="position:absolute;left:71%;top:47%;width:6px;height:6px;border-radius:50%;background:#FBF9F4;opacity:.45;animation-delay:6.8s;pointer-events:none"></div>' +
+    // Falling leaves — scene-wide ambient (always present, not tied to
+    // any one station, same non-reconciled persistent placement as the
+    // motes above), three staggered by animation-delay only, never
+    // duration, per the shared grammar's own "variety from phase, not
+    // tempo" rule. border-radius:0% 100% 0% 100% on a plain square div is
+    // the cheap CSS leaf-shape trick — no extra SVG parse cost for
+    // something this small and numerous-ish.
+    '<div class="wf-leaf" style="position:absolute;left:22%;top:6%;width:10px;height:8px;border-radius:0% 100% 0% 100%;background:#3A6B5A;pointer-events:none"></div>' +
+    '<div class="wf-leaf" style="position:absolute;left:47%;top:3%;width:8px;height:7px;border-radius:0% 100% 0% 100%;background:#6B5240;opacity:.9;animation-delay:-9.7s;pointer-events:none"></div>' +
+    '<div class="wf-leaf" style="position:absolute;left:68%;top:9%;width:9px;height:7px;border-radius:0% 100% 0% 100%;background:#7FA396;animation-delay:-14.2s;pointer-events:none"></div>' +
+    // Birds — event class, gated to senses/soundscape only (CSS below,
+    // keyed off #wf-scene[data-wf-station]) and never while a panel is
+    // open. Two instances at a half-period delay offset so a crossing is
+    // available roughly every ~39s instead of only once every 78s.
+    '<div class="wf-bird-gate" style="left:0;top:22%;width:22px;height:11px">' +
+      '<svg class="wf-bird" viewBox="0 0 24 12" width="22" height="11" aria-hidden="true"><path d="M2 8Q7 2 12 6Q17 2 22 8" stroke="#2E4A3E" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>' +
+    '</div>' +
+    '<div class="wf-bird-gate" style="left:-4%;top:15%;width:18px;height:9px">' +
+      '<svg class="wf-bird" viewBox="0 0 24 12" width="18" height="9" style="animation-delay:calc(var(--wf-beat-1200) / -2)" aria-hidden="true"><path d="M2 8Q7 2 12 6Q17 2 22 8" stroke="#2E4A3E" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>' +
+    '</div>' +
     '<svg data-wf="set" style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:150" aria-hidden="true"></svg>' +
     '<div data-wf="char-wrap" style="position:absolute;left:50%;transform:translateX(-58%);z-index:320;pointer-events:none;transition:opacity .6s">' +
       '<div class="wf-bob" data-wf="char-bob" style="width:100%;height:100%;position:relative"></div>' +
@@ -1577,13 +1598,19 @@ function wfMakePing() {
   svg.setAttribute('viewBox', '0 0 40 40');
   svg.setAttribute('aria-hidden', 'true');
   // overflow:visible matters here — the ring's own keyframe (wfPing,
-  // styles-walk-forest.css) scales it up to 2.5x, well past this 40x40
-  // viewBox (r=16 at 2.5x is an 80-unit diameter). SVG root elements clip
-  // to their viewBox by default, so without this the expanding ring got
-  // chopped into four disconnected corner arcs wherever it crossed the
-  // box edge — a "broken square" instead of a circle — for most of every
-  // cycle, not an occasional glitch.
-  svg.setAttribute('style', 'position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);overflow:visible;pointer-events:none');
+  // styles-walk-forest.css) scales it up past this 40x40 viewBox. SVG
+  // root elements clip to their viewBox by default, so without this the
+  // expanding ring got chopped into four disconnected corner arcs
+  // wherever it crossed the box edge — a "broken square" instead of a
+  // circle — for most of every cycle, not an occasional glitch.
+  //   The box itself (-18px inset, not the original -9px) is bigger than
+  // strictly required now that overflow:visible no longer depends on it
+  // for correctness — it's headroom so the ring's own fade-to-0 finishes
+  // while it's still comfortably inside open space, rather than right at
+  // (or past) the edge of whatever's nearby, which is what "reach full
+  // transparency before hitting the edges" means in practice: not a
+  // clipping fix, a legibility one.
+  svg.setAttribute('style', 'position:absolute;inset:-18px;width:calc(100% + 36px);height:calc(100% + 36px);overflow:visible;pointer-events:none');
   const circle = document.createElementNS(WF_SVG_NS, 'circle');
   circle.setAttribute('class', 'wf-ping');
   circle.setAttribute('cx', '20');
@@ -1848,6 +1875,13 @@ function wfRender() {
   if (!WF.latPrimed) { WF.latPrimed = true; wfPrimeLatExtents(); }
   const frame = wfComputeFrame();
   const d = WF.dom;
+
+  // Gates the birds (.wf-bird-gate, styles-walk-forest.css) to only the
+  // two stations whose own text is about noticing things overhead, and
+  // only while no detail panel is open — see that file's comment above
+  // #wf-scene[data-wf-station=...] for the full reasoning.
+  wfSet('stationId', frame.stationId, v => WF.el.setAttribute('data-wf-station', v));
+  wfSet('panelOpenGate', !!WF.openId, v => WF.el.classList.toggle('wf-panel-open', v));
 
   const sceneSvg = '' +
     '<g>' + frame.farTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>' +
