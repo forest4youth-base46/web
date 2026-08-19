@@ -507,11 +507,29 @@ function wfComputeFrame() {
   const narrow = w < 768;
   const camIndex = Math.round(WF.cam);
 
+  // Trail width and tree crown/trunk width both used to scale off raw `w`
+  // alone, so their apparent proportions tracked the device's own screen
+  // aspect ratio instead of staying visually consistent: a wide-but-short
+  // desktop window read as an oversized path (width scales up, nothing
+  // reins it in), while a narrow-but-tall phone read as thin, pointy trees
+  // (crown radius shrinks with `w` even as h-driven trunk height doesn't).
+  // effW/pathHalfW correct both without a new breakpoint — they're
+  // continuous functions of the same w/h already measured every frame, so
+  // there's no visible jump as a window is resized, and each only kicks in
+  // once the aspect ratio actually drifts from what already looks right:
+  // 0.7 keeps today's desktop (1.6 aspect and wider — 1280x800, 1366x768,
+  // 1440x900, 1920x1080 all clear it) numerically untouched, while
+  // portrait/mobile aspects (~0.5) get roughly a 1.5x width boost — enough
+  // to round the crowns without merging the whole treeline into a solid
+  // canopy (fully matching desktop's own radius:height ratio did that).
+  const effW = Math.max(w, h * 0.7);
+  const pathHalfW = Math.min(w * 0.235, h * 0.27);
+
   const trailPts = [];
   for (let t = WF.cam - 0.7; t < WF.cam + 7.2; t += 0.22) {
     const p = wfProject(t, 0);
     if (!p) continue;
-    trailPts.push({ x: p.x, y: p.y, hw: w * 0.235 * p.scale });
+    trailPts.push({ x: p.x, y: p.y, hw: pathHalfW * p.scale });
   }
   let trailD = '';
   if (trailPts.length > 1) {
@@ -525,8 +543,13 @@ function wfComputeFrame() {
     const p = wfProject(tr.at, tr.lat);
     if (!p || p.scale < 0.09 || p.scale > 3.2 || p.d > 12) return;
     const th = h * 0.44 * tr.h * p.scale;
-    const tw = Math.max(1.4, w * 0.019 * tr.w * p.scale);
-    const R = Math.max(5, w * 0.086 * p.scale * tr.w);
+    // effW's roundness boost scales with p.scale same as the unboosted
+    // formula did, so it compounds hardest on the handful of trees nearest
+    // the camera — capped to a viewport-relative ceiling so those don't
+    // balloon into oversized blobs while the mid/far trees lining the
+    // corridor (well under the cap) get the full roundness benefit.
+    const tw = Math.min(Math.max(1.4, effW * 0.019 * tr.w * p.scale), w * 0.065);
+    const R = Math.min(Math.max(5, effW * 0.086 * p.scale * tr.w), w * 0.28);
     const topY = p.y - th;
     const lean = tr.lean * tw * 1.6;
     const far = p.scale < 0.34;
@@ -668,7 +691,18 @@ function wfComputeFrame() {
   // among mature trees. This lands closer to 35-45% depending on viewport,
   // still legible as the "you are here" marker without competing with the
   // canopy for scale.
-  const charH = Math.max(120, Math.min(h * 0.22, 220));
+  // A purely h-driven charH reads fine on a portrait phone, but on a
+  // landscape desktop window the walker ends up occupying the same
+  // fraction of screen *height* while the trees/path around it occupy far
+  // more of the now much wider screen — so it reads as undersized even
+  // though its pixel height barely differs from mobile's. wideBoost adds a
+  // premium once the aspect ratio actually goes landscape (aspect > 1.2 —
+  // narrow phones and portrait tablets are always well under that, so
+  // they're untouched); the 300 cap was raised from 220 so a wide monitor
+  // can actually reach the boosted size.
+  const aspect = w / h;
+  const wideBoost = 1 + Math.max(0, aspect - 1.2) * 0.25;
+  const charH = Math.max(120, Math.min(h * 0.22 * wideBoost, 300));
 
   // Funder credit "sun": grows and brightens as the walk approaches its
   // final stop, reusing the same distance→scale falloff wfProject() uses
