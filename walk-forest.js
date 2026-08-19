@@ -192,6 +192,13 @@ function wfInClearing(at, lat) {
   return false;
 }
 
+// The hammock's two suspension posts, in [along, lateral, up] — shared by
+// wfBuildProps() (the cloth itself) and wfBuildCast()'s 'lie' pose, so the
+// reclining figure's rotation always matches the cloth's actual diagonal
+// instead of drifting out of sync if one side is retuned alone.
+const WF_HAMMOCK_A = [-0.12, 0.3, 0.8];
+const WF_HAMMOCK_B = [0.34, 1.0, 0.8];
+
 // [along trail, lateral, pose, height, facing, up, gesture] — group sizes
 // follow each activity's own description: individual work is one figure
 // apart, group work is three or four together.
@@ -211,10 +218,12 @@ const WF_CAST = {
   senses: [[0.5, -0.8, 'stand', 0.95]],
   tinyworld: [[-0.06, -0.92, 'kneel', 0.95, 'r', 0, [3.6, 0]], [0.12, -0.62, 'kneel', 0.92, 'l']],
   sofa: [[0.1, 0.62, 'sit', 0.95], [0.26, 0.96, 'sit', 0.93], [-0.16, 0.3, 'carry', 0.95, 'r', 0, [3.0, 0]]],
-  // Lateral spread tightened (was -0.42/0.4/0.62 — wider than the fire
-  // ring itself) so the whole group, people included, fits into the
-  // path-to-treeline clearing without needing an extreme lateral push.
-  fire: [[-0.12, -0.27, 'kneel', 0.95, 'r', 0, [1.9, 0]], [0.24, 0.26, 'kneel', 0.93, 'l'], [0.02, 0.4, 'sit', 0.92]],
+  // Positioned ~1.3x further out from the ring's own center (0.06, 0)
+  // than the ring's stones themselves, along each figure's own direction
+  // from that center — so the group reads as sitting around the fire
+  // pit's edge rather than overlapping its footprint (the flame, whose
+  // own size was also corrected — see case 'fire' in wfBuildProps()).
+  fire: [[-0.17, -0.35, 'kneel', 0.95, 'r', 0, [1.9, 0]], [0.29, 0.34, 'kneel', 0.93, 'l'], [0.01, 0.52, 'sit', 0.92]],
   bivouac: [[0.06, -1.5, 'reach', 0.95, 'r', 0, [3.2, 0]], [0.24, -0.66, 'carry', 0.93, 'l']],
   sitspot: [[0.62, -1.25, 'sit', 0.95], [1.15, 1.3, 'sit', 0.92]],
   roles: [[-0.06, 0.42, 'carry', 0.95, 'r', 0, [3.0, 0]], [0.18, 0.9, 'stand', 0.93], [0.34, 1.2, 'carry', 0.92, 'l', 0, [3.0, -1.5]]],
@@ -460,10 +469,27 @@ function wfBuildCast(s, i, out) {
       armLimb(b.x + face * H * 0.05, b.y - H * 0.3, b.x + face * H * 0.24, b.y - H * 0.08, H * 0.055);
       head('head', b.x + face * H * 0.02, top + H * 0.06, H * 0.095);
     } else if (pose === 'lie') {
+      // Oriented along the hammock's own rope diagonal (post to post),
+      // not a flat horizontal blob — the flat version spilled off both
+      // sides of the cloth and put the head entirely outside it. Only
+      // hammock uses this pose today; falls back to the flat body if
+      // 'lie' is ever reused somewhere without matching suspension posts.
+      const hA = s.id === 'hammock' ? P(...WF_HAMMOCK_A) : null;
+      const hB = s.id === 'hammock' ? P(...WF_HAMMOCK_B) : null;
+      const dx = hA && hB ? hB.x - hA.x : 1, dy = hA && hB ? hB.y - hA.y : 0;
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len, uy = dy / len;
+      const angDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+      // Sized to sit inside the cloth's own drawn silhouette with margin —
+      // the cloth is a sagging curve, not a straight band, so a body drawn
+      // at the full post-to-post length overshoots it at both ends.
+      const bodyRx = hA && hB ? Math.min(H * 0.42, len * 0.3) : H * 0.36;
+      const bodyCx = b.x, bodyCy = b.y - H * 0.16;
       out.push({ key: kp + 'body', tag: 'ellipse', attrs: {
-        cx: R(b.x), cy: R(b.y - H * 0.08), rx: R(H * 0.48), ry: R(H * 0.11), fill, opacity: op,
+        cx: R(bodyCx), cy: R(bodyCy), rx: R(bodyRx), ry: R(H * 0.085), fill, opacity: op,
+        transform: 'rotate(' + angDeg.toFixed(1) + ' ' + R(bodyCx) + ' ' + R(bodyCy) + ')',
       } });
-      head('head', b.x - face * H * 0.46, b.y - H * 0.16, H * 0.105);
+      head('head', bodyCx - face * ux * bodyRx * 0.85, bodyCy - face * uy * bodyRx * 0.85, H * 0.085);
     }
   });
 }
@@ -623,9 +649,9 @@ function wfBuildProps(s, i, out) {
     case 'hammock': {
       // l=1.9 for the far post put it well past a full viewport width off
       // the right edge — pulled the whole span in (0.6/1.25/1.9 -> 0.3/0.65/1.0).
-      const A = P(-0.12, 0.3, 0.8), B = P(0.34, 1.0, 0.8), M = P(0.11, 0.65, 0.5);
+      const A = P(...WF_HAMMOCK_A), B = P(...WF_HAMMOCK_B), M = P(0.11, 0.65, 0.5);
       if (!A || !B || !M) return;
-      post(-0.12, 0.3, 1.15, 0.05, '#5B4636'); post(0.34, 1.0, 1.15, 0.05, '#5B4636');
+      post(WF_HAMMOCK_A[0], WF_HAMMOCK_A[1], 1.15, 0.05, '#5B4636'); post(WF_HAMMOCK_B[0], WF_HAMMOCK_B[1], 1.15, 0.05, '#5B4636');
       const kh = key();
       const grp = { key: kh + 'hang', cls: 'wfHang' };
       out.push({ key: kh + 'cloth', tag: 'path', group: grp, attrs: {
@@ -720,12 +746,20 @@ function wfBuildProps(s, i, out) {
       const f = P(0.06, 0, 0.16);
       const kf = key();
       if (f) {
+        // Flame size is derived from a person's height at this point, not
+        // from f.u directly — the raw-u version stood ~1.4x a kneeling
+        // figure's own height (a bonfire, not a small gathering fire) and
+        // its top reached up into the far-side figure's head, reading as
+        // "sitting in the fire" rather than around it. 1.3H keeps it inside
+        // the documented "waist-to-chest prop" guide (0.5-0.7 of person
+        // height) near its upper end, clearing a kneeling head with margin.
+        const fu = wfPersonHeight(f.s) * 1.3;
         out.push({ key: kf + 'flame', tag: 'path', cls: 'wfFlick', attrs: {
-          d: 'M' + R(f.x) + ' ' + R(f.y - 0.3 * f.u) + ' q' + R(0.11 * f.u) + ' ' + R(0.18 * f.u) + ' ' + R(0.11 * f.u) + ' ' + R(0.28 * f.u) + ' a' + R(0.11 * f.u) + ' ' + R(0.11 * f.u) + ' 0 0 1 ' + R(-0.22 * f.u) + ' 0 q0 ' + R(-0.1 * f.u) + ' ' + R(0.11 * f.u) + ' ' + R(-0.28 * f.u) + ' Z',
+          d: 'M' + R(f.x) + ' ' + R(f.y - 0.3 * fu) + ' q' + R(0.11 * fu) + ' ' + R(0.18 * fu) + ' ' + R(0.11 * fu) + ' ' + R(0.28 * fu) + ' a' + R(0.11 * fu) + ' ' + R(0.11 * fu) + ' 0 0 1 ' + R(-0.22 * fu) + ' 0 q0 ' + R(-0.1 * fu) + ' ' + R(0.11 * fu) + ' ' + R(-0.28 * fu) + ' Z',
           fill: '#D87B4F',
         } });
         out.push({ key: kf + 'smoke', tag: 'circle', cls: 'wfSmoke', attrs: {
-          cx: R(f.x), cy: R(f.y - 0.36 * f.u), r: R(0.07 * f.u), fill: '#C8D8D0',
+          cx: R(f.x), cy: R(f.y - 0.36 * fu), r: R(0.07 * fu), fill: '#C8D8D0',
         } });
       }
       label(0.06, 0, 0.85, W(8), 0.044);
