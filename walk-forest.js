@@ -686,24 +686,23 @@ function wfComputeFrame() {
     status = t('walk.status.resuming').replace('{n}', String(Math.max(1, Math.ceil((WF.resumeAt - now) / 1000))));
   }
 
-  // The walker's height used to be its own independent h/w formula (first
-  // a flat h*0.22 cap, later an aspect-ratio "wideBoost" patched on top to
-  // chase a desktop-only complaint) — tuned by eye against nothing else in
-  // the scene, so it could silently drift out of proportion with the
-  // actual trees around it without either constant ever being wrong "on
-  // its own terms." Tying it directly to refTreeH — the same h*0.44
-  // formula every tree's height (th, above) is built from, evaluated for
-  // a canonical tree (height factor 1) at the walker's own depth (scale 1,
-  // since the walker always renders at the near/camera position) — makes
-  // the relationship an actual dependency instead of two numbers that
-  // happen to agree today: whatever the trees' height formula becomes,
-  // the walker moves with it. 0.42 is the midpoint of the original
-  // design's own "35-45% of a near tree" comment.
-  const refTreeH = h * 0.44;
-  const charH = Math.max(120, Math.min(refTreeH * 0.42, 300));
-  if (typeof console !== 'undefined' && charH > refTreeH * 0.6) {
-    console.warn('wfComputeFrame: walker (' + charH.toFixed(0) + 'px) is over 60% of its reference tree height (' + refTreeH.toFixed(0) + 'px) — charH/refTreeH ratio has drifted out of the intended 35-45% band.');
-  }
+  // Shrunk from the original 0.36/320 cap, which put the walker at ~60%+
+  // of a near tree's height — too close to tree scale to read as a person
+  // among mature trees. This lands closer to 35-45% depending on viewport,
+  // still legible as the "you are here" marker without competing with the
+  // canopy for scale.
+  // A purely h-driven charH reads fine on a portrait phone, but on a
+  // landscape desktop window the walker ends up occupying the same
+  // fraction of screen *height* while the trees/path around it occupy far
+  // more of the now much wider screen — so it reads as undersized even
+  // though its pixel height barely differs from mobile's. wideBoost adds a
+  // premium once the aspect ratio actually goes landscape (aspect > 1.2 —
+  // narrow phones and portrait tablets are always well under that, so
+  // they're untouched); the 300 cap was raised from 220 so a wide monitor
+  // can actually reach the boosted size.
+  const aspect = w / h;
+  const wideBoost = 1 + Math.max(0, aspect - 1.2) * 0.25;
+  const charH = Math.max(120, Math.min(h * 0.22 * wideBoost, 300));
 
   // Funder credit "sun": grows and brightens as the walk approaches its
   // final stop, reusing the same distance→scale falloff wfProject() uses
