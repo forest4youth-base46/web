@@ -1036,11 +1036,26 @@ function wfComputeFrame() {
   const narrow = w < 768;
   const camIndex = Math.round(WF.cam);
 
+  // Trail width and tree crown/trunk width both used to scale off raw `w`
+  // alone, so their apparent proportions tracked the device's own screen
+  // aspect ratio instead of staying visually consistent: a wide-but-short
+  // desktop window read as an oversized path (width scales up, nothing
+  // reins it in), while a narrow-but-tall phone read as thin, pointy trees
+  // (crown radius shrinks with `w` even as h-driven trunk height doesn't).
+  // effW/pathHalfW correct both without a new breakpoint — continuous
+  // functions of the same w/h already measured every frame, so there's no
+  // visible jump as a window is resized, and each only kicks in once the
+  // aspect ratio actually drifts from what already looks right: 0.7 and
+  // 0.27 keep today's desktop (1.6 aspect and wider) numerically
+  // untouched, while portrait/mobile aspects (~0.5) get a real correction.
+  const effW = Math.max(w, h * 0.7);
+  const pathHalfW = Math.min(w * 0.235, h * 0.27);
+
   const trailPts = [];
   for (let t = WF.cam - 0.7; t < WF.cam + 7.2; t += 0.22) {
     const p = wfProject(t, 0);
     if (!p) continue;
-    trailPts.push({ x: p.x, y: p.y, hw: w * 0.235 * p.scale });
+    trailPts.push({ x: p.x, y: p.y, hw: pathHalfW * p.scale });
   }
   let trailD = '';
   if (trailPts.length > 1) {
@@ -1075,8 +1090,13 @@ function wfComputeFrame() {
     // distorting any single tree's own proportions.
     const gs = Math.pow(p.scale, 0.82);
     const th = h * 0.44 * tr.h * gs * hMul;
-    const tw = Math.max(1.4, w * 0.019 * tr.w * gs * wMul);
-    const R = Math.max(5, w * 0.086 * gs * tr.w * rMul);
+    // effW in place of raw w — see the comment above trailPts — so crown
+    // radius/trunk width stop shrinking disproportionately to th (which
+    // stays h-only) on portrait aspects. Capped to a viewport-relative
+    // ceiling so the one or two nearest trees don't balloon into oversized
+    // blobs while mid/far trees (well under the cap) get the full benefit.
+    const tw = Math.min(Math.max(1.4, effW * 0.019 * tr.w * gs * wMul), w * 0.065);
+    const R = Math.min(Math.max(5, effW * 0.086 * gs * tr.w * rMul), w * 0.28);
     const topY = p.y - th;
     const lean = tr.lean * tw * 1.6;
     const far = p.scale < 0.34;
