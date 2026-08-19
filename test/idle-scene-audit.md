@@ -428,3 +428,48 @@ reason); and re-tuning `WF_TREES`' lateral spread distribution itself (the
 what was actually observed (local gaps, not a spread-shape problem), and touching the
 spread formula without similarly concrete before/after evidence would have been exactly
 the kind of unmeasured guess this session has tried consistently to avoid.
+
+## Part H — forest-floor detail (`WF_LITTER`), and the phased plan going forward
+
+Direct follow-up to the "open space isn't occupied" note (the yellow-circled ground area at
+`senses`/`barefoot`) — not a bug fix, an atmosphere addition, scoped the same way the
+idle-motion-grammar plan's admission rule scopes everything else in this scene: this is
+weather/setting, not narrative, same category as `WF_SHRUBS`/`WF_DAPPLE`, so it earns its
+place without needing a station-specific reason.
+
+**What shipped**: a new seeded generator, `WF_LITTER` (`walk-forest.js`, next to
+`WF_TREES`/`WF_SHRUBS`/`WF_DAPPLE`) — 260 entries, ~55% fallen sticks (short rotated line
+segments, two bark-brown tones) and ~45% small leaf-litter clusters (two-ellipse clumps in
+muted green/brown), scattered across the same lateral tree-growing band (clearings excluded,
+same as shrubs). Rendered into `wfComputeFrame()`'s `litter` array and spliced into the
+`geo` SVG between the dapples and the near-tree layer, so litter sits under a near tree's
+own trunk where they overlap. **Deliberately static** — no CSS animation class — because
+`geo` is still the layer with the open tree-sway restart bug (Part A): a static shape is
+unaffected by being recreated every repaint, but anything animated here would inherit that
+bug immediately, which is exactly why this was sequenced *before* Part 3 below rather than
+after. `WF_SHRUBS` also went 165 → 216 (+31%, the same ratio `WF_TREES`' own 520 → 680 bump
+used), so undergrowth density stays proportional to canopy density instead of the forest
+floor thinning out relative to the trees. Verified via screenshots at `barefoot`/`senses`
+(before/after) and a live count check (188 litter pieces, 157 shrubs, 336 trees rendered at
+`barefoot`) with zero page errors; `npm test` and `npm run test:motion` (7/7 each) still
+pass — this doesn't touch anything either suite asserts on, re-run anyway per this file's
+own standing practice.
+
+### The plan this follows (in order, and why the order matters)
+
+1. **Ground-floor population (this section, done)** — static-only, so no dependency on
+   Part 3's fix.
+2. **Re-check the atmospheric backlog** — nothing new qualifies beyond what Part F already
+   vetted; wind-gust stays deferred, campfire fireflies stay rejected, both for the same
+   reasons recorded there. Not re-litigated here.
+3. **Fix the tree-sway restart bug (still open)** — extend the keyed-reconciler pattern
+   already proven for pins/cast/set (`wfSyncShapes`) to the trail/tree projection in `geo`,
+   so a sway animation survives a camera move instead of resetting to `currentTime: 0` on
+   every repaint. This is the one prerequisite for any *animated* geo-layer addition after
+   this point (a wind gust, swaying litter, anything that needs to keep a timeline through
+   a move) — everything in Part H deliberately stayed static specifically to not need this
+   first.
+4. **Full functionality audit of Walk the Forest** (scope confirmed: this scene only, not
+   the wider Practitioner Tool app) — live-browser verification, not code-reading, of pins,
+   panel, controls, rail nav, calm/reduced-motion, keyboard nav, i18n across en/fr/de,
+   narrow/mobile breakpoints, and iframe embedding. Not started yet.

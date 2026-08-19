@@ -301,8 +301,11 @@ const WF_SHRUBS = (function () {
   const out = [];
   let seed = 53;
   const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-  for (let i = 0; i < 165; i++) {
-    const at = -1 + i * 0.085 + rnd() * 0.1;
+  // Bumped 165 -> 216, the same +31% WF_TREES' own density fix used (520
+  // -> 680) — keeps undergrowth density proportional to canopy density
+  // rather than the forest floor thinning out relative to the trees.
+  for (let i = 0; i < 216; i++) {
+    const at = -1 + i * 0.085 * (165 / 216) + rnd() * 0.1;
     const lat = (rnd() < 0.5 ? -1 : 1) * (0.6 + rnd() * 1.25);
     // Undergrowth clears the glades too, but only the inner part of them
     // — a clearing with waist-high scrub right up to the treeline still
@@ -318,6 +321,33 @@ const WF_DAPPLE = (function () {
   let seed = 31;
   const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
   for (let i = 0; i < 60; i++) out.push({ at: -0.5 + i * 0.32, lat: (rnd() - 0.5) * 0.9, s: 0.5 + rnd() * 0.9 });
+  return out;
+})();
+
+// Forest-floor detail — fallen sticks and small leaf-litter clusters,
+// scattered across the same lateral band the trees themselves grow in
+// (not the open trail corridor) rather than a station's own set-dressing:
+// this is atmosphere, not narrative, same category as WF_SHRUBS/WF_DAPPLE.
+// Deliberately static (no CSS animation) — litter lives in the `geo` SVG,
+// which still gets string-rebuilt every repaint during a camera move (the
+// open tree-sway restart bug), so anything animated here would inherit
+// that bug; a static shape is unaffected by being recreated every frame.
+const WF_LITTER = (function () {
+  const out = [];
+  let seed = 89;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  for (let i = 0; i < 260; i++) {
+    const at = -1 + i * 0.054 + rnd() * 0.09;
+    const lat = (rnd() < 0.5 ? -1 : 1) * (0.75 + rnd() * 3.2);
+    if (wfInClearing(at, lat * 0.7)) continue;
+    out.push({
+      at, lat,
+      kind: rnd() < 0.55 ? 'stick' : 'leaves',
+      s: 0.6 + rnd() * 0.7,
+      rot: (rnd() - 0.5) * 70,
+      tone: rnd(),
+    });
+  }
   return out;
 })();
 
@@ -1134,6 +1164,37 @@ function wfComputeFrame() {
     });
   });
 
+  // Forest-floor detail (WF_LITTER, near WF_TREES above) — sticks and
+  // small leaf-litter clusters. Smaller than a shrub (k below is under
+  // half WF_SHRUBS' own w*0.032 unit) and capped at a shorter render
+  // distance (d>8, vs shrubs' d>10) since it's fine ground detail that's
+  // sub-pixel noise past that anyway — no point paying the DOM cost.
+  const litter = [];
+  WF_LITTER.forEach((lt) => {
+    const p = wfProject(lt.at, lt.lat);
+    if (!p || p.scale < 0.16 || p.scale > 3.2 || p.d > 8) return;
+    const k = w * 0.013 * lt.s * p.scale;
+    const op = Math.min(1, 0.5 + p.scale * 0.7).toFixed(2);
+    if (lt.kind === 'stick') {
+      const rad = lt.rot * Math.PI / 180;
+      const dx = Math.cos(rad) * k * 3.6, dy = Math.sin(rad) * k * 1.4;
+      litter.push({
+        kind: 'stick', op,
+        x1: (p.x - dx).toFixed(1), y1: (p.y - dy).toFixed(1),
+        x2: (p.x + dx).toFixed(1), y2: (p.y + dy).toFixed(1),
+        sw: Math.max(0.8, k * 0.35).toFixed(1),
+        fill: lt.tone > 0.5 ? '#7A6552' : '#6B5240',
+      });
+    } else {
+      litter.push({
+        kind: 'leaves', op,
+        cx: p.x.toFixed(1), cy: p.y.toFixed(1), rx: (k * 1.3).toFixed(1), ry: (k * 0.68).toFixed(1),
+        cx2: (p.x + k * 0.9).toFixed(1), cy2: (p.y - k * 0.22).toFixed(1), rx2: (k * 0.9).toFixed(1), ry2: (k * 0.48).toFixed(1),
+        fill: lt.tone > 0.66 ? '#5E8C77' : (lt.tone > 0.33 ? '#8A6F4A' : '#6B5240'),
+      });
+    }
+  });
+
   const shrubs = [];
   WF_SHRUBS.forEach((sh) => {
     const p = wfProject(sh.at, sh.lat);
@@ -1293,7 +1354,7 @@ function wfComputeFrame() {
   const sunGlow = (8 + sunT * 16).toFixed(0);
 
   return {
-    trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setPieces,
+    trailD, farTrees, nearTrees, dapples, shrubs, litter, stops, rail, setPieces,
     stationId: (ACTIVITIES[camIndex] || {}).id || '',
     narrow, walking, sunOpacity, sunWidth, sunGlow,
     stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
@@ -1920,6 +1981,10 @@ function wfRender() {
     '<g>' + frame.shrubs.map(sh => '<g opacity="' + sh.op + '"><ellipse cx="' + sh.cx + '" cy="' + sh.cy + '" rx="' + sh.rx + '" ry="' + sh.ry + '" fill="' + sh.fill + '"/><ellipse cx="' + sh.cx2 + '" cy="' + sh.cy2 + '" rx="' + sh.rx2 + '" ry="' + sh.ry2 + '" fill="' + sh.fill + '"/></g>').join('') + '</g>' +
     '<path d="' + frame.trailD + '" fill="#D8CDAF"/>' +
     '<g>' + frame.dapples.map(dp => '<ellipse cx="' + dp.cx + '" cy="' + dp.cy + '" rx="' + dp.rx + '" ry="' + dp.ry + '" fill="#F2EBD8" opacity="' + dp.op + '"/>').join('') + '</g>' +
+    '<g>' + frame.litter.map(lt => lt.kind === 'stick'
+      ? '<line x1="' + lt.x1 + '" y1="' + lt.y1 + '" x2="' + lt.x2 + '" y2="' + lt.y2 + '" stroke="' + lt.fill + '" stroke-width="' + lt.sw + '" stroke-linecap="round" opacity="' + lt.op + '"/>'
+      : '<g opacity="' + lt.op + '"><ellipse cx="' + lt.cx + '" cy="' + lt.cy + '" rx="' + lt.rx + '" ry="' + lt.ry + '" fill="' + lt.fill + '"/><ellipse cx="' + lt.cx2 + '" cy="' + lt.cy2 + '" rx="' + lt.rx2 + '" ry="' + lt.ry2 + '" fill="' + lt.fill + '"/></g>'
+    ).join('') + '</g>' +
     '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
 
   wfSet('geo', sceneSvg, v => { d.geo.innerHTML = v; });
