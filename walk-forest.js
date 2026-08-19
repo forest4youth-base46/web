@@ -1077,18 +1077,18 @@ function wfComputeFrame() {
     const hMul = sp === 'pine' ? 1.25 : (sp === 'birch' ? 1.18 : 1);
     const wMul = sp === 'pine' ? 0.66 : (sp === 'birch' ? 0.52 : 1);
     const rMul = sp === 'pine' ? 0.72 : (sp === 'birch' ? 0.66 : 1);
-    // Sub-linear falloff (scale^0.82, not scale) for the tree's own
-    // geometry — height, trunk width AND crown radius all move together
-    // on this gentler curve, so a distant tree is a smaller *whole tree*,
-    // not a skinnier one. (A first pass applied this to height only;
-    // trunk width kept shrinking at the old linear rate, so distant trees
-    // read as unnaturally tall and thin — the exact "proportional feel"
-    // complaint this fixes.) True depth (p.scale itself) still drives
-    // opacity, color, and the near/far bucket split below — this only
-    // softens how fast the tree's silhouette shrinks, closing the gap
-    // between the treeline's top edge and the haze band above it without
-    // distorting any single tree's own proportions.
-    const gs = Math.pow(p.scale, 0.82);
+    // Linear (1:1) in p.scale — height, trunk width AND crown radius all
+    // move together on the same true-depth curve, so a distant tree is a
+    // smaller *whole tree*, not a skinnier one, and the canopy line
+    // recedes toward the horizon in direct proportion to distance instead
+    // of a softened one. (A previous pass used scale^0.82 here to close a
+    // gap between the treeline's top edge and the haze band above it —
+    // that dampening kept distant canopies measurably taller than true
+    // perspective, which is the reference screenshot's own linear-falloff
+    // look this restores. If the horizon gap reopens visibly, it needs a
+    // fix that doesn't distort the depth ratio — e.g. extending the haze
+    // band itself downward — not reintroducing a sub-linear curve here.)
+    const gs = p.scale;
     const th = h * 0.44 * tr.h * gs * hMul;
     // effW in place of raw w — see the comment above trailPts — so crown
     // radius/trunk width stop shrinking disproportionately to th (which
