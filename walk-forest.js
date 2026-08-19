@@ -1576,7 +1576,14 @@ function wfMakePing() {
   const svg = document.createElementNS(WF_SVG_NS, 'svg');
   svg.setAttribute('viewBox', '0 0 40 40');
   svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('style', 'position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);pointer-events:none');
+  // overflow:visible matters here — the ring's own keyframe (wfPing,
+  // styles-walk-forest.css) scales it up to 2.5x, well past this 40x40
+  // viewBox (r=16 at 2.5x is an 80-unit diameter). SVG root elements clip
+  // to their viewBox by default, so without this the expanding ring got
+  // chopped into four disconnected corner arcs wherever it crossed the
+  // box edge — a "broken square" instead of a circle — for most of every
+  // cycle, not an occasional glitch.
+  svg.setAttribute('style', 'position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);overflow:visible;pointer-events:none');
   const circle = document.createElementNS(WF_SVG_NS, 'circle');
   circle.setAttribute('class', 'wf-ping');
   circle.setAttribute('cx', '20');
