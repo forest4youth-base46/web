@@ -225,6 +225,28 @@ async function testRailButtonsNavigate(browser) {
   await page.close();
 }
 
+// At 360px width the rail's own top edge used to land ~1.5px above the
+// controls row's bottom edge — a real, measured overlap (test/idle-scene-
+// audit.md Part I), not the "~16px margin already unused below them" the
+// code originally assumed. Locks in the fix (controls' narrow-mode margin
+// raised, rail's own lowered) so it can't silently regress back to zero
+// clearance.
+async function testNarrowControlsRailDontOverlap(browser) {
+  const page = await browser.newPage({ viewport: { width: 360, height: 740 } });
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof WF !== 'undefined' && WF.dom && WF.el);
+  await page.evaluate(() => { WF.cam = 0; WF.mode = 'hold'; wfSetOn(true); wfRender(); });
+
+  const rects = await page.evaluate(() => {
+    const c = document.querySelector('.wf-controls').getBoundingClientRect();
+    const r = document.querySelector('.wf-rail').getBoundingClientRect();
+    return { controlsBottom: c.bottom, railTop: r.top };
+  });
+  assert.ok(rects.railTop >= rects.controlsBottom,
+    `the rail's top edge must sit at or below the controls row's bottom edge at 360px width (no overlap) — got railTop=${rects.railTop}, controlsBottom=${rects.controlsBottom}`);
+  await page.close();
+}
+
 // Birds (.wf-bird-gate) are an event-class element gated by CSS to only
 // senses/soundscape (the two stations whose own text is about noticing
 // things overhead — see test/idle-scene-audit.md Part E) and only while
@@ -268,6 +290,7 @@ const TESTS = [
   ['every station stays reachable via wfGoNext under reduced motion', testStationsReachableUnderReducedMotion],
   ['pins container node identity survives a camera move (no subtree replacement)', testNoSubtreeReplacementDuringMove],
   ['every rail button navigates to its own station, instantly under reduced motion', testRailButtonsNavigate],
+  ['at 360px width the rail sits clear of the controls row, no overlap', testNarrowControlsRailDontOverlap],
   ['birds only become visible at senses/soundscape, and hide while a panel is open', testBirdsGatedToRightStations],
 ];
 

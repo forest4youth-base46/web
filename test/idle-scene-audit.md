@@ -472,4 +472,51 @@ own standing practice.
 4. **Full functionality audit of Walk the Forest** (scope confirmed: this scene only, not
    the wider Practitioner Tool app) — live-browser verification, not code-reading, of pins,
    panel, controls, rail nav, calm/reduced-motion, keyboard nav, i18n across en/fr/de,
-   narrow/mobile breakpoints, and iframe embedding. Not started yet.
+   narrow/mobile breakpoints, and iframe embedding.
+
+## Part I — full functionality audit (live browser, 25 checks)
+
+25 behaviors verified live in Playwright (not read from code) across nine areas: pin/panel
+open+close (click, the panel's own close button, and Escape), pin `aria-label`/
+`aria-expanded` state, export-button plumbing, keyboard nav (`ArrowLeft`/`ArrowRight`/`r`),
+Tab-reachability of controls/rail/pins, i18n in all three locales, the narrow (360px)
+breakpoint's layout, iframe-embedding stability (`scrollHeight` across station changes —
+the original "graphics-loading-flashing" concern), and OS-level `prefers-reduced-motion`.
+
+**One real bug found and fixed.** At 360px width, the rail's own top edge landed ~1.5px
+*above* the controls row's bottom edge — a real, measured overlap, not the "~16px margin
+already unused below them" a comment on that code assumed. Screenshotted to confirm it was
+visible (the rail was nearly invisible, pressed right against the controls) before touching
+anything. First attempt at a fix moved the wrong direction — increasing the rail's own
+`bottom` offset moves it *up*, toward the controls, not away, since `bottom` is distance
+from the viewport edge — caught by re-measuring immediately rather than assuming the change
+worked, which is exactly why every fix in this file gets a before/after check. Corrected by
+raising the controls' own narrow-mode margin (16px → 26px, freeing real space below them)
+together with lowering the rail's (2px → 6px) — re-measured, confirmed a clean 3px gap
+(`walk-forest.js`, the two `wfSet('controls', ...)`/`wfSet('rail', ...)` calls in
+`wfRender()`).
+
+**Two failures investigated and confirmed as test artifacts, not product bugs**, each
+verified by direct follow-up rather than assumed:
+- The PDF/PNG export buttons "failing to exist" — they're real and correctly wired
+  (`exportRunPDF`/`exportRunPNG` both defined, both buttons present and clickable), just
+  inside the collapsible session drawer (`.wf-session-toggle`) as designed; the first audit
+  pass didn't open the drawer before checking. Confirmed by opening it explicitly:
+  `sessionDrawerOpen` flips to `true`, both buttons appear, both visible.
+- A console error while opening the session drawer traced to
+  `ERR_CONNECTION_RESET` on `fonts.googleapis.com` — an external CDN request failing in
+  this sandbox's network environment, unrelated to the drawer or any app code; confirmed by
+  checking `page.on('requestfailed')`, which named the exact failing URL.
+
+**Everything else passed on the first measured check**: pin/panel open-close-Escape cycle
+with zero page errors; `aria-expanded` correctly flips on open/close; all 17 rail buttons +
+back/restart/next + pins are genuine focusable `<button>`s (28 total interactive elements
+found via `querySelectorAll('button, a[href]')`); keyboard `ArrowLeft`/`ArrowRight`/`r` all
+move the camera correctly; all three locales render real strings with no raw `walk.*` keys
+leaking through; the scene doesn't overflow a 360px viewport horizontally;
+`document.body.scrollHeight` is bit-for-bit stable (800 → 800) across six station changes,
+confirming the iframe-embedding resize-loop concern this branch was originally named for
+stays fixed; and `WF.reduced` is correctly `true` on entry under OS-level
+`prefers-reduced-motion` even with the in-app toggle button gone.
+
+`npm test` (7/7) and `npm run test:motion` (7/7) still pass after the narrow-breakpoint fix.

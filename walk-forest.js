@@ -2030,7 +2030,10 @@ function wfRender() {
   wfSet('titleMain', t('walk.title'), v => { d.titleMain.textContent = v; });
   wfSet('titleSub', frame.stepLabel, v => { d.titleSub.textContent = v; });
   wfSet('narrowBar', frame.narrow, v => { d.narrowBar.style.display = v ? 'block' : 'none'; });
-  wfSet('controls', 'left:20px;bottom:' + (frame.narrow ? 16 : 20) + 'px',
+  // Narrow-mode margin was 16px, leaving no real room below the controls
+  // for the rail (see wfSet('rail', ...) below) — raised to 26px so the
+  // rail has somewhere to sit that isn't already the controls' own space.
+  wfSet('controls', 'left:20px;bottom:' + (frame.narrow ? 26 : 20) + 'px',
     v => d.controls.setAttribute('style', v));
   wfSet('status', frame.status, v => { d.status.textContent = v; });
   wfSet('backLabel', t('walk.back'), v => {
@@ -2044,7 +2047,14 @@ function wfRender() {
   });
 
   wfSyncRail(frame);
-  wfSet('rail', frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:2px' : 'right:20px;bottom:66px',
+  // Narrow-mode bottom was 2px — measured live (a 360px-wide audit pass),
+  // the rail's own top edge landed ~1.5px *above* the controls row's
+  // bottom edge, a real overlap rather than the "~16px margin already
+  // unused below them" the comment above this block assumed. Paired with
+  // raising the controls' own margin above, 6px now sits with genuine
+  // clearance below the controls row — confirmed the same way
+  // (re-measured live, not just recalculated).
+  wfSet('rail', frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:6px' : 'right:20px;bottom:66px',
     v => d.rail.setAttribute('style', v));
   wfSet('listLink', frame.narrow ? 'right:14px;top:220px' : 'right:20px;bottom:22px',
     v => d.listLink.setAttribute('style', v));
