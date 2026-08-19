@@ -33,7 +33,7 @@
      values. Set from JS it landed ~200ms after first paint, so the header
      and cards painted once in the opaque-paper palette and then visibly
      re-painted in the translucent one. wfSetOn() still toggles it. -->
-<body class="wf-scene-on">
+<body class="wf-scene-on" data-wf-style="default">
 
 <a class="skip-link" href="#main-content" data-i18n="nav.skip">Skip to main content</a>
 
@@ -123,10 +123,11 @@
           <button class="lang-btn" onclick="setLang('de')">DE</button>
         </div>
 
-        <!-- Walk the Forest (walk-forest.js): toggles the backdrop on/off
-             ("clean mode" when off). It never hides the header or any
-             screen — see wfToggleGlobal()/wfSetOn() and body.wf-scene-on
-             in styles-walk-forest.css. -->
+        <!-- Walk the Forest (walk-forest.js): toggles the backdrop on/off.
+             The body data-wf-style attribute selects the visual package for
+             the translucent/blurred pane treatment, so future variants such
+             as colorblind mode can tune these values without changing the
+             interaction. -->
         <button type="button" class="wf-toggle-btn" id="wf-toggle-btn" onclick="wfToggleGlobal()" aria-pressed="true" aria-label="Walk the Forest" title="Walk the Forest" data-i18n-attr="aria-label,title:walk.toggle">
           <svg viewBox="0 0 32 32" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 26C6 14 14 6 26 6c0 12-8 20-20 20Z"/><path d="M6 26 18 14"/></svg>
         </button>
