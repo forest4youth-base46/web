@@ -272,8 +272,15 @@ const WF_TREES = (function () {
   // station's glade (wfInClearing) are dropped instead of relocated, so
   // the clearings read as genuinely open ground rather than a suspicious
   // ring of trees around a gap.
-  for (let i = 0; i < 520; i++) {
-    const at = -1 + i * 0.054 + rnd() * 0.07;
+  //   Bumped again, 520 -> 680 at the same overall span (step shrunk to
+  // match): the seeded-random spacing left occasional real gaps in the
+  // canopy at some camera angles (measured: a near-even left/right split
+  // overall, but visible local clumping — some stations' compositions
+  // had a noticeably thinner patch on one side purely from bad luck in
+  // the random draw). More trees per unit of trail is the direct fix,
+  // not a redistribution — the seed and span are otherwise unchanged.
+  for (let i = 0; i < 680; i++) {
+    const at = -1 + i * 0.0413 + rnd() * 0.07;
     const lat = (rnd() < 0.5 ? -1 : 1) * (1.28 + rnd() * 2.7);
     const species = WF_SPECIES[Math.floor(rnd() * WF_SPECIES.length)];
     if (wfInClearing(at, lat)) continue;
@@ -1025,9 +1032,21 @@ function wfComputeFrame() {
     const hMul = sp === 'pine' ? 1.25 : (sp === 'birch' ? 1.18 : 1);
     const wMul = sp === 'pine' ? 0.66 : (sp === 'birch' ? 0.52 : 1);
     const rMul = sp === 'pine' ? 0.72 : (sp === 'birch' ? 0.66 : 1);
-    const th = h * 0.44 * tr.h * p.scale * hMul;
-    const tw = Math.max(1.4, w * 0.019 * tr.w * p.scale * wMul);
-    const R = Math.max(5, w * 0.086 * p.scale * tr.w * rMul);
+    // Sub-linear falloff (scale^0.82, not scale) for the tree's own
+    // geometry — height, trunk width AND crown radius all move together
+    // on this gentler curve, so a distant tree is a smaller *whole tree*,
+    // not a skinnier one. (A first pass applied this to height only;
+    // trunk width kept shrinking at the old linear rate, so distant trees
+    // read as unnaturally tall and thin — the exact "proportional feel"
+    // complaint this fixes.) True depth (p.scale itself) still drives
+    // opacity, color, and the near/far bucket split below — this only
+    // softens how fast the tree's silhouette shrinks, closing the gap
+    // between the treeline's top edge and the haze band above it without
+    // distorting any single tree's own proportions.
+    const gs = Math.pow(p.scale, 0.82);
+    const th = h * 0.44 * tr.h * gs * hMul;
+    const tw = Math.max(1.4, w * 0.019 * tr.w * gs * wMul);
+    const R = Math.max(5, w * 0.086 * gs * tr.w * rMul);
     const topY = p.y - th;
     const lean = tr.lean * tw * 1.6;
     const far = p.scale < 0.34;
@@ -1079,7 +1098,20 @@ function wfComputeFrame() {
       crown2: far ? (sp === 'pine' ? '#93AEA4' : '#A3BEB1')
         : (sp === 'pine' ? '#1B3A31' : (sp === 'birch' ? '#4F7D68'
           : (tr.crown > 0.62 ? '#234A3E' : (tr.crown > 0.3 ? '#31604F' : '#3C6B55')))),
-      op: (Math.min(1, 0.55 + p.scale * 0.8) * (p.d > 9 ? 0.55 : 1)).toFixed(2),
+      // A tree in front must cover what's behind it — the old formula
+      // (Math.min(1, 0.55 + p.scale*0.8), floor ~0.36 at the smallest
+      // rendered scale) made every tree partially see-through, so
+      // adjacent/overlapping trees blended into each other instead of
+      // the nearer one cleanly occluding the farther one. Opacity is now
+      // 1 (fully solid) for the entire scene except the last stretch
+      // before the render cutoff (p.d 9-12), which gets only a light
+      // atmospheric taper down to 0.88 — enough to read as distance haze
+      // on the farthest handful of rows, nowhere near enough to let a
+      // tree's own shape show through the one in front of it. Depth is
+      // still communicated (deliberately, via other channels): the far
+      // palette's paler crown colors, and the gentler size falloff (gs)
+      // above.
+      op: (1 - Math.max(0, Math.min(1, (p.d - 9) / 3)) * 0.12).toFixed(2),
       // Duration dropped, same reasoning as the case above — .wf-sway's
       // CSS rule now supplies it (--wf-beat-200) for every tree in the
       // scene, trail trees included; only phase (delay) still varies.

@@ -3,7 +3,9 @@
 Parts A–D are the audit. Part E was written as a *plan* for new idle elements (birds,
 falling leaves) using the admission rule from the idle-motion-grammar plan; Part F records
 what was actually built from it, in a follow-up pass, plus the ping-ring polish that came
-out of live visual review against real screenshots.
+out of live visual review against real screenshots. Part G is a further live-review pass,
+specifically on the treeline's own density and depth — a real composition problem the
+earlier "trees ordering and spread" opacity floor fix (Part 0) only partially addressed.
 
 ## Part 0 — what changed just before this audit
 
@@ -369,3 +371,60 @@ forgotten thought:
   `wfBirdCross` animations are in `playState: 'running'`; the ping ring is a complete circle
   (not four corner arcs) at every sampled phase and fades to invisible with room to spare
   before the cycle ends.
+
+## Part G — treeline density and depth (live review, `wfComputeFrame`'s tree geometry)
+
+A fresh screenshot review at several stations turned up two real, separate problems in the
+treeline itself, beyond the opacity-floor fix in Part 0 — that fix reduced how transparent
+the *farthest* trees were, but didn't touch two other things a reviewer actually sees: an
+initial one-shot attempt to close the horizon gap by softening height falloff alone made
+distant trees disproportionately tall and thin (caught and corrected before shipping, see
+below), and separately, near/overlapping trees were never fully opaque to begin with — the
+old formula's ceiling (`Math.min(1, 0.55 + p.scale*0.8)`) only reaches 1 once a tree is
+already large/near, so mid-distance trees could still let a tree behind them show through.
+
+**Fix 1 — geometry falloff, applied consistently, not just to height.** A first pass
+softened only the height term (`th`) with `Math.pow(p.scale, 0.7)`, leaving trunk width
+and crown radius on the old linear falloff — this closed the vertical gap to the horizon
+haze band, but left some distant trees visibly too tall and thin relative to their own
+trunk/crown width ("some of the tall trees look a bit off," caught by review before this
+landed). Fixed by deriving one shared `gs = Math.pow(p.scale, 0.82)` and applying it to
+height, trunk width, *and* crown radius together (`walk-forest.js`, `wfComputeFrame`'s
+tree-building loop) — a distant tree is now a smaller whole tree, not a skinnier one. True
+depth (`p.scale`, `p.d`) is untouched and still drives opacity, color, and the near/far
+bucket split — only the rate the silhouette itself shrinks got gentler.
+
+**Fix 2 — opacity is a hard occlusion rule now, not a soft distance fade.** Reworked so
+opacity is `1` (fully solid) everywhere except the last stretch before the render cutoff
+(`p.d` 9–12), which gets a light taper to `0.88` — enough for a touch of atmospheric haze
+on the farthest handful of rows, nowhere near enough for a tree's own shape to show through
+whatever's in front of it. This is a stricter, more literal reading of "a tree in front
+should cover what's behind it" than Part 0's opacity-floor fix — that fix raised the floor
+(0.36 → 0.52) but every tree was still meaningfully translucent; this makes translucency
+the deliberate exception (a small haze band) rather structurally load-bearing everywhere.
+Depth is still communicated, just through channels that don't create see-through
+artifacts: the far palette's paler crown colors, and Fix 1's size falloff.
+
+**Fix 3 — density.** `WF_TREES`' generation (280 lines up from this section, the seeded
+IIFE) went from 520 trees to 680 at the same overall trail span (step shrunk to match, seed
+and span otherwise untouched). Measured before deciding: left/right tree count at a
+representative station (`barefoot`, stop 5) was already near-balanced (123/134) — the
+visible "empty spots" a reviewer sees at any one camera angle are local clumping from the
+seeded random draw, not a systemic left/right or count bias, so the direct fix is more
+trees per unit of trail, not redistributing the existing ones.
+
+All three verified visually (not just reasoned about) via direct screenshots at four
+stations (`barefoot`, `senses`, `introduce`, `campfire`) before and after each change,
+following this file's own established practice of measuring rather than guessing. Full
+`npm test` (7/7), `npm run test:motion` (7/7) and `npm run check:i18n` all still pass —
+none of these three changes touch anything those suites assert on directly, but a tree
+count/geometry change is exactly the kind of thing worth re-confirming doesn't regress
+frame-build correctness elsewhere.
+
+**Deliberately not attempted here**: a true non-uniform "gust" or wind-driven canopy
+variation (already flagged as deferred in Part F, for the same geo-layer restart-bug
+reason); and re-tuning `WF_TREES`' lateral spread distribution itself (the
+`1.28 + rnd()*2.7` formula) — the density bump was the more direct, lower-risk fix for
+what was actually observed (local gaps, not a spread-shape problem), and touching the
+spread formula without similarly concrete before/after evidence would have been exactly
+the kind of unmeasured guess this session has tried consistently to avoid.
