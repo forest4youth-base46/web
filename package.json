@@ -5,6 +5,7 @@
   "scripts": {
     "test": "node test/smoke.js",
     "test:unit": "node test/unit.js",
+    "test:motion": "node test/motion.js",
     "check:i18n": "node scripts/check-i18n-sync.js"
   },
   "devDependencies": {

@@ -70,4 +70,38 @@
   --fs-h3:    clamp(0.9rem, 0.87rem + 0.15vw, 0.9375rem);  /* ~14.4px → 15px, card/prose subheads */
   --fs-body:  clamp(0.8125rem, 0.79rem + 0.1vw, 0.875rem); /* 13px → 14px, running prose */
   --fs-sub:   clamp(0.8125rem, 0.79rem + 0.15vw, 0.90625rem); /* 13px → 14.5px, section intros */
+
+  /* Idle-motion grammar (Walk the Forest). One shared beat and its
+     harmonics, so every ambient loop in the scene shares one rhythm
+     instead of each inventing its own duration — the scene previously had
+     20 distinct durations across 4 easing families for its ~22 idle
+     loops. --wf-beat is 6.5s because that was already the scene's most
+     common individual value (wf-bob/wf-lift/wf-peg all used it
+     independently before this token existed) — harmonics are simple
+     ratios of it so a frame-energy autocorrelation resolves to one
+     dominant period, not scattered incommensurate peaks. Variety between
+     loops comes from animation-delay (phase), never from picking a
+     different duration off this scale — see styles-walk-forest.css. */
+  --wf-beat:      6.5s;
+  --wf-beat-050:  3.25s;
+  --wf-beat-100:  6.5s;
+  --wf-beat-150:  9.75s;
+  --wf-beat-200:  13s;
+  --wf-beat-300:  19.5s;
+  --wf-beat-600:  39s;
+  --wf-beat-1200: 78s;
+  /* One deliberate off-ratio rung: the far cloud layer (.wf-drift2) needs
+     to move slower than the near one (.wf-drift, --wf-beat-1200) as a
+     parallax depth cue, not to match it — see styles-walk-forest.css. */
+  --wf-beat-1400: 91s;
+
+  /* Two easing cases, not one, because they're physically different
+     motions: an oscillating loop (sway/bob/glow/breath) needs zero
+     velocity at both ends of its swing so the wrap is invisible; a
+     one-way travel loop (a mote or a wisp of smoke drifting off in one
+     direction) needs constant velocity, and hides its own wrap with
+     opacity ramps at both ends instead (see wfMote/wfSmoke). Applying
+     --ease-idle to a travel loop would make it visibly decelerate into
+     nothing rather than drift at a steady pace. */
+  --ease-idle: cubic-bezier(.37, 0, .63, 1);
 }

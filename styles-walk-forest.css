@@ -4,14 +4,92 @@
    role-screen bubbles) is new, written to this app's own conventions.
    See walk-forest.js for the JS that renders into #wf-scene. */
 
+/* ── idle-motion grammar ──
+   Every ambient loop below shares --wf-beat and its harmonics (tokens.css)
+   for its duration, and --ease-idle for oscillating motion, so a
+   frame-energy autocorrelation across the scene resolves to one dominant
+   period instead of the 20 distinct durations across 4 easing families
+   this file had before. Where two elements previously differed in
+   duration for a *reason* (parallax depth, or one glow counter-phasing
+   another), that reason is preserved by keeping them on the SAME harmonic
+   and varying animation-delay instead — variety comes from phase, never
+   from picking a different rung of the scale. The few exceptions that
+   stay off-grammar on purpose (a locomotion cycle, a one-shot transition,
+   a deliberately eye-catching ping) are labelled as such at their
+   declaration, not silently left looking like an oversight. */
 @keyframes wfBob { 0%,100% { transform:translateY(0) rotate(-0.25deg); } 50% { transform:translateY(-1.1%) rotate(0.25deg); } }
-@keyframes wfPing { 0% { transform:scale(.62); opacity:.75; } 100% { transform:scale(2.5); opacity:0; } }
+@keyframes wfPing { 0% { transform:scale(.62); opacity:.75; } 100% { transform:scale(2.15); opacity:0; } }
 @keyframes wfMote { 0% { transform:translate3d(0,0,0); opacity:0; } 20% { opacity:.7; } 100% { transform:translate3d(70px,-38px,0); opacity:0; } }
+/* A falling leaf tumbles, it doesn't just drop — rotation alongside the
+   fall reads as "leaf" rather than "falling object." One-way travel like
+   wfMote/wfSmoke (linear, opacity ramp at both ends hides the wrap), not
+   an oscillation. All three .wf-leaf instances share this one keyframe,
+   so every leaf drifts the same direction as it falls — a small, honest
+   piece of "one wind vector" (the idle-motion grammar's own coherence
+   rule): not a claim that the whole scene's wind is fully reconciled yet
+   (.wf-drift and .wf-drift2 still lean opposite ways, a pre-existing
+   quirk this doesn't attempt to fix), just that these three leaves don't
+   contradict each other. */
+@keyframes wfLeafFall {
+  0%   { transform:translate(0,0) rotate(-8deg); opacity:0; }
+  10%  { opacity:.55; }
+  55%  { transform:translate(22px,72px) rotate(120deg); }
+  88%  { opacity:.3; }
+  100% { transform:translate(38px,136px) rotate(255deg); opacity:0; }
+}
+/* Event class (per the scene's own admission rule), not ambient idle —
+   gated to appear only at the two stations whose own text is literally
+   about noticing things overhead (senses: "find five things you can
+   see"; soundscape: "mark where sounds come from" — see
+   test/idle-scene-audit.md's Part E for the full reasoning), and only
+   while no detail panel is open. --wf-beat-1200 (78s) reused as-is, not
+   a new token — most of each cycle the ring is off-frame/invisible
+   (0-91%), so it crosses roughly once a minute rather than continuously,
+   which is what makes it a rare thing to notice rather than a tic.
+   ease-in-out (not linear, unlike every other one-way-travel loop above)
+   is deliberate: a glide that eases in and out of its crossing reads as
+   a living thing choosing to move, not a particle drifting at constant
+   velocity. */
+@keyframes wfBirdCross {
+  0%, 91% { transform:translate(0,0); opacity:0; }
+  93%     { opacity:.55; }
+  95.5%   { transform:translate(45vw,-3vh); opacity:.55; }
+  98%     { transform:translate(80vw,-1vh); opacity:.35; }
+  100%    { transform:translate(94vw,1vh); opacity:0; }
+}
 @keyframes wfSway { 0%,100% { transform:rotate(-0.55deg); } 50% { transform:rotate(0.55deg); } }
-.wf-bob { animation: wfBob 6.5s ease-in-out infinite; }
+.wf-bob { animation: wfBob var(--wf-beat-100) var(--ease-idle) infinite; }
+/* Named exception (armed-pin ping): deliberately allowed to draw the eye
+   to an interactive target, per the scene's own admission rule for motion
+   — everything else here is subordinate to foreground content, this is
+   the one interaction cue that's supposed to be noticed. Left off the
+   shared beat on purpose so it doesn't blend into the ambient rhythm. */
 .wf-ping { transform-box: fill-box; transform-origin: center; animation: wfPing 4.6s ease-out infinite; }
-.wf-mote { animation: wfMote 19s linear infinite; }
-.wf-sway { transform-box: fill-box; transform-origin: bottom center; animation: wfSway 13s ease-in-out infinite; }
+/* One-way travel, not an oscillation — linear velocity is correct here
+   (constant drift), and the wrap is hidden by the keyframe's own opacity
+   ramp at both ends rather than by easing. 19s was already almost exactly
+   this rung (--wf-beat-300, 19.5s). */
+.wf-mote { animation: wfMote var(--wf-beat-300) linear infinite; }
+.wf-leaf { opacity:0; animation: wfLeafFall var(--wf-beat-300) linear infinite; }
+/* Base opacity 0 on the class itself (not an inline starting value, the
+   way .wf-mote uses) is deliberate: under reduced motion (disabled
+   below), a mote frozen at its own static opacity still reads fine as
+   ambient dust, but a leaf frozen mid-tumble at a random angle reads as
+   broken, not restful — so it should go fully absent, not freeze. */
+.wf-bird { opacity:0; animation: wfBirdCross var(--wf-beat-1200) ease-in-out infinite; }
+.wf-bird-gate {
+  position:absolute; opacity:0; pointer-events:none;
+  transition: opacity .6s var(--ease-idle);
+}
+#wf-scene[data-wf-station="senses"]:not(.wf-panel-open) .wf-bird-gate,
+#wf-scene[data-wf-station="soundscape"]:not(.wf-panel-open) .wf-bird-gate {
+  opacity:1;
+}
+.wf-sway { transform-box: fill-box; transform-origin: bottom center; animation: wfSway var(--wf-beat-200) var(--ease-idle) infinite; }
+/* Locomotion, not ambient idle — tied to the walker's own travel speed
+   (only runs while WF.mode is 'move'), so it's exempt from the shared
+   beat by design, the same way the admission rule separates "locomotion"
+   from "ambient idle" as different motion classes. */
 @keyframes wfThigh { 0%,100% { transform:rotate(12deg); } 50% { transform:rotate(-12deg); } }
 .wfThighA { transform-box: fill-box; transform-origin: top center; animation: wfThigh 1.9s ease-in-out infinite; }
 .wfThighB { transform-box: fill-box; transform-origin: top center; animation: wfThigh 1.9s ease-in-out infinite reverse; }
@@ -19,36 +97,53 @@
 .wfShinA { transform-box: fill-box; transform-origin: top center; animation: wfShin 1.9s ease-in-out infinite; }
 .wfShinB { transform-box: fill-box; transform-origin: top center; animation: wfShin 1.9s ease-in-out infinite reverse; }
 @keyframes wfFlick { 0%,100% { transform:scale(1,1); opacity:.95; } 40% { transform:scale(.9,1.24); opacity:1; } 70% { transform:scale(1.08,.88); opacity:.82; } }
-.wfFlick { transform-box: fill-box; transform-origin: bottom center; animation: wfFlick 2.6s ease-in-out infinite; }
+.wfFlick { transform-box: fill-box; transform-origin: bottom center; animation: wfFlick var(--wf-beat-050) var(--ease-idle) infinite; }
 @keyframes wfSmoke { 0% { opacity:0; transform:translateY(0) scale(.6); } 30% { opacity:.4; } 100% { opacity:0; transform:translateY(-42px) scale(1.7); } }
-.wfSmoke { transform-box: fill-box; transform-origin: center; animation: wfSmoke 7.5s linear infinite; }
+/* One-way travel (rising smoke) — linear, same reasoning as wf-mote. */
+.wfSmoke { transform-box: fill-box; transform-origin: center; animation: wfSmoke var(--wf-beat-100) linear infinite; }
 @keyframes wfHang { 0%,100% { transform:rotate(-2.6deg); } 50% { transform:rotate(2.6deg); } }
-.wfHang { transform-box: fill-box; transform-origin: top center; animation: wfHang 8.5s ease-in-out infinite; }
+.wfHang { transform-box: fill-box; transform-origin: top center; animation: wfHang var(--wf-beat-150) var(--ease-idle) infinite; }
 @keyframes wfBreath { 0%,100% { transform:scale(.94); opacity:.5; } 50% { transform:scale(1.14); opacity:.85; } }
-.wfBreath { transform-box: fill-box; transform-origin: center; animation: wfBreath 9.5s ease-in-out infinite; }
+.wfBreath { transform-box: fill-box; transform-origin: center; animation: wfBreath var(--wf-beat-150) var(--ease-idle) infinite; }
 @keyframes wfLift { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-7px); } }
-.wfLift { transform-box: fill-box; animation: wfLift 6.5s ease-in-out infinite; }
+.wfLift { transform-box: fill-box; animation: wfLift var(--wf-beat-100) var(--ease-idle) infinite; }
 @keyframes wfPeg { 0%,100% { transform:rotate(-3deg); } 50% { transform:rotate(3deg); } }
-.wfPeg { transform-box: fill-box; transform-origin: top center; animation: wfPeg 6.5s ease-in-out infinite; }
+.wfPeg { transform-box: fill-box; transform-origin: top center; animation: wfPeg var(--wf-beat-100) var(--ease-idle) infinite; }
 /* A log still being adjusted into place (sofa) — slower and smaller than
    wfPeg's rocking, which reads as a freely-hanging object, not a settling
-   one. */
+   one. Also reused (see .wf-carry-settle below) as the carry pose's own
+   idle tell in place of a gesture swing. */
 @keyframes wfSettle { 0%,100% { transform:rotate(-1deg); } 50% { transform:rotate(1deg); } }
-.wfSettle { transform-box: fill-box; transform-origin: center; animation: wfSettle 11s ease-in-out infinite; }
+.wfSettle { transform-box: fill-box; transform-origin: center; animation: wfSettle var(--wf-beat-150) var(--ease-idle) infinite; }
 /* A tarp's near corner catching a breath of wind (bivouac) — a corner
    flutter, not a whole-object sway like wfHang, so it skews rather than
    rotates about a center. */
 @keyframes wfFlap { 0%,100% { transform:skewX(0) rotate(0deg); } 50% { transform:skewX(-2deg) rotate(-1.2deg); } }
-.wfFlap { transform-box: fill-box; transform-origin: top right; animation: wfFlap 7s ease-in-out infinite; }
+.wfFlap { transform-box: fill-box; transform-origin: top right; animation: wfFlap var(--wf-beat-100) var(--ease-idle) infinite; }
 /* A quieter wfBreath for spots that want a bare hint of life rather than
    a visible pulse (checkin's sign board) — same shape, damped amplitude.
    Always paired with .wfBreath in markup; overriding just animation-name
    here (not the full shorthand) lets wfBreath's own duration/easing carry
-   over unless prefers-reduced-motion's wfBreath { animation: none } rule
-   further down zeroes the duration too, which still yields no visible
-   motion — so this needs no separate reduced-motion entry of its own. */
+   over normally. */
 @keyframes wfBreathSoft { 0%,100% { transform:scale(.98); opacity:.4; } 50% { transform:scale(1.04); opacity:.55; } }
 .wfBreath.wf-breath-soft { animation-name: wfBreathSoft; }
+@media (prefers-reduced-motion: reduce) {
+  /* Not covered by the shared .wfBreath{animation:none} block further
+     down, despite an earlier comment here claiming it was: that block's
+     shorthand reset sets animation-name back to 'none', but this rule's
+     own animation-name longhand has higher specificity (two classes, 0,2,0)
+     and wins regardless of which one is later in source order — verified:
+     the element was left at a ~0.00001s duration, technically still
+     playState 'running', not the clean stop every other class here gets.
+     Same cascade-order failure class as .wf-sun/.wf-pin-chip below (this
+     codebase's own comments record hitting it twice already); placed
+     after its own class's declaration for the same reason those two are.
+       Matches the two-class selector exactly (0,2,0), not just
+     .wf-breath-soft alone (0,1,0) — a first attempt at this fix used the
+     lower-specificity selector and it silently lost to the very rule it
+     was meant to override, the same mistake this comment is describing. */
+  .wfBreath.wf-breath-soft { animation-name: none; }
+}
 /* Cast-figure gestures (placing a stone, pointing at a tree, lifting a
    pole, ...) — one shared class reused everywhere a figure's arm gets a
    small looping rotation, per-instance character coming entirely from
@@ -64,7 +159,13 @@
    its SVG default (view-box) makes the inline transform-origin px value
    walk-forest.js sets resolve directly in that same coordinate space. */
 @keyframes wfGesture { 0%,100% { transform:rotate(-9deg); } 50% { transform:rotate(9deg); } }
-.wfGesture { animation: wfGesture 3.2s ease-in-out infinite; }
+/* Duration is the shared beat's fastest rung — per-instance variety comes
+   entirely from animation-delay (walk-forest.js WF_CAST), never from a
+   different duration. Previously ten cast entries each carried their own
+   inline animation-duration (1.9s–4.2s, all different) — the exact
+   "variety from tempo instead of phase" failure this grammar exists to
+   fix; see test/motion-dossier.md for the full per-station account. */
+.wfGesture { animation: wfGesture var(--wf-beat-050) var(--ease-idle) infinite; }
 /* The Sit Spot's rings actually ripple outward now rather than pulsing in
    place — the station is about attention spreading from where you settle,
    and the panel illustration (VISUAL.sitspot) draws exactly that: a
@@ -76,7 +177,7 @@
   12%  { opacity: .6; }
   100% { transform: scale(1.3); opacity: 0; }
 }
-.wfRipple { transform-box: fill-box; transform-origin: center; animation: wfRipple 7s ease-out infinite; }
+.wfRipple { transform-box: fill-box; transform-origin: center; animation: wfRipple var(--wf-beat-100) ease-out infinite; }
 /* Build a Tiny World: each piece drops in, holds while the world stands
    finished, then the cycle restarts — the same element-by-element
    assembly the panel illustration animates (VISUAL.tinyworld reveals
@@ -89,15 +190,32 @@
   86%  { opacity: 1; transform: translateY(0) scale(1); }
   100% { opacity: 0; transform: translateY(-7px) scale(.55); }
 }
-.wfPlace { transform-box: fill-box; transform-origin: center; animation: wfPlace 16s ease-in-out infinite; }
+/* Duration retimed 16s → 13s (--wf-beat-200); walk-forest.js's place()
+   delay formula for this station was updated to match (13 - n*1.3, was
+   16 - n*1.6) so the six pieces keep the same proportional stagger
+   within the shorter cycle. */
+.wfPlace { transform-box: fill-box; transform-origin: center; animation: wfPlace var(--wf-beat-200) var(--ease-idle) infinite; }
 @keyframes wfDrift { 0%,100% { transform:translateX(0); } 50% { transform:translateX(3.5%); } }
-.wf-drift { animation: wfDrift 75s ease-in-out infinite; }
+.wf-drift { animation: wfDrift var(--wf-beat-1200) var(--ease-idle) infinite; }
+/* Two cloud layers, deliberately NOT the same duration: the speed
+   difference is the parallax depth cue (this layer reads as nearer than
+   .wf-drift, so it should appear to move faster) — collapsing both onto
+   one harmonic would flatten that depth read into one layer. Still on
+   the grammar's own scale (a --wf-beat-1400 rung, added specifically for
+   this one deliberate case) rather than an arbitrary number. */
 @keyframes wfDrift2 { 0%,100% { transform:translateX(0); } 50% { transform:translateX(-2.6%); } }
-.wf-drift2 { animation: wfDrift2 92s ease-in-out infinite; }
+.wf-drift2 { animation: wfDrift2 var(--wf-beat-1400) var(--ease-idle) infinite; }
+/* Two light-shaft glows, meant to breathe out of phase with each other —
+   previously different DURATIONS (12s/15.5s) that drifted in and out of
+   alignment over several minutes rather than staying reliably
+   counter-phased. Same duration now; the counter-phase comes from
+   animation-delay alone (a half-period offset), which is what "variety
+   from phase, not tempo" means in practice for a pair that's supposed to
+   stay in a fixed relationship to each other. */
 @keyframes wfGlow { 0%,100% { opacity:.09; } 50% { opacity:.24; } }
-.wf-glow { animation: wfGlow 12s ease-in-out infinite; }
+.wf-glow { animation: wfGlow var(--wf-beat-200) var(--ease-idle) infinite; }
 @keyframes wfGlow2 { 0%,100% { opacity:.06; } 50% { opacity:.16; } }
-.wf-glow2 { animation: wfGlow2 15.5s ease-in-out infinite 3s; }
+.wf-glow2 { animation: wfGlow2 var(--wf-beat-200) var(--ease-idle) infinite calc(var(--wf-beat-200) / 2); }
 /* The funder-logo "sun" (walk-forest.js) drifts a few px on a slow, loose
    loop rather than sitting pinned in place — its own transform, not the
    positioning wrapper's, so this doesn't fight the wrapper's inline
@@ -110,7 +228,7 @@
   75%  { transform: translate(3px, 6px); }
   100% { transform: translate(0, 0); }
 }
-.wf-sun { animation: wfSunDrift 42s ease-in-out infinite; }
+.wf-sun { animation: wfSunDrift var(--wf-beat-600) var(--ease-idle) infinite; }
 @media (prefers-reduced-motion: reduce) {
   /* Not in the shared disable block below — that block sits before most
      of this file's later rules in source order, so an override placed
@@ -133,7 +251,8 @@
 @media (prefers-reduced-motion: reduce) {
   .wf-bob,.wf-ping,.wf-mote,.wf-sway,.wfThighA,.wfThighB,.wfShinA,.wfShinB,
   .wfFlick,.wfSmoke,.wfHang,.wfBreath,.wfLift,.wfPeg,.wf-drift,.wf-drift2,
-  .wf-glow,.wf-glow2,.wfSettle,.wfFlap,.wfGesture,.wfRipple,.wfPlace { animation: none; }
+  .wf-glow,.wf-glow2,.wfSettle,.wfFlap,.wfGesture,.wfRipple,.wfPlace,
+  .wf-leaf,.wf-bird { animation: none; }
 }
 
 /* ── scene container ──
@@ -274,7 +393,7 @@ body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
 .wf-pin-chip-name { font: 600 12.5px/1.3 'Montserrat', sans-serif; color: #14302A; }
 .wf-pin-chip-sub { margin-top: 2px; font: 400 10px/1.3 'Open Sans', sans-serif; color: #7C8E85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Controls (back / restart / next) */
+/* Controls (back / restart / next / calm) */
 .wf-controls { position: absolute; display: flex; align-items: center; gap: 10px; z-index: 400; }
 .wf-ctrl-btn {
   display: inline-flex; align-items: center; justify-content: center;
@@ -295,6 +414,16 @@ body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
   padding: 8px 12px; background: rgba(251,249,244,0.82); border-radius: 999px;
   z-index: 400;
 }
+/* Base button reset — every other visual property (width/height/color/
+   margin) is written per-item as inline style in wfSyncRail(), computed
+   in wfComputeFrame(); this class only supplies what a <button> needs
+   that isn't already in that inline string. */
+.wf-rail-btn {
+  display: block; border: none; padding: 0; cursor: pointer;
+  box-shadow: 0 0 0 3px transparent; transition: box-shadow .15s, height .25s;
+}
+.wf-rail-btn:hover, .wf-rail-btn:focus-visible { box-shadow: 0 0 0 3px rgba(35,74,62,0.25); }
+.wf-rail-btn:focus-visible { outline: none; }
 
 .wf-list-link {
   position: absolute; z-index: 400;

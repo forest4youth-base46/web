@@ -4,3 +4,7 @@ Thumbs.db
 *.swo
 .env
 node_modules/
+# Regenerable review evidence from test/motion-probe.js (screenshots,
+# contact sheets, positioning report) — reproduce with `node
+# test/motion-probe.js`, not meant to be committed.
+test/motion-probe-output/
