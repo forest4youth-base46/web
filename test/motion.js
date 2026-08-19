@@ -192,12 +192,46 @@ async function testNoSubtreeReplacementDuringMove(browser) {
   await page.close();
 }
 
+// The rail (the row of small station markers) used to be inert divs with
+// no click handler at all — this locks in that every rail button actually
+// navigates: a normal click starts a tween toward the clicked station, and
+// under reduced motion the same click snaps straight there.
+async function testRailButtonsNavigate(browser) {
+  const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
+  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => typeof WF !== 'undefined' && WF.dom && WF.el);
+
+  const n = await page.evaluate(() => ACTIVITIES.length);
+  await page.evaluate(() => { WF.cam = 0; WF.mode = 'hold'; wfSetOn(true); wfRender(); });
+
+  const railCount = await page.$$eval('.wf-rail > button', els => els.length);
+  assert.strictEqual(railCount, n, `expected one rail button per station (${n}), found ${railCount}`);
+
+  await page.$$eval('.wf-rail > button', els => els[5].click());
+  const moved = await page.evaluate(() => ({ to: WF.to, mode: WF.mode }));
+  assert.strictEqual(moved.to, 5, `clicking rail button 5 should target station 5, got ${moved.to}`);
+  assert.strictEqual(moved.mode, 'move', 'a normal click should animate the camera, not snap it');
+
+  await page.evaluate(() => { wfSetReduced(true); });
+  await page.$$eval('.wf-rail > button', els => els[10].click());
+  const reduced = await page.evaluate(() => ({ cam: WF.cam, mode: WF.mode }));
+  assert.strictEqual(reduced.cam, 10, `reduced-motion click on rail button 10 should land there instantly, got ${reduced.cam}`);
+  assert.strictEqual(reduced.mode, 'hold', 'reduced-motion navigation must not leave the camera mid-move');
+
+  const current = await page.$$eval('.wf-rail > button', els =>
+    els.map((e, i) => e.getAttribute('aria-current') === 'step' ? i : null).filter(x => x !== null));
+  assert.deepStrictEqual(current, [10], `exactly the active station's rail button should carry aria-current="step", got indices ${JSON.stringify(current)}`);
+
+  await page.close();
+}
+
 const TESTS = [
   ['every idle animation is on the shared beat grammar or a named exception', testSharedBeatGrammar],
   ['carry-pose figures use wfLift, never wfGesture', testCarryPoseUsesLiftNotGesture],
   ['prefers-reduced-motion stops every idle animation, at every station', testReducedMotionCoversEveryAnimatedClass],
   ['every station stays reachable via wfGoNext under reduced motion', testStationsReachableUnderReducedMotion],
   ['pins container node identity survives a camera move (no subtree replacement)', testNoSubtreeReplacementDuringMove],
+  ['every rail button navigates to its own station, instantly under reduced motion', testRailButtonsNavigate],
 ];
 
 async function main() {

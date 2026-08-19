@@ -179,7 +179,6 @@ const T_FR = {
     "walk.back": "Revenir en arrière",
     "walk.next": "Activité suivante",
     "walk.restart": "Revenir au début",
-    "walk.calm": "Mode calme — réduire les animations",
     "walk.status.walking": "en marche",
     "walk.status.paused": "en pause",
     "walk.status.resuming": "reprise de la marche dans {n} s",

@@ -205,7 +205,6 @@ const T_EN = {
     "walk.back": "Step back",
     "walk.next": "Next activity",
     "walk.restart": "Back to the start",
-    "walk.calm": "Calm mode — reduce motion",
     "walk.status.walking": "walking on",
     "walk.status.paused": "paused",
     "walk.status.resuming": "walking on again in {n}s",

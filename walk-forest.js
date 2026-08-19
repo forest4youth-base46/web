@@ -962,6 +962,20 @@ function wfRestart() {
   WF.openId = null;
   wfRender();
 }
+// Jump straight to an arbitrary station — the rail's own click target.
+// Same shape as wfGoNext/wfRestart (tween under normal motion, instant
+// snap under WF.reduced) but to any index rather than ±1 or 0.
+function wfGoTo(idx) {
+  const now = performance.now();
+  const target = Math.max(0, Math.min(ACTIVITIES.length - 1, idx));
+  if (target === Math.round(WF.cam) && WF.mode !== 'move') return;
+  WF.from = WF.cam; WF.to = target; WF.moveStart = now;
+  WF.mode = 'move'; WF.manual = true;
+  WF.paused = false; WF.holdEnd = now + wfDwellMs();
+  if (WF.reduced) { WF.cam = target; WF.mode = 'hold'; }
+  WF.openId = null;
+  wfRender();
+}
 function wfOpenStop(id) {
   WF.paused = true; WF.resumeAt = Infinity;
   WF.openId = id;
@@ -1206,6 +1220,7 @@ function wfComputeFrame() {
     const done = i < camIndex;
     const gap = i > 0 && ACTIVITIES[i - 1].group !== s.group ? 12 : 3;
     return {
+      id: s.id, index: i, active,
       title: pbT(s, 'name'),
       style: 'width:' + (narrow ? 12 : 16) + 'px;height:' + (active ? 8 : 4) + 'px;border-radius:3px;margin-left:' +
         (i === 0 ? 0 : gap) + 'px;background:' + (active ? 'var(--ember)' : (done ? gMeta.color : 'var(--forest-mist)')) +
@@ -1485,15 +1500,6 @@ function wfSkeletonHTML() {
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 8a5 5 0 1 1-1.6-3.7"/><path d="M13 2.5V5h-2.5"/></svg></button>' +
       '<button type="button" class="wf-ctrl-btn" data-wf="btn-next" onclick="wfGoNext()">' +
         '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5"/></svg></button>' +
-      // A user-facing override for OS-level prefers-reduced-motion — the
-      // scene previously only ever read that OS setting once on entry,
-      // with no in-app way to ask for it. aria-pressed (kept in sync in
-      // wfRender()) is the toggle's own state; the leaf-in-circle glyph
-      // has no motion of its own regardless of state, deliberately, so
-      // the control itself never becomes the thing needing a
-      // reduced-motion exception.
-      '<button type="button" class="wf-ctrl-btn" data-wf="btn-calm" onclick="wfToggleCalm()">' +
-        '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6c0 2 -1.8 3 -3.4 3.2 .6 1.7 2 2.8 3.4 2.8"/></svg></button>' +
       '<div class="wf-status-pill" data-wf="status"></div>' +
     '</div>' +
     // Narrow mode: below both the character (whose feet land ~47px above
@@ -1524,7 +1530,7 @@ function wfBuildScene() {
     titleMain: q('title-main'), titleSub: q('title-sub'),
     narrowBar: q('narrow-bar'),
     controls: q('controls'), status: q('status'),
-    btnBack: q('btn-back'), btnRestart: q('btn-restart'), btnNext: q('btn-next'), btnCalm: q('btn-calm'),
+    btnBack: q('btn-back'), btnRestart: q('btn-restart'), btnNext: q('btn-next'),
     rail: q('rail'), listLink: q('list-link'),
     // Last value written for each keyed slot below. Re-writing an
     // identical attribute still costs a style recalc, and this runs
@@ -1660,12 +1666,28 @@ function wfSyncPins(frame) {
 function wfSyncRail(frame) {
   const host = WF.dom.rail;
   while (host.children.length > frame.rail.length) host.lastChild.remove();
-  while (host.children.length < frame.rail.length) host.appendChild(document.createElement('div'));
+  // Real <button>s, each wired to its own fixed station index once, at
+  // creation — the rail's order never changes (always ACTIVITIES' own
+  // order), so a button's position in the host is a stable key. Mirrors
+  // wfMakePin's onclick-set-once-at-creation pattern.
+  while (host.children.length < frame.rail.length) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'wf-rail-btn';
+    const idx = host.children.length;
+    btn.onclick = () => wfGoTo(idx);
+    host.appendChild(btn);
+  }
   for (let i = 0; i < frame.rail.length; i++) {
     const el = host.children[i];
     const rn = frame.rail[i];
     if (el.getAttribute('style') !== rn.style) el.setAttribute('style', rn.style);
     if (el.getAttribute('title') !== rn.title) el.setAttribute('title', rn.title);
+    if (el.getAttribute('aria-label') !== rn.title) el.setAttribute('aria-label', rn.title);
+    const current = rn.active ? 'step' : null;
+    if (el.getAttribute('aria-current') !== current) {
+      if (current) el.setAttribute('aria-current', current); else el.removeAttribute('aria-current');
+    }
   }
 }
 
@@ -1882,12 +1904,6 @@ function wfRender() {
   wfSet('nextLabel', t('walk.next'), v => {
     d.btnNext.setAttribute('aria-label', v); d.btnNext.setAttribute('title', v);
   });
-  wfSet('calmLabel', t('walk.calm') + '|' + WF.reduced, () => {
-    d.btnCalm.setAttribute('aria-label', t('walk.calm'));
-    d.btnCalm.setAttribute('title', t('walk.calm'));
-    d.btnCalm.setAttribute('aria-pressed', WF.reduced ? 'true' : 'false');
-    d.btnCalm.classList.toggle('wf-ctrl-btn--active', WF.reduced);
-  });
 
   wfSyncRail(frame);
   wfSet('rail', frame.narrow ? 'left:50%;transform:translateX(-50%);bottom:2px' : 'right:20px;bottom:66px',
@@ -2017,8 +2033,6 @@ function wfSetReduced(on) {
   }
   wfRender();
 }
-
-function wfToggleCalm() { wfSetReduced(!WF.reduced); }
 
 function wfEnterScene() {
   WF.el = document.getElementById('wf-scene');

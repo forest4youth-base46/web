@@ -350,11 +350,6 @@ body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
   transition: border-color .15s, color .15s;
 }
 .wf-ctrl-btn:hover, .wf-ctrl-btn:focus-visible { border-color: #7FA396; color: #234A3E; }
-/* Calm mode's own toggle, when on — a filled state, same idiom as any
-   other pressed toggle in the app, not an animation (the button
-   controlling motion shouldn't need its own reduced-motion exception). */
-.wf-ctrl-btn--active { background: #234A3E; border-color: #234A3E; color: #F4F1EA; }
-.wf-ctrl-btn--active:hover, .wf-ctrl-btn--active:focus-visible { border-color: #14302A; color: #FFFFFF; }
 .wf-status-pill {
   font: 400 10.5px/1.4 'Open Sans', sans-serif; color: #4D6359;
   background: rgba(251,249,244,0.82); border-radius: 999px; padding: 6px 12px;
@@ -366,6 +361,16 @@ body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
   padding: 8px 12px; background: rgba(251,249,244,0.82); border-radius: 999px;
   z-index: 400;
 }
+/* Base button reset — every other visual property (width/height/color/
+   margin) is written per-item as inline style in wfSyncRail(), computed
+   in wfComputeFrame(); this class only supplies what a <button> needs
+   that isn't already in that inline string. */
+.wf-rail-btn {
+  display: block; border: none; padding: 0; cursor: pointer;
+  box-shadow: 0 0 0 3px transparent; transition: box-shadow .15s, height .25s;
+}
+.wf-rail-btn:hover, .wf-rail-btn:focus-visible { box-shadow: 0 0 0 3px rgba(35,74,62,0.25); }
+.wf-rail-btn:focus-visible { outline: none; }
 
 .wf-list-link {
   position: absolute; z-index: 400;
