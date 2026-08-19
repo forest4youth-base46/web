@@ -1508,16 +1508,16 @@ function wfMakePin(id) {
 
 function wfMakePing() {
   const svg = document.createElementNS(WF_SVG_NS, 'svg');
-  svg.setAttribute('viewBox', '0 0 40 40');
+  svg.setAttribute('viewBox', '0 0 120 120');
   svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('style', 'position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);pointer-events:none');
+  svg.setAttribute('style', 'position:absolute;inset:-120%;width:340%;height:340%;overflow:visible;pointer-events:none');
   const circle = document.createElementNS(WF_SVG_NS, 'circle');
   circle.setAttribute('class', 'wf-ping');
-  circle.setAttribute('cx', '20');
-  circle.setAttribute('cy', '20');
-  circle.setAttribute('r', '16');
+  circle.setAttribute('cx', '60');
+  circle.setAttribute('cy', '60');
+  circle.setAttribute('r', '18');
   circle.setAttribute('fill', 'none');
-  circle.setAttribute('stroke', '#B8552E');
+  circle.setAttribute('stroke', 'var(--ember)');
   circle.setAttribute('stroke-width', '2');
   svg.appendChild(circle);
   return svg;

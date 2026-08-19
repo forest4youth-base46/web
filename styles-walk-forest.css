@@ -5,11 +5,11 @@
    See walk-forest.js for the JS that renders into #wf-scene. */
 
 @keyframes wfBob { 0%,100% { transform:translateY(0) rotate(-0.25deg); } 50% { transform:translateY(-1.1%) rotate(0.25deg); } }
-@keyframes wfPing { 0% { transform:scale(.62); opacity:.75; } 100% { transform:scale(2.5); opacity:0; } }
+@keyframes wfPing { 0% { transform:scale(.3); opacity:0; } 16% { opacity:var(--wf-ripple-peak,.58); } 72% { opacity:var(--wf-ripple-tail,.16); } 100% { transform:scale(2.15); opacity:0; } }
 @keyframes wfMote { 0% { transform:translate3d(0,0,0); opacity:0; } 20% { opacity:.7; } 100% { transform:translate3d(70px,-38px,0); opacity:0; } }
 @keyframes wfSway { 0%,100% { transform:rotate(-0.55deg); } 50% { transform:rotate(0.55deg); } }
 .wf-bob { animation: wfBob 6.5s ease-in-out infinite; }
-.wf-ping { transform-box: fill-box; transform-origin: center; animation: wfPing 4.6s ease-out infinite; }
+.wf-ping { transform-box: fill-box; transform-origin: center; animation: wfPing var(--wf-ripple-duration,5.8s) ease-out infinite; }
 .wf-mote { animation: wfMote 19s linear infinite; }
 .wf-sway { transform-box: fill-box; transform-origin: bottom center; animation: wfSway 13s ease-in-out infinite; }
 @keyframes wfThigh { 0%,100% { transform:rotate(12deg); } 50% { transform:rotate(-12deg); } }
@@ -396,10 +396,31 @@ body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
    header's muted text tokens darken — --ink-soft/--ink-faint default to
    fairly light grays, fine over solid paper but too low-contrast once
    there's a busy scene behind them instead. */
+/* Visual packages for the translucent pane over the blurred forest.
+   Keep this as a small set of semantic values: the default package only
+   makes the pane slightly more transparent than before, while giving future
+   packages (for example, colorblind mode) a single place to tune the same
+   relationship without changing the Walk the Forest interaction. */
+body[data-wf-style="default"] {
+  --wf-pane-paper: rgba(244,241,234,0.84);
+  --wf-pane-card: rgba(251,249,244,0.84);
+  --wf-pane-pure: rgba(255,255,255,0.88);
+  --wf-pane-ink-soft: #14302A;
+  --wf-pane-ink-faint: #234A3E;
+}
+
+body[data-wf-style="colorblind"] {
+  --wf-pane-paper: rgba(244,241,234,0.86);
+  --wf-pane-card: rgba(251,249,244,0.86);
+  --wf-pane-pure: rgba(255,255,255,0.9);
+  --wf-pane-ink-soft: #14302A;
+  --wf-pane-ink-faint: #234A3E;
+}
+
 body.wf-scene-on {
-  --paper:      rgba(244,241,234,0.88);
-  --paper-card: rgba(251,249,244,0.88);
-  --paper-pure: rgba(255,255,255,0.92);
-  --ink-soft:   #14302A;
-  --ink-faint:  #234A3E;
+  --paper:      var(--wf-pane-paper, rgba(244,241,234,0.84));
+  --paper-card: var(--wf-pane-card, rgba(251,249,244,0.84));
+  --paper-pure: var(--wf-pane-pure, rgba(255,255,255,0.88));
+  --ink-soft:   var(--wf-pane-ink-soft, #14302A);
+  --ink-faint:  var(--wf-pane-ink-faint, #234A3E);
 }
