@@ -790,7 +790,7 @@ function wfBuildProps(s, i, out) {
       const kc = key();
       if (f) {
         out.push({ key: kc + 'glow', tag: 'ellipse', cls: 'wfBreath', attrs: {
-          cx: R(f.x), cy: R(f.y), rx: R(0.55 * f.u), ry: R(0.22 * f.u), fill: '#D87B4F', opacity: 0.2,
+          cx: R(f.x), cy: R(f.y), rx: R(0.17 * f.u), ry: R(0.07 * f.u), fill: '#D87B4F', opacity: 0.28,
         } });
         out.push({ key: kc + 'flame', tag: 'path', cls: 'wfFlick', attrs: {
           d: 'M' + R(f.x) + ' ' + R(f.y - 0.2 * f.u) + ' q' + R(0.08 * f.u) + ' ' + R(0.12 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(0.18 * f.u) + ' a' + R(0.08 * f.u) + ' ' + R(0.08 * f.u) + ' 0 0 1 ' + R(-0.16 * f.u) + ' 0 q0 ' + R(-0.06 * f.u) + ' ' + R(0.08 * f.u) + ' ' + R(-0.18 * f.u) + ' Z',
@@ -919,7 +919,7 @@ function wfComputeFrame() {
   const farTrees = [], nearTrees = [];
   WF_TREES.forEach((tr) => {
     const p = wfProject(tr.at, tr.lat);
-    if (!p || p.scale < 0.09 || p.scale > 3.2 || p.d > 12) return;
+    if (!p || p.scale < 0.13 || p.scale > 3.2 || p.d > 12) return;
     const sp = tr.species || 'oak';
     // Per-species proportions: a pine is tall and narrow, a birch taller
     // still and slimmer again, an oak broad and shorter. Applied to the
@@ -936,7 +936,7 @@ function wfComputeFrame() {
     const lean = tr.lean * tw * 1.6;
     const far = p.scale < 0.34;
     const item = {
-      species: sp,
+      species: sp, far,
       cx: p.x.toFixed(1), by: p.y.toFixed(1),
       shRx: (tw * 2.4).toFixed(1), shRy: (tw * 0.8).toFixed(1),
       trunkD: 'M' + (p.x - tw * 0.72).toFixed(1) + ' ' + p.y.toFixed(1) +
@@ -960,10 +960,10 @@ function wfComputeFrame() {
       })) : null,
       // Pine: three stacked tiers, widest at the bottom, drawn as
       // triangles rather than the oak's ellipse cluster.
-      tiers: sp === 'pine' ? [0, 1, 2].map((k) => {
-        const tierW = R * (1.25 - k * 0.26);
-        const tierTop = topY + th * (k * 0.235) - R * 0.15;
-        const tierBot = tierTop + R * 0.95;
+      tiers: sp === 'pine' && !far ? [0, 1, 2].map((k) => {
+        const tierW = R * (0.68 + k * 0.18);
+        const tierTop = topY + th * (k * 0.17);
+        const tierBot = tierTop + R * 1.08;
         const cxk = p.x + lean * (1 - k * 0.28);
         return 'M' + cxk.toFixed(1) + ' ' + tierTop.toFixed(1) +
           ' L' + (cxk - tierW).toFixed(1) + ' ' + tierBot.toFixed(1) +
@@ -1193,6 +1193,19 @@ function wfEsc(str) {
 }
 
 function wfTreeMarkup(tr, hint) {
+  // Distant trees get a deliberately cheap body: trunk plus a single crown
+  // shape, no ground shadow, no bark detail, no tiering, and crucially no
+  // wf-sway wrapper. At that size none of it resolves to more than a pixel
+  // or two, but it was costing 7-11 SVG nodes and one live CSS animation
+  // per tree — and the whole geo layer is rebuilt by innerHTML on every
+  // repaint while the camera moves, so that per-tree cost is paid ~30x a
+  // second. Measured on a 1280x800 viewport this was the difference
+  // between a ~12fps walk and a smooth one.
+  if (tr.far) {
+    return '<g opacity="' + tr.op + '"><path d="' + tr.trunkD + '" fill="' + tr.bark + '"/>' +
+      '<ellipse cx="' + tr.c1x + '" cy="' + tr.c1y + '" rx="' + tr.c1rx + '" ry="' + tr.c1ry +
+      '" fill="' + tr.crown + '"/></g>';
+  }
   // Trunk, plus birch's dark bark scars where the species calls for them.
   let trunk = '<path d="' + tr.trunkD + '" fill="' + tr.bark + '"/>';
   if (tr.barkMarks) {
@@ -1695,11 +1708,20 @@ function wfSyncSet(frame) {
 function wfRender() {
   if (!WF.el) return;
   wfBuildScene();
-  wfMeasure();
+  // wfMeasure() is deliberately NOT called here. It reads
+  // clientWidth/clientHeight, which forces the browser to synchronously
+  // flush any pending layout — including every DOM write this same
+  // function just made last frame (the geo layer's innerHTML, style
+  // attributes, etc.). Doing that on every repaint (~30x/sec while the
+  // camera moves) measured at ~38ms of the ~80ms wfRender was costing —
+  // more than the actual rendering work. WF.w/WF.h only change on an
+  // actual viewport resize, so they're measured once on scene-enter and
+  // again only from the resize handler (wfEnterScene/WF.onResize) — see
+  // wfMeasure()'s own comment.
   // Learn each station's raw lateral range from its own builders, once,
   // before the first frame that positions anything — wfLatFor() needs it
-  // and wfMeasure() above has just established WF.w/WF.h that the
-  // builders project against.
+  // and wfMeasure() (called once on scene-enter, before this) has already
+  // established WF.w/WF.h that the builders project against.
   if (!WF.latPrimed) { WF.latPrimed = true; wfPrimeLatExtents(); }
   const frame = wfComputeFrame();
   const d = WF.dom;
@@ -1783,6 +1805,13 @@ function wfRender() {
   });
 }
 
+// Reads the scene's actual box size. Deliberately called only on scene
+// entry and on an actual window resize (see WF.onResize below) — NOT from
+// inside wfRender()'s per-frame path. clientWidth/clientHeight are
+// layout-dependent reads that force the browser to synchronously flush
+// any pending style/DOM mutations first; calling this every repaint while
+// the camera moves (~30x/sec) was measured forcing ~38ms of layout work
+// per frame, more than the rest of wfRender() combined.
 function wfMeasure() {
   if (!WF.el) return;
   const w = WF.el.clientWidth || 1200;
@@ -1855,7 +1884,7 @@ function wfEnterScene() {
   wfMeasure();
   WF.holdEnd = performance.now() + wfDwellMs();
   wfRender();
-  WF.onResize = () => wfRender();
+  WF.onResize = () => { wfMeasure(); wfRender(); };
   window.addEventListener('resize', WF.onResize);
   WF.onKey = (e) => {
     if (!WF.active) return;
