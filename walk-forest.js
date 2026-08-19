@@ -163,6 +163,12 @@ const WF_CLEARING_SPEC = {
   fire: { alongR: 1.05, latMax: 2.8 },
   bivouac: { alongR: 1.0, latMax: 2.7 },
   campfire: { alongR: 1.15, latMax: 3.1 },
+  // Not an "open ground" station like the others above, but it needed one
+  // anyway: mobile's bigger, closer-cropping near trees (see the near-tree
+  // geometry in wfComputeFrame()) could land right on top of this stop's
+  // own three labeled trees, burying the exact illustration the "pine"/
+  // "oak"/"birch" labels are supposed to point at.
+  naming: { alongR: 1.0, latMax: 2.2 },
 };
 
 const WF_CLEARINGS = Object.keys(WF_CLEARING_SPEC).map((id) => {
@@ -256,12 +262,16 @@ const WF_CAST = {
 // Three species, matching the three the Naming the Forest panel
 // illustration names and draws (VISUAL.naming in pocketbook-data.js) —
 // so a walker who reads that panel and then looks at the trail sees the
-// same trees. Weighted rather than even: oak stays the commonest (it was
-// the only shape the canopy had), with pine and birch as real variety.
+// same trees. Heavily weighted toward oak: at even odds, and especially
+// once a nearby pine can now grow large enough to crop off-frame (see the
+// near-tree geometry below), its dark, spiky silhouette reads as eerie
+// rather than as "one species among a few" — oak's broad, soft crown
+// stays the default the forest is made of, with pine and birch as rare
+// variety rather than a third of it each.
 //   oak   — broad three-lobe crown, brown trunk (the original shape)
 //   pine  — stacked triangular tiers, darkest green, narrow
 //   birch — pale near-white trunk with dark bark scars, slim oval crown
-const WF_SPECIES = ['oak', 'oak', 'oak', 'oak', 'pine', 'pine', 'birch', 'birch'];
+const WF_SPECIES = ['oak', 'oak', 'oak', 'oak', 'oak', 'oak', 'pine', 'birch'];
 
 const WF_TREES = (function () {
   const out = [];
@@ -684,26 +694,40 @@ function wfBuildProps(s, i, out) {
       return;
     case 'naming': {
       const spots = [[-0.32, -0.95], [0.06, 1], [0.44, -1.1]];
-      const barks = ['#6B5240', '#5B4636', '#6B5240'];
-      const crowns = ['#3A6B5A', '#47775F', '#2E5A4A'];
-      const crown2s = ['#31604F', '#3C6B55', '#234A3E'];
+      // W(k*2) below pulls this stop's own label text — oak, birch, pine
+      // in that fixed order (see i18n's `naming` array: name/latin pairs).
+      // The three trees used to all share one generic silhouette, so a
+      // label reading "pine" pointed at an oak-shaped tree same as the
+      // other two. Each tree now actually matches its species' shape —
+      // pine's stacked triangular tiers, birch's pale trunk and slim
+      // crown, oak's broad three-lobe cluster — the same silhouettes
+      // WF_TREES uses out on the trail, so "this is a pine" here and a
+      // pine passed while walking read as the same tree.
+      const species = ['oak', 'birch', 'pine'];
+      const barks = { oak: '#6B5240', birch: '#F4F1E8', pine: '#5B4636' };
+      const crowns = { oak: '#3A6B5A', birch: '#5E8C77', pine: '#234A3E' };
+      const crown2s = { oak: '#31604F', birch: '#4F7D68', pine: '#1B3A31' };
       for (let k = 0; k < 3; k++) {
         const a = spots[k][0], l = spots[k][1];
-        const base = P(a, l, 0), top = P(a, l, 1.3);
+        const sp = species[k];
+        const hMul = sp === 'pine' ? 1.15 : (sp === 'birch' ? 1.1 : 1);
+        const wMul = sp === 'pine' ? 0.66 : (sp === 'birch' ? 0.52 : 1);
+        const rMul = sp === 'pine' ? 0.72 : (sp === 'birch' ? 0.66 : 1);
+        const base = P(a, l, 0), top = P(a, l, 1.3 * hMul);
         if (!base || !top) continue;
-        const tw = Math.max(1.6, 0.05 * base.u);
-        const R2 = Math.max(8, 0.36 * base.u);
-        const topY = top.y, midY = topY + R2 * 0.4, cx = base.x;
+        const tw = Math.max(1.6, 0.05 * base.u * wMul);
+        const R2 = Math.max(8, 0.36 * base.u * rMul);
+        const topY = top.y, treeH = base.y - topY, midY = topY + R2 * 0.4, cx = base.x;
         const kt = key();
         out.push({ key: kt + 'sh', tag: 'ellipse', attrs: {
           cx: R(cx), cy: R(base.y), rx: R(tw * 3.2), ry: R(tw * 1.1), fill: '#3A2E22', opacity: 0.15,
         } });
         out.push({ key: kt + 'tr', tag: 'path', attrs: {
           d: 'M' + R(cx - tw) + ' ' + R(base.y) + ' L' + R(cx - tw * 0.4) + ' ' + R(topY) + ' L' + R(cx + tw * 0.4) + ' ' + R(topY) + ' L' + R(cx + tw) + ' ' + R(base.y) + ' Z',
-          fill: barks[k],
+          fill: barks[sp],
         } });
-        // The three crown ellipses share one wf-sway group (a wrapping <g>,
-        // not a shape descriptor) so they sway as one rigid unit — see
+        // The crown shapes share one wf-sway group (a wrapping <g>, not a
+        // shape descriptor) so they sway as one rigid unit — see
         // wfSyncShapes()'s `group` handling for how descriptors that share
         // a `group.key` get one persistent <g> wrapper between them.
         // Duration dropped — .wf-sway's CSS rule supplies one shared
@@ -714,15 +738,33 @@ function wfBuildProps(s, i, out) {
         // this file — see test/motion-dossier.md.
         const swayStyle = 'animation-delay:-' + (k * 3.1) + 's';
         const grp = { key: kt + 'crown', cls: 'wf-sway', style: swayStyle };
-        out.push({ key: kt + 'c2', tag: 'ellipse', group: grp, attrs: {
-          cx: R(cx - R2 * 0.55), cy: R(midY), rx: R(R2 * 0.6), ry: R(R2 * 0.48), fill: crown2s[k],
-        } });
-        out.push({ key: kt + 'c3', tag: 'ellipse', group: grp, attrs: {
-          cx: R(cx + R2 * 0.58), cy: R(midY - R2 * 0.05), rx: R(R2 * 0.54), ry: R(R2 * 0.44), fill: crown2s[k],
-        } });
-        out.push({ key: kt + 'c1', tag: 'ellipse', group: grp, attrs: {
-          cx: R(cx), cy: R(topY + R2 * 0.12), rx: R(R2 * 0.9), ry: R(R2 * 0.7), fill: crowns[k],
-        } });
+        if (sp === 'pine') {
+          // Three stacked triangular tiers, widest at the bottom — same
+          // construction as WF_TREES' own pine, just in this scene's
+          // descriptor form rather than a raw SVG string.
+          [0, 1, 2].forEach((tier) => {
+            const tierW = R2 * (0.68 + tier * 0.18);
+            const tierTop = topY + treeH * (tier * 0.17);
+            const tierBot = tierTop + R2 * 1.08;
+            out.push({ key: kt + 't' + tier, tag: 'path', group: grp, attrs: {
+              d: 'M' + R(cx) + ' ' + R(tierTop) + ' L' + R(cx - tierW) + ' ' + R(tierBot) + ' L' + R(cx + tierW) + ' ' + R(tierBot) + ' Z',
+              fill: tier === 2 ? crowns[sp] : crown2s[sp],
+            } });
+          });
+        } else {
+          // Oak's broad three-lobe cluster, or birch's own (its taller,
+          // narrower ry below gives the slim upright crown, same as
+          // WF_TREES' birch multiplier).
+          out.push({ key: kt + 'c2', tag: 'ellipse', group: grp, attrs: {
+            cx: R(cx - R2 * 0.55), cy: R(midY), rx: R(R2 * 0.6), ry: R(R2 * (sp === 'birch' ? 0.66 : 0.48)), fill: crown2s[sp],
+          } });
+          out.push({ key: kt + 'c3', tag: 'ellipse', group: grp, attrs: {
+            cx: R(cx + R2 * 0.58), cy: R(midY - R2 * 0.05), rx: R(R2 * 0.54), ry: R(R2 * (sp === 'birch' ? 0.62 : 0.44)), fill: crown2s[sp],
+          } });
+          out.push({ key: kt + 'c1', tag: 'ellipse', group: grp, attrs: {
+            cx: R(cx), cy: R(topY + R2 * 0.12), rx: R(R2 * 0.9), ry: R(R2 * (sp === 'birch' ? 0.95 : 0.7)), fill: crowns[sp],
+          } });
+        }
         label(a, l, 1.55, W(k * 2), 0.048);
       }
       return;
@@ -1067,8 +1109,46 @@ function wfComputeFrame() {
   const farTrees = [], nearTrees = [];
   WF_TREES.forEach((tr) => {
     const p = wfProject(tr.at, tr.lat);
-    if (!p || p.scale < 0.13 || p.scale > 3.2 || p.d > 12) return;
-    const sp = tr.species || 'oak';
+    // wfProject()'s z clamps at d=-0.85 (scale maxes out there rather than
+    // continuing to grow), so *any* tree more than 0.85 behind the camera
+    // — including ones from far earlier in the walk, well outside the
+    // forward field of view — was rendering at exactly the same max scale
+    // as a genuinely close one. Harmless when every tree capped out at a
+    // modest size; became a real bug once near trees were allowed to grow
+    // large and pulled toward the centerline (see cx below) for the
+    // foreground-scale effect — dozens of "phantom" behind-camera trees
+    // could pile up at max size, centered, burying whatever a held stop
+    // actually wanted to show. p.d < -0.9 excludes anything past the
+    // clamp with a small buffer, keeping genuinely-near trees intact.
+    if (!p || p.scale < 0.13 || p.scale > 3.2 || p.d > 12 || p.d < -0.9) return;
+    // wfProject()'s x scales tr.lat by p.scale directly, which is right
+    // for a far tree (keeps the whole treeline converging naturally
+    // toward the centerline near the horizon) but breaks down for a near
+    // one: at scale approaching the ~2.3 ceiling wfProject()'s own z-clamp
+    // allows, even a mid-range tr.lat pushes a tree thousands of pixels
+    // past either edge. Exactly the trees with the most scale-driven size
+    // — the big, close foreground canopies depth perception depends on —
+    // were being computed entirely off-screen, invisible, contributing
+    // nothing. Capping the scale used for the *lateral* term only (size
+    // and y stay on the real p.scale) keeps a tree's lane position stable
+    // past that cap instead of sliding further off-frame as it keeps
+    // growing — it grows toward the camera along a lane, not off the
+    // edge of the world, so it can actually cover what's behind it.
+    // Mobile-only (narrow): tried on desktop too and it read worse there
+    // — desktop's own proportions were already settled, this is a
+    // portrait-viewport correction, not a global one. Desktop keeps
+    // latScale === p.scale, i.e. cx === p.x, unchanged.
+    const latScale = narrow ? Math.min(p.scale, 0.6) : p.scale;
+    const cx = p.x - tr.lat * w * 0.42 * (p.scale - latScale);
+    // Pine's dark, spiky silhouette reads as eerie rather than "one
+    // species among a few" on a phone, especially now that a nearby one
+    // can grow large enough to crop off-frame (see the near-tree geometry
+    // below) — on narrow viewports every procedurally-scattered pine
+    // renders as oak instead. The Naming the Forest stop's own dedicated
+    // pine (wfBuildProps()'s 'naming' case, a separate tree entirely from
+    // this WF_TREES scatter) is untouched, so mobile still has exactly
+    // one pine — the one the "pine" label actually points at.
+    const sp = (narrow && tr.species === 'pine') ? 'oak' : (tr.species || 'oak');
     // Per-species proportions: a pine is tall and narrow, a birch taller
     // still and slimmer again, an oak broad and shorter. Applied to the
     // shared trunk-height/crown-radius maths rather than each species
@@ -1077,37 +1157,41 @@ function wfComputeFrame() {
     const hMul = sp === 'pine' ? 1.25 : (sp === 'birch' ? 1.18 : 1);
     const wMul = sp === 'pine' ? 0.66 : (sp === 'birch' ? 0.52 : 1);
     const rMul = sp === 'pine' ? 0.72 : (sp === 'birch' ? 0.66 : 1);
-    // Linear (1:1) in p.scale — height, trunk width AND crown radius all
-    // move together on the same true-depth curve, so a distant tree is a
-    // smaller *whole tree*, not a skinnier one, and the canopy line
-    // recedes toward the horizon in direct proportion to distance instead
-    // of a softened one. (A previous pass used scale^0.82 here to close a
-    // gap between the treeline's top edge and the haze band above it —
-    // that dampening kept distant canopies measurably taller than true
-    // perspective, which is the reference screenshot's own linear-falloff
-    // look this restores. If the horizon gap reopens visibly, it needs a
-    // fix that doesn't distort the depth ratio — e.g. extending the haze
-    // band itself downward — not reintroducing a sub-linear curve here.)
-    const gs = p.scale;
+    // Mobile only, and piecewise: super-linear (scale^1.4) for a tree at
+    // or nearer than the walker's own reference depth (scale >= 1) so the
+    // one or two closest trees loom large enough to crop off-frame — the
+    // foreground-scale cue a flat/diorama-reading scene was missing — but
+    // sub-linear (scale^0.82, the curve a previous pass introduced) for
+    // anything farther, so the distant canopy skyline stays solid instead
+    // of thinning out faster than before. Continuous at scale===1 (either
+    // curve gives 1 there), so there's no visible seam where trees cross
+    // from "near" to "far" as the camera moves. Desktop keeps the plain
+    // linear curve (scale^1) — its proportions were already settled.
+    const gs = !narrow ? p.scale : (p.scale >= 1 ? Math.pow(p.scale, 1.4) : Math.pow(p.scale, 0.82));
     const th = h * 0.44 * tr.h * gs * hMul;
     // effW in place of raw w — see the comment above trailPts — so crown
     // radius/trunk width stop shrinking disproportionately to th (which
-    // stays h-only) on portrait aspects. Capped to a viewport-relative
-    // ceiling so the one or two nearest trees don't balloon into oversized
-    // blobs while mid/far trees (well under the cap) get the full benefit.
-    const tw = Math.min(Math.max(1.4, effW * 0.019 * tr.w * gs * wMul), w * 0.065);
-    const R = Math.min(Math.max(5, effW * 0.086 * gs * tr.w * rMul), w * 0.28);
+    // stays h-only) on portrait aspects. The cap is loose on mobile (not
+    // the tight w*0.28/w*0.065 desktop keeps) — the nearest tree or two
+    // on a phone are now *meant* to crop off the top/side edges; this only
+    // stops truly degenerate values (scale near the 3.2 render-cutoff)
+    // from becoming absurd rather than just large. Desktop's proportions
+    // were already settled, so it keeps the tight cap unchanged.
+    const twCap = narrow ? w * 0.16 : w * 0.065;
+    const rCap = narrow ? w * 0.75 : w * 0.28;
+    const tw = Math.min(Math.max(1.4, effW * 0.019 * tr.w * gs * wMul), twCap);
+    const R = Math.min(Math.max(5, effW * 0.086 * gs * tr.w * rMul), rCap);
     const topY = p.y - th;
     const lean = tr.lean * tw * 1.6;
     const far = p.scale < 0.34;
     const item = {
       species: sp, far,
-      cx: p.x.toFixed(1), by: p.y.toFixed(1),
+      cx: cx.toFixed(1), by: p.y.toFixed(1),
       shRx: (tw * 2.4).toFixed(1), shRy: (tw * 0.8).toFixed(1),
-      trunkD: 'M' + (p.x - tw * 0.72).toFixed(1) + ' ' + p.y.toFixed(1) +
-        ' L' + (p.x - tw * 0.3 + lean).toFixed(1) + ' ' + topY.toFixed(1) +
-        ' L' + (p.x + tw * 0.3 + lean).toFixed(1) + ' ' + topY.toFixed(1) +
-        ' L' + (p.x + tw * 0.72).toFixed(1) + ' ' + p.y.toFixed(1) + ' Z',
+      trunkD: 'M' + (cx - tw * 0.72).toFixed(1) + ' ' + p.y.toFixed(1) +
+        ' L' + (cx - tw * 0.3 + lean).toFixed(1) + ' ' + topY.toFixed(1) +
+        ' L' + (cx + tw * 0.3 + lean).toFixed(1) + ' ' + topY.toFixed(1) +
+        ' L' + (cx + tw * 0.72).toFixed(1) + ' ' + p.y.toFixed(1) + ' Z',
       // Birch bark is the species' whole signature — near-white, never the
       // brown the other two share, and it keeps its identity into the far
       // palette (a pale trunk reads paler with distance, not browner).
@@ -1118,7 +1202,7 @@ function wfComputeFrame() {
       // as birch rather than just a pale pole. Skipped on far/small trees
       // where they'd be sub-pixel noise.
       barkMarks: sp === 'birch' && !far ? [0.28, 0.46, 0.63, 0.78].map((f) => ({
-        x: (p.x - tw * 0.5 + lean * f).toFixed(1),
+        x: (cx - tw * 0.5 + lean * f).toFixed(1),
         y: (p.y - th * f).toFixed(1),
         w: (tw * 0.85).toFixed(1),
         h: Math.max(0.8, tw * 0.16).toFixed(1),
@@ -1129,16 +1213,16 @@ function wfComputeFrame() {
         const tierW = R * (0.68 + k * 0.18);
         const tierTop = topY + th * (k * 0.17);
         const tierBot = tierTop + R * 1.08;
-        const cxk = p.x + lean * (1 - k * 0.28);
+        const cxk = cx + lean * (1 - k * 0.28);
         return 'M' + cxk.toFixed(1) + ' ' + tierTop.toFixed(1) +
           ' L' + (cxk - tierW).toFixed(1) + ' ' + tierBot.toFixed(1) +
           ' L' + (cxk + tierW).toFixed(1) + ' ' + tierBot.toFixed(1) + ' Z';
       }) : null,
-      c1x: (p.x + lean).toFixed(1), c1y: (topY + R * 0.1).toFixed(1),
+      c1x: (cx + lean).toFixed(1), c1y: (topY + R * 0.1).toFixed(1),
       c1rx: R.toFixed(1), c1ry: (R * (sp === 'birch' ? 1.15 : 0.78)).toFixed(1),
-      c2x: (p.x + lean - R * 0.62).toFixed(1), c2y: (topY + R * 0.46).toFixed(1),
+      c2x: (cx + lean - R * 0.62).toFixed(1), c2y: (topY + R * 0.46).toFixed(1),
       c2rx: (R * 0.66).toFixed(1), c2ry: (R * (sp === 'birch' ? 0.8 : 0.54)).toFixed(1),
-      c3x: (p.x + lean + R * 0.66).toFixed(1), c3y: (topY + R * 0.38).toFixed(1),
+      c3x: (cx + lean + R * 0.66).toFixed(1), c3y: (topY + R * 0.38).toFixed(1),
       c3rx: (R * 0.6).toFixed(1), c3ry: (R * (sp === 'birch' ? 0.74 : 0.5)).toFixed(1),
       // Pine reads darkest, birch lightest — the same tonal separation the
       // Naming panel's own three trees use.
