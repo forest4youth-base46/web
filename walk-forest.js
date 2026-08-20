@@ -314,9 +314,9 @@ const WF_SHRUBS = (function () {
   // Bumped 165 -> 216, the same +31% WF_TREES' own density fix used (520
   // -> 680) — keeps undergrowth density proportional to canopy density
   // rather than the forest floor thinning out relative to the trees.
-  for (let i = 0; i < 216; i++) {
+  for (let i = 0; i < 280; i++) {
     const at = -1 + i * 0.085 * (165 / 216) + rnd() * 0.1;
-    const lat = (rnd() < 0.5 ? -1 : 1) * (0.6 + rnd() * 1.25);
+    const lat = (rnd() < 0.5 ? -1 : 1) * (0.75 + rnd() * 1.1);
     // Undergrowth clears the glades too, but only the inner part of them
     // — a clearing with waist-high scrub right up to the treeline still
     // reads as open ground you could sit a group down in.
@@ -346,7 +346,7 @@ const WF_LITTER = (function () {
   const out = [];
   let seed = 89;
   const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
-  for (let i = 0; i < 260; i++) {
+  for (let i = 0; i < 340; i++) {
     const at = -1 + i * 0.054 + rnd() * 0.09;
     const lat = (rnd() < 0.5 ? -1 : 1) * (0.75 + rnd() * 3.2);
     if (wfInClearing(at, lat * 0.7)) continue;
@@ -1168,7 +1168,7 @@ function wfComputeFrame() {
     // from "near" to "far" as the camera moves. Desktop keeps the plain
     // linear curve (scale^1) — its proportions were already settled.
     const gs = !narrow ? p.scale : (p.scale >= 1 ? Math.pow(p.scale, 1.4) : Math.pow(p.scale, 0.82));
-    const th = h * 0.44 * tr.h * gs * hMul;
+    const th = h * 0.47 * tr.h * gs * hMul;
     // effW in place of raw w — see the comment above trailPts — so crown
     // radius/trunk width stop shrinking disproportionately to th (which
     // stays h-only) on portrait aspects. The cap is loose on mobile (not
@@ -1369,7 +1369,7 @@ function wfComputeFrame() {
   const atStop = Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
   const atId = atStop ? atStop.id : '';
   const seated = atId === 'soundscape' || atId === 'sitspot' || atId === 'campfire';
-  const hidden = atId === 'hammock';
+  const hidden = false;
   const shoeless = atId === 'barefoot';
 
   // Barefoot's one scripted moment: the walker crouches, a shoe comes
@@ -2115,7 +2115,7 @@ function wfRender() {
   const crouched = frame.barefootPhase === 'crouch-in' || frame.barefootPhase === 'crouch';
   wfSet('charWrap',
     'position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform-origin:center bottom;' +
-    'transform:translateX(-58%)' + (crouched ? ' scaleY(0.8)' : '') + ';width:' +
+    'transform:translateX(-58%);width:' +
     (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) +
     'px;z-index:320;pointer-events:none;transition:opacity .6s, transform .5s ease-in-out;opacity:' + (frame.hidden ? 0 : 1),
     v => d.charWrap.setAttribute('style', v));
