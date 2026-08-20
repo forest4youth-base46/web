@@ -1106,7 +1106,7 @@ function wfComputeFrame() {
       ' L' + trailPts.map(p => (p.x + p.hw).toFixed(1) + ' ' + p.y.toFixed(1)).join(' L') + ' Z';
   }
 
-  const farTrees = [], nearTrees = [];
+  const trees = [];
   WF_TREES.forEach((tr) => {
     const p = wfProject(tr.at, tr.lat);
     // wfProject()'s z clamps at d=-0.85 (scale maxes out there rather than
@@ -1252,10 +1252,8 @@ function wfComputeFrame() {
       swayStyle: 'animation-delay:-' + tr.swayDelay.toFixed(1) + 's',
       _s: p.scale,
     };
-    if (p.scale > 0.62) nearTrees.push(item); else farTrees.push(item);
+    trees.push(item);
   });
-  farTrees.sort((a, b) => a._s - b._s);
-  nearTrees.sort((a, b) => a._s - b._s);
 
   const dapples = [];
   WF_DAPPLE.forEach((dp) => {
@@ -1308,7 +1306,7 @@ function wfComputeFrame() {
     shrubs.push({
       cx: p.x.toFixed(1), cy: p.y.toFixed(1), rx: (k * 1.3).toFixed(1), ry: (k * 0.8).toFixed(1),
       cx2: (p.x + k * 0.9).toFixed(1), cy2: (p.y - k * 0.32).toFixed(1), rx2: (k * 0.82).toFixed(1), ry2: (k * 0.52).toFixed(1),
-      fill, op: Math.min(1, 0.42 + p.scale * 0.85).toFixed(2),
+      fill, op: Math.min(1, 0.42 + p.scale * 0.85).toFixed(2), _s: p.scale,
     });
   });
 
@@ -1458,7 +1456,7 @@ function wfComputeFrame() {
   const sunGlow = (8 + sunT * 16).toFixed(0);
 
   return {
-    trailD, farTrees, nearTrees, dapples, shrubs, litter, stops, rail, setPieces,
+    trailD, trees, dapples, shrubs, litter, stops, rail, setPieces,
     stationId: (ACTIVITIES[camIndex] || {}).id || '',
     narrow, walking, sunOpacity, sunWidth, sunGlow,
     stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
@@ -2080,16 +2078,17 @@ function wfRender() {
   wfSet('stationId', frame.stationId, v => WF.el.setAttribute('data-wf-station', v));
   wfSet('panelOpenGate', !!WF.openId, v => WF.el.classList.toggle('wf-panel-open', v));
 
-  const sceneSvg = '' +
-    '<g>' + frame.farTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>' +
-    '<g>' + frame.shrubs.map(sh => '<g opacity="' + sh.op + '"><ellipse cx="' + sh.cx + '" cy="' + sh.cy + '" rx="' + sh.rx + '" ry="' + sh.ry + '" fill="' + sh.fill + '"/><ellipse cx="' + sh.cx2 + '" cy="' + sh.cy2 + '" rx="' + sh.rx2 + '" ry="' + sh.ry2 + '" fill="' + sh.fill + '"/></g>').join('') + '</g>' +
+  const sceneSvg =
     '<path d="' + frame.trailD + '" fill="#D8CDAF"/>' +
     '<g>' + frame.dapples.map(dp => '<ellipse cx="' + dp.cx + '" cy="' + dp.cy + '" rx="' + dp.rx + '" ry="' + dp.ry + '" fill="#F2EBD8" opacity="' + dp.op + '"/>').join('') + '</g>' +
     '<g>' + frame.litter.map(lt => lt.kind === 'stick'
       ? '<line x1="' + lt.x1 + '" y1="' + lt.y1 + '" x2="' + lt.x2 + '" y2="' + lt.y2 + '" stroke="' + lt.fill + '" stroke-width="' + lt.sw + '" stroke-linecap="round" opacity="' + lt.op + '"/>'
       : '<g opacity="' + lt.op + '"><ellipse cx="' + lt.cx + '" cy="' + lt.cy + '" rx="' + lt.rx + '" ry="' + lt.ry + '" fill="' + lt.fill + '"/><ellipse cx="' + lt.cx2 + '" cy="' + lt.cy2 + '" rx="' + lt.rx2 + '" ry="' + lt.ry2 + '" fill="' + lt.fill + '"/></g>'
     ).join('') + '</g>' +
-    '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
+    '<g>' + [
+      ...frame.trees.map(tr => ({ _s: tr._s, html: wfTreeMarkup(tr) })),
+      ...frame.shrubs.map(sh => ({ _s: sh._s, html: '<g opacity="' + sh.op + '"><ellipse cx="' + sh.cx + '" cy="' + sh.cy + '" rx="' + sh.rx + '" ry="' + sh.ry + '" fill="' + sh.fill + '"/><ellipse cx="' + sh.cx2 + '" cy="' + sh.cy2 + '" rx="' + sh.rx2 + '" ry="' + sh.ry2 + '" fill="' + sh.fill + '"/></g>' })),
+    ].sort((a, b) => a._s - b._s).map(x => x.html).join('') + '</g>';
 
   wfSet('geo', sceneSvg, v => { d.geo.innerHTML = v; });
   wfSyncSet(frame);
