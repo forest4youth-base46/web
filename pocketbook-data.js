@@ -265,12 +265,6 @@ const VISUAL = {
     <g stroke="#234A3E" stroke-width="0.4" opacity="0"><animate attributeName="opacity" from="0" to="0.5" dur="0.6s" begin="1.0s" fill="freeze"/>
       <path d="M115 85 Q240 132 365 85"/><path d="M115 85 Q240 138 365 85"/>
     </g>
-    <!-- person resting -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="1.7s" fill="freeze"/>
-      <ellipse cx="240" cy="118" rx="60" ry="7" fill="#14302A" opacity="0.85"/>
-      <circle cx="305" cy="115" r="7" fill="#14302A"/>
-      <line x1="170" y1="118" x2="160" y2="124" stroke="#14302A" stroke-width="3" stroke-linecap="round"/>
-    </g>
     <!-- gentle sway -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="0.6" dur="0.6s" begin="2.4s" fill="freeze"/>
       <path d="M180 78 Q240 82 300 78" fill="none" stroke="#7FA396" stroke-width="0.5" stroke-dasharray="2 3">
