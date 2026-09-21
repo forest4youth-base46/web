@@ -215,33 +215,34 @@ const VISUAL = {
       <line x1="9" y1="40" x2="9" y2="55" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
       <line x1="8" y1="14" x2="28" y2="6" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
     </g>
-    <!-- tree 1: oak (revealed first) -->
+    <!-- item 1: acorn (revealed first) -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.4s" fill="freeze"/>
-      <ellipse cx="170" cy="78" rx="22" ry="16" fill="#3A6B5A" opacity="0.65"/>
-      <rect x="167" y="92" width="6" height="55" fill="#6B5240"/>
-      <line x1="170" y1="120" x2="195" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <text x="200" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Oak</text>
-      <text x="200" y="130" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">Quercus robur</text>
+      <path d="M162 110 Q172 100 182 110 L180 128 Q172 134 164 128 Z" fill="#8B6F47"/>
+      <path d="M161 108 Q172 98 183 108 L183 112 Q172 104 161 112 Z" fill="#6B5240"/>
+      <line x1="172" y1="134" x2="195" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <text x="200" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Acorn</text>
     </g>
-    <!-- tree 2: birch -->
+    <!-- item 2: beetle -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.2s" fill="freeze"/>
-      <path d="M280 80 Q270 62 280 50 Q290 62 280 80" fill="#3A6B5A" opacity="0.7"/>
-      <path d="M290 84 Q282 66 292 58 Q300 68 290 84" fill="#7FA396" opacity="0.6"/>
-      <rect x="282" y="80" width="4" height="65" fill="#FBF9F4" stroke="#14302A" stroke-width="0.5"/>
-      <g stroke="#14302A" stroke-width="0.4" opacity="0.6"><line x1="282" y1="95" x2="286" y2="95"/><line x1="282" y1="110" x2="286" y2="110"/><line x1="282" y1="125" x2="286" y2="125"/></g>
+      <ellipse cx="280" cy="118" rx="10" ry="7" fill="#14302A"/>
+      <line x1="280" y1="112" x2="280" y2="125" stroke="#F4F1EA" stroke-width="0.6"/>
+      <g stroke="#14302A" stroke-width="0.8" stroke-linecap="round">
+        <line x1="272" y1="113" x2="265" y2="109"/>
+        <line x1="272" y1="118" x2="264" y2="118"/>
+        <line x1="272" y1="123" x2="265" y2="128"/>
+        <line x1="288" y1="113" x2="295" y2="109"/>
+        <line x1="288" y1="118" x2="296" y2="118"/>
+        <line x1="288" y1="123" x2="295" y2="128"/>
+      </g>
       <line x1="290" y1="120" x2="315" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <text x="320" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Birch</text>
-      <text x="320" y="130" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">Betula pendula</text>
+      <text x="320" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Beetle</text>
     </g>
-    <!-- tree 3: pine -->
+    <!-- item 3: oak -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.0s" fill="freeze"/>
-      <polygon points="395,46 378,75 412,75" fill="#234A3E"/>
-      <polygon points="395,62 380,90 410,90" fill="#234A3E"/>
-      <polygon points="395,78 378,108 412,108" fill="#234A3E"/>
-      <rect x="392" y="105" width="6" height="42" fill="#6B5240"/>
-      <line x1="395" y1="135" x2="425" y2="135" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <text x="430" y="133" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Pine</text>
-      <text x="430" y="145" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">P. sylvestris</text>
+      <ellipse cx="395" cy="78" rx="22" ry="16" fill="#3A6B5A" opacity="0.65"/>
+      <rect x="392" y="92" width="6" height="55" fill="#6B5240"/>
+      <line x1="395" y1="120" x2="420" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <text x="425" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Oak</text>
     </g>
   </svg>`,
 
@@ -263,12 +264,6 @@ const VISUAL = {
     <path d="M115 85 Q240 145 365 85 L365 85 Q240 130 115 85 Z" fill="#7FA396" opacity="0"><animate attributeName="opacity" from="0" to="0.5" dur="0.6s" begin="1.0s" fill="freeze"/></path>
     <g stroke="#234A3E" stroke-width="0.4" opacity="0"><animate attributeName="opacity" from="0" to="0.5" dur="0.6s" begin="1.0s" fill="freeze"/>
       <path d="M115 85 Q240 132 365 85"/><path d="M115 85 Q240 138 365 85"/>
-    </g>
-    <!-- person resting -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="1.7s" fill="freeze"/>
-      <ellipse cx="240" cy="118" rx="60" ry="7" fill="#14302A" opacity="0.85"/>
-      <circle cx="305" cy="115" r="7" fill="#14302A"/>
-      <line x1="170" y1="118" x2="160" y2="124" stroke="#14302A" stroke-width="3" stroke-linecap="round"/>
     </g>
     <!-- gentle sway -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="0.6" dur="0.6s" begin="2.4s" fill="freeze"/>
@@ -618,35 +613,19 @@ const VISUAL = {
 
   checkin: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
-    <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
-    <!-- card -->
-    <rect x="150" y="22" width="180" height="120" rx="6" fill="#FBF9F4" stroke="#234A3E" stroke-width="1"/>
-    <text x="170" y="44" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#7C8E85">how am I leaving today?</text>
-    <g font-family="Open Sans, sans-serif" font-size="11" fill="#1B2A24">
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.4s" fill="freeze"/>
-        <circle cx="172" cy="62" r="5" fill="none" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="66">much better</text>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.8s" fill="freeze"/>
-        <circle cx="172" cy="82" r="5" fill="#234A3E" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="86">a bit better</text>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.2s" fill="freeze"/>
-        <circle cx="172" cy="102" r="5" fill="none" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="106">about the same</text>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.6s" fill="freeze"/>
-        <circle cx="172" cy="122" r="5" fill="none" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="126">a bit worse</text>
-      </g>
+    <ellipse cx="240" cy="152" rx="30" ry="5" fill="#14302A" opacity="0.15"/>
+    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.3s" fill="freeze"/>
+      <circle cx="240" cy="46" r="2" fill="#7FA396"/>
+      <circle cx="251" cy="38" r="1.4" fill="#7FA396" opacity="0.7"/>
+      <circle cx="230" cy="40" r="1.4" fill="#7FA396" opacity="0.5"/>
     </g>
-    <!-- hand placing in box -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.0s" fill="freeze"/>
-      <rect x="350" y="100" width="40" height="30" rx="2" fill="none" stroke="#234A3E" stroke-width="1.2"/>
-      <path d="M370 102 L390 102 L390 96 L370 96" fill="#FBF9F4" stroke="#234A3E" stroke-width="0.8"/>
-      <line x1="332" y1="92" x2="350" y2="105" stroke="#7C8E85" stroke-width="0.5" stroke-dasharray="2 2"/>
+    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.6s" fill="freeze"/>
+      <circle cx="240" cy="68" r="15" fill="#3A6B5A"/>
+      <rect x="222" y="86" width="36" height="60" rx="10" fill="#234A3E"/>
+      <circle cx="240" cy="112" r="6" fill="none" stroke="#F4F1EA" stroke-width="1.2"/>
+      <circle cx="240" cy="112" r="2" fill="#F4F1EA"/>
     </g>
-    <text x="240" y="160" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#7C8E85">private. quietly collected.</text>
+    <text x="240" y="165" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#7C8E85">private. held quietly within.</text>
   </svg>`,
 
   campfire: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
