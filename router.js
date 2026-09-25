@@ -115,7 +115,10 @@ function applyRoute() {
     applyRouteActivateOnly('entry-screen');
     return;
   }
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Leave an already-active screen alone: re-adding .active restarts its
+  // fade-in, which made sub-route changes (#guide/<section>,
+  // #implement/<module>) flash the whole screen.
+  document.querySelectorAll('.screen').forEach(s => { if (s !== target) s.classList.remove('active'); });
   target.classList.add('active');
 
   applyRouteOpenModule(target, moduleId);
@@ -368,10 +371,9 @@ function toggleCheck(el) {
 // ─────────────────────────────────────────
 // GUIDE INTEGRATION
 // ─────────────────────────────────────────
-// The practical guides are rendered in-app (guide-render.js), so a chapter
-// link is just a route: #guide/g-<chapterId>, e.g. openChapter('fi-8') or
-// openChapter('ivn-app-a'). guideSyncFromHash() switches tab, opens and
-// scrolls. (This used to open a PDF of a handbook that was never written.)
+// The guides are rendered in-app (guide-render.js), so a section link is
+// just a route: #guide/g-<sectionId>, e.g. openChapter('fi-young') or
+// openChapter('ivn-sheets'). guideSyncFromHash() switches guide and section.
 function openChapter(chapterId) {
   window.location.hash = 'guide/g-' + chapterId;
 }
