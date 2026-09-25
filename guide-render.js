@@ -1,141 +1,179 @@
 // ============================================================
-// PRACTICAL GUIDES — renders the full WP1 practical guides
+// GUIDES — the forest and immersive-virtual-nature practical guides
 // ============================================================
-// Replaces the old "Companion Guide" screen, which listed a 14-chapter,
-// 108-page handbook that was never written. #guide-screen now shows the two
-// real deliverables in full:
+// Renders #guide-screen from two generated data files:
 //
-//   GUIDE_FI  (guide-fi-data.js)  — D1.2.1, Forest-Based Interventions
-//   GUIDE_IVN (guide-ivn-data.js) — D1.3.2, Immersive Virtual Nature
+//   GUIDE_FI  (guide-fi-data.js)  — Forest-Based Interventions
+//   GUIDE_IVN (guide-ivn-data.js) — Immersive Virtual Nature
 //
-// Both data files are generated from the deliverables by
+// Both are built from the project's practical guides by
 // admin/projects/forest4youth/web-app/scripts/build_guide_data.py — change
-// the text there, not here. The Pocketbook chapter (D1.2.1 ch.8) doesn't
-// repeat the 17 activity pages: {t:'acts'} blocks list them from ACTIVITIES
-// (pocketbook-data.js) and link into the Pocketbook, so each activity has
-// one copy.
+// the text there, not here. The data is already organised for reading
+// (sections named for the reader, lists turned into tips, cards, checklists
+// and menus); this file only lays it out.
 //
-// Routing: #guide shows FI; #guide/g-<chapterId> (e.g. #guide/g-ivn-app-a)
-// switches to that guide, opens the chapter and scrolls to it. router.js's
-// applyRouteOpenModule() already adds .open to the element with that id;
-// guideSyncFromHash() below (on hashchange, registered after router.js's
-// own listener) does the rest — tab, aria-expanded, scroll.
+// Layout: a switch between the two guides, a short lead, then a section
+// menu beside one readable column (one section at a time, previous/next at
+// the bottom). The Pocketbook is its own feature and is not repeated here.
 //
-// Chapters use the existing .exp-card accordion + toggleExp() (router.js),
-// per CONTRIBUTING.md's accordion pattern. Guide text is English only for
-// now; FR/DE editions exist for D1.2.1 (older than v2.2) and not at all for
-// D1.3.2 — see admin/.../web-app/PLAN.md, phase 4.
+// Routing: #guide/g-<sectionId> (e.g. #guide/g-ivn-sheets) opens that
+// section of that guide. router.js handles the screen; guideSyncFromHash()
+// (hashchange, registered after router.js's own listener) does the rest.
 
 const GUIDES = { fi: typeof GUIDE_FI !== 'undefined' ? GUIDE_FI : null,
                  ivn: typeof GUIDE_IVN !== 'undefined' ? GUIDE_IVN : null };
 let guideActive = 'fi';
+const guideSection = { fi: 'fi-start', ivn: 'ivn-start' };
 
 function guideEsc(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// "Purpose. To familiarize…" → bold lead-in. Only short, capitalised
-// labels ending in a full stop at the very start of a paragraph.
-function guideInline(text) {
-  const esc = guideEsc(text).replace(/\n/g, '<br>');
-  return esc.replace(/^([A-Z][A-Za-z ,/()–-]{1,38}\.)(\s)/, '<strong>$1</strong>$2');
+// Paragraph text, with its lead-in in bold when the source set one in bold
+// (e.g. "Inform and consent." — recorded by the generator as b.label).
+function guideInline(text, label) {
+  const html = guideEsc(text).replace(/\n/g, '<br>');
+  if (label && text.indexOf(label) === 0) {
+    const l = guideEsc(label);
+    return '<strong>' + l + '</strong>' + html.slice(l.length);
+  }
+  return html;
 }
 
-function guideActsBlock(groupNum) {
-  if (typeof ACTIVITIES === 'undefined' || typeof GROUPS === 'undefined') return '';
-  const g = GROUPS.find(x => x.id === groupNum);
-  const acts = ACTIVITIES.filter(a => a.group === groupNum);
-  const title = typeof pbGroupT === 'function' ? pbGroupT(g, 'title') : g.title;
-  const name = a => (typeof pbT === 'function' ? pbT(a, 'name') : a.name);
-  const purpose = a => (typeof pbT === 'function' ? pbT(a, 'purpose') : a.purpose);
-  return '<div class="guide-acts"><div class="guide-acts-title">' + guideEsc(g.num + '. ' + title) +
-    ' <span class="guide-acts-count">· ' + acts.length + '</span></div><ul>' +
-    acts.map(a => '<li><a href="#implement/mod-pocket/pb-act-' + a.id + '">' + guideEsc(name(a)) +
-      '</a><span> — ' + guideEsc(purpose(a)) + '</span></li>').join('') + '</ul></div>';
+function guideFindSection(id) {
+  for (const key of ['fi', 'ivn']) {
+    const g = GUIDES[key];
+    if (!g) continue;
+    const s = g.sections.find(x => x.id === id);
+    if (s) return { key, section: s };
+  }
+  return null;
+}
+
+// ── Blocks ────────────────────────────────────────────────
+let guideUid = 0;
+
+function guideChips(options, single) {
+  return '<div class="gd-chips"' + (single ? ' data-single="1"' : '') + '>' + options.map(o =>
+    '<button type="button" class="gd-chip" aria-pressed="false" onclick="guideToggleChip(this)">' + guideEsc(o) + '</button>').join('') + '</div>';
 }
 
 function guideBlock(b) {
   switch (b.t) {
-    case 'h':  return '<h4 class="guide-h">' + guideEsc(b.text) + '</h4>';
-    case 'h3': return '<h5 class="guide-h3">' + guideEsc(b.text) + '</h5>';
-    case 'p':  return '<p class="guide-p">' + guideInline(b.text) + '</p>';
-    case 'callout': return '<p class="guide-callout">' + guideInline(b.text) + '</p>';
-    case 'ul': return '<ul class="guide-ul">' + b.items.map(i => '<li>' + guideInline(i) + '</li>').join('') + '</ul>';
-    case 'ol': return '<ol class="guide-ol">' + b.items.map(i => '<li>' + guideInline(i) + '</li>').join('') + '</ol>';
-    case 'check': return '<ul class="guide-check">' + b.items.map(i => '<li>' + guideInline(i) + '</li>').join('') + '</ul>';
-    case 'form': return '<p class="guide-form">' + guideEsc(b.text) + '</p>';
-    case 'quote': return '<blockquote class="guide-quote"><p>' + guideEsc(b.text) + '</p>' +
-      (b.by ? '<cite>' + guideEsc(b.by) + '</cite>' : '') + '</blockquote>';
-    case 'sheet': return '<div class="guide-sheet"><div class="guide-sheet-title">' + guideEsc(b.title) + '</div>' +
-      b.lines.map(l => '<p class="guide-p">' + guideInline(l) + '</p>').join('') + '</div>';
-    case 'table': return '<div class="guide-table-wrap"><table class="guide-table"><thead><tr>' +
+    case 'lead': return '<p class="gd-lead-p">' + guideInline(b.text) + '</p>';
+    case 'p':  return '<p>' + guideInline(b.text, b.label) + '</p>';
+    case 'h':  return '<h4 class="gd-h">' + guideEsc(b.text) + '</h4>';
+    case 'h3': return '<h5 class="gd-h3">' + guideEsc(b.text) + '</h5>';
+    case 'callout': return '<p class="gd-callout">' + guideInline(b.text) + '</p>';
+    case 'ul': return '<ul class="gd-list">' + b.items.map(i => '<li>' + guideInline(i) + '</li>').join('') + '</ul>';
+    case 'ol': return '<ol class="gd-list gd-list-num">' + b.items.map(i => '<li>' + guideInline(i) + '</li>').join('') + '</ol>';
+    case 'quote': return '<figure class="gd-quote"><blockquote>' + guideEsc(b.text) + '</blockquote>' +
+      (b.by ? '<figcaption>' + guideEsc(b.by) + '</figcaption>' : '') + '</figure>';
+    case 'tips': return '<div class="gd-tips">' + b.items.map(i =>
+      '<div class="gd-tip"><h5>' + guideEsc(i.title) + '</h5><p>' + guideEsc(i.text) + '</p></div>').join('') + '</div>';
+    case 'roles': return '<div class="gd-roles">' + b.items.map(i =>
+      '<a class="gd-role" href="#guide/g-' + i.to + '"><span class="gd-role-title">' + guideEsc(i.title) +
+      '</span><span class="gd-role-text">' + guideEsc(i.text) + '</span><span class="gd-role-go" aria-hidden="true">→</span></a>').join('') + '</div>';
+    case 'bridge': return '<div class="gd-bridge"><p>' + guideEsc(b.text) + '</p><a class="gd-button" href="#guide/g-' +
+      b.to + '">' + guideEsc(b.label) + ' →</a></div>';
+    case 'check': return '<ul class="gd-check">' + b.items.map(i =>
+      '<li><button type="button" role="checkbox" aria-checked="false" onclick="guideToggleCheck(this)">' +
+      '<span class="gd-box" aria-hidden="true"></span><span>' + guideInline(i) + '</span></button></li>').join('') + '</ul>';
+    case 'menu': return '<div class="gd-menu">' + b.groups.map(g => {
+      const id = 'gd-m' + (++guideUid);
+      return '<div class="gd-menu-row" role="group" aria-labelledby="' + id + '"><div class="gd-menu-label" id="' + id + '">' +
+        guideEsc(g.label) + '</div>' + (g.scale
+          ? '<div class="gd-scale"><span>' + guideEsc(g.scale[0]) + '</span>' + guideChips(['·', '··', '···'], true) + '<span>' + guideEsc(g.scale[1]) + '</span></div>'
+          : guideChips(g.options)) + '</div>';
+    }).join('') + '</div>';
+    case 'fields': return '<div class="gd-fields">' + b.items.map(f =>
+      '<div class="gd-field"><div class="gd-field-label">' + guideEsc(f.label) + '</div>' +
+      (f.options ? guideChips(f.options, true) : '<div class="gd-field-line" aria-hidden="true"></div>') + '</div>').join('') + '</div>';
+    case 'modules': return '<div class="gd-modules">' + b.items.map(m =>
+      '<article class="gd-module"><div class="gd-module-key" aria-hidden="true">' + guideEsc(m.key) + '</div>' +
+      '<h5>' + guideEsc(m.title) + '</h5><p class="gd-module-sub">' + guideEsc(m.sub) + '</p>' +
+      (m.purpose ? '<p>' + guideEsc(m.purpose) + '</p>' : '') +
+      '<ul class="gd-params">' + m.params.map(p => '<li>' + guideEsc(p) + '</li>').join('') + '</ul>' +
+      '<details class="gd-more"><summary>' + guideEsc(t('guide.module.more')) + '</summary><dl>' +
+      m.details.map(d => '<dt>' + guideEsc(d.label) + '</dt><dd>' + guideEsc(d.text) + '</dd>').join('') +
+      '</dl></details></article>').join('') + '</div>';
+    case 'panel': return '<section class="gd-panel-alert"><h4 class="gd-h">' + guideEsc(b.title) + '</h4>' +
+      b.blocks.map(guideBlock).join('') + '</section>';
+    case 'qa': return '<div class="gd-qa">' + b.items.map(i =>
+      '<div class="gd-qa-item"><h5>' + guideEsc(i.q) + '</h5><p>' + guideEsc(i.a) + '</p></div>').join('') + '</div>';
+    case 'table': return '<div class="gd-table-wrap"><table class="gd-table"><thead><tr>' +
       b.head.map(h => '<th scope="col">' + guideEsc(h) + '</th>').join('') + '</tr></thead><tbody>' +
-      b.rows.map(r => '<tr>' + r.map((c, i) => (i === 0 ? '<th scope="row">' : '<td>') +
-        guideEsc(c).replace(/\n/g, '<br>') + (i === 0 ? '</th>' : '</td>')).join('') + '</tr>').join('') +
-      '</tbody></table></div>';
-    case 'acts': return guideActsBlock(b.group);
-    case 'link': return '<p class="guide-link"><a href="' + guideEsc(b.href) + '">' + guideEsc(b.text) + '</a></p>';
+      b.rows.map(r => '<tr>' + r.map((c, i) => {
+        const lines = String(c).split('\n');
+        return i === 0 ? '<th scope="row">' + guideEsc(lines[0]) + (lines[1] ? '<span>' + guideEsc(lines.slice(1).join(' ')) + '</span>' : '') + '</th>'
+                       : '<td>' + guideEsc(c).replace(/\n/g, '<br>') + '</td>';
+      }).join('') + '</tr>').join('') + '</tbody></table></div>';
     default: return '';
   }
 }
 
-function guideChapterLabel(c) {
-  if (!c.num) return '';
-  return /^[A-H]$/.test(c.num) ? t('guide.appendix') + ' ' + c.num : t('guide.chapter') + ' ' + c.num;
+function guideToggleCheck(btn) {
+  btn.setAttribute('aria-checked', String(btn.getAttribute('aria-checked') !== 'true'));
+}
+function guideToggleChip(btn) {
+  const wrap = btn.parentElement;
+  const on = btn.getAttribute('aria-pressed') !== 'true';
+  if (on && wrap.dataset.single) wrap.querySelectorAll('.gd-chip').forEach(c => c.setAttribute('aria-pressed', 'false'));
+  btn.setAttribute('aria-pressed', String(on));
 }
 
-function guidePanel(g) {
-  const toc = g.chapters.map(c =>
-    '<a href="#guide/g-' + c.id + '" class="guide-chapter" data-chapter-id="' + c.id + '">' +
-      '<div class="guide-chapter-num">' + guideEsc(c.num || '·') + '</div>' +
-      '<div class="guide-chapter-body"><div class="guide-chapter-title"><span data-guide-title>' + guideEsc(c.title) + '</span></div>' +
-      (c.sub ? '<div class="guide-chapter-desc">' + guideEsc(c.sub) + '</div>' : '') + '</div></a>').join('');
-  const chapters = g.chapters.map(c => {
-    const id = 'g-' + c.id;
-    const label = guideChapterLabel(c);
-    return '<section class="exp-card guide-ch" id="' + id + '">' +
-      '<div class="exp-header" role="button" tabindex="0" aria-expanded="false" aria-controls="' + id + '-body" ' +
-        'onclick="toggleExp(\'' + id + '\')" onkeydown="activateOnKey(event, () => toggleExp(\'' + id + '\'))">' +
-        '<div class="exp-icon">' + guideEsc(c.num || '·') + '</div>' +
-        '<div class="exp-title">' + (label ? '<span class="guide-ch-label">' + guideEsc(label) + '</span>' : '') +
-          guideEsc(c.title) + '</div><div class="exp-toggle">+</div></div>' +
-      '<div class="exp-body" id="' + id + '-body">' + c.blocks.map(guideBlock).join('') +
-        '<p class="guide-source">' + guideEsc(g.code + ' · ' + g.edition) + '</p></div></section>';
-  }).join('');
-  return '<div class="guide-intro">' +
-      '<p class="guide-meta"><strong>' + guideEsc(g.code) + '</strong> · ' + guideEsc(g.wp) + ' · ' + guideEsc(g.authors) + '</p>' +
-      '<h3>' + guideEsc(g.title) + '</h3><p>' + guideEsc(g.audience) + '</p>' +
-      '<p class="guide-meta">' + guideEsc(t('guide.edition')) + ': ' + guideEsc(g.edition) + '</p>' +
-      (currentLang !== 'en' ? '<p class="guide-lang-note">' + guideEsc(t('guide.langnote')) + '</p>' : '') +
+// ── Layout ────────────────────────────────────────────────
+function guideArticle(key) {
+  const g = GUIDES[key];
+  const idx = Math.max(0, g.sections.findIndex(s => s.id === guideSection[key]));
+  const s = g.sections[idx];
+  const prev = g.sections[idx - 1], next = g.sections[idx + 1];
+  const pager = '<nav class="gd-pager" aria-label="' + guideEsc(t('guide.pager')) + '">' +
+    (prev ? '<a class="gd-pager-prev" href="#guide/g-' + prev.id + '"><span>' + guideEsc(t('guide.prev')) + '</span>' + guideEsc(prev.title) + '</a>' : '<span></span>') +
+    (next ? '<a class="gd-pager-next" href="#guide/g-' + next.id + '"><span>' + guideEsc(t('guide.next')) + '</span>' + guideEsc(next.title) + '</a>' : '<span></span>') +
+    '</nav>';
+  return '<h3 class="gd-title" tabindex="-1">' + guideEsc(s.title) + '</h3>' +
+    '<div class="gd-body">' + s.blocks.map(guideBlock).join('') + '</div>' + pager;
+}
+
+function guideNav(key) {
+  const g = GUIDES[key];
+  return g.sections.map(s =>
+    '<li><a href="#guide/g-' + s.id + '"' + (s.id === guideSection[key] ? ' aria-current="true"' : '') + '>' +
+    '<span class="gd-nav-title">' + guideEsc(s.title) + '</span><span class="gd-nav-teaser">' + guideEsc(s.teaser || '') + '</span></a></li>').join('');
+}
+
+function guidePanel(key) {
+  const g = GUIDES[key];
+  return '<div class="gd-lead"><p class="gd-lead-quote">' + guideEsc(g.lead_quote) + '</p><p>' + guideEsc(g.lead) + '</p>' +
+      (currentLang !== 'en' ? '<p class="gd-langnote">' + guideEsc(t('guide.langnote')) + '</p>' : '') + '</div>' +
+    '<div class="gd-layout">' +
+      '<nav class="gd-nav" aria-label="' + guideEsc(t('guide.sections')) + '"><ol id="gd-nav-' + key + '">' + guideNav(key) + '</ol></nav>' +
+      '<article class="gd-article" id="gd-article-' + key + '">' + guideArticle(key) + '</article>' +
     '</div>' +
-    '<nav class="guide-toc" aria-label="' + guideEsc(t('guide.contents')) + '">' + toc + '</nav>' +
-    '<div class="guide-chapters">' + chapters + '</div>';
+    '<details class="gd-about"><summary>' + guideEsc(t('guide.about')) + '</summary>' +
+      g.about.map(p => '<p>' + guideEsc(p) + '</p>').join('') + '</details>';
 }
 
 function guideRender() {
   const root = document.getElementById('guide-root');
   if (!root || !GUIDES.fi || !GUIDES.ivn) return;
-  const open = new Set(Array.from(root.querySelectorAll('.guide-ch.open')).map(el => el.id));
-  const tab = (key, g) =>
-    '<button type="button" role="tab" class="guide-tab" id="guide-tab-' + key + '" aria-controls="guide-panel-' + key + '" ' +
+  guideUid = 0;
+  const tab = key =>
+    '<button type="button" role="tab" class="gd-tab" id="guide-tab-' + key + '" aria-controls="guide-panel-' + key + '" ' +
       'aria-selected="' + (guideActive === key) + '" tabindex="' + (guideActive === key ? 0 : -1) + '" ' +
-      'onclick="guideSelect(\'' + key + '\')" onkeydown="guideTabKey(event)">' +
-      '<span class="guide-tab-code">' + guideEsc(g.short + ' · ' + g.code) + '</span>' +
-      '<span class="guide-tab-title">' + guideEsc(t('guide.tab.' + key)) + '</span></button>';
+      'onclick="guideOpen(\'' + key + '\')" onkeydown="guideTabKey(event)">' +
+      '<span class="gd-tab-title">' + guideEsc(t('guide.tab.' + key)) + '</span>' +
+      '<span class="gd-tab-desc">' + guideEsc(t('guide.tab.' + key + '.desc')) + '</span></button>';
   root.innerHTML =
-    '<div class="guide-tabs" role="tablist" aria-label="' + guideEsc(t('guide.heading')) + '">' +
-      tab('fi', GUIDES.fi) + tab('ivn', GUIDES.ivn) + '</div>' +
-    ['fi', 'ivn'].map(key =>
-      '<div class="guide-panel" role="tabpanel" id="guide-panel-' + key + '" aria-labelledby="guide-tab-' + key + '"' +
-        (guideActive === key ? '' : ' hidden') + '>' + guidePanel(GUIDES[key]) + '</div>').join('');
-  open.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.classList.add('open'); el.querySelector('.exp-header').setAttribute('aria-expanded', 'true'); }
-  });
+    '<div class="gd-tabs" role="tablist" aria-label="' + guideEsc(t('guide.heading')) + '">' + tab('fi') + tab('ivn') + '</div>' +
+    ['fi', 'ivn'].map(key => '<div class="gd-guide" role="tabpanel" id="guide-panel-' + key + '" aria-labelledby="guide-tab-' + key + '"' +
+      (guideActive === key ? '' : ' hidden') + '>' + guidePanel(key) + '</div>').join('');
 }
 
-function guideSelect(key, focusTab) {
+function guideShow(key, sectionId, focus) {
   guideActive = key;
+  if (sectionId) guideSection[key] = sectionId;
   ['fi', 'ivn'].forEach(k => {
     const tabEl = document.getElementById('guide-tab-' + k);
     const panel = document.getElementById('guide-panel-' + k);
@@ -144,30 +182,44 @@ function guideSelect(key, focusTab) {
     tabEl.tabIndex = k === key ? 0 : -1;
     panel.hidden = k !== key;
   });
-  if (focusTab) document.getElementById('guide-tab-' + key).focus();
+  const art = document.getElementById('gd-article-' + key);
+  const nav = document.getElementById('gd-nav-' + key);
+  if (art) art.innerHTML = guideArticle(key);
+  if (nav) {
+    nav.innerHTML = guideNav(key);
+    const cur = nav.querySelector('[aria-current]');
+    if (cur && cur.scrollIntoView && window.matchMedia('(max-width: 820px)').matches) {
+      cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+    }
+  }
+  if (focus && art) {
+    const title = art.querySelector('.gd-title');
+    const top = document.getElementById('guide-panel-' + key).querySelector('.gd-layout');
+    requestAnimationFrame(() => {
+      if (top) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (title) title.focus({ preventScroll: true });
+    });
+  }
 }
 
-// Arrow keys move between the two tabs (WAI-ARIA tabs pattern).
+// Tab click: go to that guide's current section (via the hash, so Back works).
+function guideOpen(key) {
+  window.location.hash = 'guide/g-' + guideSection[key];
+}
+
 function guideTabKey(e) {
   if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
   e.preventDefault();
-  guideSelect(guideActive === 'fi' ? 'ivn' : 'fi', true);
+  const key = guideActive === 'fi' ? 'ivn' : 'fi';
+  guideOpen(key);
+  requestAnimationFrame(() => document.getElementById('guide-tab-' + key).focus());
 }
 
 function guideSyncFromHash() {
   const parts = window.location.hash.replace('#', '').split('/');
-  if (parts[0] !== 'guide' || !parts[1] || parts[1].indexOf('g-') !== 0) return;
-  const id = parts[1];
-  guideSelect(id.indexOf('g-ivn') === 0 ? 'ivn' : 'fi');
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('open');
-  const header = el.querySelector('.exp-header');
-  if (header) header.setAttribute('aria-expanded', 'true');
-  setTimeout(() => {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (header) header.focus({ preventScroll: true });
-  }, 60);
+  if (parts[0] !== 'guide') return;
+  const found = parts[1] && parts[1].indexOf('g-') === 0 ? guideFindSection(parts[1].slice(2)) : null;
+  if (found) guideShow(found.key, found.section.id, true);
 }
 
 window.addEventListener('hashchange', guideSyncFromHash);

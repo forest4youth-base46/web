@@ -412,80 +412,153 @@
 .pb-prose p:last-child { margin-bottom: 0; }
 .pb-prose strong { font-weight: 500; color: var(--forest-ink); }
 
-/* ── PRACTICAL GUIDES (guide-render.js) ──
-   Two tabs (FI · D1.2.1 / IVN · D1.3.2), a contents list reusing
-   .guide-chapter, and one .exp-card accordion per chapter. */
-.guide-tabs {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-  margin: 0 0 20px;
-}
-.guide-tab {
+/* ── GUIDES (guide-render.js) ──
+   A switch between the two guides, a short lead, then a section menu
+   beside one readable column. Reading comfort first: ~65ch lines,
+   17px body, generous leading. */
+.gd-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 28px; }
+.gd-tab {
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
-  padding: 14px 16px; text-align: left; cursor: pointer;
+  padding: 16px 18px; text-align: left; cursor: pointer; font: inherit;
   background: var(--paper-pure); color: var(--forest-ink);
-  border: 1px solid var(--forest-mist); border-radius: var(--r-md);
-  font: inherit; transition: border-color 0.2s, background 0.2s;
+  border: 1px solid var(--forest-mist); border-radius: var(--r-lg);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
 }
-.guide-tab:hover { border-color: var(--forest-soft); }
-.guide-tab[aria-selected="true"] { background: var(--forest-deep); border-color: var(--forest-deep); color: var(--paper-pure); }
-.guide-tab:focus-visible { outline: 2px solid var(--forest-mid); outline-offset: 2px; }
-.guide-tab-code { font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.75; }
-.guide-tab-title { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: -0.005em; }
-.guide-lang-note { font-size: 12px; color: var(--forest-mid); font-style: italic; }
-.guide-toc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; margin-bottom: 20px; }
-.guide-chapters { margin-bottom: 36px; }
-.guide-ch .exp-title { display: flex; flex-direction: column; gap: 2px; }
-.guide-ch-label { font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--forest-soft-text); }
-.guide-ch .exp-body { font-size: 13.5px; line-height: 1.7; color: var(--ink); font-weight: 300; }
-.guide-h { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 500; color: var(--forest-ink); margin: 20px 0 6px; }
-.guide-h:first-child { margin-top: 4px; }
-.guide-h3 { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest-soft-text); margin: 14px 0 4px; }
-.guide-p { margin: 0 0 10px; }
-.guide-p strong { font-weight: 500; color: var(--forest-ink); }
-.guide-callout {
-  margin: 12px 0; padding: 12px 14px;
-  background: var(--paper); border-left: 3px solid var(--forest-mid);
-  border-radius: 0 var(--r-sm) var(--r-sm) 0; color: var(--forest-ink); font-weight: 400;
+.gd-tab:hover { border-color: var(--forest-soft); }
+.gd-tab[aria-selected="true"] { background: var(--forest-deep); border-color: var(--forest-deep); color: var(--paper-pure); }
+.gd-tab:focus-visible, .gd-nav a:focus-visible, .gd-chip:focus-visible, .gd-check button:focus-visible, .gd-role:focus-visible, .gd-button:focus-visible, .gd-pager a:focus-visible {
+  outline: 2px solid var(--forest-mid); outline-offset: 2px;
 }
-.guide-ul, .guide-ol { margin: 0 0 12px; padding-left: 20px; }
-.guide-ul li, .guide-ol li { margin-bottom: 4px; }
-.guide-check { list-style: none; margin: 0 0 12px; padding: 0; }
-.guide-check li { position: relative; padding-left: 26px; margin-bottom: 6px; }
-.guide-check li::before {
-  content: ''; position: absolute; left: 0; top: 4px; width: 14px; height: 14px;
-  border: 1.5px solid var(--forest-mid); border-radius: 3px;
-}
-.guide-form {
-  margin: 0 0 6px; padding: 8px 10px; font-size: 12.5px;
-  background: var(--paper); border: 1px dashed var(--forest-mist); border-radius: var(--r-sm);
-  white-space: pre-wrap; overflow-wrap: anywhere;
-}
-.guide-quote { margin: 14px 0; padding: 4px 0 4px 16px; border-left: 2px solid var(--forest-soft); }
-.guide-quote p { margin: 0 0 4px; font-style: italic; color: var(--forest-ink); }
-.guide-quote cite { font-size: 10.5px; font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest-soft-text); }
-.guide-sheet { margin: 0 0 12px; padding: 14px 16px; border: 1px solid var(--forest-mist); border-radius: var(--r-md); background: var(--paper-card); }
-.guide-sheet-title { font-family: 'Montserrat', sans-serif; font-weight: 500; color: var(--forest-ink); margin-bottom: 8px; }
-.guide-table-wrap { overflow-x: auto; margin: 0 0 14px; }
-.guide-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-.guide-table th, .guide-table td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--forest-mist); }
-.guide-table thead th { font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--forest-soft-text); }
-.guide-table tbody th { font-weight: 500; color: var(--forest-ink); width: 32%; }
-.guide-acts { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--forest-mist); border-radius: var(--r-md); }
-.guide-acts-title { font-family: 'Montserrat', sans-serif; font-weight: 500; color: var(--forest-ink); margin-bottom: 6px; }
-.guide-acts-count { color: var(--ink-faint); font-weight: 400; }
-.guide-acts ul { margin: 0; padding-left: 18px; }
-.guide-acts li { margin-bottom: 4px; }
-.guide-acts a, .guide-link a { color: var(--forest-deep); font-weight: 500; text-decoration: none; border-bottom: 1px dotted var(--forest-soft); }
-.guide-acts a:hover, .guide-link a:hover { border-bottom-style: solid; }
-.guide-acts li span { color: var(--ink-soft); }
-.guide-link { margin: 6px 0 14px; }
-.guide-source { margin: 16px 0 0; padding-top: 10px; border-top: 1px dashed var(--forest-mist); font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; }
+.gd-tab-title { font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 500; letter-spacing: -0.005em; }
+.gd-tab-desc { font-size: 12.5px; opacity: 0.8; line-height: 1.45; }
 
-/* Marks sections that still hold pre-WP1 prototype content (kept as
-   placeholders until rewritten from the deliverables — see
-   admin/projects/forest4youth/web-app/CONFLICTS.md, placeholder register). */
-.draft-notice {
-  margin: 0 0 16px; padding: 10px 14px;
-  font-size: 12px; line-height: 1.55; color: var(--forest-ink);
-  background: var(--paper); border: 1px dashed var(--forest-soft); border-radius: var(--r-sm);
+.gd-lead { max-width: 62ch; margin: 0 0 32px; }
+.gd-lead .gd-lead-quote {
+  font-family: 'Montserrat', sans-serif; font-size: clamp(20px, 2.4vw, 26px); font-weight: 400;
+  line-height: 1.3; color: var(--forest-deep); letter-spacing: -0.01em; margin: 0 0 12px; text-wrap: balance;
 }
+.gd-lead p { font-size: 14.5px; line-height: 1.65; color: var(--ink-soft); margin: 0 0 8px; }
+.gd-langnote { font-style: italic; }
+
+.gd-layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 40px; align-items: start; }
+.gd-nav { position: sticky; top: 96px; }
+.gd-nav ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.gd-nav a {
+  display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--r-md);
+  text-decoration: none; color: var(--ink-soft); border-left: 2px solid transparent;
+}
+.gd-nav a:hover { background: var(--paper-card); color: var(--forest-ink); }
+.gd-nav a[aria-current] { background: var(--paper-pure); color: var(--forest-ink); border-left-color: var(--forest-mid); box-shadow: var(--shadow-sm); }
+.gd-nav-title { font-family: 'Montserrat', sans-serif; font-size: 13.5px; font-weight: 500; }
+.gd-nav-teaser { font-size: 12px; line-height: 1.4; color: var(--ink-faint); }
+
+.gd-article {
+  background: var(--paper-pure); border: 1px solid var(--forest-mist); border-radius: var(--r-lg);
+  padding: clamp(22px, 4vw, 44px); min-width: 0;
+}
+.gd-title {
+  font-family: 'Montserrat', sans-serif; font-size: clamp(24px, 3vw, 32px); font-weight: 500;
+  color: var(--forest-ink); letter-spacing: -0.015em; line-height: 1.2; margin: 0 0 20px; text-wrap: balance;
+}
+.gd-title:focus { outline: none; }
+.gd-body { font-size: 16.5px; line-height: 1.75; color: var(--ink); max-width: 66ch; }
+.gd-body p { margin: 0 0 16px; }
+.gd-body strong { font-weight: 600; color: var(--forest-ink); }
+.gd-lead-p { font-size: 19px; line-height: 1.6; color: var(--forest-deep); }
+.gd-h { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 500; color: var(--forest-ink); margin: 34px 0 10px; letter-spacing: -0.01em; }
+.gd-body > .gd-h:first-child { margin-top: 0; }
+.gd-h3 { font-size: 11.5px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest-soft-text); margin: 22px 0 8px; }
+.gd-callout {
+  font-family: 'Montserrat', sans-serif; font-size: 17px; line-height: 1.55; font-weight: 400;
+  color: var(--forest-deep); background: var(--paper); border-radius: var(--r-md);
+  padding: 18px 22px; margin: 20px 0 !important;
+}
+.gd-list { margin: 0 0 18px; padding-left: 22px; }
+.gd-list li { margin-bottom: 8px; padding-left: 4px; }
+.gd-list li::marker { color: var(--forest-soft); }
+.gd-list-num li::marker { font-family: 'Montserrat', sans-serif; font-weight: 500; color: var(--forest-mid); }
+.gd-quote { margin: 28px 0; padding: 0 0 0 22px; border-left: 3px solid var(--forest-soft); }
+.gd-quote blockquote { margin: 0; font-family: 'Montserrat', sans-serif; font-size: 17.5px; line-height: 1.6; font-weight: 400; font-style: italic; color: var(--forest-deep); }
+.gd-quote figcaption { margin-top: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest-soft-text); }
+
+.gd-tips, .gd-roles, .gd-qa { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 8px 0 20px; }
+.gd-tip, .gd-qa-item { background: var(--paper-card); border: 1px solid var(--forest-mist); border-radius: var(--r-md); padding: 18px; }
+.gd-tip h5, .gd-qa-item h5, .gd-module h5 { font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 500; color: var(--forest-ink); margin: 0 0 6px; }
+.gd-tip p, .gd-qa-item p { font-size: 14.5px; line-height: 1.6; margin: 0; color: var(--ink); }
+.gd-role {
+  position: relative; display: grid; gap: 4px; padding: 16px 38px 16px 18px; text-decoration: none;
+  background: var(--paper-card); border: 1px solid var(--forest-mist); border-radius: var(--r-md);
+  color: var(--forest-ink); transition: border-color 0.2s, transform 0.2s;
+}
+.gd-role:hover { border-color: var(--forest-mid); transform: translateY(-1px); }
+.gd-role-title { font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 500; }
+.gd-role-text { font-size: 13px; line-height: 1.45; color: var(--ink-soft); }
+.gd-role-go { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--forest-mid); }
+.gd-bridge { background: var(--paper); border-radius: var(--r-md); padding: 20px 22px; margin: 22px 0 0; }
+.gd-bridge p { margin: 0 0 14px !important; }
+.gd-button {
+  display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: var(--r-pill);
+  background: var(--forest-deep); color: var(--paper-pure); text-decoration: none;
+  font-family: 'Montserrat', sans-serif; font-size: 13.5px; font-weight: 500;
+}
+.gd-button:hover { background: var(--forest-ink); }
+
+.gd-check { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 6px; }
+.gd-check button {
+  display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; cursor: pointer;
+  background: var(--paper-card); border: 1px solid var(--forest-mist); border-radius: var(--r-md);
+  padding: 12px 14px; font: inherit; font-size: 15px; line-height: 1.55; color: var(--ink);
+}
+.gd-box { flex: 0 0 18px; height: 18px; margin-top: 3px; border: 1.5px solid var(--forest-mid); border-radius: 4px; display: grid; place-items: center; }
+.gd-check button[aria-checked="true"] { background: var(--paper); color: var(--ink-soft); }
+.gd-check button[aria-checked="true"] .gd-box { background: var(--forest-mid); border-color: var(--forest-mid); }
+.gd-check button[aria-checked="true"] .gd-box::after { content: ''; width: 5px; height: 9px; border: solid var(--paper-pure); border-width: 0 2px 2px 0; transform: rotate(45deg) translate(-1px, -1px); }
+
+.gd-menu, .gd-fields { display: grid; gap: 14px; margin: 8px 0 22px; padding: 20px; background: var(--paper-card); border: 1px solid var(--forest-mist); border-radius: var(--r-md); }
+.gd-menu-row, .gd-field { display: grid; grid-template-columns: 170px 1fr; gap: 12px; align-items: start; }
+.gd-menu-label, .gd-field-label { font-size: 13.5px; font-weight: 600; color: var(--forest-ink); line-height: 1.4; padding-top: 6px; }
+.gd-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.gd-chip {
+  padding: 6px 12px; border-radius: var(--r-pill); border: 1px solid var(--forest-mist); background: var(--paper-pure);
+  font: inherit; font-size: 13px; color: var(--ink); cursor: pointer; transition: all 0.15s;
+}
+.gd-chip:hover { border-color: var(--forest-soft); }
+.gd-chip[aria-pressed="true"] { background: var(--forest-deep); border-color: var(--forest-deep); color: var(--paper-pure); }
+.gd-scale { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink-soft); }
+.gd-field-line { height: 28px; border-bottom: 1px dashed var(--forest-soft); }
+
+.gd-modules { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 12px 0 8px; }
+.gd-module { position: relative; background: var(--paper-card); border: 1px solid var(--forest-mist); border-radius: var(--r-lg); padding: 20px; font-size: 14.5px; line-height: 1.6; }
+.gd-module-key {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 12px;
+  background: var(--forest-deep); color: var(--paper-pure); font-family: 'Montserrat', sans-serif; font-weight: 500;
+}
+.gd-module-sub { font-size: 12.5px !important; color: var(--forest-soft-text); margin: -2px 0 10px !important; }
+.gd-module p { margin: 0 0 12px; }
+.gd-params { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 6px; }
+.gd-params li { font-size: 13px; line-height: 1.45; padding: 6px 10px; background: var(--paper-pure); border-radius: var(--r-sm); color: var(--ink-soft); }
+.gd-params li:first-child { color: var(--forest-ink); font-weight: 600; }
+.gd-more summary { cursor: pointer; font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 500; color: var(--forest-mid); }
+.gd-more dl { margin: 12px 0 0; }
+.gd-more dt { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--forest-soft-text); margin-top: 10px; }
+.gd-more dd { margin: 2px 0 0; font-size: 14px; }
+
+.gd-panel-alert { margin: 28px 0 0; padding: 22px 24px; background: var(--safety-bg); border-radius: var(--r-md); border-left: 4px solid var(--safety-ink); }
+.gd-panel-alert .gd-h { margin-top: 0; color: var(--safety-ink); }
+.gd-panel-alert .gd-h3 { color: var(--safety-ink); }
+
+.gd-table-wrap { overflow-x: auto; margin: 8px 0 20px; }
+.gd-table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 1.5; }
+.gd-table th, .gd-table td { text-align: left; vertical-align: top; padding: 12px 10px; border-bottom: 1px solid var(--forest-mist); }
+.gd-table thead th { font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--forest-soft-text); }
+.gd-table tbody th { font-weight: 600; color: var(--forest-ink); width: 34%; }
+.gd-table tbody th span { display: block; font-weight: 400; font-size: 12.5px; color: var(--ink-soft); }
+
+.gd-pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--forest-mist); }
+.gd-pager a { display: grid; gap: 2px; padding: 12px 14px; border-radius: var(--r-md); text-decoration: none; color: var(--forest-ink); font-family: 'Montserrat', sans-serif; font-size: 14.5px; font-weight: 500; border: 1px solid var(--forest-mist); }
+.gd-pager a:hover { border-color: var(--forest-mid); }
+.gd-pager a span { font-family: 'Open Sans', sans-serif; font-size: 11.5px; font-weight: 400; color: var(--ink-faint); }
+.gd-pager-next { text-align: right; grid-column: 2; }
+
+.gd-about { margin: 28px 0 40px; font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); max-width: 80ch; }
+.gd-about summary { cursor: pointer; font-family: 'Montserrat', sans-serif; font-weight: 500; color: var(--forest-mid); margin-bottom: 8px; }

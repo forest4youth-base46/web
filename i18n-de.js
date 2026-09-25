@@ -436,11 +436,11 @@ const T_DE = {
     "ref.int.nar.h": "Narrative Therapie — Externalisierung und Umschreiben",
     "ref.int.nar.p": "Der Schwellengang ist eine Umschreibungsstruktur in physischer Form — von einer Version der Geschichte zu einer anderen durch eine markierte Mitte. Baumrat externalisiert Stimmen und Positionen. Der Wald bietet räumliches Gerüst für narrative Züge, die sonst imaginiert würden.",
     "pathway.guide.title": "Praktische Leitfäden",
-    "pathway.guide.desc": "Der vollständige Leitfaden für waldbasierte Interventionen (D1.2.1) und sein Begleiter zur immersiven virtuellen Natur (D1.3.2), Kapitel für Kapitel.",
+    "pathway.guide.desc": "Der Waldleitfaden und sein Begleiter zur immersiven virtuellen Natur, zum Lesen geschrieben: nach Rolle, nach Situation, mit gebrauchsfertigen Bögen.",
     "pathway.guide.cta": "Leitfäden lesen →",
     "guide.badge": "Praktische Leitfäden",
     "guide.heading": "Praktische Leitfäden von Forest4Youth",
-    "guide.sub": "Die beiden im ersten Arbeitspaket von Forest4Youth gemeinsam entwickelten praktischen Leitfäden, vollständig: Waldbasierte Interventionen (D1.2.1) und sein Begleiter, Immersive virtuelle Natur (D1.3.2). Zusammen lesen: im Raum vorbereiten, in den Wald gehen, über den Raum zurückkehren.",
+    "guide.sub": "Was junge Menschen, Familien, Fachkräfte und Forstleute aus fünf Ländern als hilfreich beschrieben haben. Zwei Begleitleitfäden: einer für den Wald, einer für die Zeit, in der der Wald noch nicht erreichbar ist.",
 
 
 
@@ -649,10 +649,13 @@ const T_DE = {
     // Practical Guides screen (guide-render.js)
     "guide.tab.fi": "Waldbasierte Interventionen",
     "guide.tab.ivn": "Immersive virtuelle Natur",
-    "guide.edition": "Ausgabe",
-    "guide.langnote": "Dieser Leitfaden wird auf Englisch angezeigt: Die deutsche Fassung von D1.2.1 ist älter als die letzten Änderungen, und D1.3.2 liegt nur auf Englisch vor. Übersetzungen folgen.",
-    "guide.contents": "Inhalt",
-    "guide.chapter": "Kapitel",
-    "guide.appendix": "Anhang",
-    "draft.notice": "Entwurf — dieser Abschnitt ist älter als die endgültigen Ergebnisse des Arbeitspakets 1 von Forest4Youth und wird auf deren Grundlage neu geschrieben. Bitte als Platzhalter verstehen; maßgeblich sind die Praktischen Leitfäden.",
+    "guide.langnote": "Dieser Leitfaden wird vorerst auf Englisch angezeigt.",
+    "guide.tab.fi.desc": "Für alle im Umfeld eines jungen Menschen",
+    "guide.tab.ivn.desc": "Für Fachkräfte: vor dem Wald, auf der Station, nach dem Wald",
+    "guide.sections": "Abschnitte",
+    "guide.prev": "Zurück",
+    "guide.next": "Weiter",
+    "guide.pager": "Mehr in diesem Leitfaden",
+    "guide.about": "Über diesen Leitfaden",
+    "guide.module.more": "So funktioniert es",
 };

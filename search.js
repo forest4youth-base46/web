@@ -69,31 +69,35 @@ function searchReferenceEntries() {
 }
 
 function searchGuideEntries() {
-  // One entry per chapter and per section heading of both practical guides
-  // (guide-fi-data.js / guide-ivn-data.js), so a search for e.g.
-  // "cybersickness" or "partnership agreements" lands on the right chapter.
+  // One entry per section of both guides (full-text matched), plus one per
+  // subheading (shown only once there's a query — see renderSearchResults).
   const out = [];
   if (typeof GUIDES === 'undefined') return out;
+  const textOf = function(b) {
+    return [b.text, b.title, b.q, b.a].concat(b.items || []).map(function(x) {
+      return typeof x === 'string' ? x : (x && (x.title || x.text || x.q || x.label)) || '';
+    }).join(' ');
+  };
   ['fi', 'ivn'].forEach(function(key) {
     const g = GUIDES[key];
     if (!g) return;
-    g.chapters.forEach(function(c) {
+    const guideName = t('guide.tab.' + key);
+    g.sections.forEach(function(sec) {
       const go = function() {
         closeSearchDialog();
         if (currentRole !== 'practitioner') setRole('practitioner');
-        openChapter(c.id);
+        openChapter(sec.id);
       };
-      const text = c.blocks.map(function(b) { return b.text || (b.items || []).join(' ') || ''; }).join(' ');
       out.push({
         category: t('search.cat.guide'),
-        title: c.title,
-        sub: g.short + ' · ' + g.code,
-        keywords: (c.title + ' ' + (c.sub || '') + ' ' + text).toLowerCase(),
+        title: sec.title,
+        sub: guideName,
+        keywords: (sec.title + ' ' + (sec.teaser || '') + ' ' + sec.blocks.map(textOf).join(' ')).toLowerCase(),
         action: go
       });
-      c.blocks.forEach(function(b) {
+      sec.blocks.forEach(function(b) {
         if (b.t !== 'h') return;
-        out.push({ category: t('search.cat.guide'), title: b.text, sub: g.short + ' · ' + c.title,
+        out.push({ category: t('search.cat.guide'), title: b.text, sub: guideName + ' · ' + sec.title,
                    keywords: b.text.toLowerCase(), action: go, minor: true });
       });
     });

@@ -557,11 +557,11 @@ const T_EN = {
     "ref.int.nar.h": "Narrative therapy — externalisation and re-authoring",
     "ref.int.nar.p": "The threshold walk is a re-authoring structure in physical form — moving from one version of the story to another through a marked middle. Tree council externalises voices and positions. The forest provides spatial scaffolding for narrative moves that would otherwise be imagined.",
     "pathway.guide.title": "Practical Guides",
-    "pathway.guide.desc": "The full Forest-Based Interventions guide (D1.2.1) and its Immersive Virtual Nature companion (D1.3.2), chapter by chapter.",
+    "pathway.guide.desc": "The forest guide and its immersive virtual nature companion, written to be read: by role, by situation, with ready-to-use sheets.",
     "pathway.guide.cta": "Read the guides →",
     "guide.badge": "Practical Guides",
     "guide.heading": "Forest4Youth Practical Guides",
-    "guide.sub": "The two practical guides co-designed in Forest4Youth's first work package, in full: Forest-Based Interventions (D1.2.1) and its companion, Immersive Virtual Nature (D1.3.2). Read them together: prepare in the room, go to the forest, return through the room.",
+    "guide.sub": "What young people, families, clinicians and forest professionals across five countries told us helps. Two companion guides: one for the forest, one for when the forest can't be reached yet.",
 
 
 
@@ -740,10 +740,13 @@ const T_EN = {
     // Practical Guides screen (guide-render.js)
     "guide.tab.fi": "Forest-Based Interventions",
     "guide.tab.ivn": "Immersive Virtual Nature",
-    "guide.edition": "Edition",
-    "guide.langnote": "This guide is shown in English.",
-    "guide.contents": "Contents",
-    "guide.chapter": "Chapter",
-    "guide.appendix": "Appendix",
-    "draft.notice": "Draft — this section predates the final Forest4Youth WP1 deliverables and is being rewritten from them. Treat it as a placeholder; the Practical Guides are the reference.",
+    "guide.langnote": "This guide is shown in English for now.",
+    "guide.tab.fi.desc": "For everyone in the circle around a young person",
+    "guide.tab.ivn.desc": "For clinicians: before the forest, on the ward, after the forest",
+    "guide.sections": "Sections",
+    "guide.prev": "Previous",
+    "guide.next": "Next",
+    "guide.pager": "More in this guide",
+    "guide.about": "About this guide",
+    "guide.module.more": "How it works",
 };

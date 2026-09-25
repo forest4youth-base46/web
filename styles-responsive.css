@@ -300,9 +300,20 @@
 }
 
 
-/* Practical Guides: single-column contents list on narrow screens. */
-@media (max-width: 640px) {
-  .guide-toc { grid-template-columns: 1fr; }
-  .guide-tab { padding: 12px; }
-  .guide-tab-title { font-size: 13px; }
+/* Guides: menu becomes a horizontal strip above the text on narrow screens. */
+@media (max-width: 820px) {
+  .gd-layout { grid-template-columns: 1fr; gap: 16px; }
+  .gd-nav { position: static; margin: 0 -16px; overflow-x: auto; scrollbar-width: none; }
+  .gd-nav::-webkit-scrollbar { display: none; }
+  .gd-nav ol { display: flex; gap: 6px; padding: 0 16px; width: max-content; }
+  .gd-nav a { border-left: 0; border: 1px solid var(--forest-mist); border-radius: var(--r-pill); padding: 8px 14px; background: var(--paper-pure); }
+  .gd-nav a[aria-current] { background: var(--forest-deep); color: var(--paper-pure); border-color: var(--forest-deep); }
+  .gd-nav-teaser { display: none; }
+  .gd-body { font-size: 16px; }
+}
+@media (max-width: 560px) {
+  .gd-tabs { grid-template-columns: 1fr; }
+  .gd-menu-row, .gd-field { grid-template-columns: 1fr; gap: 6px; }
+  .gd-pager { grid-template-columns: 1fr; }
+  .gd-pager-next { grid-column: 1; }
 }

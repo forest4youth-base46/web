@@ -192,42 +192,46 @@ const TESTS = [
   ['Learn More — accordion + single column', (b) => testAccordionScreen(b, '#learn', 'practitioner', ['mod-what', 'mod-evidence'])],
   ['role/nav state survives a real refresh', testRoleSurvivesRefresh],
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
-  ['Practical Guides — both WP1 guides render in full, deep links open chapters', testPracticalGuides],
+  ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
 ];
 
 async function testPracticalGuides(browser) {
-  // #guide renders both WP1 practical guides in full (guide-render.js):
-  // D1.2.1 = welcome + 8 chapters + legal notice; D1.3.2 = welcome +
-  // 6 sections + appendices A–H + legal notice. A deep link switches tab,
-  // opens the chapter and keeps aria-expanded in sync.
+  // #guide renders both practical guides as readable sections
+  // (guide-render.js). Public-facing: no document codes, no chapter
+  // numbers, and the Pocketbook is not repeated inside the guide.
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE, { waitUntil: 'networkidle' });
   await page.evaluate(() => { setRole('practitioner'); window.location.hash = 'guide'; });
   await page.waitForTimeout(250);
   const info = await page.evaluate(() => ({
-    fiChapters: [...document.querySelectorAll('#guide-panel-fi .guide-chapter')].map(a => a.dataset.chapterId),
-    ivnChapters: [...document.querySelectorAll('#guide-panel-ivn .guide-chapter')].map(a => a.dataset.chapterId),
-    fiActs: document.querySelectorAll('#g-fi-8 .guide-acts li').length,
+    fiNav: document.querySelectorAll('#gd-nav-fi a').length,
+    ivnNav: document.querySelectorAll('#gd-nav-ivn a').length,
     ivnHidden: document.getElementById('guide-panel-ivn').hidden,
+    text: document.getElementById('guide-screen').innerText + ' ' +
+      [...document.querySelectorAll('#gd-nav-fi a, #gd-nav-ivn a')].map(a => a.textContent).join(' '),
   }));
-  assert.deepStrictEqual(info.fiChapters.filter(id => /^fi-\d$/.test(id)), ['fi-1','fi-2','fi-3','fi-4','fi-5','fi-6','fi-7','fi-8'],
-    'FI guide should list chapters 1-8');
-  assert.deepStrictEqual(info.ivnChapters.filter(id => /^ivn-app-/.test(id)).map(id => id.slice(-1)), ['a','b','c','d','e','f','g','h'],
-    'IVN guide should list appendices A-H');
-  assert.strictEqual(info.fiActs, 17, 'Pocketbook chapter should list all 17 activities');
-  assert.strictEqual(info.ivnHidden, true, 'IVN panel starts hidden');
+  assert.strictEqual(info.fiNav, 8, 'forest guide should have 8 sections');
+  assert.strictEqual(info.ivnNav, 8, 'IVN guide should have 8 sections');
+  assert.strictEqual(info.ivnHidden, true, 'IVN guide starts hidden');
+  assert.ok(!/D1\.\d|D2\.\d|Canva|Appendix|Chapter \d|Pocketbook of activities/i.test(info.text),
+    'guide UI must not show document codes, appendix/chapter numbers or the Pocketbook chapter');
 
-  await page.evaluate(() => { window.location.hash = 'guide/g-ivn-app-a'; });
-  await page.waitForTimeout(250);
+  await page.evaluate(() => { window.location.hash = 'guide/g-ivn-sheets'; });
+  await page.waitForTimeout(300);
   const deep = await page.evaluate(() => ({
     ivnSelected: document.getElementById('guide-tab-ivn').getAttribute('aria-selected'),
-    open: document.getElementById('g-ivn-app-a').classList.contains('open'),
-    expanded: document.querySelector('#g-ivn-app-a .exp-header').getAttribute('aria-expanded'),
-    checks: document.querySelectorAll('#g-ivn-app-a .guide-check li').length,
+    title: document.querySelector('#gd-article-ivn .gd-title').textContent,
+    checks: document.querySelectorAll('#gd-article-ivn .gd-check button').length,
+    current: document.querySelector('#gd-nav-ivn [aria-current]').getAttribute('href'),
   }));
-  assert.strictEqual(deep.ivnSelected, 'true', 'deep link should select the IVN tab');
-  assert.ok(deep.open && deep.expanded === 'true', 'deep link should open Appendix A with aria-expanded=true');
-  assert.strictEqual(deep.checks, 13, 'Appendix A has 6 first-use + 7 every-session checks');
+  assert.strictEqual(deep.ivnSelected, 'true', 'deep link should select the IVN guide');
+  assert.strictEqual(deep.title, 'Ready-to-use sheets');
+  assert.strictEqual(deep.checks, 13, 'pre-session check has 6 first-use + 7 every-session items');
+  assert.strictEqual(deep.current, '#guide/g-ivn-sheets', 'menu marks the open section');
+
+  await page.locator('#gd-article-ivn .gd-check button').first().click();
+  const ticked = await page.locator('#gd-article-ivn .gd-check button').first().getAttribute('aria-checked');
+  assert.strictEqual(ticked, 'true', 'checklist items tick');
   await page.close();
 }
 

@@ -511,11 +511,11 @@ const T_FR = {
     "ref.int.nar.h": "Thérapie narrative — externalisation et ré-écriture",
     "ref.int.nar.p": "La marche du seuil est une structure de ré-écriture en forme physique — passer d'une version de l'histoire à une autre à travers un milieu marqué. Le conseil des arbres externalise voix et positions. La forêt fournit un échafaudage spatial pour des mouvements narratifs qui seraient autrement imaginés.",
     "pathway.guide.title": "Guides pratiques",
-    "pathway.guide.desc": "Le guide complet des interventions en milieu forestier (D1.2.1) et son compagnon sur la nature virtuelle immersive (D1.3.2), chapitre par chapitre.",
+    "pathway.guide.desc": "Le guide de la forêt et son compagnon sur la nature virtuelle immersive, écrits pour être lus : par rôle, par situation, avec des fiches prêtes à l'emploi.",
     "pathway.guide.cta": "Lire les guides →",
     "guide.badge": "Guides pratiques",
     "guide.heading": "Guides pratiques Forest4Youth",
-    "guide.sub": "Les deux guides pratiques co-conçus lors du premier lot de travail de Forest4Youth, en intégralité : Interventions en milieu forestier (D1.2.1) et son compagnon, la Nature virtuelle immersive (D1.3.2). À lire ensemble : se préparer dans la salle, aller en forêt, revenir par la salle.",
+    "guide.sub": "Ce que des jeunes, des familles, des cliniciens et des professionnels de la forêt de cinq pays nous ont dit être utile. Deux guides complémentaires : l'un pour la forêt, l'autre pour quand la forêt n'est pas encore accessible.",
 
 
 
@@ -724,10 +724,13 @@ const T_FR = {
     // Practical Guides screen (guide-render.js)
     "guide.tab.fi": "Interventions en milieu forestier",
     "guide.tab.ivn": "Nature virtuelle immersive",
-    "guide.edition": "Édition",
-    "guide.langnote": "Ce guide est affiché en anglais : la version française du D1.2.1 est antérieure aux dernières modifications, et le D1.3.2 n'existe qu'en anglais. Les traductions suivront.",
-    "guide.contents": "Sommaire",
-    "guide.chapter": "Chapitre",
-    "guide.appendix": "Annexe",
-    "draft.notice": "Brouillon — cette section est antérieure aux livrables finaux du lot de travail 1 de Forest4Youth et est en cours de réécriture à partir de ceux-ci. À considérer comme provisoire ; les Guides pratiques font référence.",
+    "guide.langnote": "Ce guide est affiché en anglais pour le moment.",
+    "guide.tab.fi.desc": "Pour tout le cercle autour d'un jeune",
+    "guide.tab.ivn.desc": "Pour les cliniciens : avant la forêt, dans le service, après la forêt",
+    "guide.sections": "Sections",
+    "guide.prev": "Précédent",
+    "guide.next": "Suivant",
+    "guide.pager": "Suite du guide",
+    "guide.about": "À propos de ce guide",
+    "guide.module.more": "Comment ça marche",
 };
