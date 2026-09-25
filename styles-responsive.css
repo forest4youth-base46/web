@@ -299,3 +299,10 @@
   .pb-group-num { font-size: 22px; }
 }
 
+
+/* Practical Guides: single-column contents list on narrow screens. */
+@media (max-width: 640px) {
+  .guide-toc { grid-template-columns: 1fr; }
+  .guide-tab { padding: 12px; }
+  .guide-tab-title { font-size: 13px; }
+}

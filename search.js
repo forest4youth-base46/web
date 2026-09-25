@@ -6,7 +6,8 @@
 // the DOM's current i18n state — nothing here duplicates English strings.
 // A fuller reference index (dosage, integration, populations, glossary)
 // is a follow-up task; this covers ACTIVITIES, the clinical-indications /
-// contraindications tiers, and the guide's 14 chapter titles.
+// contraindications tiers, and both practical guides (chapters + section
+// headings, full-text matched at chapter level).
 'use strict';
 
 let searchOpen = false;
@@ -68,24 +69,33 @@ function searchReferenceEntries() {
 }
 
 function searchGuideEntries() {
+  // One entry per chapter and per section heading of both practical guides
+  // (guide-fi-data.js / guide-ivn-data.js), so a search for e.g.
+  // "cybersickness" or "partnership agreements" lands on the right chapter.
   const out = [];
-  document.querySelectorAll('.guide-chapter[data-chapter-id]').forEach(function(a) {
-    const titleEl = a.querySelector('.guide-chapter-title span[data-i18n]');
-    if (!titleEl) return;
-    const title = t(titleEl.getAttribute('data-i18n'));
-    const chapterId = a.getAttribute('data-chapter-id');
-    const m = /openChapter\('([^']+)'\s*,\s*(\d+)\)/.exec(a.getAttribute('href') || '');
-    const page = m ? parseInt(m[2], 10) : undefined;
-    out.push({
-      category: t('search.cat.guide'),
-      title: title,
-      sub: t('guide.heading'),
-      keywords: title.toLowerCase(),
-      action: function() {
+  if (typeof GUIDES === 'undefined') return out;
+  ['fi', 'ivn'].forEach(function(key) {
+    const g = GUIDES[key];
+    if (!g) return;
+    g.chapters.forEach(function(c) {
+      const go = function() {
         closeSearchDialog();
         if (currentRole !== 'practitioner') setRole('practitioner');
-        openChapter(chapterId, page);
-      }
+        openChapter(c.id);
+      };
+      const text = c.blocks.map(function(b) { return b.text || (b.items || []).join(' ') || ''; }).join(' ');
+      out.push({
+        category: t('search.cat.guide'),
+        title: c.title,
+        sub: g.short + ' · ' + g.code,
+        keywords: (c.title + ' ' + (c.sub || '') + ' ' + text).toLowerCase(),
+        action: go
+      });
+      c.blocks.forEach(function(b) {
+        if (b.t !== 'h') return;
+        out.push({ category: t('search.cat.guide'), title: b.text, sub: g.short + ' · ' + c.title,
+                   keywords: b.text.toLowerCase(), action: go, minor: true });
+      });
     });
   });
   return out;
@@ -132,7 +142,10 @@ function searchNavigateToElement(screenHash, el) {
 function renderSearchResults(query) {
   const q = query.trim().toLowerCase();
   const entries = searchCollectEntries();
-  const filtered = q ? entries.filter(function(e) { return e.keywords.indexOf(q) !== -1; }) : entries;
+  // Section-heading entries (minor) only appear once there's a query —
+  // the empty-query list stays a scannable overview.
+  const filtered = q ? entries.filter(function(e) { return e.keywords.indexOf(q) !== -1; })
+                     : entries.filter(function(e) { return !e.minor; });
   const list = document.getElementById('search-results');
   const live = document.getElementById('search-live');
   if (!list) return;

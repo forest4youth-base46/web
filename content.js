@@ -121,6 +121,8 @@ function setLang(lang) {
   // if it's already been initialized, so switching language updates any
   // already-visible Pocketbook content immediately instead of only on
   // next reload.
+  // The Practical Guides screen is also built from JS (guide-render.js).
+  if (typeof guideRender === 'function') guideRender();
   if (window.__pbInited) {
     pbRenderGroups();
     pbRenderFilters();

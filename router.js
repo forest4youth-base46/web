@@ -398,47 +398,12 @@ function toggleCheck(el) {
 // ─────────────────────────────────────────
 // GUIDE INTEGRATION
 // ─────────────────────────────────────────
-// When the PDF has a stable URL, set GUIDE_PDF_URL to it.
-// Named destinations in the PDF can be used for chapter jumps: set
-// GUIDE_USE_PAGE_ANCHORS = true and the tool will append #page=N.
-const GUIDE_PDF_URL = '';  // e.g. 'https://forest4youth.nweurope.eu/guide.pdf'
-const GUIDE_USE_PAGE_ANCHORS = true;
-
-function openGuide() {
-  if (!GUIDE_PDF_URL) {
-    alert(t('guide.pdf.unavailable') || 'The PDF link is not yet available. Once the guide is hosted, this button will open it.');
-    return;
-  }
-  window.open(GUIDE_PDF_URL, '_blank', 'noopener');
-}
-
-function openChapter(chapterId, page) {
-  if (!GUIDE_PDF_URL) {
-    // No URL yet — surface the chapter in the guide-screen instead and tell the user.
-    const el = document.querySelector('[data-chapter-id="' + chapterId + '"]');
-    if (el) {
-      document.querySelectorAll('[data-chapter-id].guide-chapter-highlight')
-        .forEach(e => e.classList.remove('guide-chapter-highlight'));
-      // Navigate to guide screen if not already there
-      if (window.location.hash !== '#guide') {
-        window.location.hash = 'guide';
-        setTimeout(() => {
-          el.classList.add('guide-chapter-highlight');
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setTimeout(() => el.classList.remove('guide-chapter-highlight'), 2500);
-        }, 200);
-      } else {
-        el.classList.add('guide-chapter-highlight');
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => el.classList.remove('guide-chapter-highlight'), 2500);
-      }
-    }
-    return;
-  }
-  const url = GUIDE_USE_PAGE_ANCHORS && page
-    ? GUIDE_PDF_URL + '#page=' + encodeURIComponent(page)
-    : GUIDE_PDF_URL;
-  window.open(url, '_blank', 'noopener');
+// The practical guides are rendered in-app (guide-render.js), so a chapter
+// link is just a route: #guide/g-<chapterId>, e.g. openChapter('fi-8') or
+// openChapter('ivn-app-a'). guideSyncFromHash() switches tab, opens and
+// scrolls. (This used to open a PDF of a handbook that was never written.)
+function openChapter(chapterId) {
+  window.location.hash = 'guide/g-' + chapterId;
 }
 
 // ─────────────────────────────────────────

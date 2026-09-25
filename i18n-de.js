@@ -435,55 +435,55 @@ const T_DE = {
     "ref.int.som.p": "Somatische Arbeit hängt von anhaltender intraozeptiver Aufmerksamkeit ab, die von Innenraum-Sinnessättigung leicht gestört wird. Der Wald bietet eine geräuschärmere Umgebung, in der subtile Körpersignale verfügbar werden. Bewegung wird Teil der Verarbeitung statt Unterbrechung.",
     "ref.int.nar.h": "Narrative Therapie — Externalisierung und Umschreiben",
     "ref.int.nar.p": "Der Schwellengang ist eine Umschreibungsstruktur in physischer Form — von einer Version der Geschichte zu einer anderen durch eine markierte Mitte. Baumrat externalisiert Stimmen und Positionen. Der Wald bietet räumliches Gerüst für narrative Züge, die sonst imaginiert würden.",
-    "pathway.guide.title": "Begleithandbuch",
-    "pathway.guide.desc": "Das vollständige Praktiker-Handbuch von Forest4Youth. Theorie, Praxis, klinische Anwendung und professioneller Kontext in 14 Kapiteln.",
-    "pathway.guide.cta": "Kapitel durchsuchen →",
-    "guide.badge": "Begleithandbuch",
-    "guide.heading": "Waldbasierte Intervention · Praktiker-Handbuch",
-    "guide.sub": "Das Begleithandbuch zu diesem Tool. Wo das Tool kompakte Referenz bietet, liefert das Handbuch theoretische Grundlage, Fallmaterial und vertiefte Diskussion jedes Themas.",
-    "guide.intro.h": "Über diese Ausgabe",
-    "guide.intro.p1": "Dieses Handbuch ist ein Arbeitsbegleiter zum Praktiker-Tool. Es richtet sich an Klinker·innen, Facilitator·innen und Ausbilder·innen, die waldbasierte Intervention anbieten. Es setzt klinische Grundausbildung voraus und baut von dort WI-spezifische Kompetenz auf.",
-    "guide.intro.pages": "108 Seiten",
-    "guide.intro.chapters": "14 Kapitel in 4 Teilen",
-    "guide.intro.edition": "Prototyp-Ausgabe · 2026",
-    "guide.intro.pdf": "Vollständiges PDF öffnen (Link folgt)",
-    "guide.pdf.unavailable": "Der PDF-Link ist noch nicht verfügbar. Sobald das Handbuch gehostet ist, öffnet diese Schaltfläche es.",
-    "guide.part-1.title": "Grundlagen",
-    "guide.part-1.desc": "Theoretische Fundierung, historische Linie und Evidenzbasis.",
-    "guide.part-2.title": "Praxis",
-    "guide.part-2.desc": "Die Arbeit selbst — Ortsauswahl, Sitzungsstruktur, Aktivitäten und Facilitierung.",
-    "guide.part-3.title": "Klinische Anwendung",
-    "guide.part-3.desc": "Arbeit mit spezifischen Präsentationen und Populationen.",
-    "guide.part-4.title": "Professioneller Kontext",
-    "guide.part-4.desc": "Ethik, Supervision und kontinuierliche Entwicklung.",
-    "guide.ch-1.title": "Was waldbasierte Intervention ist",
-    "guide.ch-1.desc": "Definitorische Grenzen. Abgrenzung der WI von Waldbaden, Wildnistherapie und allgemeiner Outdoor-Arbeit. Der therapeutische Kontrakt im natürlichen Setting.",
-    "guide.ch-2.title": "Theoretische Grundlagen",
-    "guide.ch-2.desc": "Aufmerksamkeitsrestaurationstheorie, Stresserholungstheorie, Biophilie, Phytonzide. Was die Mechanismen für die Praxis bedeuten.",
-    "guide.ch-3.title": "Evidenzbasis",
-    "guide.ch-3.desc": "Synthese aktueller Forschung. Forest4Youth-Ergebnisse. Was die Evidenz stützt, was nicht, und wo sie im Entstehen ist.",
-    "guide.ch-4.title": "Ortswahl und Sicherheit",
-    "guide.ch-4.desc": "Wahl eines therapeutischen Ortes. Gelände, akustische Eigenschaften, saisonale Überlegungen, Zugänglichkeit. Risikobewertung und Notfallplanung.",
-    "guide.ch-5.title": "Sitzungsarchitektur",
-    "guide.ch-5.desc": "Ankommen, Erden, Hauptaktivität, Integration, Übergang. Wie jede Phase wirkt, was sie leistet, wie sie zu halten ist.",
-    "guide.ch-6.title": "Die Hauptaktivitäten facilitieren",
-    "guide.ch-6.desc": "Hinweise zu jeder der 12 Taschenführer-Aktivitäten. Was sie klinisch leisten, wann sie zu wählen sind, häufige Varianten und Fallstricke.",
-    "guide.ch-7.title": "Gruppen- und Dyadenarbeit",
-    "guide.ch-7.desc": "Dispersion, Aufmerksamkeit über den Raum halten, divergente Reaktionen managen, Kreis- vs. disperse Formate.",
-    "guide.ch-8.title": "Angst, Burnout und Stress",
-    "guide.ch-8.desc": "Primäre Indikationen. Sitzungstrajektorien, Aktivitätspaarungen, häufige Muster in frühen und späteren Sitzungen.",
-    "guide.ch-9.title": "Depression und Rückzug",
-    "guide.ch-9.desc": "Aktivierung durch natürliche Umgebung. Einschätzung der Motivation. Kombination mit anderen Behandlungen.",
-    "guide.ch-10.title": "Arbeit mit Jugendlichen",
-    "guide.ch-10.desc": "Entwicklungsbezogene Überlegungen. Reduktion des klinischen Blicks. Kommunikation mit Eltern und Betreuungspersonen. Schutz in Outdoor-Kontexten.",
-    "guide.ch-11.title": "Trauer und Lebensübergänge",
-    "guide.ch-11.desc": "Natur-als-Zeuge. Saisonale und Zerfalls-Metaphern. Timing relativ zur akuten Phase. Schwellenstrukturen.",
-    "guide.ch-12.title": "Trauma: Grenzen und adjunktive Nutzung",
-    "guide.ch-12.desc": "Wann WI Traumaarbeit unterstützt und wann nicht. Post-Stabilisierung-Integration. Umgang mit Aktivierung in Outdoor-Settings.",
-    "guide.ch-13.title": "Ethik und informierte Zustimmung",
-    "guide.ch-13.desc": "Spezifische ethische Überlegungen für Outdoor-Therapie. Zustimmungsprozesse. Vertraulichkeit in geteiltem Naturraum. Fachgebietsgrenzen.",
-    "guide.ch-14.title": "Supervision und Praktiker-Entwicklung",
-    "guide.ch-14.desc": "Warum WI-Supervision anders ist. Supervision finden. Selbstreflexionspraktiken. Wege zur kontinuierlichen Entwicklung.",
+    "pathway.guide.title": "Praktische Leitfäden",
+    "pathway.guide.desc": "Der vollständige Leitfaden für waldbasierte Interventionen (D1.2.1) und sein Begleiter zur immersiven virtuellen Natur (D1.3.2), Kapitel für Kapitel.",
+    "pathway.guide.cta": "Leitfäden lesen →",
+    "guide.badge": "Praktische Leitfäden",
+    "guide.heading": "Praktische Leitfäden von Forest4Youth",
+    "guide.sub": "Die beiden im ersten Arbeitspaket von Forest4Youth gemeinsam entwickelten praktischen Leitfäden, vollständig: Waldbasierte Interventionen (D1.2.1) und sein Begleiter, Immersive virtuelle Natur (D1.3.2). Zusammen lesen: im Raum vorbereiten, in den Wald gehen, über den Raum zurückkehren.",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     "export.pdf": "Als PDF exportieren",
     "export.png": "Als PNG exportieren",
     "export.qr.label": "Zum erneuten Öffnen scannen",
@@ -542,7 +542,7 @@ const T_DE = {
     "search.count.zero": "Keine Treffer",
     "search.cat.activities": "Aktivitäten",
     "search.cat.reference": "Klinische Referenz",
-    "search.cat.guide": "Begleithandbuch",
+    "search.cat.guide": "Praktische Leitfäden",
     "ref.search.label": "Diese Seite durchsuchen",
     "ref.search.placeholder": "Indikationen, Kontraindikationen, Dosierung durchsuchen…",
     "ref.search.empty": "Nichts auf dieser Seite passt dazu.",
@@ -646,4 +646,13 @@ const T_DE = {
     "pbui.planexport.meta.starttime.placeholder": "z. B. 10:00",
     "pbui.planexport.meta.site": "Gruppe / Ort",
     "pbui.planexport.meta.practitioner": "Praktiker·in",
+    // Practical Guides screen (guide-render.js)
+    "guide.tab.fi": "Waldbasierte Interventionen",
+    "guide.tab.ivn": "Immersive virtuelle Natur",
+    "guide.edition": "Ausgabe",
+    "guide.langnote": "Dieser Leitfaden wird auf Englisch angezeigt: Die deutsche Fassung von D1.2.1 ist älter als die letzten Änderungen, und D1.3.2 liegt nur auf Englisch vor. Übersetzungen folgen.",
+    "guide.contents": "Inhalt",
+    "guide.chapter": "Kapitel",
+    "guide.appendix": "Anhang",
+    "draft.notice": "Entwurf — dieser Abschnitt ist älter als die endgültigen Ergebnisse des Arbeitspakets 1 von Forest4Youth und wird auf deren Grundlage neu geschrieben. Bitte als Platzhalter verstehen; maßgeblich sind die Praktischen Leitfäden.",
 };

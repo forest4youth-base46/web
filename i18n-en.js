@@ -46,7 +46,7 @@ const T_EN = {
     "search.count.zero": "No results",
     "search.cat.activities": "Activities",
     "search.cat.reference": "Clinical reference",
-    "search.cat.guide": "Companion guide",
+    "search.cat.guide": "Practical guides",
 
     "learn.heading": "Understanding Forest-Based Interventions",
     "learn.sub": "A grounding in the theory, evidence base, and mechanisms behind FI before entering practice.",
@@ -556,55 +556,55 @@ const T_EN = {
     "ref.int.som.p": "Somatic work depends on sustained interoceptive attention, which is easily disrupted by indoor sensory saturation. The forest provides a lower-noise environment where subtle body signals become available. Movement becomes part of processing rather than an interruption of it.",
     "ref.int.nar.h": "Narrative therapy — externalisation and re-authoring",
     "ref.int.nar.p": "The threshold walk is a re-authoring structure in physical form — moving from one version of the story to another through a marked middle. Tree council externalises voices and positions. The forest provides spatial scaffolding for narrative moves that would otherwise be imagined.",
-    "pathway.guide.title": "Companion Guide",
-    "pathway.guide.desc": "The full Forest4Youth practitioner handbook. Theory, practice, clinical application, and professional context across 14 chapters.",
-    "pathway.guide.cta": "Browse chapters →",
-    "guide.badge": "Companion Guide",
-    "guide.heading": "Forest-Based Therapy · Practitioner's Handbook",
-    "guide.sub": "The companion guide to this tool. Where this tool gives you reference at a glance, the guide provides theoretical grounding, case material, and sustained discussion of each topic.",
-    "guide.intro.h": "About this edition",
-    "guide.intro.p1": "This handbook is a working companion to the practitioner tool. It is written for clinicians, facilitators, and educators delivering forest-based interventions. It assumes baseline clinical training and builds FI-specific competence from there.",
-    "guide.intro.pages": "108 pages",
-    "guide.intro.chapters": "14 chapters across 4 parts",
-    "guide.intro.edition": "Prototype edition · 2026",
-    "guide.intro.pdf": "Open full PDF (link coming soon)",
-    "guide.pdf.unavailable": "The PDF link is not yet available. Once the guide is hosted, this button will open it.",
-    "guide.part-1.title": "Foundations",
-    "guide.part-1.desc": "Theoretical grounding, historical lineage, and the evidence base.",
-    "guide.ch-1.title": "What a forest-based intervention is",
-    "guide.ch-1.desc": "Definitional boundaries. Distinguishing FI from forest bathing, wilderness therapy, and general outdoor work. The therapeutic contract in a natural setting.",
-    "guide.ch-2.title": "Theoretical foundations",
-    "guide.ch-2.desc": "Attention Restoration Theory, Stress Recovery Theory, biophilia, phytoncides. What the mechanisms imply for practice.",
-    "guide.ch-3.title": "Evidence base",
-    "guide.ch-3.desc": "Synthesis of current research. Forest4Youth findings. What the evidence supports, what it doesn't, and where it's emerging.",
-    "guide.part-2.title": "Practice",
-    "guide.part-2.desc": "The work itself — site selection, session structure, activities, and facilitation.",
-    "guide.ch-4.title": "Site selection and safety",
-    "guide.ch-4.desc": "Choosing a therapeutic site. Terrain, acoustic characteristics, seasonal considerations, accessibility. Risk assessment and emergency planning.",
-    "guide.ch-5.title": "Session architecture",
-    "guide.ch-5.desc": "Arrival, grounding, core activity, integration, transition. How each phase works, what it does, how to hold it.",
-    "guide.ch-6.title": "Facilitating the core activities",
-    "guide.ch-6.desc": "Notes on each of the 12 pocket-guide activities. What they do clinically, when to choose each, common variations and pitfalls.",
-    "guide.ch-7.title": "Group and dyadic work",
-    "guide.ch-7.desc": "Dispersion, holding attention across space, managing divergent responses, circle versus dispersed formats.",
-    "guide.part-3.title": "Clinical application",
-    "guide.part-3.desc": "Working with specific presentations and populations.",
-    "guide.ch-8.title": "Anxiety, burnout, and stress",
-    "guide.ch-8.desc": "Primary indications. Session trajectories, activity pairings, common patterns in early and later sessions.",
-    "guide.ch-9.title": "Depression and withdrawal",
-    "guide.ch-9.desc": "Activation through natural environment. Assessment of motivation. Pairing with other treatment.",
-    "guide.ch-10.title": "Working with adolescents",
-    "guide.ch-10.desc": "Developmental considerations. Reducing the clinical gaze. Parent and carer communication. Safeguarding in outdoor contexts.",
-    "guide.ch-11.title": "Grief and life transitions",
-    "guide.ch-11.desc": "Nature-as-witness. Seasonal and decay metaphors. Timing relative to acute phase. Threshold structures.",
-    "guide.ch-12.title": "Trauma: boundaries and adjunctive use",
-    "guide.ch-12.desc": "When FI supports trauma work and when it doesn't. Post-stabilisation integration. Managing activation in outdoor settings.",
-    "guide.part-4.title": "Professional context",
-    "guide.part-4.desc": "Ethics, supervision, and continuing development.",
-    "guide.ch-13.title": "Ethics and informed consent",
-    "guide.ch-13.desc": "Specific ethical considerations for outdoor therapy. Consent processes. Confidentiality in shared natural space. Scope of practice.",
-    "guide.ch-14.title": "Supervision and practitioner development",
-    "guide.ch-14.desc": "Why FI supervision differs. Finding supervision. Self-reflection practices. Pathways for continuing development.",
+    "pathway.guide.title": "Practical Guides",
+    "pathway.guide.desc": "The full Forest-Based Interventions guide (D1.2.1) and its Immersive Virtual Nature companion (D1.3.2), chapter by chapter.",
+    "pathway.guide.cta": "Read the guides →",
+    "guide.badge": "Practical Guides",
+    "guide.heading": "Forest4Youth Practical Guides",
+    "guide.sub": "The two practical guides co-designed in Forest4Youth's first work package, in full: Forest-Based Interventions (D1.2.1) and its companion, Immersive Virtual Nature (D1.3.2). Read them together: prepare in the room, go to the forest, return through the room.",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     "export.pdf": "Export to PDF",
     "export.png": "Export to PNG",
     "export.qr.label": "Scan to reopen",
@@ -737,4 +737,13 @@ const T_EN = {
     "pbui.planexport.meta.starttime.placeholder": "e.g. 10:00",
     "pbui.planexport.meta.site": "Group / Site",
     "pbui.planexport.meta.practitioner": "Practitioner",
+    // Practical Guides screen (guide-render.js)
+    "guide.tab.fi": "Forest-Based Interventions",
+    "guide.tab.ivn": "Immersive Virtual Nature",
+    "guide.edition": "Edition",
+    "guide.langnote": "This guide is shown in English.",
+    "guide.contents": "Contents",
+    "guide.chapter": "Chapter",
+    "guide.appendix": "Appendix",
+    "draft.notice": "Draft — this section predates the final Forest4Youth WP1 deliverables and is being rewritten from them. Treat it as a placeholder; the Practical Guides are the reference.",
 };

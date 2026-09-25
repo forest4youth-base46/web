@@ -510,55 +510,55 @@ const T_FR = {
     "ref.int.som.p": "Le travail somatique dépend d'une attention intéroceptive soutenue, facilement perturbée par la saturation sensorielle en intérieur. La forêt fournit un environnement à bruit réduit où les signaux corporels subtils deviennent disponibles. Le mouvement devient une partie du traitement plutôt qu'une interruption.",
     "ref.int.nar.h": "Thérapie narrative — externalisation et ré-écriture",
     "ref.int.nar.p": "La marche du seuil est une structure de ré-écriture en forme physique — passer d'une version de l'histoire à une autre à travers un milieu marqué. Le conseil des arbres externalise voix et positions. La forêt fournit un échafaudage spatial pour des mouvements narratifs qui seraient autrement imaginés.",
-    "pathway.guide.title": "Guide d'accompagnement",
-    "pathway.guide.desc": "Le manuel complet du praticien Forest4Youth. Théorie, pratique, application clinique et contexte professionnel en 14 chapitres.",
-    "pathway.guide.cta": "Parcourir les chapitres →",
-    "guide.badge": "Guide d'accompagnement",
-    "guide.heading": "Thérapie basée sur la forêt · Manuel du praticien",
-    "guide.sub": "Le guide qui accompagne cet outil. Là où l'outil fournit une référence rapide, le guide offre un ancrage théorique, du matériel de cas et une discussion approfondie de chaque sujet.",
-    "guide.intro.h": "À propos de cette édition",
-    "guide.intro.p1": "Ce manuel est un compagnon de travail de l'outil pour les praticien·ne·s. Il s'adresse aux clinicien·ne·s, facilitateur·rice·s et formateur·rice·s qui mettent en œuvre la intervention en milieu forestier. Il suppose une formation clinique de base et développe à partir de là une compétence spécifique à l'intervention en milieu forestier.",
-    "guide.intro.pages": "108 pages",
-    "guide.intro.chapters": "14 chapitres en 4 parties",
-    "guide.intro.edition": "Édition prototype · 2026",
-    "guide.intro.pdf": "Ouvrir le PDF complet (lien à venir)",
-    "guide.pdf.unavailable": "Le lien PDF n'est pas encore disponible. Une fois le guide hébergé, ce bouton l'ouvrira.",
-    "guide.part-1.title": "Fondements",
-    "guide.part-1.desc": "Ancrage théorique, lignée historique et base de données probantes.",
-    "guide.part-2.title": "Pratique",
-    "guide.part-2.desc": "Le travail lui-même — choix du site, structure de séance, activités et facilitation.",
-    "guide.part-3.title": "Application clinique",
-    "guide.part-3.desc": "Travailler avec des présentations et des populations spécifiques.",
-    "guide.part-4.title": "Contexte professionnel",
-    "guide.part-4.desc": "Éthique, supervision et développement continu.",
-    "guide.ch-1.title": "Ce qu'est la intervention en milieu forestier",
-    "guide.ch-1.desc": "Frontières définitionnelles. Distinguer l'intervention en milieu forestier du bain de forêt, de la thérapie en milieu sauvage et du travail en plein air en général. Le contrat thérapeutique en milieu naturel.",
-    "guide.ch-2.title": "Fondements théoriques",
-    "guide.ch-2.desc": "Théorie de la restauration de l'attention, théorie de la récupération du stress, biophilie, phytoncides. Ce que les mécanismes impliquent pour la pratique.",
-    "guide.ch-3.title": "Base de données probantes",
-    "guide.ch-3.desc": "Synthèse de la recherche actuelle. Résultats Forest4Youth. Ce que les preuves soutiennent, ce qu'elles ne soutiennent pas, et les domaines émergents.",
-    "guide.ch-4.title": "Choix du site et sécurité",
-    "guide.ch-4.desc": "Choisir un site thérapeutique. Terrain, caractéristiques acoustiques, considérations saisonnières, accessibilité. Évaluation des risques et planification d'urgence.",
-    "guide.ch-5.title": "Architecture de séance",
-    "guide.ch-5.desc": "Arrivée, ancrage, activité principale, intégration, transition. Comment chaque phase fonctionne, ce qu'elle fait, comment la tenir.",
-    "guide.ch-6.title": "Faciliter les activités principales",
-    "guide.ch-6.desc": "Notes sur chacune des 12 activités du carnet. Ce qu'elles font cliniquement, quand les choisir, variantes et pièges courants.",
-    "guide.ch-7.title": "Travail en groupe et en binôme",
-    "guide.ch-7.desc": "Dispersion, tenir l'attention dans l'espace, gérer les réponses divergentes, formats en cercle ou dispersés.",
-    "guide.ch-8.title": "Anxiété, burnout et stress",
-    "guide.ch-8.desc": "Indications primaires. Trajectoires de séance, appariements d'activités, schémas courants en séances précoces et tardives.",
-    "guide.ch-9.title": "Dépression et retrait",
-    "guide.ch-9.desc": "Activation par l'environnement naturel. Évaluation de la motivation. Articulation avec d'autres traitements.",
-    "guide.ch-10.title": "Travailler avec les adolescent·e·s",
-    "guide.ch-10.desc": "Considérations développementales. Réduire le regard clinique. Communication avec parents et responsables. Protection en contexte extérieur.",
-    "guide.ch-11.title": "Deuil et transitions de vie",
-    "guide.ch-11.desc": "Nature-comme-témoin. Métaphores saisonnières et de décomposition. Timing par rapport à la phase aiguë. Structures de seuil.",
-    "guide.ch-12.title": "Trauma : limites et usage adjonctif",
-    "guide.ch-12.desc": "Quand l'intervention en milieu forestier soutient le travail sur le trauma et quand elle ne le fait pas. Intégration post-stabilisation. Gérer l'activation en milieu extérieur.",
-    "guide.ch-13.title": "Éthique et consentement éclairé",
-    "guide.ch-13.desc": "Considérations éthiques spécifiques à la thérapie en extérieur. Processus de consentement. Confidentialité en espace naturel partagé. Champ de pratique.",
-    "guide.ch-14.title": "Supervision et développement du praticien·ne",
-    "guide.ch-14.desc": "Pourquoi la supervision FI diffère. Trouver une supervision. Pratiques d'auto-réflexion. Parcours de développement continu.",
+    "pathway.guide.title": "Guides pratiques",
+    "pathway.guide.desc": "Le guide complet des interventions en milieu forestier (D1.2.1) et son compagnon sur la nature virtuelle immersive (D1.3.2), chapitre par chapitre.",
+    "pathway.guide.cta": "Lire les guides →",
+    "guide.badge": "Guides pratiques",
+    "guide.heading": "Guides pratiques Forest4Youth",
+    "guide.sub": "Les deux guides pratiques co-conçus lors du premier lot de travail de Forest4Youth, en intégralité : Interventions en milieu forestier (D1.2.1) et son compagnon, la Nature virtuelle immersive (D1.3.2). À lire ensemble : se préparer dans la salle, aller en forêt, revenir par la salle.",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     "export.pdf": "Exporter en PDF",
     "export.png": "Exporter en PNG",
     "export.qr.label": "Scannez pour rouvrir",
@@ -617,7 +617,7 @@ const T_FR = {
     "search.count.zero": "Aucun résultat",
     "search.cat.activities": "Activités",
     "search.cat.reference": "Référence clinique",
-    "search.cat.guide": "Guide d'accompagnement",
+    "search.cat.guide": "Guides pratiques",
     "ref.search.label": "Rechercher dans cette page",
     "ref.search.placeholder": "Rechercher indications, contre-indications, dosage…",
     "ref.search.empty": "Rien sur cette page ne correspond à cette recherche.",
@@ -721,4 +721,13 @@ const T_FR = {
     "pbui.planexport.meta.starttime.placeholder": "p. ex. 10:00",
     "pbui.planexport.meta.site": "Groupe / Lieu",
     "pbui.planexport.meta.practitioner": "Praticien·ne",
+    // Practical Guides screen (guide-render.js)
+    "guide.tab.fi": "Interventions en milieu forestier",
+    "guide.tab.ivn": "Nature virtuelle immersive",
+    "guide.edition": "Édition",
+    "guide.langnote": "Ce guide est affiché en anglais : la version française du D1.2.1 est antérieure aux dernières modifications, et le D1.3.2 n'existe qu'en anglais. Les traductions suivront.",
+    "guide.contents": "Sommaire",
+    "guide.chapter": "Chapitre",
+    "guide.appendix": "Annexe",
+    "draft.notice": "Brouillon — cette section est antérieure aux livrables finaux du lot de travail 1 de Forest4Youth et est en cours de réécriture à partir de ceux-ci. À considérer comme provisoire ; les Guides pratiques font référence.",
 };

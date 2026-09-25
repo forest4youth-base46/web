@@ -268,60 +268,7 @@
 .guide-intro p:last-child { margin-bottom: 0; }
 .guide-meta { font-size: 11.5px; color: var(--forest-mid); letter-spacing: 0.04em; }
 .guide-meta strong { color: var(--forest-deep); font-weight: 500; }
-.guide-pdf-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--forest-deep);
-  background: var(--paper-pure);
-  border: 1px solid var(--forest-mist);
-  border-radius: var(--r-sm);
-  padding: 8px 14px;
-  margin-top: 12px;
-  text-decoration: none;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  transition: all 0.18s;
-}
-.guide-pdf-link:hover { background: var(--forest-deep); color: var(--paper-pure); border-color: var(--forest-deep); }
-.guide-pdf-link.placeholder { opacity: 0.6; cursor: not-allowed; font-style: italic; font-weight: 400; }
-.guide-pdf-link.placeholder:hover {
-  background: var(--paper-pure); color: var(--forest-deep); border-color: var(--forest-mist);
-}
 
-.guide-part { margin-bottom: 36px; }
-.guide-part-header {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  margin-bottom: 6px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--forest-mist);
-}
-.guide-part-roman {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 28px;
-  color: var(--forest-soft-text);
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1;
-  flex-shrink: 0;
-}
-.guide-part-title {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 20px;
-  color: var(--forest-ink);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-.guide-part-desc {
-  font-size: 12.5px;
-  color: var(--ink-soft);
-  line-height: 1.6;
-  font-weight: 300;
-  margin: 0 0 16px 42px;
-}
 
 .guide-chapter {
   display: flex;
@@ -372,13 +319,6 @@
   gap: 10px;
   flex-wrap: wrap;
   letter-spacing: -0.005em;
-}
-.guide-chapter-pages {
-  font-size: 10.5px;
-  color: var(--ink-faint);
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  font-variant-numeric: tabular-nums;
 }
 .guide-chapter-desc {
   font-size: 12.5px;
@@ -472,3 +412,80 @@
 .pb-prose p:last-child { margin-bottom: 0; }
 .pb-prose strong { font-weight: 500; color: var(--forest-ink); }
 
+/* ── PRACTICAL GUIDES (guide-render.js) ──
+   Two tabs (FI · D1.2.1 / IVN · D1.3.2), a contents list reusing
+   .guide-chapter, and one .exp-card accordion per chapter. */
+.guide-tabs {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin: 0 0 20px;
+}
+.guide-tab {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  padding: 14px 16px; text-align: left; cursor: pointer;
+  background: var(--paper-pure); color: var(--forest-ink);
+  border: 1px solid var(--forest-mist); border-radius: var(--r-md);
+  font: inherit; transition: border-color 0.2s, background 0.2s;
+}
+.guide-tab:hover { border-color: var(--forest-soft); }
+.guide-tab[aria-selected="true"] { background: var(--forest-deep); border-color: var(--forest-deep); color: var(--paper-pure); }
+.guide-tab:focus-visible { outline: 2px solid var(--forest-mid); outline-offset: 2px; }
+.guide-tab-code { font-size: 10.5px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.75; }
+.guide-tab-title { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 500; letter-spacing: -0.005em; }
+.guide-lang-note { font-size: 12px; color: var(--forest-mid); font-style: italic; }
+.guide-toc { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; margin-bottom: 20px; }
+.guide-chapters { margin-bottom: 36px; }
+.guide-ch .exp-title { display: flex; flex-direction: column; gap: 2px; }
+.guide-ch-label { font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--forest-soft-text); }
+.guide-ch .exp-body { font-size: 13.5px; line-height: 1.7; color: var(--ink); font-weight: 300; }
+.guide-h { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 500; color: var(--forest-ink); margin: 20px 0 6px; }
+.guide-h:first-child { margin-top: 4px; }
+.guide-h3 { font-size: 11px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest-soft-text); margin: 14px 0 4px; }
+.guide-p { margin: 0 0 10px; }
+.guide-p strong { font-weight: 500; color: var(--forest-ink); }
+.guide-callout {
+  margin: 12px 0; padding: 12px 14px;
+  background: var(--paper); border-left: 3px solid var(--forest-mid);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0; color: var(--forest-ink); font-weight: 400;
+}
+.guide-ul, .guide-ol { margin: 0 0 12px; padding-left: 20px; }
+.guide-ul li, .guide-ol li { margin-bottom: 4px; }
+.guide-check { list-style: none; margin: 0 0 12px; padding: 0; }
+.guide-check li { position: relative; padding-left: 26px; margin-bottom: 6px; }
+.guide-check li::before {
+  content: ''; position: absolute; left: 0; top: 4px; width: 14px; height: 14px;
+  border: 1.5px solid var(--forest-mid); border-radius: 3px;
+}
+.guide-form {
+  margin: 0 0 6px; padding: 8px 10px; font-size: 12.5px;
+  background: var(--paper); border: 1px dashed var(--forest-mist); border-radius: var(--r-sm);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.guide-quote { margin: 14px 0; padding: 4px 0 4px 16px; border-left: 2px solid var(--forest-soft); }
+.guide-quote p { margin: 0 0 4px; font-style: italic; color: var(--forest-ink); }
+.guide-quote cite { font-size: 10.5px; font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--forest-soft-text); }
+.guide-sheet { margin: 0 0 12px; padding: 14px 16px; border: 1px solid var(--forest-mist); border-radius: var(--r-md); background: var(--paper-card); }
+.guide-sheet-title { font-family: 'Montserrat', sans-serif; font-weight: 500; color: var(--forest-ink); margin-bottom: 8px; }
+.guide-table-wrap { overflow-x: auto; margin: 0 0 14px; }
+.guide-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.guide-table th, .guide-table td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--forest-mist); }
+.guide-table thead th { font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--forest-soft-text); }
+.guide-table tbody th { font-weight: 500; color: var(--forest-ink); width: 32%; }
+.guide-acts { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--forest-mist); border-radius: var(--r-md); }
+.guide-acts-title { font-family: 'Montserrat', sans-serif; font-weight: 500; color: var(--forest-ink); margin-bottom: 6px; }
+.guide-acts-count { color: var(--ink-faint); font-weight: 400; }
+.guide-acts ul { margin: 0; padding-left: 18px; }
+.guide-acts li { margin-bottom: 4px; }
+.guide-acts a, .guide-link a { color: var(--forest-deep); font-weight: 500; text-decoration: none; border-bottom: 1px dotted var(--forest-soft); }
+.guide-acts a:hover, .guide-link a:hover { border-bottom-style: solid; }
+.guide-acts li span { color: var(--ink-soft); }
+.guide-link { margin: 6px 0 14px; }
+.guide-source { margin: 16px 0 0; padding-top: 10px; border-top: 1px dashed var(--forest-mist); font-size: 11px; color: var(--ink-faint); letter-spacing: 0.04em; }
+
+/* Marks sections that still hold pre-WP1 prototype content (kept as
+   placeholders until rewritten from the deliverables — see
+   admin/projects/forest4youth/web-app/CONFLICTS.md, placeholder register). */
+.draft-notice {
+  margin: 0 0 16px; padding: 10px 14px;
+  font-size: 12px; line-height: 1.55; color: var(--forest-ink);
+  background: var(--paper); border: 1px dashed var(--forest-soft); border-radius: var(--r-sm);
+}
