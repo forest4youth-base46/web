@@ -1,6 +1,8 @@
-# Forest-Based Therapy · Practitioner Tool
+# Forest4Youth Practical Guides
 
-An interactive web tool for forest therapy practitioners — session planning, activity reference, and guided run mode. Built for the [Forest4Youth NWEurope](https://forest4youth.nweurope.eu) project.
+An interactive web tool for professionals supporting young people's mental health through Forest-Based Interventions (FI) and Immersive Virtual Nature (IVN) — the two WP1 practical guides in full, activity reference, session planning and guided run mode. Built for the [Forest4Youth NWEurope](https://forest4youth.nweurope.eu) project.
+
+> **Branch `post-wp1-update`** aligns the tool with the final WP1 deliverables (D1.2.1 Canva v2.2, D1.3.2, D1.2.3, D1.4.1, D1.1.2). It is deliberately not merged to `main` (the live site) until partners have reviewed it. The audit, conflict list and roadmap live in the private `admin` repo under `projects/forest4youth/web-app/`.
 
 See `ARCHITECTURE.md` for the reasoning behind the zero-build-step setup, the file-splitting conventions, and how global state is meant to be handled. See `CONTRIBUTING.md` for the practical clone-to-first-commit steps.
 
@@ -11,7 +13,8 @@ See `ARCHITECTURE.md` for the reasoning behind the zero-build-step setup, the fi
 The tool supports practitioners through three pathways:
 
 **Practitioner pathways**
-- **Learn** — foundational knowledge: what forest-based therapy is, the evidence base, contraindications, and dosage guidelines. Includes the full Companion Guide.
+- **Practical Guides** — the full D1.2.1 FI Practical Guide (Canva v2.2) and D1.3.2 IVN Practical Guide (appendices A–H included), rendered from `guide-fi-data.js` / `guide-ivn-data.js`.
+- **Learn** — foundational knowledge (draft: predates the WP1 deliverables and is marked as a placeholder until rewritten from them).
 - **Implement in Practice** — session tools: a 17-activity Pocketbook (5 therapeutic groups), Session Builder with arc-balance visualisation, guided Run Mode with per-activity countdown timers, and a Pre-Session Checklist.
 - **Reflect & Evaluate** — post-session tools: observation templates, outcome indicators, and progress tracking.
 
@@ -64,6 +67,9 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── pocketbook-reflect.js    # post-session recap/history, self-reflection, indicators
 ├── pocketbook-init.js       # QR/link session restore + pbInit() — loads last, wires it together
 ├── ui-behaviors.js       # header scroll hide/show
+├── guide-fi-data.js      # GENERATED — D1.2.1 FI Practical Guide (built in admin/…/web-app/scripts/)
+├── guide-ivn-data.js     # GENERATED — D1.3.2 IVN Practical Guide (same generator)
+├── guide-render.js       # renders both guides into #guide-screen (tabs, contents, chapter accordions)
 ├── search.js             # ⌘K / Ctrl+K search dialog (activities, reference, guide chapters)
 ├── iframe-bridge.js      # iframe embed: reports document height, requests parent scroll
 ├── vendor/               # vendored html2canvas + qrcodejs + jsPDF (no CDN at runtime)
