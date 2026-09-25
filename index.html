@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="description" content="Forest-Based Therapy Practitioner Tool — interactive session planner, activity pocketbook, and guided run mode for forest therapy practitioners.">
+<meta name="description" content="Forest4Youth Practical Guides — the Forest-Based Interventions (FI) and Immersive Virtual Nature (IVN) practical guides, activity pocketbook, session builder and guided run mode for professionals supporting young people's mental health.">
 <meta name="theme-color" content="#234A3E">
-<meta property="og:title" content="Forest-Based Therapy · Practitioner Tool">
-<meta property="og:description" content="Interactive session planning and activity reference for forest therapy practitioners.">
+<meta property="og:title" content="Forest4Youth Practical Guides">
+<meta property="og:description" content="Forest-Based Interventions and Immersive Virtual Nature for adolescent mental health — practical guides and session tools from the Forest4Youth project.">
 <meta property="og:type" content="website">
-<title>Forest-Based Therapy · Practitioner Tool</title>
+<title>Forest4Youth Practical Guides</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600&family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap" rel="stylesheet">
@@ -80,7 +80,7 @@
           <a class="site-nav-link" data-navkey="reference" href="#reference" data-i18n="nav.reference">Reference</a>
         </div>
         <div class="site-nav-group" data-role-only="participant">
-          <a class="site-nav-link" data-navkey="pwhat" href="#pwhat" data-i18n="ppath.what.title">What is FBT?</a>
+          <a class="site-nav-link" data-navkey="pwhat" href="#pwhat" data-i18n="ppath.what.title">What is FI?</a>
           <a class="site-nav-link" data-navkey="psession" href="#psession" data-i18n="ppath.session.title">What happens in a session?</a>
           <a class="site-nav-link" data-navkey="pforme" href="#pforme" data-i18n="ppath.forme.title">Is it for me?</a>
           <a class="site-nav-link" data-navkey="pbefore" href="#pbefore" data-i18n="ppath.before.title">Before your first session</a>
@@ -139,16 +139,16 @@
       <p class="entry-sub" data-i18n="role.sub">Choose the perspective that fits your current need. You can switch at any time using the toggle in the corner.</p>
       <div class="role-cards">
         <div class="role-card" role="button" tabindex="0" onclick="setRole('participant', true)" onkeydown="activateOnKey(event, () => setRole('participant', true))">
-          <div class="role-card-sub" data-i18n="role.part.sub">Exploring FBT</div>
-          <h2 data-i18n="role.part.title">I'm exploring forest-based therapy</h2>
-          <p data-i18n="role.part.desc">Plain-language information about what FBT is, how sessions work, and whether it might be useful for your situation or someone you care about.</p>
+          <div class="role-card-sub" data-i18n="role.part.sub">Exploring FI</div>
+          <h2 data-i18n="role.part.title">I'm exploring forest-based interventions</h2>
+          <p data-i18n="role.part.desc">Plain-language information about what FI is, how sessions work, and whether it might be useful for your situation or someone you care about.</p>
           <div class="role-examples" data-i18n="role.part.eg">Participant · carer · referrer · curious person</div>
           <span class="role-card-arrow" data-i18n="role.part.cta">Continue →</span>
         </div>
         <div class="role-card" role="button" tabindex="0" onclick="setRole('practitioner', true)" onkeydown="activateOnKey(event, () => setRole('practitioner', true))">
-          <div class="role-card-sub" data-i18n="role.prac.sub">Practising FBT</div>
+          <div class="role-card-sub" data-i18n="role.prac.sub">Practising FI</div>
           <h2 data-i18n="role.prac.title">I'm a practitioner</h2>
-          <p data-i18n="role.prac.desc">Clinical reference, session tools, pocket guide to activities, indications and contraindications, integration with other modalities, and reflection prompts.</p>
+          <p data-i18n="role.prac.desc">Clinical reference, session tools, the 17-activity Pocketbook, indications and contraindications, integration with other modalities, and reflection prompts.</p>
           <div class="role-examples" data-i18n="role.prac.eg">Therapist · facilitator · educator · researcher</div>
           <span class="role-card-arrow" data-i18n="role.prac.cta">Continue →</span>
         </div>
@@ -168,13 +168,13 @@
         <div class="pathway-card" role="button" tabindex="0" onclick="navigate('learn')" onkeydown="activateOnKey(event, () => navigate('learn'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24v-8"/><path d="M6 17c0-5 3.5-9 8-11 4.5 2 8 6 8 11"/><path d="M10 24h8"/></svg></span>
           <h2 data-i18n="pathway.learn.title">Learn More</h2>
-          <p data-i18n="pathway.learn.desc">Understand the theoretical basis of forest-based therapy, the evidence, and the key principles behind it.</p>
+          <p data-i18n="pathway.learn.desc">Understand the theoretical basis of forest-based interventions, the evidence, and the key principles behind it.</p>
           <span class="pathway-arrow" data-i18n="pathway.learn.cta">Explore →</span>
         </div>
         <div class="pathway-card" role="button" tabindex="0" onclick="navigate('implement')" onkeydown="activateOnKey(event, () => navigate('implement'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="10"/><path d="M14 5v2M14 21v2M5 14h2M21 14h2"/><path d="M17 10l-5 5M11 18l4-4"/><circle cx="14" cy="14" r="1.5" fill="currentColor" stroke="none"/></svg></span>
           <h2 data-i18n="pathway.implement.title">Implement in Practice</h2>
-          <p data-i18n="pathway.implement.desc">Session planning tools, a pocket guide to activities, pre/post checklists, and safety considerations.</p>
+          <p data-i18n="pathway.implement.desc">Session planning tools, the 17-activity Pocketbook, pre/post checklists, and safety considerations.</p>
           <span class="pathway-arrow" data-i18n="pathway.implement.cta">Get started →</span>
         </div>
         <div class="pathway-card" role="button" tabindex="0" onclick="navigate('reflect')" onkeydown="activateOnKey(event, () => navigate('reflect'))">
@@ -202,12 +202,12 @@
     <div data-role-only="participant">
       <div class="entry-label" data-i18n="pentry.label">Welcome</div>
       <h1 class="entry-title" data-i18n="pentry.title">What would be helpful today?</h1>
-      <p class="entry-sub" data-i18n="pentry.sub">Plain information about forest-based therapy — what it is, what a session looks like, whether it might fit your situation, and how to prepare.</p>
+      <p class="entry-sub" data-i18n="pentry.sub">Plain information about forest-based interventions (FI) — what they are, what a session looks like, whether they might fit your situation, and how to prepare.</p>
       <div class="pathways">
         <div class="pathway-card" role="button" tabindex="0" onclick="navigate('pwhat')" onkeydown="activateOnKey(event, () => navigate('pwhat'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24v-8"/><path d="M6 17c0-5 3.5-9 8-11 4.5 2 8 6 8 11"/><path d="M10 24h8"/></svg></span>
-          <h2 data-i18n="ppath.what.title">What is FBT?</h2>
-          <p data-i18n="ppath.what.desc">A plain explanation — what forest-based therapy is, what it isn't, and how it differs from forest bathing.</p>
+          <h2 data-i18n="ppath.what.title">What is FI?</h2>
+          <p data-i18n="ppath.what.desc">A plain explanation — what a forest-based intervention is, what it isn't, and how it differs from forest bathing.</p>
           <span class="pathway-arrow" data-i18n="ppath.what.cta">Read →</span>
         </div>
         <div class="pathway-card" role="button" tabindex="0" onclick="navigate('psession')" onkeydown="activateOnKey(event, () => navigate('psession'))">
@@ -233,12 +233,12 @@
 
   </div>
 
-  <!-- PARTICIPANT: WHAT IS FBT? -->
+  <!-- PARTICIPANT: WHAT IS FI? -->
   <div id="pwhat-screen" class="screen" data-role-only="participant">
     <button class="back-btn" onclick="navigate('')">← <span data-i18n="nav.back">Back</span></button>
     <div class="section-header">
       <div class="badge" data-i18n="pwhat.badge">Exploring</div>
-      <h2 data-i18n="pwhat.heading">What forest-based therapy is</h2>
+      <h2 data-i18n="pwhat.heading">What a forest-based intervention is</h2>
       <p class="section-sub" data-i18n="pwhat.sub">A plain-language introduction. No jargon — just what it is, what it isn't, and what it might do.</p>
     </div>
 
@@ -246,11 +246,11 @@
 
       <div class="module-card" id="pw-def">
         <div class="module-body">
-          <p class="lead-p" data-i18n="pwhat.def.lead">Forest-based therapy (FBT) is a way of doing therapy where the forest is part of the work. A trained practitioner guides you through activities in a natural setting — walking, sitting, noticing, sometimes making something, sometimes talking. The forest isn't a backdrop. It's part of how the therapy works.</p>
+          <p class="lead-p" data-i18n="pwhat.def.lead">A forest-based intervention (FI) is a way of doing therapy where the forest is part of the work. A trained practitioner guides you through activities in a natural setting — walking, sitting, noticing, sometimes making something, sometimes talking. The forest isn't a backdrop. It's part of how the therapy works.</p>
           <div class="learn-blocks">
             <div class="learn-block">
               <h4 data-i18n="pwhat.def.b1.h">Not a replacement for clinical care</h4>
-              <p data-i18n="pwhat.def.b1.p">FBT is a therapeutic approach that can stand alone for some situations and complement other treatment for others. It is not a substitute for medication, crisis care, or treatment of serious clinical conditions. A good practitioner will be clear with you about what FBT can and can't do in your case.</p>
+              <p data-i18n="pwhat.def.b1.p">FI is a therapeutic approach that can stand alone for some situations and complement other treatment for others. It is not a substitute for medication, crisis care, or treatment of serious clinical conditions. A good practitioner will be clear with you about what FI can and can't do in your case.</p>
               <span class="evidence-pill evidence-pill--moderate" data-i18n="pwhat.ev.moderate">Research behind this</span>
             </div>
             <div class="learn-block">
@@ -259,7 +259,7 @@
             </div>
             <div class="learn-block">
               <h4 data-i18n="pwhat.def.b3.h">Not only for "outdoor people"</h4>
-              <p data-i18n="pwhat.def.b3.p">You don't need to be fit, experienced outdoors, or comfortable in nature for FBT to work. In fact, some of the best therapeutic material emerges from discomfort — the forest not feeling safe, getting cold, noticing resistance. Tell your practitioner honestly about your relationship with nature.</p>
+              <p data-i18n="pwhat.def.b3.p">You don't need to be fit, experienced outdoors, or comfortable in nature for FI to work. In fact, some of the best therapeutic material emerges from discomfort — the forest not feeling safe, getting cold, noticing resistance. Tell your practitioner honestly about your relationship with nature.</p>
             </div>
           </div>
         </div>
@@ -273,12 +273,12 @@
               <p data-i18n="pwhat.vs.b1.p">A practice from Japan. Usually non-clinical, often in groups, focused on sensory immersion. Benefits are real but general — reduced stress, improved mood, lower blood pressure. There is no therapeutic contract, no clinical goal, no practitioner competency requirement.</p>
             </div>
             <div class="learn-block">
-              <h4 data-i18n="pwhat.vs.b2.h">Forest-based therapy</h4>
+              <h4 data-i18n="pwhat.vs.b2.h">Forest-based interventions</h4>
               <p data-i18n="pwhat.vs.b2.p">A clinical or therapeutic engagement. A trained practitioner works with you toward specific goals, often across several sessions. Activities are chosen for your situation. The relationship is structured: informed consent, confidentiality, supervision, evaluation.</p>
             </div>
             <div class="learn-block">
               <h4 data-i18n="pwhat.vs.b3.h">Both are valuable — for different things</h4>
-              <p data-i18n="pwhat.vs.b3.p">Forest bathing is an excellent preventive practice and wellbeing habit. FBT is a therapeutic intervention for a specific situation or goal. If you're looking for general wellbeing, forest bathing may be enough. If you're working through something specific, FBT is the right tool.</p>
+              <p data-i18n="pwhat.vs.b3.p">Forest bathing is an excellent preventive practice and wellbeing habit. FI is a therapeutic intervention for a specific situation or goal. If you're looking for general wellbeing, forest bathing may be enough. If you're working through something specific, FI is the right tool.</p>
             </div>
           </div>
         </div>
@@ -299,7 +299,7 @@
             </div>
             <div class="learn-block">
               <h4 data-i18n="pwhat.works.b3.h">Mood lifts, but gradually</h4>
-              <p data-i18n="pwhat.works.b3.p">For depression, FBT shows promising results but usually works best alongside other treatment. Expect gradual shifts across several sessions, not a single transformative experience. One session rarely changes anything lasting — a sequence of sessions can.</p>
+              <p data-i18n="pwhat.works.b3.p">For depression, FI shows promising results but usually works best alongside other treatment. Expect gradual shifts across several sessions, not a single transformative experience. One session rarely changes anything lasting — a sequence of sessions can.</p>
               <span class="evidence-pill evidence-pill--moderate" data-i18n="pwhat.ev.moderate2">Moderate evidence</span>
             </div>
             <div class="learn-block">
@@ -406,7 +406,7 @@
     <div class="section-header">
       <div class="badge" data-i18n="pforme.badge">Exploring</div>
       <h2 data-i18n="pforme.heading">Is this for you?</h2>
-      <p class="section-sub" data-i18n="pforme.sub">These are experiences, not diagnoses. Pick whichever is closest to what you're living with. None of these say "yes, definitely" or "no, never" — they describe what FBT tends to look like in each situation.</p>
+      <p class="section-sub" data-i18n="pforme.sub">These are experiences, not diagnoses. Pick whichever is closest to what you're living with. None of these say "yes, definitely" or "no, never" — they describe what FI tends to look like in each situation.</p>
     </div>
 
     <div class="exp-card" id="exp-anxiety">
@@ -418,7 +418,7 @@
       <div class="exp-body" id="exp-anxiety-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
-          <div class="sub-text" data-i18n="pforme.anx.research">For generalised anxiety and chronic stress, forest-based therapy has some of the strongest evidence. Most people report meaningful reduction in anxiety symptoms within 4–6 sessions. The effect is not just psychological — measurable changes in the nervous system (heart rate variability, cortisol) occur alongside.</div>
+          <div class="sub-text" data-i18n="pforme.anx.research">For generalised anxiety and chronic stress, forest-based interventions have some of the strongest evidence. Most people report meaningful reduction in anxiety symptoms within 4–6 sessions. The effect is not just psychological — measurable changes in the nervous system (heart rate variability, cortisol) occur alongside.</div>
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.engagement.label">What a typical engagement looks like</div>
@@ -426,7 +426,7 @@
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.expect.label">Realistic expectations</div>
-          <div class="sub-text" data-i18n="pforme.anx.expect">You will probably feel some relief early — this is real but partial. Lasting change takes longer. Some sessions will feel more productive than others; that is normal. If you are currently taking medication for anxiety, FBT complements rather than replaces it. Tell your practitioner about any medication.</div>
+          <div class="sub-text" data-i18n="pforme.anx.expect">You will probably feel some relief early — this is real but partial. Lasting change takes longer. Some sessions will feel more productive than others; that is normal. If you are currently taking medication for anxiety, FI complements rather than replaces it. Tell your practitioner about any medication.</div>
         </div>
       </div>
     </div>
@@ -440,7 +440,7 @@
       <div class="exp-body" id="exp-burnout-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
-          <div class="sub-text" data-i18n="pforme.bo.research">For burnout and exhaustion — the kind that doesn't lift after a weekend off — FBT has consistent results. The combination of reduced sensory load, sustained attention to something outside yourself, and permission to do very little in early sessions seems to be what helps.</div>
+          <div class="sub-text" data-i18n="pforme.bo.research">For burnout and exhaustion — the kind that doesn't lift after a weekend off — FI has consistent results. The combination of reduced sensory load, sustained attention to something outside yourself, and permission to do very little in early sessions seems to be what helps.</div>
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.engagement.label">What a typical engagement looks like</div>
@@ -448,7 +448,7 @@
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.expect.label">Realistic expectations</div>
-          <div class="sub-text" data-i18n="pforme.bo.expect">Recovery from real burnout is slow. Expect months, not weeks. Sessions that feel "like nothing happened" are often the most useful ones early on. If you are still in the situation that caused the exhaustion, FBT can help but will not override chronic overwork.</div>
+          <div class="sub-text" data-i18n="pforme.bo.expect">Recovery from real burnout is slow. Expect months, not weeks. Sessions that feel "like nothing happened" are often the most useful ones early on. If you are still in the situation that caused the exhaustion, FI can help but will not override chronic overwork.</div>
         </div>
       </div>
     </div>
@@ -462,7 +462,7 @@
       <div class="exp-body" id="exp-transition-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
-          <div class="sub-text" data-i18n="pforme.tr.research">For life transitions — a relationship ending, a job change, a move, an identity shift, a new chapter of life — FBT is particularly well suited. The forest gives change a physical scale: thresholds, paths, clearings, seasons. Many people find it easier to work with change when it has somewhere to exist outside their own head.</div>
+          <div class="sub-text" data-i18n="pforme.tr.research">For life transitions — a relationship ending, a job change, a move, an identity shift, a new chapter of life — FI is particularly well suited. The forest gives change a physical scale: thresholds, paths, clearings, seasons. Many people find it easier to work with change when it has somewhere to exist outside their own head.</div>
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.engagement.label">What a typical engagement looks like</div>
@@ -470,7 +470,7 @@
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.expect.label">Realistic expectations</div>
-          <div class="sub-text" data-i18n="pforme.tr.expect">Expect more clarity, not fewer difficult feelings. The transition itself will still be hard. What FBT can do is help you meet it more consciously, with less reactivity and more sense of where you stand.</div>
+          <div class="sub-text" data-i18n="pforme.tr.expect">Expect more clarity, not fewer difficult feelings. The transition itself will still be hard. What FI can do is help you meet it more consciously, with less reactivity and more sense of where you stand.</div>
         </div>
       </div>
     </div>
@@ -484,7 +484,7 @@
       <div class="exp-body" id="exp-child-body">
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.research.label">What research shows</div>
-          <div class="sub-text" data-i18n="pforme.ch.research">For young people — especially adolescents — FBT often works when indoor talking therapy hasn't. The outdoor setting reduces the pressure of being examined, the walking makes silence feel less awkward, and many young people find it easier to talk about difficult things side by side than face to face. Evidence is emerging but consistent.</div>
+          <div class="sub-text" data-i18n="pforme.ch.research">For young people — especially adolescents — FI often works when indoor talking therapy hasn't. The outdoor setting reduces the pressure of being examined, the walking makes silence feel less awkward, and many young people find it easier to talk about difficult things side by side than face to face. Evidence is emerging but consistent.</div>
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.engagement.label">What a typical engagement looks like</div>
@@ -510,11 +510,11 @@
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.engagement.label">What a typical engagement looks like</div>
-          <div class="sub-text" data-i18n="pforme.ls.engage">Individual sessions. Timing matters — if your loss is very recent and you are still in acute grief, a gentler setting may be better first. When ready, FBT often involves working with specific places or objects (a tree, a piece of dead wood, a path), walking as a way of holding difficult emotion, and space for silence.</div>
+          <div class="sub-text" data-i18n="pforme.ls.engage">Individual sessions. Timing matters — if your loss is very recent and you are still in acute grief, a gentler setting may be better first. When ready, FI often involves working with specific places or objects (a tree, a piece of dead wood, a path), walking as a way of holding difficult emotion, and space for silence.</div>
         </div>
         <div class="sub-section">
           <div class="sub-label" data-i18n="pforme.expect.label">Realistic expectations</div>
-          <div class="sub-text" data-i18n="pforme.ls.expect">Grief does not resolve — it metabolises. FBT does not make loss smaller. It can make it more bearable to carry, and it can help grief find a form. Sessions may bring waves of sadness; this is the work. Choose a practitioner with specific training in grief.</div>
+          <div class="sub-text" data-i18n="pforme.ls.expect">Grief does not resolve — it metabolises. FI does not make loss smaller. It can make it more bearable to carry, and it can help grief find a form. Sessions may bring waves of sadness; this is the work. Choose a practitioner with specific training in grief.</div>
         </div>
       </div>
     </div>
@@ -625,9 +625,9 @@
         <div class="module-body">
           <p class="lead-p" data-i18n="pbefore.q.lead">A good practitioner welcomes these questions. If any of them are brushed off, that is itself useful information.</p>
           <ul class="q-list">
-            <li data-i18n="pbefore.q.q1">What is your training specifically in forest-based therapy? How long have you been practising it?</li>
+            <li data-i18n="pbefore.q.q1">What is your training specifically in forest-based interventions? How long have you been practising it?</li>
             <li data-i18n="pbefore.q.q2">Do you have clinical supervision for this work? With whom?</li>
-            <li data-i18n="pbefore.q.q3">Given what I've shared, do you think FBT is the right approach for my situation — or might something else be a better fit?</li>
+            <li data-i18n="pbefore.q.q3">Given what I've shared, do you think FI is the right approach for my situation — or might something else be a better fit?</li>
             <li data-i18n="pbefore.q.q4">What does a typical engagement with you look like? How many sessions, how often, how do we decide when to end?</li>
             <li data-i18n="pbefore.q.q5">How do you handle confidentiality — and what are the exceptions?</li>
             <li data-i18n="pbefore.q.q6">What happens if I'm in distress during or after a session?</li>
@@ -651,7 +651,7 @@
 
     <div class="guide-intro">
       <h3 data-i18n="guide.intro.h">About this edition</h3>
-      <p data-i18n="guide.intro.p1">This handbook is a working companion to the practitioner tool. It is written for clinicians, facilitators, and educators delivering forest-based therapy. It assumes baseline clinical training and builds FBT-specific competence from there.</p>
+      <p data-i18n="guide.intro.p1">This handbook is a working companion to the practitioner tool. It is written for clinicians, facilitators, and educators delivering forest-based interventions. It assumes baseline clinical training and builds FI-specific competence from there.</p>
       <p class="guide-meta"><strong data-i18n="guide.intro.pages">108 pages</strong> · <span data-i18n="guide.intro.chapters">14 chapters across 4 parts</span> · <span data-i18n="guide.intro.edition">Prototype edition · 2026</span></p>
       <a href="javascript:openGuide()" class="guide-pdf-link placeholder" id="guide-pdf-link">
         <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0;"><path d="M7 4h10l4 4v16H7V4z"/><path d="M17 4v4h4"/><path d="M10 13h8M10 17h6"/></svg>
@@ -669,10 +669,10 @@
             <div class="guide-chapter-num">1</div>
             <div class="guide-chapter-body">
               <div class="guide-chapter-title">
-                <span data-i18n="guide.ch-1.title">What forest-based therapy is</span>
+                <span data-i18n="guide.ch-1.title">What a forest-based intervention is</span>
                 <span class="guide-chapter-pages">pp. 3–10</span>
               </div>
-              <div class="guide-chapter-desc" data-i18n="guide.ch-1.desc">Definitional boundaries. Distinguishing FBT from forest bathing, wilderness therapy, and general outdoor work. The therapeutic contract in a natural setting.</div>
+              <div class="guide-chapter-desc" data-i18n="guide.ch-1.desc">Definitional boundaries. Distinguishing FI from forest bathing, wilderness therapy, and general outdoor work. The therapeutic contract in a natural setting.</div>
             </div>
           </a>
           <a href="javascript:openChapter('ch-2', 11)" class="guide-chapter" data-chapter-id="ch-2">
@@ -796,7 +796,7 @@
                 <span data-i18n="guide.ch-12.title">Trauma: boundaries and adjunctive use</span>
                 <span class="guide-chapter-pages">pp. 90–96</span>
               </div>
-              <div class="guide-chapter-desc" data-i18n="guide.ch-12.desc">When FBT supports trauma work and when it doesn't. Post-stabilisation integration. Managing activation in outdoor settings.</div>
+              <div class="guide-chapter-desc" data-i18n="guide.ch-12.desc">When FI supports trauma work and when it doesn't. Post-stabilisation integration. Managing activation in outdoor settings.</div>
             </div>
           </a>
       </div>
@@ -823,7 +823,7 @@
                 <span data-i18n="guide.ch-14.title">Supervision and practitioner development</span>
                 <span class="guide-chapter-pages">pp. 103–108</span>
               </div>
-              <div class="guide-chapter-desc" data-i18n="guide.ch-14.desc">Why FBT supervision differs. Finding supervision. Self-reflection practices. Pathways for continuing development.</div>
+              <div class="guide-chapter-desc" data-i18n="guide.ch-14.desc">Why FI supervision differs. Finding supervision. Self-reflection practices. Pathways for continuing development.</div>
             </div>
           </a>
       </div>
@@ -962,7 +962,7 @@
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
           <div class="ref-panel" id="ref-panel-con-c1" hidden>
-            <p data-i18n="ref.con.c1.p">If the presenting complexity exceeds the practitioner's clinical training, FBT is contraindicated for that practitioner with that participant — regardless of how well the indication fits the approach. Refer, consult, or decline. This is a matter of clinical responsibility, not of willingness.</p>
+            <p data-i18n="ref.con.c1.p">If the presenting complexity exceeds the practitioner's clinical training, FI is contraindicated for that practitioner with that participant — regardless of how well the indication fits the approach. Refer, consult, or decline. This is a matter of clinical responsibility, not of willingness.</p>
           </div>
         </article>
 
@@ -970,11 +970,11 @@
           <div class="ref-trigger-row">
             <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-c2" aria-labelledby="ref-title-con-c2" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-c2" data-i18n="ref.con.c2.h">When FBT-specific training is absent</h4>
+            <h4 id="ref-title-con-c2" data-i18n="ref.con.c2.h">When FI-specific training is absent</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
           <div class="ref-panel" id="ref-panel-con-c2" hidden>
-            <p data-i18n="ref.con.c2.p">Holding a clinical qualification without FBT-specific training is not sufficient for FBT practice. The setting introduces factors (safety, group dynamics outdoors, transference shifts in informal space) that require specific preparation.</p>
+            <p data-i18n="ref.con.c2.p">Holding a clinical qualification without FI-specific training is not sufficient for FI practice. The setting introduces factors (safety, group dynamics outdoors, transference shifts in informal space) that require specific preparation.</p>
           </div>
         </article>
       </div>
@@ -984,7 +984,7 @@
     <div id="mod-indications">
 
       <div class="ref-group" data-group="tier1">
-        <div class="tier-header" data-i18n="ref.ind.tier1">Tier 1 · Primary indications — FBT may be first-line</div>
+        <div class="tier-header" data-i18n="ref.ind.tier1">Tier 1 · Primary indications — FI may be first-line</div>
 
         <article class="indication-block ref-entry" data-kind="indication">
           <div class="ref-trigger-row">
@@ -1000,9 +1000,7 @@
           <div class="ref-panel" id="ref-panel-gad" hidden>
             <p data-i18n="ref.ind.gad.p">Consistent effects on self-reported anxiety and autonomic markers (HRV, cortisol). Outdoor setting directly addresses sensory over-stimulation that commonly maintains anxiety.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format">Format</strong>: <span data-i18n="ref.ind.gad.fmt">Individual, weekly or fortnightly, 6–10 sessions before reassessment.</span></div>
-            <div class="ind-meta"><strong data-i18n="ref.ind.acts">Pocket guide activities</strong>: <span data-i18n="ref.ind.gad.acts">Sit spot, forest breathing, sensory mapping.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo">Combines with</strong>: <span data-i18n="ref.ind.gad.combo">CBT (behavioural experiments with graded exposure); somatic approaches for interoceptive work.</span></div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-8', 8)" data-i18n="ref.rr.gad">Guide ch. 8, pp. 65–70</a></div>
           </div>
         </article>
 
@@ -1020,9 +1018,7 @@
           <div class="ref-panel" id="ref-panel-bo" hidden>
             <p data-i18n="ref.ind.bo.p">Particularly strong results where exhaustion is accompanied by depletion of directed attention. Low-demand early sessions that permit rest counter the productivity bias sustaining the condition.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format2">Format</strong>: <span data-i18n="ref.ind.bo.fmt">Individual, fortnightly, 8–12 sessions; longer timeframe than anxiety work.</span></div>
-            <div class="ind-meta"><strong data-i18n="ref.ind.acts2">Pocket guide activities</strong>: <span data-i18n="ref.ind.bo.acts">Sit spot, silent paired walk, weather dialogue.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo2">Combines with</strong>: <span data-i18n="ref.ind.bo.combo">ACT for values clarification; narrative work on occupational identity.</span></div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-8', 8)" data-i18n="ref.rr.bo">Guide ch. 8, pp. 65–70</a></div>
           </div>
         </article>
 
@@ -1040,9 +1036,7 @@
           <div class="ref-panel" id="ref-panel-dep" hidden>
             <p data-i18n="ref.ind.dep.p">Evidence strongest for depression with behavioural withdrawal and anhedonia components. Movement through natural environments supports activation without the demand characteristic of structured exercise prescriptions.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format3">Format</strong>: <span data-i18n="ref.ind.dep.fmt">Individual, weekly, 8–12 sessions. Assess motivation for outdoor engagement before committing.</span></div>
-            <div class="ind-meta"><strong data-i18n="ref.ind.acts3">Pocket guide activities</strong>: <span data-i18n="ref.ind.dep.acts">Threshold walk, roots &amp; branches, bark rubbing &amp; texture journal.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo3">Combines with</strong>: <span data-i18n="ref.ind.dep.combo">Behavioural activation; medication management; narrative therapy for meaning-making.</span></div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-9', 9)" data-i18n="ref.rr.dep">Guide ch. 9, pp. 71–75</a></div>
           </div>
         </article>
 
@@ -1060,9 +1054,7 @@
           <div class="ref-panel" id="ref-panel-ado" hidden>
             <p data-i18n="ref.ind.ado.p">Outdoor context lowers resistance typical of adolescent presentations: reduces face-to-face pressure, normalises movement and silence, side-by-side dialogue feels less clinical. Group formats leverage peer-relational dynamics.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format4">Format</strong>: <span data-i18n="ref.ind.ado.fmt">Individual or small group (4–6), weekly, 8–12 sessions. Parent/carer communication protocol agreed in advance.</span></div>
-            <div class="ind-meta"><strong data-i18n="ref.ind.acts4">Pocket guide activities</strong>: <span data-i18n="ref.ind.ado.acts">Threshold walk, tracking &amp; noticing, forest mandala.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo4">Combines with</strong>: <span data-i18n="ref.ind.ado.combo">CBT-adapted approaches; systemic family work; school liaison where indicated.</span></div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-10', 10)" data-i18n="ref.rr.ado">Guide ch. 10, pp. 76–82</a></div>
           </div>
         </article>
 
@@ -1080,7 +1072,6 @@
           <div class="ref-panel" id="ref-panel-adhd" hidden>
             <p data-i18n="ref.ind.adhd.p">Attention Restoration Theory predicts direct benefit; emerging evidence supports this for both adults and children. Particularly useful as adjunct to stimulant treatment for non-pharmacological skill development.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format5">Format</strong>: <span data-i18n="ref.ind.adhd.fmt">Individual or group, shorter sessions (45–60 min), weekly, 6–10 sessions. Pharmacological treatment continues unchanged.</span></div>
-            <div class="ind-meta"><strong data-i18n="ref.ind.acts5">Pocket guide activities</strong>: <span data-i18n="ref.ind.adhd.acts">Tracking &amp; noticing, sit spot, forest breathing.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo5">Combines with</strong>: <span data-i18n="ref.ind.adhd.combo">Ongoing ADHD pharmacotherapy; executive function coaching.</span></div>
           </div>
         </article>
@@ -1099,15 +1090,13 @@
           <div class="ref-panel" id="ref-panel-grief" hidden>
             <p data-i18n="ref.ind.grief.p">Not for acute grief. For post-acute grief work — typically 3+ months after loss — nature provides structural metaphors (cycles, decay as generative, seasons) that complement narrative reconstruction of the bereaved's relationship with the deceased.</p>
             <div class="ind-meta"><strong data-i18n="ref.ind.format6">Format</strong>: <span data-i18n="ref.ind.grief.fmt">Individual, fortnightly, 6–10 sessions. Longer if complicated grief.</span></div>
-            <div class="ind-meta"><strong data-i18n="ref.ind.acts6">Pocket guide activities</strong>: <span data-i18n="ref.ind.grief.acts">Dead wood dialogue, threshold walk, tree council.</span></div>
             <div class="ind-meta"><strong data-i18n="ref.ind.combo6">Combines with</strong>: <span data-i18n="ref.ind.grief.combo">Continuing-bonds frameworks; narrative therapy; meaning reconstruction approaches.</span></div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-11', 11)" data-i18n="ref.rr.grief">Guide ch. 11, pp. 83–89</a></div>
           </div>
         </article>
       </div>
 
       <div class="ref-group" data-group="tier2">
-        <div class="tier-header" data-i18n="ref.ind.tier2">Tier 2 · Adjunctive — FBT as complement to primary treatment</div>
+        <div class="tier-header" data-i18n="ref.ind.tier2">Tier 2 · Adjunctive — FI as complement to primary treatment</div>
 
         <article class="indication-block ref-entry" data-kind="adjunctive">
           <div class="ref-trigger-row">
@@ -1117,9 +1106,8 @@
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
           <div class="ref-panel" id="ref-panel-adj-trauma" hidden>
-            <p data-i18n="ref.adj.trauma.p">FBT may support integration work once trauma has been stabilised through trauma-specific approaches (EMDR, CPT, phased trauma therapy). Never a primary trauma treatment. Requires specific training in trauma-informed practice.</p>
+            <p data-i18n="ref.adj.trauma.p">FI may support integration work once trauma has been stabilised through trauma-specific approaches (EMDR, CPT, phased trauma therapy). Never a primary trauma treatment. Requires specific training in trauma-informed practice.</p>
             <div class="ind-meta"><strong data-i18n="ref.adj.need">Required before use</strong>: <span data-i18n="ref.adj.trauma.pre">Stabilisation phase complete; participant's window of tolerance mapped; trauma-informed practitioner competency; clear containment protocol if activation occurs outdoors.</span></div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-12', 12)" data-i18n="ref.rr.trauma">Guide ch. 12, pp. 90–96</a></div>
           </div>
         </article>
 
@@ -1174,7 +1162,7 @@
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
           <div class="ref-panel" id="ref-panel-flag-diss" hidden>
-            <p data-i18n="ref.flag.diss.p">Natural environments can both ground and trigger dissociation. Outcomes depend critically on the practitioner's competence in working with dissociation, not on the setting. Without that competence, FBT is contraindicated for this presentation.</p>
+            <p data-i18n="ref.flag.diss.p">Natural environments can both ground and trigger dissociation. Outcomes depend critically on the practitioner's competence in working with dissociation, not on the setting. Without that competence, FI is contraindicated for this presentation.</p>
           </div>
         </article>
 
@@ -1198,7 +1186,7 @@
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
           <div class="ref-panel" id="ref-panel-flag-sui" hidden>
-            <p data-i18n="ref.flag.sui.p">FBT is not contraindicated in recent (not current) suicidality if stabilisation is established. However, remote-setting risk considerations (access to means, phone signal, extraction time) require explicit planning and shared with the participant.</p>
+            <p data-i18n="ref.flag.sui.p">FI is not contraindicated in recent (not current) suicidality if stabilisation is established. However, remote-setting risk considerations (access to means, phone signal, extraction time) require explicit planning and shared with the participant.</p>
           </div>
         </article>
 
@@ -1228,7 +1216,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-pop-ado" hidden>
             <p data-i18n="ref.pop.ado.p">Outdoor settings reduce the clinical gaze that many adolescents find intolerable indoors. Side-by-side dialogue (while walking, while working with bark, while making something) feels less confrontational than face-to-face. Peer-relational dynamics in group formats can be productively used but require active facilitation. Safeguarding considerations: clear contact protocols, supervision ratio, terrain safety, mobile phone policy, and explicit protocol for what is and is not shared with parents or carers. Parent/carer communication should be agreed with the young person at the outset and revisited.</p>
-            <div class="related-reading"><a href="javascript:openChapter('ch-10', 10)" data-i18n="ref.rr.pop_ado">Guide ch. 10, pp. 76–82</a></div>
           </div>
         </article>
 
@@ -1241,7 +1228,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-pop-bo" hidden>
             <p data-i18n="ref.pop.bo.p">A recognisable trajectory: recognition of depletion → permission to rest without guilt → gradual reconnection with interest and capacity → reorientation toward a sustainable rhythm. Early sessions should demand almost nothing. Resist the participant's frequent wish to make sessions productive. The guilt response to stillness is the clinical material. Expect the engagement to be longer than for anxiety — burnout recovers on a slower timescale and cannot be compressed.</p>
-            <div class="related-reading"><a href="javascript:openChapter('ch-8', 8)" data-i18n="ref.rr.pop_bo">Guide ch. 8, pp. 65–70</a></div>
           </div>
         </article>
 
@@ -1254,7 +1240,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-pop-grief" hidden>
             <p data-i18n="ref.pop.grief.p">Timing matters. Acute grief (weeks to a few months) is usually better served by gentler, more contained settings; forest sessions at that stage can feel exposed. In post-acute grief, nature-as-witness framing is particularly generative: the forest does not try to console, does not look away, continues its own processes. Dead wood, seasonal change, and threshold metaphors offer structural support for mourning work. Build explicit closure protocols for sessions where grief activates strongly.</p>
-            <div class="related-reading"><a href="javascript:openChapter('ch-11', 11)" data-i18n="ref.rr.pop_grief">Guide ch. 11, pp. 83–89</a></div>
           </div>
         </article>
 
@@ -1267,7 +1252,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-pop-group" hidden>
             <p data-i18n="ref.pop.group.p">Group facilitation outdoors has distinct dynamics from individual work and from indoor groups. Dispersion (participants at different spots during an activity) requires attention-holding across space. Divergent responses in a shared setting — one person finding a quality of peace, another finding discomfort — are the norm, not a problem; manage them in the integration phase rather than suppressing them. Decide in advance between circle formats (tighter containment) and dispersed formats (greater autonomy, more complex facilitation). Ideal group size is usually 6–10, with clear sightlines.</p>
-            <div class="related-reading"><a href="javascript:openChapter('ch-7', 7)" data-i18n="ref.rr.pop_group">Guide ch. 7, pp. 59–64</a></div>
           </div>
         </article>
     </div>
@@ -1361,8 +1345,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-int-cbt" hidden>
             <p data-i18n="ref.int.cbt.p">Cognitive-behavioural work benefits from concrete contexts for testing predictions. The forest provides unpredictable, real-world material for behavioural experiments: predicting one's own response, testing avoidance patterns against actual tolerance, graded exposure to externally-imposed discomfort (cold, unfamiliar terrain, uncertainty).</p>
-            <div class="int-pair" data-i18n="ref.int.cbt.pair">Pairs with: sit spot, tracking &amp; noticing, threshold walk.</div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-6', 6)" data-i18n="ref.rr.int_cbt">Guide ch. 6, pp. 45–58</a></div>
           </div>
         </article>
 
@@ -1375,8 +1357,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-int-act" hidden>
             <p data-i18n="ref.int.act.p">The forest offers rich metaphor for values work: what directions does this tree grow toward, what has it had to adapt around, where does it give way. Many ACT practitioners find values clarification substantially easier with a concrete referent than with abstract worksheets.</p>
-            <div class="int-pair" data-i18n="ref.int.act.pair">Pairs with: roots &amp; branches, tree council, weather dialogue.</div>
-            <div class="related-reading"><a href="javascript:openChapter('ch-6', 6)" data-i18n="ref.rr.int_act">Guide ch. 6, pp. 45–58</a></div>
           </div>
         </article>
 
@@ -1389,7 +1369,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-int-som" hidden>
             <p data-i18n="ref.int.som.p">Somatic work depends on sustained interoceptive attention, which is easily disrupted by indoor sensory saturation. The forest provides a lower-noise environment where subtle body signals become available. Movement becomes part of processing rather than an interruption of it.</p>
-            <div class="int-pair" data-i18n="ref.int.som.pair">Pairs with: forest breathing, bark rubbing &amp; texture journal, silent paired walk.</div>
           </div>
         </article>
 
@@ -1402,7 +1381,6 @@
           </div>
           <div class="ref-panel" id="ref-panel-int-nar" hidden>
             <p data-i18n="ref.int.nar.p">The threshold walk is a re-authoring structure in physical form — moving from one version of the story to another through a marked middle. Tree council externalises voices and positions. The forest provides spatial scaffolding for narrative moves that would otherwise be imagined.</p>
-            <div class="int-pair" data-i18n="ref.int.nar.pair">Pairs with: threshold walk, tree council, sensory mapping.</div>
           </div>
         </article>
     </div>
@@ -1419,8 +1397,8 @@
     <button class="back-btn" onclick="navigate('')">← <span data-i18n="nav.back">Back</span></button>
     <div class="section-header">
       <span class="badge" data-i18n="pathway.learn.title">Learn More</span>
-      <h2 data-i18n="learn.heading">Understanding Forest-Based Therapy</h2>
-      <p data-i18n="learn.sub">A grounding in the theory, evidence base, and mechanisms behind FBT before entering practice.</p>
+      <h2 data-i18n="learn.heading">Understanding Forest-Based Interventions</h2>
+      <p data-i18n="learn.sub">A grounding in the theory, evidence base, and mechanisms behind FI before entering practice.</p>
     </div>
     <div class="modules-grid">
 
@@ -1429,11 +1407,11 @@
           <div class="learn-blocks">
             <div class="learn-block">
               <h4 data-i18n="mod.what.b1.h">Definition</h4>
-              <p data-i18n="mod.what.b1.p">Forest-Based Therapy (FBT) is a structured therapeutic approach that uses natural forest environments as the primary setting for psychological and physical health interventions. It is distinct from recreational forest use — the therapeutic relationship, intentional framing, and evidence-based activities are central.</p>
+              <p data-i18n="mod.what.b1.p">A Forest-Based Intervention (FI) is a structured therapeutic approach that uses natural forest environments as the primary setting for psychological and physical health interventions. It is distinct from recreational forest use — the therapeutic relationship, intentional framing, and evidence-based activities are central.</p>
             </div>
             <div class="learn-block">
               <h4 data-i18n="mod.what.b2.h">Distinction from Forest Bathing</h4>
-              <p data-i18n="mod.what.b2.p">Shinrin-yoku (forest bathing) is passive immersion. FBT is practitioner-guided, goal-oriented, and often combines somatic, creative, and relational elements within a clinical or semi-clinical framework.</p>
+              <p data-i18n="mod.what.b2.p">Shinrin-yoku (forest bathing) is passive immersion. FI is practitioner-guided, goal-oriented, and often combines somatic, creative, and relational elements within a clinical or semi-clinical framework.</p>
             </div>
             <div class="learn-block">
               <h4 data-i18n="mod.what.b3.h">Core mechanisms</h4>
@@ -1449,7 +1427,7 @@
           <div class="learn-blocks">
             <div class="learn-block">
               <h4 data-i18n="mod.evidence.b1.h">Mental health outcomes</h4>
-              <p data-i18n="mod.evidence.b1.p">FBT interventions show consistent reductions in anxiety, depression, and perceived stress across adolescent and adult populations, with moderate to strong effect sizes in controlled studies.</p>
+              <p data-i18n="mod.evidence.b1.p">FI interventions show consistent reductions in anxiety, depression, and perceived stress across adolescent and adult populations, with moderate to strong effect sizes in controlled studies.</p>
               <span class="evidence-pill">Kaleta et al., Frontiers in Psychology, 2025</span>
             </div>
             <div class="learn-block">
@@ -1477,7 +1455,7 @@
             </div>
             <div class="learn-block">
               <h4 data-i18n="mod.contra.b3.h">Ethical boundaries</h4>
-              <p data-i18n="mod.contra.b3.p">FBT does not replace clinical treatment. Practitioners must define their role clearly — whether they are acting as guides, facilitators, or co-therapists — and work within their competency boundaries.</p>
+              <p data-i18n="mod.contra.b3.p">FI does not replace clinical treatment. Practitioners must define their role clearly — whether they are acting as guides, facilitators, or co-therapists — and work within their competency boundaries.</p>
             </div>
           </div>
         </div>
@@ -1641,7 +1619,7 @@
         <div class="module-body">
           <div class="learn-blocks">
             <div class="learn-block"><h4 data-i18n="mod.plan.b1.h">Opening (10–15 min)</h4><p data-i18n="mod.plan.b1.p">Arrival and grounding. Brief check-in — physical and emotional. Orient participants to the space without agenda. Let the environment land before introducing any structure.</p></div>
-            <div class="learn-block"><h4 data-i18n="mod.plan.b2.h">Core activity (30–45 min)</h4><p data-i18n="mod.plan.b2.p">The main intervention — one of the pocket guide activities or a practitioner-designed protocol. Hold the frame lightly: nature often redirects sessions productively.</p></div>
+            <div class="learn-block"><h4 data-i18n="mod.plan.b2.h">Core activity (30–45 min)</h4><p data-i18n="mod.plan.b2.p">The main intervention — one of the Pocketbook activities or a practitioner-designed protocol. Hold the frame lightly: nature often redirects sessions productively.</p></div>
             <div class="learn-block"><h4 data-i18n="mod.plan.b3.h">Integration (10–15 min)</h4><p data-i18n="mod.plan.b3.p">Sitting debrief in the space. Open questions: what came up, what surprised, what stays. Avoid over-interpretation — hold space rather than analyse.</p></div>
             <div class="learn-block"><h4 data-i18n="mod.plan.b4.h">Transition out (5–10 min)</h4><p data-i18n="mod.plan.b4.p">Conscious re-entry. Acknowledge the shift back to everyday space. A simple closing gesture (breath, touch of bark, naming one thing) supports psychological closure.</p></div>
           </div>
@@ -1709,7 +1687,7 @@
               <div class="reflect-prompt-num">4</div>
               <div class="reflect-prompt-body">
                 <h4 data-i18n="mod.reflectself.b4.h">What needs to be brought to supervision?</h4>
-                <p data-i18n="mod.reflectself.b4.p">Note any countertransference, boundary moments, clinical concerns, or powerful projective material that emerged. FBT supervision should include the environmental dimension explicitly.</p>
+                <p data-i18n="mod.reflectself.b4.p">Note any countertransference, boundary moments, clinical concerns, or powerful projective material that emerged. FI supervision should include the environmental dimension explicitly.</p>
                 <label class="reflect-answer-label" for="reflect-answer-3" data-i18n="pbui.reflect.answer.placeholder">Your notes…</label>
                 <textarea class="reflect-answer" id="reflect-answer-3" rows="2" oninput="pbSaveReflectAnswer(3, this.value)" data-i18n-attr="placeholder:pbui.reflect.answer.placeholder" placeholder="Your notes…"></textarea>
               </div>
