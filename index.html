@@ -25,6 +25,7 @@
 <link rel="stylesheet" href="styles-pocketbook.css">
 <link rel="stylesheet" href="styles-walk-forest.css">
 <link rel="stylesheet" href="styles-export.css">
+<link rel="stylesheet" href="styles-tools.css">
 <link rel="stylesheet" href="styles-responsive.css">
 </head>
 <body>
@@ -159,43 +160,31 @@
   <!-- ENTRY (role-aware) -->
   <div id="entry-screen" class="screen active">
 
-    <!-- PRACTITIONER ENTRY -->
+    <!-- PRACTITIONER ENTRY: choose the intervention first -->
     <div data-role-only="practitioner">
       <div class="entry-label" data-i18n="entry.label">Welcome</div>
       <h1 class="entry-title" data-i18n="entry.title">What brings you here today?</h1>
-      <p class="entry-sub" data-i18n="entry.sub">Select a pathway to access resources tailored to your current need.</p>
-      <div class="pathways">
-        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('learn')" onkeydown="activateOnKey(event, () => navigate('learn'))">
+      <p class="entry-sub" data-i18n="entry.sub">Choose where you are working.</p>
+      <div class="pathways pathways-two">
+        <div class="pathway-card pathway-card-big" role="button" tabindex="0" onclick="navigate('fi')" onkeydown="activateOnKey(event, () => navigate('fi'))">
           <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 24v-8"/><path d="M6 17c0-5 3.5-9 8-11 4.5 2 8 6 8 11"/><path d="M10 24h8"/></svg></span>
-          <h2 data-i18n="pathway.learn.title">Learn More</h2>
-          <p data-i18n="pathway.learn.desc">Understand the theoretical basis of forest-based interventions, the evidence, and the key principles behind it.</p>
-          <span class="pathway-arrow" data-i18n="pathway.learn.cta">Explore →</span>
+          <h2 data-i18n="pathway.fi.title">Forest-Based Interventions</h2>
+          <p data-i18n="pathway.fi.desc">Plan, prepare, run and debrief sessions in the forest: the Pocketbook and session builder, the session arc, screening and the joint briefing.</p>
+          <span class="pathway-arrow" data-i18n="pathway.fi.cta">Open the forest tools →</span>
         </div>
-        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('implement')" onkeydown="activateOnKey(event, () => navigate('implement'))">
-          <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="14" r="10"/><path d="M14 5v2M14 21v2M5 14h2M21 14h2"/><path d="M17 10l-5 5M11 18l4-4"/><circle cx="14" cy="14" r="1.5" fill="currentColor" stroke="none"/></svg></span>
-          <h2 data-i18n="pathway.implement.title">Implement in Practice</h2>
-          <p data-i18n="pathway.implement.desc">Session planning tools, the 17-activity Pocketbook, pre/post checklists, and safety considerations.</p>
-          <span class="pathway-arrow" data-i18n="pathway.implement.cta">Get started →</span>
-        </div>
-        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('reflect')" onkeydown="activateOnKey(event, () => navigate('reflect'))">
-          <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="5" width="14" height="18" rx="2"/><path d="M11 5V3h6v2"/><path d="M10 12h8M10 16h8M10 20h5"/></svg></span>
-          <h2 data-i18n="pathway.reflect.title">Reflect & Evaluate</h2>
-          <p data-i18n="pathway.reflect.desc">Post-session reflection prompts, outcome tracking, and practitioner self-assessment tools.</p>
-          <span class="pathway-arrow" data-i18n="pathway.reflect.cta">Open →</span>
-        </div>
-        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('reference')" onkeydown="activateOnKey(event, () => navigate('reference'))">
-          <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 22V8"/><path d="M5 22V8a1 1 0 0 1 1-1h8v15H6a1 1 0 0 1-1-1z"/><path d="M23 22V8a1 1 0 0 0-1-1h-8v15h8a1 1 0 0 0 1-1z"/><path d="M5 8a3 3 0 0 1 3-3h6M23 8a3 3 0 0 0-3-3h-6"/></svg></span>
-          <h2 data-i18n="pathway.reference.title">Clinical Reference</h2>
-          <p data-i18n="pathway.reference.desc">Indications, contraindications, population-specific guidance, dosage reference, and integration with other modalities.</p>
-          <span class="pathway-arrow" data-i18n="pathway.reference.cta">Open →</span>
-        </div>
-        <div class="pathway-card" role="button" tabindex="0" onclick="navigate('guide')" onkeydown="activateOnKey(event, () => navigate('guide'))">
-          <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l10-4 10 4-10 4z"/><path d="M4 14l10-4 10 4"/><path d="M4 20l10-4 10 4"/></svg></span>
-          <h2 data-i18n="pathway.guide.title">Companion Guide</h2>
-          <p data-i18n="pathway.guide.desc">The full Forest4Youth practitioner handbook. Theory, practice, clinical application, and professional context across 14 chapters.</p>
-          <span class="pathway-arrow" data-i18n="pathway.guide.cta">Browse chapters →</span>
+        <div class="pathway-card pathway-card-big" role="button" tabindex="0" onclick="navigate('ivn')" onkeydown="activateOnKey(event, () => navigate('ivn'))">
+          <span class="pathway-icon"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="20" height="13" rx="3"/><path d="M9 13a2 2 0 1 0 0 .01M19 13a2 2 0 1 0 0 .01"/><path d="M12 20l2-3 2 3"/></svg></span>
+          <h2 data-i18n="pathway.ivn.title">Immersive Virtual Nature</h2>
+          <p data-i18n="pathway.ivn.desc">Before the forest, on the ward, after the forest: plan a session, run the checks, keep the distress steps at hand, debrief and keep a record.</p>
+          <span class="pathway-arrow" data-i18n="pathway.ivn.cta">Open the IVN tools →</span>
         </div>
       </div>
+      <nav class="entry-more" aria-label="More">
+        <a href="#guide" data-i18n="pathway.guide.title">Practical Guides</a>
+        <a href="#reference" data-i18n="pathway.reference.title">Clinical Reference</a>
+        <a href="#learn" data-i18n="pathway.learn.title">Learn More</a>
+        <a href="#reflect" data-i18n="pathway.reflect.title">Reflect &amp; Evaluate</a>
+      </nav>
     </div>
 
     <!-- PARTICIPANT ENTRY -->
@@ -641,6 +630,16 @@
   </div>
 
     <!-- PRACTITIONER: COMPANION GUIDE -->
+  <!-- FOREST-BASED INTERVENTIONS: tool hub (fi-tools.js) -->
+  <div id="fi-screen" class="screen" data-role-only="practitioner">
+    <div id="fi-root"></div>
+  </div>
+
+  <!-- IMMERSIVE VIRTUAL NATURE: tool hub (ivn-tools.js) -->
+  <div id="ivn-screen" class="screen" data-role-only="practitioner">
+    <div id="ivn-root"></div>
+  </div>
+
   <div id="guide-screen" class="screen" data-role-only="practitioner">
     <button class="back-btn" onclick="navigate('')">← <span data-i18n="nav.back">Back</span></button>
     <div class="section-header">
@@ -683,122 +682,164 @@
 
     <div id="mod-contraindications">
 
-      <!-- Absolute contraindications: always visible, never collapsible,
-           never touched by refApplyFilter() — it only ever queries
-           .ref-group/.ref-entry, and this section is neither. -->
+      <!-- Contraindications, screening and IVN risks — from the project's
+           guidance for professionals (screening and contra-indications) and
+           the IVN practical guide (risks to consider before use). The first
+           section is never collapsed and never touched by refApplyFilter(). -->
       <section class="ref-absolute" aria-labelledby="ref-absolute-heading">
         <div class="ref-absolute-head">
-          <h3 id="ref-absolute-heading" data-i18n="ref.con.abs">Absolute — do not proceed without specialist consultation</h3>
-          <span class="ref-absolute-badge" data-i18n="ref.abs.badge">Never collapsed</span>
+          <h3 id="ref-absolute-heading" data-i18n="ref.con.abs">Likely to make forest work unsuitable for now</h3>
+          <span class="ref-absolute-badge" data-i18n="ref.abs.badge">Case by case</span>
         </div>
-        <div class="warn-block">
-          <h4 data-i18n="ref.con.a1.h">Acute or recent psychosis</h4>
-          <p data-i18n="ref.con.a1.p">Active psychotic symptoms or psychosis within a period too recent for stability (judgement of treating team). Perceptual ambiguity of forest environments can compound symptoms. Specialist psychiatric consultation required before any consideration.</p>
-        </div>
-        <div class="warn-block">
-          <h4 data-i18n="ref.con.a2.h">Active suicidal crisis without stabilisation</h4>
-          <p data-i18n="ref.con.a2.p">Current plan, intent, or recent attempt without adequate safety planning and clinical stabilisation. Outdoor setting complicates crisis response time and may introduce means. Crisis care takes precedence.</p>
-        </div>
-        <div class="warn-block">
-          <h4 data-i18n="ref.con.a3.h">Severe untreated agoraphobia or specific nature-related phobia</h4>
-          <p data-i18n="ref.con.a3.p">Where the forest setting itself would constitute an untreated phobic exposure without gradient and without specific therapeutic framing. Phobia treatment with graded exposure must precede or be the explicit frame of the work.</p>
-        </div>
-        <div class="warn-block">
-          <h4 data-i18n="ref.con.a4.h">Conditions requiring continuous clinical monitoring</h4>
-          <p data-i18n="ref.con.a4.p">Acute eating disorder below safe weight, brittle diabetes, unstable epilepsy, severe cardiac conditions, or any condition where the distance from emergency response exceeds safe intervention time.</p>
-        </div>
+        <div class="warn-block"><h4 data-i18n="ref.con.a1.h">Active psychosis</h4></div>
+        <div class="warn-block"><h4 data-i18n="ref.con.a2.h">Acute suicidality</h4></div>
+        <div class="warn-block"><h4 data-i18n="ref.con.a3.h">Severe anxiety disorders preventing outdoor participation</h4></div>
+        <div class="warn-block"><h4 data-i18n="ref.con.a4.h">Eating disorders with active physical risk, unless movement can be realistically restricted</h4></div>
+        <div class="warn-block"><h4 data-i18n="ref.con.a5.h">Any condition where physical exertion is clinically contra-indicated</h4></div>
+        <p class="ref-con-note" data-i18n="ref.con.note">Symptom severity, not diagnosis, is the primary criterion. The clinical team screens before the first session, keeps suitability under review, and decides case by case, knowing the young person. Where forest work isn't right yet, nature connection can be introduced gradually, in a sensory garden or through immersive virtual nature, with the forest held as a later goal.</p>
+        <p class="ref-con-tools"><span data-i18n="ref.con.tools">Screening tools:</span> <a href="#fi/screening" data-i18n="ref.con.tools.fi">Forest</a> · <a href="#ivn/check" data-i18n="ref.con.tools.ivn">Immersive virtual nature</a></p>
       </section>
 
       <div class="ref-group" data-group="con-relative">
-        <div class="tier-header" data-i18n="ref.con.rel">Relative — protocol adaptation required</div>
+        <div class="tier-header" data-i18n="ref.con.rel">Before the first session: the assessment</div>
 
         <article class="indication-block ref-entry" data-kind="contraindication">
           <div class="ref-trigger-row">
-            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r1" aria-labelledby="ref-title-con-r1" onclick="refToggleEntry(this)"></button>
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-s1" aria-labelledby="ref-title-con-s1" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-r1" data-i18n="ref.con.r1.h">PTSD with possible nature triggers</h4>
+            <h4 id="ref-title-con-s1" data-i18n="ref.con.s1.h">Mobility and physical access</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="ref-panel" id="ref-panel-con-r1" hidden>
-            <p data-i18n="ref.con.r1.p">Assess history before proceeding. Specific sensory modalities (certain sounds, light conditions, smells, enclosure/exposure) may trigger. Co-design the session with explicit trigger map and exit protocol.</p>
+          <div class="ref-panel" id="ref-panel-con-s1" hidden>
+            <p data-i18n="ref.con.s1.p">Can the young person physically access the planned site? Are there terrain, weather or exertion factors to account for?</p>
           </div>
         </article>
 
         <article class="indication-block ref-entry" data-kind="contraindication">
           <div class="ref-trigger-row">
-            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r2" aria-labelledby="ref-title-con-r2" onclick="refToggleEntry(this)"></button>
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-s2" aria-labelledby="ref-title-con-s2" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-r2" data-i18n="ref.con.r2.h">Significant mobility impairment</h4>
+            <h4 id="ref-title-con-s2" data-i18n="ref.con.s2.h">Sensory sensitivities</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="ref-panel" id="ref-panel-con-r2" hidden>
-            <p data-i18n="ref.con.r2.p">Adapt site and activity selection. Accessible trails, reduced distance, stationary activities. Not a contraindication — an activity selection constraint. Consult with the participant on capability and preference.</p>
+          <div class="ref-panel" id="ref-panel-con-s2" hidden>
+            <p data-i18n="ref.con.s2.p">Will the outdoor environment be therapeutic or overwhelming? Consider noise, texture, temperature, unpredictability.</p>
           </div>
         </article>
 
         <article class="indication-block ref-entry" data-kind="contraindication">
           <div class="ref-trigger-row">
-            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r3" aria-labelledby="ref-title-con-r3" onclick="refToggleEntry(this)"></button>
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-s3" aria-labelledby="ref-title-con-s3" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-r3" data-i18n="ref.con.r3.h">Severe pollen or insect allergy</h4>
+            <h4 id="ref-title-con-s3" data-i18n="ref.con.s3.h">Safety</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="ref-panel" id="ref-panel-con-r3" hidden>
-            <p data-i18n="ref.con.r3.p">Seasonal scheduling, pharmacological management (antihistamines, epinephrine auto-injector accessible), site selection (avoid known allergen concentrations). Written protocol agreed with participant and practitioner.</p>
+          <div class="ref-panel" id="ref-panel-con-s3" hidden>
+            <p data-i18n="ref.con.s3.p">What is the risk of self-harm, elopement or substance use in an uncontrolled environment?</p>
           </div>
         </article>
 
         <article class="indication-block ref-entry" data-kind="contraindication">
           <div class="ref-trigger-row">
-            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r4" aria-labelledby="ref-title-con-r4" onclick="refToggleEntry(this)"></button>
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-s4" aria-labelledby="ref-title-con-s4" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-r4" data-i18n="ref.con.r4.h">Extreme thermoregulatory sensitivity</h4>
+            <h4 id="ref-title-con-s4" data-i18n="ref.con.s4.h">Readiness</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="ref-panel" id="ref-panel-con-r4" hidden>
-            <p data-i18n="ref.con.r4.p">Certain medications, menopause, cardiovascular conditions, MS. Adjust clothing requirements, session length, time of day, seasonal timing. Not a barrier — a scheduling constraint.</p>
+          <div class="ref-panel" id="ref-panel-con-s4" hidden>
+            <p data-i18n="ref.con.s4.p">Is the young person open to a nature-based approach? Have they been given clear information about what it involves?</p>
           </div>
         </article>
 
         <article class="indication-block ref-entry" data-kind="contraindication">
           <div class="ref-trigger-row">
-            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-r5" aria-labelledby="ref-title-con-r5" onclick="refToggleEntry(this)"></button>
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-s5" aria-labelledby="ref-title-con-s5" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-r5" data-i18n="ref.con.r5.h">Sensory processing profiles requiring modified sensory load</h4>
+            <h4 id="ref-title-con-s5" data-i18n="ref.con.s5.h">Relational readiness</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="ref-panel" id="ref-panel-con-r5" hidden>
-            <p data-i18n="ref.con.r5.p">Autism spectrum profiles, post-concussion syndrome, migraine disorders. Choose sites by sensory characteristics (reduced acoustic variation, predictable light, known routes). Pre-session site briefing reduces startle load.</p>
+          <div class="ref-panel" id="ref-panel-con-s5" hidden>
+            <p data-i18n="ref.con.s5.p">Is there an established therapeutic relationship with at least one adult in the group?</p>
           </div>
         </article>
+
+        <article class="indication-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-s6" aria-labelledby="ref-title-con-s6" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-s6" data-i18n="ref.con.s6.h">Physical health</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-s6" hidden>
+            <p data-i18n="ref.con.s6.p">Any physical health conditions, including medication side effects, that could be affected by outdoor activity, weather or exertion?</p>
+          </div>
+        </article>
+
       </div>
 
       <div class="ref-group" data-group="con-competency">
-        <div class="tier-header" data-i18n="ref.con.comp">Practitioner competency contraindications</div>
+        <div class="tier-header" data-i18n="ref.con.comp">Immersive virtual nature: screen before first use</div>
 
         <article class="warn-block ref-entry" data-kind="contraindication">
           <div class="ref-trigger-row">
-            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-c1" aria-labelledby="ref-title-con-c1" onclick="refToggleEntry(this)"></button>
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-v1" aria-labelledby="ref-title-con-v1" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-c1" data-i18n="ref.con.c1.h">When clinical complexity exceeds practitioner training</h4>
+            <h4 id="ref-title-con-v1" data-i18n="ref.con.v1.h">Photosensitive epilepsy</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="ref-panel" id="ref-panel-con-c1" hidden>
-            <p data-i18n="ref.con.c1.p">If the presenting complexity exceeds the practitioner's clinical training, FI is contraindicated for that practitioner with that participant — regardless of how well the indication fits the approach. Refer, consult, or decline. This is a matter of clinical responsibility, not of willingness.</p>
+          <div class="ref-panel" id="ref-panel-con-v1" hidden>
+            <p data-i18n="ref.con.v1.p">Check for a personal or family history of seizures or photosensitivity. Avoid flickering, flashing or rapidly changing high-contrast content. Calm nature scenes are usually low-risk, but verify first.</p>
           </div>
         </article>
 
         <article class="warn-block ref-entry" data-kind="contraindication">
           <div class="ref-trigger-row">
-            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-c2" aria-labelledby="ref-title-con-c2" onclick="refToggleEntry(this)"></button>
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-v2" aria-labelledby="ref-title-con-v2" onclick="refToggleEntry(this)"></button>
             <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
-            <h4 id="ref-title-con-c2" data-i18n="ref.con.c2.h">When FI-specific training is absent</h4>
+            <h4 id="ref-title-con-v2" data-i18n="ref.con.v2.h">Motion sensitivity and cybersickness</h4>
             <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
           </div>
-          <div class="ref-panel" id="ref-panel-con-c2" hidden>
-            <p data-i18n="ref.con.c2.p">Holding a clinical qualification without FI-specific training is not sufficient for FI practice. The setting introduces factors (safety, group dynamics outdoors, transference shifts in informal space) that require specific preparation.</p>
+          <div class="ref-panel" id="ref-panel-con-v2" hidden>
+            <p data-i18n="ref.con.v2.p">Ask about motion sickness and migraine. Cybersickness can occur with headsets and immersive rooms alike, and may appear during the session or in the hours after, so monitor tolerance during the first exposure and check again later.</p>
           </div>
         </article>
+
+        <article class="warn-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-v3" aria-labelledby="ref-title-con-v3" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-v3" data-i18n="ref.con.v3.h">Clinical and diagnostic profile</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-v3" hidden>
+            <p data-i18n="ref.con.v3.p">Some presentations, for example active psychosis, marked dissociation or certain trauma histories, call for more caution, more support, or may mean immersive virtual nature is not appropriate at this time.</p>
+          </div>
+        </article>
+
+        <article class="warn-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-v4" aria-labelledby="ref-title-con-v4" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-v4" data-i18n="ref.con.v4.h">Trauma-linked content</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-v4" hidden>
+            <p data-i18n="ref.con.v4.p">Anticipate environments or elements that could reactivate difficult material, and adapt the content before the session.</p>
+          </div>
+        </article>
+
+        <article class="warn-block ref-entry" data-kind="contraindication">
+          <div class="ref-trigger-row">
+            <button type="button" class="ref-trigger" aria-expanded="false" aria-controls="ref-panel-con-v5" aria-labelledby="ref-title-con-v5" onclick="refToggleEntry(this)"></button>
+            <span class="ref-kind-badge" data-i18n="ref.filter.contraindication">Contraindication</span>
+            <h4 id="ref-title-con-v5" data-i18n="ref.con.v5.h">Headset age rating</h4>
+            <svg class="ref-chevron" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+          </div>
+          <div class="ref-panel" id="ref-panel-con-v5" hidden>
+            <p data-i18n="ref.con.v5.p">For headset use, check the manufacturer's age rating (many are 12–13+). The immersive room avoids this hardware limit.</p>
+          </div>
+        </article>
+
       </div>
 
     </div>
@@ -1268,16 +1309,16 @@
         <div class="module-body">
           <div class="learn-blocks">
             <div class="learn-block">
-              <h4 data-i18n="mod.contra.b1.h">Clinical contraindications</h4>
-              <p data-i18n="mod.contra.b1.p">Acute psychosis, severe agoraphobia or nature-related phobias, recent suicidal crisis without stabilisation, and conditions requiring close clinical supervision should be carefully assessed before outdoor referral.</p>
+              <h4 data-i18n="mod.contra.b1.h">Likely to make forest work unsuitable for now</h4>
+              <p data-i18n="mod.contra.b1.p">Active psychosis; acute suicidality; severe anxiety disorders preventing outdoor participation; eating disorders with active physical risk, unless movement can be realistically restricted; any condition where physical exertion is clinically contra-indicated.</p>
             </div>
             <div class="learn-block">
-              <h4 data-i18n="mod.contra.b2.h">Environmental considerations</h4>
-              <p data-i18n="mod.contra.b2.p">Severe allergies (pollen, insect), extreme weather sensitivity, or significant mobility limitations require protocol adaptation, not necessarily exclusion.</p>
+              <h4 data-i18n="mod.contra.b2.h">Severity, not diagnosis</h4>
+              <p data-i18n="mod.contra.b2.p">The clinical team screens before the first session and keeps suitability under review. Symptom severity, not diagnosis, is the primary criterion, and decisions are made case by case by the people who know the young person.</p>
             </div>
             <div class="learn-block">
-              <h4 data-i18n="mod.contra.b3.h">Ethical boundaries</h4>
-              <p data-i18n="mod.contra.b3.p">FI does not replace clinical treatment. Practitioners must define their role clearly — whether they are acting as guides, facilitators, or co-therapists — and work within their competency boundaries.</p>
+              <h4 data-i18n="mod.contra.b3.h">When the forest isn't right yet</h4>
+              <p data-i18n="mod.contra.b3.p">Nature connection can be introduced gradually, for example in a sensory garden or through immersive virtual nature, with the forest held as a later goal.</p>
             </div>
           </div>
         </div>
@@ -1423,14 +1464,14 @@
       <!-- Pre-session checklist -->
       <div class="module-card is-door" id="mod-pre">
         <div class="module-body">
-          <p class="assessment-intro" data-i18n="mod.pre.intro">Run through this before each session. Tap each item to mark it.</p>
+          <p class="assessment-intro" data-i18n="mod.pre.intro">Before each session. Tap each item to mark it.</p>
           <div class="check-list">
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.1">Site assessed for safety (uneven ground, fallen branches, insects)</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.2">Participant contraindications reviewed (allergies, mobility, clinical flags)</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.3">Weather checked and appropriate clothing communicated</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.4">Session objectives defined and activity selected</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.5">Informed consent and confidentiality confirmed</label></div>
-            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.6">Emergency procedure in place (first aid kit, phone signal, exit route)</label></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.1">Site checked with the landowner or forest authority, visited in advance; hazards noted and a plan for bad weather, injuries and route changes shared with everyone</label></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.2">Roles agreed before you start: who does what, and how you will communicate during the session</label></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.3">Carers, professionals and other adults briefed before the young people arrive</label></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.4">How phones and devices will be handled agreed with the young person</label></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.5">The young person informed and consenting: risks and how they are managed, expected behaviours, how long it takes, what to bring, who to ask</label></div>
+            <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox"><label data-i18n="check.pre.6">A consistent arrival routine planned, such as a circle or a brief check-in</label></div>
           </div>
           <p class="checklist-note" data-i18n="mod.pre.note">This checklist does not replace a full risk assessment for clinical settings.</p>
         </div>
@@ -1439,12 +1480,9 @@
       <!-- Session planner -->
       <div class="module-card is-door" id="mod-plan">
         <div class="module-body">
-          <div class="learn-blocks">
-            <div class="learn-block"><h4 data-i18n="mod.plan.b1.h">Opening (10–15 min)</h4><p data-i18n="mod.plan.b1.p">Arrival and grounding. Brief check-in — physical and emotional. Orient participants to the space without agenda. Let the environment land before introducing any structure.</p></div>
-            <div class="learn-block"><h4 data-i18n="mod.plan.b2.h">Core activity (30–45 min)</h4><p data-i18n="mod.plan.b2.p">The main intervention — one of the Pocketbook activities or a practitioner-designed protocol. Hold the frame lightly: nature often redirects sessions productively.</p></div>
-            <div class="learn-block"><h4 data-i18n="mod.plan.b3.h">Integration (10–15 min)</h4><p data-i18n="mod.plan.b3.p">Sitting debrief in the space. Open questions: what came up, what surprised, what stays. Avoid over-interpretation — hold space rather than analyse.</p></div>
-            <div class="learn-block"><h4 data-i18n="mod.plan.b4.h">Transition out (5–10 min)</h4><p data-i18n="mod.plan.b4.p">Conscious re-entry. Acknowledge the shift back to everyday space. A simple closing gesture (breath, touch of bark, naming one thing) supports psychological closure.</p></div>
-          </div>
+          <!-- Rendered by fi-tools.js (fiRenderPlanModule) from FI_TOOLS.structure:
+               the session arc and session lengths, with a link to #fi/structure. -->
+          <div id="fi-plan-summary"></div>
         </div>
       </div>
 
@@ -1773,6 +1811,10 @@
 <script src="guide-fi-data.js"></script>
 <script src="guide-ivn-data.js"></script>
 <script src="guide-render.js"></script>
+<script src="fi-tools-data.js"></script>
+<script src="tools-common.js"></script>
+<script src="fi-tools.js"></script>
+<script src="ivn-tools.js"></script>
 <!-- Role-screen hero: the animated trail scene behind the two role
      bubbles. Loaded after pocketbook-init.js since it calls into
      ACTIVITIES/GROUPS/VISUAL/PB_I18N/pbT()/pbTagT()/pbGroupT()/

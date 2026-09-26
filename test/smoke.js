@@ -192,6 +192,7 @@ const TESTS = [
   ['Learn More — accordion + single column', (b) => testAccordionScreen(b, '#learn', 'practitioner', ['mod-what', 'mod-evidence'])],
   ['role/nav state survives a real refresh', testRoleSurvivesRefresh],
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
+  ['Forest and IVN hubs — tools work end to end, guidance content, no codes', testToolHubs],
   ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
 ];
 
@@ -232,6 +233,65 @@ async function testPracticalGuides(browser) {
   await page.locator('#gd-article-ivn .gd-check button').first().click();
   const ticked = await page.locator('#gd-article-ivn .gd-check button').first().getAttribute('aria-checked');
   assert.strictEqual(ticked, 'true', 'checklist items tick');
+  await page.close();
+}
+
+async function testToolHubs(browser) {
+  // Forest and IVN hubs (fi-tools.js, ivn-tools.js): cards render, a full
+  // IVN session (plan → check → run → debrief) saves a record carrying the
+  // plan's choices and before/after measures, first-use screening is
+  // remembered per young-person ID, and Reference/Implement show the
+  // guidance-for-professionals content. No document codes anywhere.
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => { localStorage.clear(); setRole('practitioner'); window.location.hash = 'fi'; });
+  await page.waitForTimeout(200);
+  assert.ok(await page.locator('#fi-root .hub-card').count() >= 7, 'forest hub shows its tool cards');
+  await page.evaluate(() => { window.location.hash = 'ivn'; });
+  await page.waitForTimeout(200);
+  assert.ok(await page.locator('#ivn-root .hub-card').count() >= 9, 'IVN hub shows its tool cards');
+
+  await page.evaluate(() => { window.location.hash = 'ivn/plan'; });
+  await page.waitForTimeout(200);
+  await page.fill('input[data-f="youngId"]', 'T-1');
+  await page.click('.ivn-module[data-module="C"]');
+  await page.click('.gd-chips[data-name="intention"] .gd-chip >> nth=0');
+  await page.click('.gd-chips[data-name="measures"] .gd-chip >> nth=0');
+  await page.evaluate(() => { window.location.hash = 'ivn/check'; });
+  await page.waitForTimeout(200);
+  for (const btn of await page.$$('.gd-check[data-name="first"] button')) await btn.click();
+  await page.evaluate(() => { window.location.hash = 'ivn/run'; });
+  await page.waitForTimeout(200);
+  await page.fill('input[data-when="before"]', '8');
+  await page.evaluate(() => ivnEnd());
+  await page.waitForTimeout(200);
+  await page.fill('input[data-when="after"]', '4');
+  await page.fill('textarea[data-d="keep"]', 'the stream');
+  await page.evaluate(() => ivnSaveRecord());
+  await page.waitForTimeout(250);
+  const rec = await page.locator('.ivn-record').innerText();
+  assert.ok(/T-1/.test(rec) && /C — After the forest/.test(rec) && /8 → 4/.test(rec) && /the stream/.test(rec),
+    'saved record carries ID, module, before→after measure and the module C question');
+  const screened = await page.evaluate(() => (storageLoad('f4y.ivn.screening', {})['T-1'] || {}).items);
+  assert.ok(screened && screened.length === 6 && screened.every(Boolean), 'first-use screening remembered for the ID');
+
+  await page.evaluate(() => { window.location.hash = 'reference'; });
+  await page.waitForTimeout(200);
+  const ref = await page.locator('#mod-contraindications').innerText();
+  assert.ok(/Symptom severity, not diagnosis/.test(ref) && /Eating disorders with active physical risk/.test(ref), 'Reference contraindications follow the guidance for professionals');
+  await page.evaluate(() => { window.location.hash = 'implement/mod-plan'; });
+  await page.waitForTimeout(250);
+  const plan = await page.locator('#fi-plan-summary').innerText();
+  assert.ok(/Threshold/.test(plan) && /2–3 hours/.test(plan), 'session structure shows the arc and session lengths');
+
+  let text = '';
+  for (const h of ['fi', 'fi/structure', 'fi/prepare', 'fi/screening', 'fi/debrief', 'ivn', 'ivn/plan', 'ivn/check', 'ivn/run', 'ivn/measures', 'ivn/distress', 'ivn/young']) {
+    await page.evaluate(h => { window.location.hash = h; }, h);
+    await page.waitForTimeout(120);
+    text += await page.locator('.screen.active').innerText();
+  }
+  assert.ok(!/D1\.\d|D2\.\d|Canva|Appendix|Chapter \d|WP1|deliverable/i.test(text), 'tool screens must not show document codes');
+  await page.evaluate(() => localStorage.clear());
   await page.close();
 }
 

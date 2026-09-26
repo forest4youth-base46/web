@@ -1098,5 +1098,492 @@ const GUIDE_IVN = {
   "This guide does not replace clinical protocols, risk assessments, or governance requirements set by your organisation or regulatory body. All activities involving vulnerable young people must fall within the practitioner's scope of practice and receive appropriate supervision and any necessary approvals.",
   "Where virtual reality equipment is used, follow the manufacturer's instructions, age ratings, and hygiene guidance, and your organisation's policies on equipment and infection control.",
   "Forest4Youth is funded by the European Union under Interreg North-West Europe (NWE0400643). Its contents are the sole responsibility of the Forest4Youth project and do not reflect the views of the EU, partner countries, or the Managing Authority. Project partners accept no liability for outcomes arising from the application of this guidance."
- ]
+ ],
+ "tools": {
+  "modules": [
+   {
+    "key": "A",
+    "title": "Before the forest",
+    "sub": "Preparation Before Real Forest Exposure",
+    "params": [
+     "~10–20 min immersion + time to talk",
+     "Individual, or small group before a shared stay in real forest",
+     "Room with a forest scene similar to the target site; soundscape; comfortable seating; gentle sensory add-ons"
+    ],
+    "details": [
+     {
+      "label": "When to use",
+      "text": "Before a planned forest visit or stay, especially when the young person is anxious, reluctant, or unfamiliar with woodland, or has a specific fear such as darkness or getting lost. \"It could allow for a gradual adaptation.\""
+     },
+     {
+      "label": "Suggested format",
+      "text": "Individual or small group; a group session works well for preparing several young people before a shared stay. Where possible, choose an environment that resembles the actual forest, since the aim is preparation for that specific place. Calming-passive or lightly guided. Often a short series rather than a single session."
+     },
+     {
+      "label": "Before",
+      "text": "In addition to the shared arc: link the session explicitly to the upcoming forest plan, choose an environment resembling the real site, and name the young person's specific worries (night, weather, the unknown). Coordinate with the forest team."
+     },
+     {
+      "label": "During",
+      "text": "Use the immersion to talk through what the real visit will involve while the young person explores at their own pace. Where a specific fear is at stake (for example, night falling), it can be introduced gently and gradually."
+     },
+     {
+      "label": "How to end",
+      "text": "Connect the experience back to the real visit, leaving the young person with a sense of familiarity and something concrete to expect."
+     },
+     {
+      "label": "What to watch out for",
+      "text": "Do not promise the real forest will feel the same; a relatable scene is not an identical one. Watch for the simulation raising new worries, and address them before the visit."
+     }
+    ],
+    "purpose": "To familiarize a young person with the forest before a real visit or stay, reduce anticipatory anxiety and offer a graded first contact, turning an environment that may feel hostile or unknown into something already a little familiar. \"A bridge… before doing it in real nature.\""
+   },
+   {
+    "key": "B",
+    "title": "A pause on the ward",
+    "sub": "Short Regulation Sessions in Care Settings",
+    "params": [
+     "~5–15 min, kept short especially at first",
+     "Individual, or with a clinician",
+     "Calming scene; soundscape; full sensory comfort (mats, reclined or supported positioning, dim light, proprioceptive support); sensory add-ons central"
+    ],
+    "details": [
+     {
+      "label": "When to use",
+      "text": "At a moment of anxiety, agitation, emotional overload, withdrawal, or boredom; as a short scheduled reset; whenever a young person needs to step out of the ward environment for a few minutes. \"They could use that room for five minutes.\""
+     },
+     {
+      "label": "Suggested format",
+      "text": "Usually one-to-one with mental health practitioner. Calming-passive mode, with high sensory comfort and containment. Deliberately short."
+     },
+     {
+      "label": "Before",
+      "text": "The acute context allows a lighter, quicker setup, but still gain consent, confirm the young person can stop at any time, and let them make a quick environment choice. Respect contraindications (see Safety)."
+     },
+     {
+      "label": "During",
+      "text": "Keep demand to a minimum: let them settle, breathe, and \"simply settle into it and let it have an effect.\" A calm, undemanding presence nearby is what matters; there is no agenda."
+     },
+     {
+      "label": "How to end",
+      "text": "Bring them out gently and check briefly how they feel. Some young people become drowsy or fall asleep, \"the majority of them will fall asleep,\" so plan for that."
+     },
+     {
+      "label": "What to watch out for",
+      "text": "IVN is not automatically calming and can overstimulate; watch arousal, keep early sessions short, and make sure the timing fits the young person's current state."
+     }
+    ],
+    "purpose": "A brief, accessible pause for calming and regulation within the ward: to settle, interrupt rumination, ease agitation or overload, and offer sensory containment. This is the standalone use of IVN, for moments when real nature is out of reach. \"They feel calmed\"; the effect may carry into the rest of the day."
+   },
+   {
+    "key": "C",
+    "title": "After the forest",
+    "sub": "Transition and Integration After Forest Exposure",
+    "params": [
+     "~10–20 min + debrief",
+     "Individual, or the small group that visited together",
+     "A scene echoing the visited forest; soundscape; comfortable settling; sensory add-ons as usual"
+    ],
+    "details": [
+     {
+      "label": "When to use",
+      "text": "Shortly after a real forest visit or stay, especially when the return to the ward feels jarring, whenever the young person asks for it; and between forest sessions, to keep some continuity when direct access is not possible."
+     },
+     {
+      "label": "Suggested format",
+      "text": "Individual or small group. Choose an environment that echoes the forest they have just visited, for continuity. Reflective or guided mode; pairs naturally with a debrief."
+     },
+     {
+      "label": "Before",
+      "text": "In addition to the shared arc: time the session close to the return, and choose an environment that recalls where the young person has been."
+     },
+     {
+      "label": "During",
+      "text": "Use the immersion to hold and process the forest experience, what happened, what mattered, while keeping the calm before re-entering ward routine."
+     },
+     {
+      "label": "How to end",
+      "text": "Provide a gentle bridge back to the ward, and help the young person carry forward something from the forest experience [FBI practical guide, on endings and debrief]."
+     },
+     {
+      "label": "What to watch out for",
+      "text": "The session can reactivate difficult material from the real forest stay. Manage the contrast between the real forest and the simulation so it does not feel like a loss, and make sure it grounds the young person in the present rather than prolonging avoidance."
+     }
+    ],
+    "purpose": "To soften the abrupt return from a meaningful forest experience back to the institution, to hold and process what happened, and to maintain continuity with the forest when the young person cannot return to it soon. An \"in-between\" space, \" it could be the exit airlock,\" that helps them \" reconnect to reality\" gently."
+   }
+  ],
+  "checkFirst": [
+   "Photosensitive epilepsy: any personal or family history of seizures or photosensitivity? (If yes, avoid flickering/flashing content and consider whether to proceed.)",
+   "Motion sickness or migraine history noted (higher cybersickness risk, especially with a headset)",
+   "Clinical profile reviewed for caution (e.g. active psychosis, marked dissociation, trauma history) — suitable for now?",
+   "Trauma-linked environments or elements anticipated and noted",
+   "(Headset only) manufacturer age rating appropriate for this young person",
+   "Informed: side effects (nausea, dizziness) explained; agreed they can stop at any time"
+  ],
+  "checkEvery": [
+   "Consent confirmed; \"you can stop anytime\" agreed",
+   "Care intention set (links to your chosen measure — see the outcome and scale menu)",
+   "Personalization choices made (see the personalization menu)",
+   "Space safe and uncluttered; dim-light trip hazards cleared (headset: area cleared, seated use, boundary set); supervision in place",
+   "Equipment clean (headset cover / mats / blankets / cushions)",
+   "Quick before/after measure ready + tolerability check planned",
+   "Easy exit available throughout"
+  ],
+  "menu": [
+   {
+    "label": "Environment",
+    "options": [
+     "Forest",
+     "Coast",
+     "Mountain",
+     "Marine",
+     "Other"
+    ]
+   },
+   {
+    "label": "Mode",
+    "options": [
+     "Calming-passive",
+     "Guided",
+     "Exploratory"
+    ]
+   },
+   {
+    "label": "Sensory level",
+    "scale": [
+     "Lower",
+     "Higher"
+    ],
+    "steps": 3
+   },
+   {
+    "label": "Add-ons",
+    "options": [
+     "Soundscape",
+     "Scent",
+     "Temperature",
+     "Dimmed lighting",
+     "Body support (mat / cushion / hammock / reclined)"
+    ]
+   },
+   {
+    "label": "Social format",
+    "options": [
+     "Alone",
+     "With a clinician",
+     "Small group"
+    ]
+   },
+   {
+    "label": "Purpose",
+    "options": [
+     "Calming",
+     "Preparation",
+     "Memory",
+     "Connection"
+    ]
+   }
+  ],
+  "menuPrompts": "Two prompts to start: \"Is there a place that makes you feel calm?\" and, for forest preparation, \"What worries you about going to the forest?\"",
+  "menuRealism": "Match realism to purpose: for preparing a specific forest visit, choose a relatable or local scene; for calming, the most meaningful or preferred environment may matter more than accuracy.",
+  "debriefFields": [
+   {
+    "label": "Date"
+   },
+   {
+    "label": "Module",
+    "options": [
+     "A",
+     "B",
+     "C"
+    ]
+   },
+   {
+    "label": "Young person (ID)"
+   },
+   {
+    "label": "Overall, how was it?",
+    "options": [
+     "Positive",
+     "Neutral",
+     "Negative"
+    ]
+   },
+   {
+    "label": "What was it like?"
+   },
+   {
+    "label": "Anything that stood out?"
+   },
+   {
+    "label": "Anything you'd change next time?"
+   },
+   {
+    "label": "Any discomfort or cybersickness?",
+    "options": [
+     "No",
+     "Yes (note)"
+    ]
+   },
+   {
+    "label": "Module A: Do you feel more ready for the forest?",
+    "options": [
+     "More",
+     "Same",
+     "Less"
+    ]
+   },
+   {
+    "label": "Module C: What from the forest do you want to keep?"
+   },
+   {
+    "label": "Optional close: one word, or one object/image, for how you feel now"
+   }
+  ],
+  "recordFields": [
+   {
+    "label": "Date / time / duration"
+   },
+   {
+    "label": "Clinician"
+   },
+   {
+    "label": "Young person (ID)"
+   },
+   {
+    "label": "Module",
+    "options": [
+     "A",
+     "B",
+     "C"
+    ]
+   },
+   {
+    "label": "Setting",
+    "options": [
+     "Immersive room",
+     "Headset"
+    ]
+   },
+   {
+    "label": "Care intention"
+   },
+   {
+    "label": "Personalization: environment"
+   },
+   {
+    "label": "mode"
+   },
+   {
+    "label": "sensory level"
+   },
+   {
+    "label": "social format"
+   },
+   {
+    "label": "Measures (before → after)"
+   },
+   {
+    "label": "tolerability / cybersickness check",
+    "options": [
+     "OK",
+     "Issue (note)"
+    ]
+   },
+   {
+    "label": "Observations during (engagement, arousal, comfort, distress)"
+   },
+   {
+    "label": "Any distress / incident + action taken (see the steps for when a young person is overwhelmed)"
+   },
+   {
+    "label": "Debrief summary (1–2 lines)"
+   },
+   {
+    "label": "Carry forward (preferences, what worked, next-time adjustments)"
+   }
+  ],
+  "scales": [
+   {
+    "intention": "Reduce anxiety",
+    "domain": "Anxiety / state distress",
+    "quick": [
+     "Anxiety VAS (0–10)",
+     "SAM",
+     "STAI-S"
+    ],
+    "validated": [
+     "GAD-7",
+     "SCARED or RCADS-47",
+     "HADS-A",
+     "SIAS (social)"
+    ]
+   },
+   {
+    "intention": "Reduce stress",
+    "domain": "Stress",
+    "quick": [
+     "Stress VAS"
+    ],
+    "validated": [
+     "PSS (short)"
+    ]
+   },
+   {
+    "intention": "Lift / stabilise mood",
+    "domain": "Mood & affect",
+    "quick": [
+     "VAMS",
+     "SAM",
+     "I-PANAS-SF"
+    ],
+    "validated": [
+     "POMS-SF",
+     "PANAS"
+    ]
+   },
+   {
+    "intention": "Calm / regulate",
+    "domain": "Relaxation & bodily calm",
+    "quick": [],
+    "validated": [
+     "RSQ",
+     "Relaxation VAS",
+     "SAM (arousal)"
+    ]
+   },
+   {
+    "intention": "Restore / recover",
+    "domain": "Restoration & vitality",
+    "quick": [
+     "ROS",
+     "SVS (vitality)"
+    ],
+    "validated": [
+     "PRS-11 or SRRS (restorativeness)"
+    ]
+   },
+   {
+    "intention": "Interrupt rumination",
+    "domain": "Emotion regulation & rumination",
+    "quick": [
+     "State mindfulness (SMS / MAAS)"
+    ],
+    "validated": [
+     "ERQ-CA",
+     "RRS"
+    ]
+   },
+   {
+    "intention": "Support wellbeing",
+    "domain": "Wellbeing (broad)",
+    "quick": [],
+    "validated": [
+     "SWEMWBS",
+     "WHOQOL-26"
+    ]
+   },
+   {
+    "intention": "Engage / acceptability",
+    "domain": "Engagement, enjoyment, acceptability",
+    "quick": [
+     "Single-item Likert"
+    ],
+    "validated": [
+     "PACES",
+     "IMI",
+     "SUS (usability)"
+    ]
+   },
+   {
+    "intention": "Help feel safe",
+    "domain": "Perceived safety",
+    "quick": [],
+    "validated": [
+     "Single-item Likert / VAS"
+    ]
+   },
+   {
+    "intention": "Prepare for / reconnect with nature",
+    "domain": "Nature connectedness, appreciation, exposure & intention",
+    "quick": [],
+    "validated": [
+     "INS (1 pictorial item)",
+     "“readiness to go to the forest” single item",
+     "NR-6",
+     "CNS or NCI (connectedness)",
+     "VAS (appreciation of / aversion to nature)",
+     "NES, 4-item (nature exposure)",
+     "VAS or open questions (intention to spend time in nature)"
+    ]
+   },
+   {
+    "intention": "Gauge the IVN experience",
+    "domain": "Presence & usability (process)",
+    "quick": [],
+    "validated": [
+     "IPQ or SPES (presence)",
+     "SUS (usability)"
+    ]
+   },
+   {
+    "intention": "Let the young person define it",
+    "domain": "Patient-generated",
+    "quick": [],
+    "validated": [
+     "PSYCHLOPS"
+    ]
+   },
+   {
+    "intention": "Capture meaning",
+    "domain": "Qualitative",
+    "quick": [
+     "Short debrief"
+    ],
+    "validated": [
+     "Exit interview",
+     "open questions",
+     "photovoice",
+     "field diary"
+    ]
+   },
+   {
+    "intention": "Tolerability",
+    "domain": "Cybersickness",
+    "quick": [
+     "Tolerability single item",
+     "single-item discomfort or nausea rating (0–10)",
+     "brief pre-immersion motion-sickness screen (MSR)"
+    ],
+    "validated": [
+     "SSQ before and after each immersion (total score + nausea and oculomotor sub-scores)",
+     "at intake, susceptibility scales MSSQ-short and VIMSSQ-short"
+    ]
+   }
+  ],
+  "scalesHowTo": "How to use: start from the outcome you want to improve, then choose one or two measures, preferring the briefest that fits. Whatever the intention, always add a tolerability / cybersickness check. Obtain instruments from their original sources; some need a licence.",
+  "scalesSafety": "Safety, every session: whatever the intention, run a tolerability / cybersickness check before and after. Symptoms may appear after the session, so check again later (see Safety); risk is higher with moving or locomotion-based content.",
+  "distress": {
+   "intro": "For in-the-moment use. IVN is not automatically calming; act early.",
+   "watch": [
+    "Physical: nausea, dizziness, pallor, sweating, headache, eye strain",
+    "Emotional / behavioural: rising arousal or agitation, fear, tearfulness, freezing, dissociation, withdrawal, any request to stop"
+   ],
+   "act": [
+    "Stop now — remove the headset or end the projection; raise the lights gently; return to the ordinary room. Don't wait.",
+    "Stay calm and present — reassure, give space and time.",
+    "Cybersickness → rest, water, fresh air; let it settle before moving.",
+    "Emotional distress / trauma activation → ground and reorient (name the room and day; a simple sensory grounding; let vision and balance settle before standing). Do not push to continue or to \"process\" intensely now.",
+    "Escalate through your service's procedures if the young person decompensates, expresses risk, or shows distress beyond what the session can hold."
+   ],
+   "after": [
+    "Check in later the same day",
+    "Note what happened and the trigger (see the session record)",
+    "Adjust or pause IVN for this young person",
+    "Bring it to clinical supervision (see Making it work in your service)"
+   ]
+  },
+  "signs": "Watch continuously, not only at the end. Physical signs include nausea, dizziness, pallor, sweating, headache, and eye strain. Emotional and behavioural signs include rising arousal or agitation, fear, tearfulness, freezing, dissociation, distress tied to the content, withdrawal, or any request to stop."
+ }
 };

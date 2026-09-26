@@ -123,6 +123,9 @@ function setLang(lang) {
   // next reload.
   // The Practical Guides screen is also built from JS (guide-render.js).
   if (typeof guideRender === 'function') guideRender();
+  // …and so are the Forest / IVN tool hubs (fi-tools.js, ivn-tools.js).
+  if (typeof fiRender === 'function') fiRender();
+  if (typeof ivnRender === 'function') ivnRender();
   if (window.__pbInited) {
     pbRenderGroups();
     pbRenderFilters();

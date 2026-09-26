@@ -141,7 +141,7 @@
 
 .section-header { margin-bottom: 40px; }
 
-.section-header .badge {
+.section-header .badge, .tool-head .badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -156,7 +156,7 @@
   border-radius: var(--r-pill);
   margin-bottom: 18px;
 }
-.section-header .badge::before {
+.section-header .badge::before, .tool-head .badge::before {
   content: '';
   width: 6px; height: 6px;
   border-radius: 50%;
