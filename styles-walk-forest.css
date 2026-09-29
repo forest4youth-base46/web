@@ -324,3 +324,28 @@ body.wf-scene-on {
   --ink-soft:   #14302A;
   --ink-faint:  #234A3E;
 }
+
+/* ── renderer layers ──
+   #wf-scene's content is four stacked wrappers (walk-forest.js
+   wfEnsureLayers()): sky, gl (the WebGL canvas, 3D backdrop only), scene
+   (the SVG backdrop), ui (pins/controls/rail). Positioned with no z-index,
+   so they form no stacking contexts — children keep ranking against each
+   other exactly as they did when all of this was one innerHTML string. */
+.wf-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.wf-layer canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+/* ?wf=debug readout (walk-forest-3d.js wf3dDebug). */
+.wf3d-debug {
+  position: absolute; left: 50%; top: 110px; transform: translateX(-50%); z-index: 450;
+  font: 500 11px/1.4 ui-monospace, Menlo, monospace; color: #14302A;
+  background: rgba(251,249,244,0.85); padding: 4px 10px; border-radius: 6px; pointer-events: none;
+  white-space: nowrap;
+}
+.wf3d-haze {
+  position: absolute; left: 0; right: 0; top: 0; height: 170px; pointer-events: none;
+  background: linear-gradient(180deg, rgba(232,237,231,0.94) 0%, rgba(232,237,231,0.82) 55%, rgba(232,237,231,0) 100%);
+}
+@media (max-width: 768px) {
+  /* Same zoom:0.75 compensation as .wf-title-chip above: the phone header
+     is ~150px rendered, so ~200px here, plus fade room. */
+  .wf3d-haze { height: 300px; }
+}

@@ -120,6 +120,10 @@ const WF = {
   w: 1200, h: 640, raf: null, lastPaint: 0,
   onResize: null, onKey: null, onSceneClick: null,
   _wordsEnCache: {},
+  // Backdrop renderer: 'svg' (the painted scene below, always available) or
+  // '3d' (walk-forest-3d.js, WebGL). Only wfSetRenderer() reassigns it.
+  // The overlay (pins/controls/rail/chip/panel) is the same DOM either way.
+  renderer: 'svg', layers: null, overlayKey: '', suppressClick: false,
 };
 
 function wfWordsEnglish(activityId) {
@@ -452,6 +456,14 @@ function wfStep(now) {
   // scene's innerHTML ~30x/second even at rest, destroying and recreating
   // every pin/control/link out from under the pointer — real clicks on
   // them ranged from unreliable to impossible.
+  if (wfUse3d()) {
+    // The WebGL backdrop animates every frame on its own (camera spring,
+    // wind, particles) and moves the pins itself; the DOM overlay is only
+    // rebuilt when something it shows actually changed.
+    wf3dFrame(now);
+    if (wfOverlayKey(now) !== WF.overlayKey) wfRender();
+    return;
+  }
   if ((wasMoving || WF.mode === 'move') && now - (WF.lastPaint || 0) > 32) {
     WF.lastPaint = now; wfRender();
   }
@@ -502,13 +514,54 @@ function wfToggleSessionDrawer() {
 }
 
 // ───────── frame computation + render ─────────
+// One stop pin's screen geometry from its projected trail point — shared by
+// the full overlay render (wfComputeFrame) and the per-frame pin placement
+// the 3D backdrop does between full renders (wfPlacePins).
+function wfStopGeom(s, p, w, narrow) {
+  const gMeta = WF_GROUP_META[s.group];
+  const armed = Math.abs(p.d) < 0.34;
+  const size = Math.max(narrow ? 26 : 22, Math.min(64, w * (narrow ? 0.085 : 0.052) * p.scale));
+  const hit = Math.max(44, size + 18);
+  const near = p.scale;
+  const baseRx = w * 0.062 * near;
+  const chipW = Math.max(170, Math.min(300, w * 0.26));
+  const group = GROUPS.find(g => g.id === s.group);
+  return {
+    id: s.id, name: pbT(s, 'name'), sub: pbGroupT(group, 'title') + ' · ' + pbFmtDuration(s),
+    color: gMeta.color, glyph: gMeta.glyph,
+    aria: pbT(s, 'name') + ' — ' + pbGroupT(group, 'title') + ', ' + pbFmtDuration(s),
+    expanded: WF.openId === s.id, armed, showChip: armed || WF.openId === s.id,
+    op: Math.min(1, 0.35 + near * 1.1).toFixed(2),
+    cx: p.x.toFixed(1), baseY: p.y.toFixed(1),
+    pinLeft: p.x.toFixed(1), pinTop: (p.y - baseRx * 0.5).toFixed(1),
+    z: 200 + Math.round(near * 100),
+    hit, size,
+    // Narrow mode docks the "nearest stop" caption to a fixed band
+    // rather than following the pin — anchored from the bottom (above
+    // the rail/controls stack) rather than the top, since the top is
+    // where the site's own persistent header sits (#wf-scene is a fixed
+    // viewport-relative background behind every screen — see the
+    // comment on #wf-scene in index.html).
+    chipStyle: narrow
+      ? 'position:absolute;left:' + (12 - p.x).toFixed(1) + 'px;bottom:' + (230 + (p.y - baseRx * 0.5) - WF.h).toFixed(1) +
+        'px;width:' + (w - 24).toFixed(0) + 'px'
+      : 'position:absolute;left:' +
+        (Math.max(10, Math.min(w - chipW - 10, p.x - chipW / 2)) - p.x).toFixed(1) +
+        'px;top:' + (-size - 62).toFixed(1) + 'px;width:' + chipW.toFixed(0) + 'px',
+    baseRx: baseRx.toFixed(1),
+  };
+}
+
 function wfComputeFrame() {
   const w = WF.w, h = WF.h, lang = currentLang;
   const narrow = w < 768;
   const camIndex = Math.round(WF.cam);
+  // The 3D backdrop paints its own trail/trees/shrubs/set pieces, so the
+  // SVG-only geometry below is skipped (not just hidden) while it's active.
+  const three = wfUse3d();
 
   const trailPts = [];
-  for (let t = WF.cam - 0.7; t < WF.cam + 7.2; t += 0.22) {
+  if (!three) for (let t = WF.cam - 0.7; t < WF.cam + 7.2; t += 0.22) {
     const p = wfProject(t, 0);
     if (!p) continue;
     trailPts.push({ x: p.x, y: p.y, hw: w * 0.235 * p.scale });
@@ -521,7 +574,7 @@ function wfComputeFrame() {
   }
 
   const farTrees = [], nearTrees = [];
-  WF_TREES.forEach((tr) => {
+  if (!three) WF_TREES.forEach((tr) => {
     const p = wfProject(tr.at, tr.lat);
     if (!p || p.scale < 0.09 || p.scale > 3.2 || p.d > 12) return;
     const th = h * 0.44 * tr.h * p.scale;
@@ -556,7 +609,7 @@ function wfComputeFrame() {
   nearTrees.sort((a, b) => a._s - b._s);
 
   const dapples = [];
-  WF_DAPPLE.forEach((dp) => {
+  if (!three) WF_DAPPLE.forEach((dp) => {
     const p = wfProject(dp.at, dp.lat);
     if (!p || p.scale < 0.18 || p.d > 7) return;
     dapples.push({
@@ -567,7 +620,7 @@ function wfComputeFrame() {
   });
 
   const shrubs = [];
-  WF_SHRUBS.forEach((sh) => {
+  if (!three) WF_SHRUBS.forEach((sh) => {
     const p = wfProject(sh.at, sh.lat);
     if (!p || p.scale < 0.12 || p.scale > 3.2 || p.d > 10) return;
     const k = w * 0.032 * sh.s * p.scale;
@@ -581,45 +634,19 @@ function wfComputeFrame() {
 
   const stops = [];
   ACTIVITIES.forEach((s, i) => {
-    const gMeta = WF_GROUP_META[s.group];
-    const p = wfProject(i, WF_STOP_SIDE[s.id] || 0);
-    if (!p || p.scale < 0.16 || p.d > 6.4) return;
-    const armed = Math.abs(p.d) < 0.34;
-    const size = Math.max(narrow ? 26 : 22, Math.min(64, w * (narrow ? 0.085 : 0.052) * p.scale));
-    const hit = Math.max(44, size + 18);
-    const near = p.scale;
-    const baseRx = w * 0.062 * near;
-    const chipW = Math.max(170, Math.min(300, w * 0.26));
-    const group = GROUPS.find(g => g.id === s.group);
-    stops.push({
-      id: s.id, name: pbT(s, 'name'), sub: pbGroupT(group, 'title') + ' · ' + pbFmtDuration(s),
-      color: gMeta.color, glyph: gMeta.glyph,
-      aria: pbT(s, 'name') + ' — ' + pbGroupT(group, 'title') + ', ' + pbFmtDuration(s),
-      expanded: WF.openId === s.id, armed, showChip: armed || WF.openId === s.id,
-      op: Math.min(1, 0.35 + near * 1.1).toFixed(2),
-      cx: p.x.toFixed(1), baseY: p.y.toFixed(1),
-      pinLeft: p.x.toFixed(1), pinTop: (p.y - baseRx * 0.5).toFixed(1),
-      z: 200 + Math.round(near * 100),
-      hit, size,
-      // Narrow mode docks the "nearest stop" caption to a fixed band
-      // rather than following the pin — anchored from the bottom (above
-      // the rail/controls stack) rather than the top, since the top is
-      // where the site's own persistent header sits (#wf-scene is a fixed
-      // viewport-relative background behind every screen — see the
-      // comment on #wf-scene in index.html).
-      chipStyle: narrow
-        ? 'position:absolute;left:' + (12 - p.x).toFixed(1) + 'px;bottom:' + (230 + (p.y - baseRx * 0.5) - WF.h).toFixed(1) +
-          'px;width:' + (w - 24).toFixed(0) + 'px'
-        : 'position:absolute;left:' +
-          (Math.max(10, Math.min(w - chipW - 10, p.x - chipW / 2)) - p.x).toFixed(1) +
-          'px;top:' + (-size - 62).toFixed(1) + 'px;width:' + chipW.toFixed(0) + 'px',
-      baseRx: baseRx.toFixed(1),
-    });
+    const p = wfStopProject(i, WF_STOP_SIDE[s.id] || 0);
+    if (!p || p.scale < 0.16 || p.d > 6.4) {
+      // The 3D backdrop keeps every pin in the DOM (hidden) so wfPlacePins()
+      // can move them per frame without rebuilding anything.
+      if (three) stops.push(Object.assign(wfStopGeom(s, p || { x: -9999, y: -9999, scale: 0.5, d: 99 }, w, narrow), { idx: i, culled: true }));
+      return;
+    }
+    stops.push(Object.assign(wfStopGeom(s, p, w, narrow), three ? { idx: i } : {}));
   });
   stops.sort((a, b) => parseFloat(a.baseRx) - parseFloat(b.baseRx));
 
   const setPieces = [];
-  ACTIVITIES.forEach((s, i) => {
+  if (!three) ACTIVITIES.forEach((s, i) => {
     const p = wfProject(i, 0);
     if (!p) return;
     const d = p.d;
@@ -657,11 +684,7 @@ function wfComputeFrame() {
   const walking = WF.mode === 'move' && !WF.paused && !WF.openId && !WF.reduced;
   const openStop = ACTIVITIES.find(s => s.id === WF.openId) || null;
   const now = typeof performance !== 'undefined' ? performance.now() : 0;
-  let status = t('walk.status.walking');
-  if (WF.openId) status = t('walk.status.paused');
-  else if (WF.paused && WF.resumeAt !== Infinity) {
-    status = t('walk.status.resuming').replace('{n}', String(Math.max(1, Math.ceil((WF.resumeAt - now) / 1000))));
-  }
+  const status = wfStatusText(now);
 
   // Shrunk from the original 0.36/320 cap, which put the walker at ~60%+
   // of a near tree's height — too close to tree scale to read as a person
@@ -686,7 +709,7 @@ function wfComputeFrame() {
 
   return {
     trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setLayer,
-    narrow, walking, sunOpacity, sunWidth, sunGlow,
+    narrow, walking, three, seated, shoeless, atId, sunOpacity, sunWidth, sunGlow,
     stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
     status,
     useArtSlot: false, poseStand: !seated, poseSeated: seated,
@@ -706,6 +729,14 @@ function wfComputeFrame() {
       id: openStop.id,
     } : null,
   };
+}
+
+function wfStatusText(now) {
+  if (WF.openId) return t('walk.status.paused');
+  if (WF.paused && WF.resumeAt !== Infinity) {
+    return t('walk.status.resuming').replace('{n}', String(Math.max(1, Math.ceil((WF.resumeAt - now) / 1000))));
+  }
+  return t('walk.status.walking');
 }
 
 // Every activity's own tuned lateral "side" offset from the trail centre —
@@ -811,43 +842,16 @@ function wfPanelHTML(frame) {
     '</div>';
 }
 
-function wfRender() {
-  if (!WF.el) return;
-  wfMeasure();
-  const frame = wfComputeFrame();
-
-  const sceneSvg = '' +
-    '<g>' + frame.farTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>' +
-    '<g>' + frame.shrubs.map(sh => '<g opacity="' + sh.op + '"><ellipse cx="' + sh.cx + '" cy="' + sh.cy + '" rx="' + sh.rx + '" ry="' + sh.ry + '" fill="' + sh.fill + '"/><ellipse cx="' + sh.cx2 + '" cy="' + sh.cy2 + '" rx="' + sh.rx2 + '" ry="' + sh.ry2 + '" fill="' + sh.fill + '"/></g>').join('') + '</g>' +
-    '<path d="' + frame.trailD + '" fill="#D8CDAF"/>' +
-    '<g>' + frame.dapples.map(dp => '<ellipse cx="' + dp.cx + '" cy="' + dp.cy + '" rx="' + dp.rx + '" ry="' + dp.ry + '" fill="#F2EBD8" opacity="' + dp.op + '"/>').join('') + '</g>' +
-    '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
-
-  const pinsHtml = frame.stops.map(st => '' +
-    '<div style="position:absolute;left:' + st.pinLeft + 'px;top:' + st.pinTop + 'px;width:0;height:0;z-index:' + st.z + '">' +
-      '<button type="button" class="wf-pin-btn" aria-label="' + wfEsc(st.aria) + '" aria-expanded="' + st.expanded + '" onclick="wfOpenStop(\'' + st.id + '\')" ' +
-        'style="left:' + (-st.hit / 2).toFixed(1) + 'px;top:' + (-st.size / 2 - st.hit / 2).toFixed(1) + 'px;width:' + st.hit.toFixed(1) + 'px;height:' + st.hit.toFixed(1) + 'px">' +
-        '<div class="wf-pin-disc" style="width:' + st.size.toFixed(1) + 'px;height:' + st.size.toFixed(1) + 'px;border-color:' + (st.armed ? '#B8552E' : '#FBF9F4') + '">' +
-          '<svg viewBox="0 0 32 32" style="width:' + (st.size * 0.56).toFixed(1) + 'px;height:' + (st.size * 0.56).toFixed(1) + 'px;display:block" fill="none" stroke="' + st.color + '" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + st.glyph + '"/></svg>' +
-          (st.armed ? '<svg viewBox="0 0 40 40" style="position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);pointer-events:none" aria-hidden="true"><circle class="wf-ping" cx="20" cy="20" r="16" fill="none" stroke="#B8552E" stroke-width="2"/></svg>' : '') +
-        '</div>' +
-      '</button>' +
-      (st.showChip ? '<div class="wf-pin-chip" style="' + st.chipStyle + '"><div class="wf-pin-chip-name">' + wfEsc(st.name) + '</div><div class="wf-pin-chip-sub">' + wfEsc(st.sub) + '</div></div>' : '') +
-    '</div>'
-  ).join('');
-
-  const railHtml = frame.rail.map(rn => '<div title="' + wfEsc(rn.title) + '" style="' + rn.style + '"></div>').join('');
-
-  const html = '' +
-    '<div class="wf-blur-layer">' +
+// Sky band + funder "sun": shared by both backdrops. The 3D canvas is
+// transparent above its horizon, so this shows through it and trees
+// occlude the sun exactly as they do in the SVG scene.
+function wfSkyHTML(frame) {
+  return '' +
     '<div style="position:absolute;left:0;right:0;top:0;height:47%;background:linear-gradient(180deg,#E7EEE4 0%,#DCE6DE 58%,#D3E0D6 100%)"></div>' +
     '<div class="wf-drift" style="position:absolute;left:-14%;top:-20%;width:70%;height:36%;border-radius:50%;background:#EEF3EB;opacity:.7;filter:blur(1px)"></div>' +
     '<div class="wf-drift2" style="position:absolute;right:-16%;top:-13%;width:78%;height:34%;border-radius:50%;background:#EAF0E8;opacity:.55"></div>' +
     '<div class="wf-drift" style="position:absolute;left:34%;top:-6%;width:32%;height:18%;border-radius:50%;background:#EEF3EB;opacity:.4;filter:blur(1px)"></div>' +
-    '<svg style="position:absolute;left:0;right:0;top:29%;width:100%;height:20%;display:block" viewBox="0 0 1000 140" preserveAspectRatio="none" aria-hidden="true">' +
-      '<path d="M0,122 C130,64 250,96 380,74 C520,50 630,88 780,66 C880,52 950,68 1000,60 L1000,140 L0,140 Z" fill="#C6D5C7" opacity="0.5"/>' +
-      '<path d="M0,132 C160,94 300,112 440,94 C580,78 700,106 840,90 C920,82 970,94 1000,88 L1000,140 L0,140 Z" fill="#B7CAC0" opacity="0.5"/>' +
-    '</svg>' +
+    (frame.three ? '' : wfSvgHillsHTML()) +
     '<div class="wf-glow" style="position:absolute;left:22%;top:-8%;width:6%;height:62%;background:linear-gradient(180deg,rgba(251,249,244,.55),rgba(251,249,244,0));transform:skewX(-9deg);filter:blur(4px);pointer-events:none"></div>' +
     '<div class="wf-glow2" style="position:absolute;left:64%;top:-6%;width:5%;height:58%;background:linear-gradient(180deg,rgba(251,249,244,.5),rgba(251,249,244,0));transform:skewX(-7deg);filter:blur(4px);pointer-events:none"></div>' +
     // Funder credit (Interreg North-West Europe / Forest4Youth), sitting
@@ -862,9 +866,34 @@ function wfRender() {
     // .wf-sun's own idle-drift animation (styles-walk-forest.css) can
     // freely animate the <img>'s transform without a CSS animation and an
     // inline style fighting over the same property on the same element.
-    '<div style="position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%)">' +
+    // In 3D mode the credit sits above the canvas (z-index:1) rather than
+    // behind the canopy: real perspective trees would otherwise cover it
+    // for most of the walk, and it's a funder acknowledgement that has to
+    // stay visible, not decoration.
+    '<div style="position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%)' + (frame.three ? ';z-index:1' : '') + '">' +
       '<img src="assets/logo-interreg-forest4youth.png" alt="' + wfEsc(t('walk.funder')) + '" class="wf-sun" style="display:block;width:' + frame.sunWidth + 'px;height:auto;opacity:' + frame.sunOpacity + ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.35));pointer-events:none" />' +
-    '</div>' +
+    '</div>';
+}
+
+function wfSvgHillsHTML() {
+  return '' +
+    '<svg style="position:absolute;left:0;right:0;top:29%;width:100%;height:20%;display:block" viewBox="0 0 1000 140" preserveAspectRatio="none" aria-hidden="true">' +
+      '<path d="M0,122 C130,64 250,96 380,74 C520,50 630,88 780,66 C880,52 950,68 1000,60 L1000,140 L0,140 Z" fill="#C6D5C7" opacity="0.5"/>' +
+      '<path d="M0,132 C160,94 300,112 440,94 C580,78 700,106 840,90 C920,82 970,94 1000,88 L1000,140 L0,140 Z" fill="#B7CAC0" opacity="0.5"/>' +
+    '</svg>';
+}
+
+// Everything the SVG backdrop paints between the sky and the overlay:
+// ground, trail, trees, set pieces, the walker. Not used by the 3D backdrop.
+function wfSvgSceneHTML(frame) {
+  const sceneSvg = '' +
+    '<g>' + frame.farTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>' +
+    '<g>' + frame.shrubs.map(sh => '<g opacity="' + sh.op + '"><ellipse cx="' + sh.cx + '" cy="' + sh.cy + '" rx="' + sh.rx + '" ry="' + sh.ry + '" fill="' + sh.fill + '"/><ellipse cx="' + sh.cx2 + '" cy="' + sh.cy2 + '" rx="' + sh.rx2 + '" ry="' + sh.ry2 + '" fill="' + sh.fill + '"/></g>').join('') + '</g>' +
+    '<path d="' + frame.trailD + '" fill="#D8CDAF"/>' +
+    '<g>' + frame.dapples.map(dp => '<ellipse cx="' + dp.cx + '" cy="' + dp.cy + '" rx="' + dp.rx + '" ry="' + dp.ry + '" fill="#F2EBD8" opacity="' + dp.op + '"/>').join('') + '</g>' +
+    '<g>' + frame.nearTrees.map(tr => wfTreeMarkup(tr)).join('') + '</g>';
+
+  return '' +
     '<div style="position:absolute;left:0;right:0;top:47%;bottom:0;background:linear-gradient(180deg,#B9BA9C 0%,#A9AA8E 38%,#9B9C79 100%)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:40%;height:7.5%;background:#B4C8BC;opacity:.7;filter:blur(3px)"></div>' +
     '<div style="position:absolute;left:0;right:0;top:44.5%;height:5%;background:#C8D8D0;opacity:.8;filter:blur(2px)"></div>' +
@@ -878,7 +907,33 @@ function wfRender() {
     '<svg style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:150" aria-hidden="true">' + frame.setLayer + '</svg>' +
     '<div style="position:absolute;left:50%;bottom:' + (WF.h * 0.055).toFixed(0) + 'px;transform:translateX(-58%);width:' + (frame.charH * 0.52).toFixed(0) + 'px;height:' + frame.charH.toFixed(0) + 'px;z-index:320;pointer-events:none;transition:opacity .6s;opacity:' + (frame.hidden ? 0 : 1) + '">' +
       '<div class="wf-bob" style="width:100%;height:100%;position:relative">' + wfCharacterSVG(frame) + '</div>' +
-    '</div>' +
+    '</div>';
+}
+
+// The interactive layer: pins (+ arrival chip), title chip, controls,
+// status, rail, list link. Identical markup for both backdrops — only the
+// pins' screen positions come from a different projection.
+function wfOverlayHTML(frame) {
+  const pinsHtml = frame.stops.map(st => '' +
+    '<div ' + (frame.three ? 'data-wf-stop="' + st.idx + '" ' : '') + 'style="position:absolute;left:' + st.pinLeft + 'px;top:' + st.pinTop + 'px;width:0;height:0;z-index:' + st.z + (st.culled ? ';visibility:hidden' : '') + '">' +
+      '<button type="button" class="wf-pin-btn" aria-label="' + wfEsc(st.aria) + '" aria-expanded="' + st.expanded + '" onclick="wfOpenStop(\'' + st.id + '\')" ' +
+        'style="left:' + (-st.hit / 2).toFixed(1) + 'px;top:' + (-st.size / 2 - st.hit / 2).toFixed(1) + 'px;width:' + st.hit.toFixed(1) + 'px;height:' + st.hit.toFixed(1) + 'px">' +
+        '<div class="wf-pin-disc" style="width:' + st.size.toFixed(1) + 'px;height:' + st.size.toFixed(1) + 'px;border-color:' + (st.armed ? '#B8552E' : '#FBF9F4') + '">' +
+          '<svg viewBox="0 0 32 32" style="width:' + (st.size * 0.56).toFixed(1) + 'px;height:' + (st.size * 0.56).toFixed(1) + 'px;display:block" fill="none" stroke="' + st.color + '" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + st.glyph + '"/></svg>' +
+          (st.armed ? '<svg viewBox="0 0 40 40" style="position:absolute;inset:-9px;width:calc(100% + 18px);height:calc(100% + 18px);pointer-events:none" aria-hidden="true"><circle class="wf-ping" cx="20" cy="20" r="16" fill="none" stroke="#B8552E" stroke-width="2"/></svg>' : '') +
+        '</div>' +
+      '</button>' +
+      (st.showChip ? '<div class="wf-pin-chip" style="' + st.chipStyle + '"><div class="wf-pin-chip-name">' + wfEsc(st.name) + '</div><div class="wf-pin-chip-sub">' + wfEsc(st.sub) + '</div></div>' : '') +
+    '</div>'
+  ).join('');
+
+  const railHtml = frame.rail.map(rn => '<div title="' + wfEsc(rn.title) + '" style="' + rn.style + '"></div>').join('');
+
+  return '' +
+    // 3D only: a soft paper-toned haze under the site header. The SVG
+    // scene has open sky there; real trees fill it, which left the header's
+    // text unreadable against dark trunks and crowns.
+    (frame.three ? '<div class="wf3d-haze"></div>' : '') +
     pinsHtml +
     '<div class="wf-title-chip"><div class="wf-title-chip-main">' + wfEsc(t('walk.title')) + '</div><div class="wf-title-chip-sub">' + wfEsc(frame.stepLabel) + '</div></div>' +
     (frame.narrow ? '<div style="position:absolute;left:0;right:0;bottom:0;height:70px;background:rgba(244,241,234,0.92);border-top:1px solid #DCD6C8;pointer-events:none"></div>' : '') +
@@ -901,16 +956,121 @@ function wfRender() {
     // fixed viewport-relative layer (see index.html) behind every screen,
     // so this and the title chip above both need to duck under it
     // explicitly rather than assuming they start below it.
-    '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:220px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>' +
-    '</div>';
+    '<a href="#implement/mod-pocket" class="wf-list-link" style="' + (frame.narrow ? 'right:14px;top:220px' : 'right:20px;bottom:22px') + '">' + wfEsc(t('walk.listlink')) + '</a>';
+}
 
-  WF.el.innerHTML = html;
+// Layer skeleton inside #wf-scene. Built once and kept, so the 3D canvas
+// (inside the "gl" layer) survives every re-render. The wrappers are
+// positioned but carry no z-index, so they create no stacking contexts:
+// paint order is exactly the old single-innerHTML order.
+function wfEnsureLayers() {
+  const L = WF.layers;
+  if (L && L.root.parentNode === WF.el) return L;
+  WF.el.innerHTML = '<div class="wf-blur-layer">' +
+    '<div class="wf-layer" data-wf-layer="sky"></div>' +
+    '<div class="wf-layer" data-wf-layer="gl"></div>' +
+    '<div class="wf-layer" data-wf-layer="scene"></div>' +
+    '<div class="wf-layer" data-wf-layer="ui"></div></div>';
+  const root = WF.el.firstChild;
+  const q = (n) => root.querySelector('[data-wf-layer="' + n + '"]');
+  WF.layers = { root, sky: q('sky'), gl: q('gl'), scene: q('scene'), ui: q('ui') };
+  return WF.layers;
+}
+
+function wfUse3d() {
+  return WF.renderer === '3d' && typeof wf3dReady === 'function' && wf3dReady();
+}
+
+function wfRender() {
+  if (!WF.el) return;
+  wfMeasure();
+  const frame = wfComputeFrame();
+  const L = wfEnsureLayers();
+  // Only replace the sky when it actually changed, so its slow CSS drift
+  // animations aren't restarted by every repaint.
+  const sky = wfSkyHTML(frame);
+  if (L.sky._wfHtml !== sky) { L.sky.innerHTML = sky; L.sky._wfHtml = sky; }
+  L.scene.innerHTML = frame.three ? '' : wfSvgSceneHTML(frame);
+  L.ui.innerHTML = wfOverlayHTML(frame);
+  if (frame.three) { wf3dSync(frame); WF.overlayKey = wfOverlayKey(performance.now()); }
 
   // Rendered into its own body-level root, not inside #wf-scene — see the
   // #wf-panel-root comment in styles-walk-forest.css for why (z-index on a
   // descendant of #wf-scene can't out-rank .container/the header).
   const panelRoot = document.getElementById('wf-panel-root');
   if (panelRoot) panelRoot.innerHTML = frame.isOpen ? wfPanelHTML(frame) : '';
+}
+
+// Everything the overlay markup depends on that can change while the 3D
+// backdrop is animating. wfStep() only rebuilds the overlay when this
+// changes, never per frame — per-frame work is wfPlacePins() moving the
+// existing pins (the 32ms-innerHTML lesson in the wfStep() comment above).
+function wfOverlayKey(now) {
+  const at = Math.round(WF.cam);
+  const armed = Math.abs(WF.cam - at) < 0.34 ? at : -1;
+  return [at, armed, WF.openId, wfStatusText(now), currentLang, WF.w, WF.h,
+    Math.round(WF.cam * 4)].join('|');
+}
+
+// 3D mode only: reposition the already-rendered pins from the 3D camera's
+// projection. Same geometry (wfStopGeom) as a full render; only style
+// properties change, so a pointer mid-click on a pin is never disturbed.
+function wfPlacePins() {
+  const L = WF.layers;
+  if (!L) return;
+  const nodes = L.ui.querySelectorAll('[data-wf-stop]');
+  const narrow = WF.w < 768;
+  for (let k = 0; k < nodes.length; k++) {
+    const wrap = nodes[k];
+    const i = +wrap.getAttribute('data-wf-stop');
+    const s = ACTIVITIES[i];
+    const p = wfStopProject(i, WF_STOP_SIDE[s.id] || 0);
+    if (!p || p.scale < 0.16 || p.d > 6.4) { wrap.style.visibility = 'hidden'; continue; }
+    const g = wfStopGeom(s, p, WF.w, narrow);
+    const st = wrap.style;
+    st.visibility = '';
+    st.left = g.pinLeft + 'px'; st.top = g.pinTop + 'px'; st.zIndex = String(g.z);
+    const btn = wrap.firstChild;
+    if (!btn) continue;
+    btn.style.left = (-g.hit / 2).toFixed(1) + 'px';
+    btn.style.top = (-g.size / 2 - g.hit / 2).toFixed(1) + 'px';
+    btn.style.width = btn.style.height = g.hit.toFixed(1) + 'px';
+    const disc = btn.firstChild;
+    if (disc) {
+      disc.style.width = disc.style.height = g.size.toFixed(1) + 'px';
+      const icon = disc.firstChild;
+      if (icon) icon.style.width = icon.style.height = (g.size * 0.56).toFixed(1) + 'px';
+    }
+    const chip = btn.nextSibling;
+    if (chip) chip.style.cssText = g.chipStyle;
+  }
+}
+
+// Which projection the pins use: the 3D camera's when the WebGL backdrop is
+// live, the painted scene's otherwise. Both return {x, y, scale, d}.
+function wfStopProject(at, lat) {
+  return wfUse3d() ? wf3dProject(at, lat) : wfProject(at, lat);
+}
+
+// The only place WF.renderer is reassigned. Re-asserts everything that
+// depends on it (the canvas's presence, a full render) on every call.
+function wfSetRenderer(kind) {
+  WF.renderer = kind === '3d' ? '3d' : 'svg';
+  if (WF.renderer === 'svg' && typeof wf3dUnmount === 'function') wf3dUnmount();
+  WF.overlayKey = '';
+  if (WF.el && WF.active) wfRender();
+}
+
+// ?wf=svg | ?wf=3d | ?wf=debug (3d + stats). The default stays the SVG
+// scene until the 3D one has been checked on the real embedded device —
+// see ARCHITECTURE.md "Walk the Forest renderer layers".
+const WF_3D_DEFAULT = false;
+function wfRequestedRenderer() {
+  const m = /[?&]wf=([a-z0-9]+)/i.exec(window.location.search || '');
+  const v = m ? m[1].toLowerCase() : '';
+  if (v === 'svg') return 'svg';
+  if (v === '3d' || v === 'debug') return '3d';
+  return WF_3D_DEFAULT ? '3d' : 'svg';
 }
 
 function wfMeasure() {
@@ -968,6 +1128,9 @@ function wfSetDeepFromScreen(screenId) {
 // entry-screen, which navigating can't undo since you never left.
 function wfOnSceneClick(e) {
   if (!WF.on || !e.target.closest) return;
+  // A drag across the 3D scene (a physics gesture — see wf3dOnPointerUp in
+  // walk-forest-3d.js) ends in a click event too; it isn't "open space".
+  if (WF.suppressClick) { WF.suppressClick = false; return; }
   if (e.target.closest('button, a')) return;
   if (typeof appEscapeAction === 'function') appEscapeAction();
 }
@@ -998,6 +1161,12 @@ function wfEnterScene() {
   WF.onSceneClick = wfOnSceneClick;
   WF.el.addEventListener('click', WF.onSceneClick);
   if (WF.reduced) return;
+  // WebGL backdrop: only when asked for (see wfRequestedRenderer) and never
+  // under reduced motion. Boots asynchronously (lazy-loads Three.js); the
+  // SVG scene keeps running until it's ready, and stays if it never is.
+  if (wfRequestedRenderer() === '3d' && typeof wf3dBoot === 'function') {
+    wf3dBoot(function () { wfSetRenderer('3d'); }, function () { wfSetRenderer('svg'); });
+  }
   const loop = (now) => {
     if (!WF.active) return;
     wfStep(now);

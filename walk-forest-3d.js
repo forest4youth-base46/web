@@ -1,0 +1,1674 @@
+// ─── Walk the Forest — WebGL backdrop (Three.js r147, vendored). ───
+//
+// A second painter for the same scene walk-forest.js draws in SVG. It owns
+// no app state and no UI: WF (walk-forest.js) stays the single source of
+// truth — WF.cam, WF.openId, the stop state machine — and the pins,
+// controls, rail, chip and panel are the same DOM as in SVG mode. This file
+// only (1) paints the forest into a canvas in #wf-scene's "gl" layer,
+// (2) projects trail points to screen for the pins (wf3dProject), and
+// (3) turns pointer movement into wind and taps into physics
+// (walk-forest-physics.js). See ARCHITECTURE.md "Walk the Forest renderer
+// layers" for the contract and the fallback ladder.
+//
+// World: metres, y up. Trail position `at` (one unit per activity stop)
+// runs toward −z; the SVG scene's lateral unit maps to WF3D_LAT metres, so
+// every coordinate table in walk-forest.js (WF_TREES, WF_SHRUBS, WF_CAST,
+// WF_SPAN, WF_STOP_SIDE) is reused as-is rather than re-authored.
+'use strict';
+
+const WF3D_THREE_SRC = 'vendor/three.min.js';
+const WF3D_GLTF_SRC = 'vendor/three-GLTFLoader.js';
+const WF3D_ALONG = 14;    // metres between consecutive stops
+const WF3D_LAT = 3.2;     // metres per SVG-scene lateral unit
+const WF3D_UP = 0.42 * WF3D_LAT;  // metres per SVG "up" unit (matches wfBuildProps' UP·u)
+const WF3D_SZ = 0.45 * WF3D_LAT;  // metres per SVG prop-size unit (wfBuildProps' SZ·u)
+const WF3D_OUT = 1.2;     // wfBuildProps' lateral spread for set dressing
+// Each stop's activity is staged this far (in stops) ahead of where the
+// walker stops, so on arrival it's framed in front of the walker instead
+// of half of it sitting behind them, filling the foreground. Pins move
+// with it; their d (and so "armed"/the arrival chip) is unchanged.
+const WF3D_SET_AHEAD = 0.28;
+
+// Blender/glTF drop-in (see assets/wf/README.md). Add an entry here —
+// activity id -> path — and that stop's procedural set piece is replaced
+// by the model. Empty by default, so GLTFLoader is never even downloaded.
+const WF3D_GLTF = {};
+
+// Quality tiers. The starting tier is picked from the device
+// (wf3dPickTier) and only ever steps down at runtime (wf3dGovern).
+const WF3D_TIERS = {
+  high: { name: 'high', dpr: 2, shadow: 2048, grass: 5200, leaves: 220, puffs: 260, motes: 140, light: true },
+  med:  { name: 'med',  dpr: 1.5, shadow: 1024, grass: 3000, leaves: 140, puffs: 160, motes: 90, light: true },
+  low:  { name: 'low',  dpr: 1, shadow: 0, grass: 1200, leaves: 60, puffs: 80, motes: 40, light: false },
+};
+// Governor: median frame interval above this (after warm-up) steps the
+// tier down; still above it at "low" falls back to the SVG scene.
+const WF3D_SLOW_MS = 28;
+
+const WF3D = {
+  state: 'off',            // off | loading | ready | failed
+  onFail: null,
+  tier: null, maxTier: null,
+  renderer: null, scene: null, camera: null, canvas: null,
+  sun: null, fire: [],
+  w: 0, h: 0, dpr: 1, deep: false, frameNo: 0,
+  cs: { x: 0, v: 0 },      // camera trail position (spring toward WF.cam)
+  look: { yaw: { x: 0, v: 0 }, pitch: { x: 0, v: 0 }, tyaw: 0, tpitch: 0 },
+  refDepth: 8, back: 8,
+  t: 0, last: 0, clock: { acc: 0 },
+  uni: null,
+  trees: null, crowns: null, trunks: null, benders: null, treeAt: null,
+  grass: null, leaves: null, leafMesh: null, puffs: null, puffPts: null,
+  motes: null, rays: [], labels: [], labelLang: '',
+  cloth: null, rope: null, anims: [], cast: [],
+  walker: null, walkPhase: 0, pose: { seated: false, hidden: false, shoeless: false },
+  gusts: null, ptr: null,
+  samples: [], governOn: true, debugEl: null, lost: false,
+};
+
+// ───────── boot / capability / lifecycle ─────────
+
+function wf3dCapable() {
+  try {
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext &&
+      (c.getContext('webgl2') || c.getContext('webgl') || c.getContext('experimental-webgl')));
+  } catch (e) { return false; }
+}
+
+function wf3dReady() { return WF3D.state === 'ready'; }
+
+function wf3dLoadScript(src, ok, fail) {
+  const s = document.createElement('script');
+  s.src = src; s.async = true;
+  s.onload = ok; s.onerror = fail;
+  document.head.appendChild(s);
+}
+
+// Lazy: Three.js (~600KB, ~150KB gzipped) is only fetched once WebGL is
+// known to work, so SVG-fallback visitors never download it.
+function wf3dBoot(onReady, onFail) {
+  if (WF3D.state === 'ready') { onReady(); return; }
+  if (WF3D.state === 'loading' || WF3D.state === 'failed') return;
+  WF3D.onFail = onFail;
+  if (!wf3dCapable()) { WF3D.state = 'failed'; onFail('no-webgl'); return; }
+  WF3D.state = 'loading';
+  const start = function () {
+    try {
+      wf3dInit();
+      WF3D.state = 'ready';
+      onReady();
+    } catch (e) {
+      if (window.console) console.warn('Walk the Forest: 3D unavailable, using the painted scene.', e);
+      wf3dAbandon('init');
+    }
+  };
+  if (window.THREE) start();
+  else wf3dLoadScript(WF3D_THREE_SRC, start, function () { wf3dAbandon('load'); });
+}
+
+// Step off the ladder entirely: tear down, and hand back to the SVG scene.
+function wf3dAbandon(reason) {
+  const cb = WF3D.onFail;
+  wf3dUnmount();
+  WF3D.state = 'failed';
+  WF3D.abandonReason = reason;
+  if (cb) cb(reason);
+}
+
+function wf3dUnmount() {
+  if (WF3D.canvas && WF3D.canvas.parentNode) WF3D.canvas.parentNode.removeChild(WF3D.canvas);
+  if (WF3D.debugEl && WF3D.debugEl.parentNode) WF3D.debugEl.parentNode.removeChild(WF3D.debugEl);
+  if (WF3D.ptr && WF.el) {
+    WF.el.removeEventListener('pointermove', WF3D.ptr.move);
+    WF.el.removeEventListener('pointerdown', WF3D.ptr.down);
+    WF.el.removeEventListener('pointerup', WF3D.ptr.up);
+    WF.el.removeEventListener('pointercancel', WF3D.ptr.cancel);
+  }
+  if (WF3D.renderer) {
+    try { WF3D.renderer.dispose(); WF3D.renderer.forceContextLoss(); } catch (e) { /* already gone */ }
+  }
+  WF3D.renderer = null; WF3D.canvas = null; WF3D.ptr = null;
+  if (WF3D.state === 'ready') WF3D.state = 'off';
+}
+
+function wf3dQuery(name) {
+  const m = new RegExp('[?&]' + name + '=([^&#]*)').exec(window.location.search || '');
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function wf3dPickTier() {
+  const forced = wf3dQuery('wftier');
+  if (forced && WF3D_TIERS[forced]) return WF3D_TIERS[forced];
+  const cores = navigator.hardwareConcurrency || 4;
+  const mem = navigator.deviceMemory || 4;
+  const narrow = (WF.w || window.innerWidth) < 768;
+  if (mem <= 2 || (narrow && cores <= 4)) return WF3D_TIERS.low;
+  if (!narrow && cores >= 8 && mem >= 8) return WF3D_TIERS.high;
+  return WF3D_TIERS.med;
+}
+
+// ───────── world helpers ─────────
+
+function wf3dX(at, lat) { return (wfPathLat(at) + lat) * WF3D_LAT; }
+function wf3dZ(at) { return -at * WF3D_ALONG; }
+
+function wf3dSmooth(a, b, x) { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+
+// Gentle rolling ground, flattened under the trail so the path reads as a
+// worn, level track. Every placed object samples this.
+function wf3dGround(x, z) {
+  const base = 0.5 * Math.sin(x * 0.13 + 1.3) * Math.sin(z * 0.07) + 0.32 * Math.sin(z * 0.031 + x * 0.05);
+  const at = -z / WF3D_ALONG;
+  const dx = Math.abs(x - wfPathLat(at) * WF3D_LAT);
+  return base * (0.2 + 0.8 * wf3dSmooth(2.4, 8, dx));
+}
+
+// Trail point (at, lat, up) in world space; lat is in SVG lateral units,
+// up in metres.
+function wf3dAt(at, lat, up, v) {
+  const x = wf3dX(at, lat), z = wf3dZ(at);
+  return (v || new THREE.Vector3()).set(x, wf3dGround(x, z) + (up || 0), z);
+}
+
+// Deterministic hash noise for procedural shapes/colours.
+function wf3dHash(x, y, z) {
+  const s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+
+// ───────── shared shader bits ─────────
+// The GPU twin of wfpAmbientWind + wfpGustAt (walk-forest-physics.js).
+// Keep the constants identical so grass, shrubs and the JS-simulated trees
+// and leaves all lean the same way at the same moment.
+const WF3D_WIND_GLSL = [
+  'uniform float uTime;',
+  'uniform vec4 uGust[4];',
+  'vec2 wfWind(vec2 p) {',
+  '  float base = 0.55 + 0.3 * sin(uTime * 0.23) + 0.22 * sin(uTime * 0.61 + p.x * 0.05 + p.y * 0.03);',
+  '  float wv = sin(uTime * 0.4 - (p.x * 0.7 + p.y * 0.7) * 0.08);',
+  '  float g = wv > 0.0 ? wv * wv * wv * 0.9 : 0.0;',
+  '  vec2 w = vec2(0.86, -0.5) * (base + g);',
+  '  for (int i = 0; i < 4; i++) {',
+  '    vec2 d = p - uGust[i].xy;',
+  '    w += uGust[i].zw * exp(-dot(d, d) / 12.96);',
+  '  }',
+  '  return w;',
+  '}',
+].join('\n');
+
+// Patch a built-in material's vertex stage. mode:
+//  'bend'  — per-instance crown offset from the JS tree springs (aBend =
+//            bendX, bendZ, treeHeight), quadratic up the trunk, plus a
+//            small leaf flutter.
+//  'field' — evaluate the wind field in the shader (grass, shrubs), bend
+//            by local height (aSway = height scale, stiffness).
+function wf3dPatch(mat, mode) {
+  mat.onBeforeCompile = function (shader) {
+    shader.uniforms.uTime = WF3D.uni.uTime;
+    shader.uniforms.uGust = WF3D.uni.uGust;
+    const decl = mode === 'bend'
+      ? 'attribute vec3 aBend;\nuniform float uTime;\n'
+      : 'attribute vec2 aSway;\n' + WF3D_WIND_GLSL + '\n';
+    const body = mode === 'bend'
+      ? [
+        'vec4 mvPosition = vec4( transformed, 1.0 );',
+        '#ifdef USE_INSTANCING',
+        '  mvPosition = instanceMatrix * mvPosition;',
+        '#endif',
+        'float hf = clamp( mvPosition.y / aBend.z, 0.0, 1.3 ); hf *= hf;',
+        'mvPosition.x += aBend.x * hf; mvPosition.z += aBend.y * hf;',
+        'mvPosition.y -= ( aBend.x * aBend.x + aBend.y * aBend.y ) * hf * 0.08;',
+        'mvPosition.xyz += hf * 0.05 * vec3( sin( uTime * 2.3 + mvPosition.y * 1.7 + mvPosition.x ), 0.0, cos( uTime * 1.9 + mvPosition.z * 1.3 ) );',
+        'mvPosition = modelViewMatrix * mvPosition;',
+        'gl_Position = projectionMatrix * mvPosition;',
+      ].join('\n')
+      : [
+        'float hl = clamp( transformed.y * aSway.x, 0.0, 1.5 ); hl *= hl;',
+        'vec4 mvPosition = vec4( transformed, 1.0 );',
+        '#ifdef USE_INSTANCING',
+        '  mvPosition = instanceMatrix * mvPosition;',
+        '#endif',
+        'vec2 wv = wfWind( mvPosition.xz );',
+        'wv /= max( 1.0, length( wv ) / 4.0 );',
+        'float flick = sin( uTime * 3.1 + mvPosition.x * 2.3 + mvPosition.z * 1.7 ) * 0.25;',
+        'mvPosition.xz += ( wv * ( 1.0 + flick ) ) * hl * aSway.y;',
+        'mvPosition.y -= dot( wv, wv ) * hl * aSway.y * 0.15;',
+        'mvPosition = modelViewMatrix * mvPosition;',
+        'gl_Position = projectionMatrix * mvPosition;',
+      ].join('\n');
+    shader.vertexShader = decl + shader.vertexShader.replace('#include <project_vertex>', body);
+  };
+  return mat;
+}
+
+const WF3D_MATS = {};
+function wf3dMat(hex, opts) {
+  const key = hex + (opts ? JSON.stringify(opts) : '');
+  if (!WF3D_MATS[key]) WF3D_MATS[key] = new THREE.MeshLambertMaterial(Object.assign({ color: hex }, opts || {}));
+  return WF3D_MATS[key];
+}
+
+// ───────── scene construction ─────────
+
+function wf3dInit() {
+  const T = THREE;
+  WF3D.tier = WF3D.maxTier = wf3dPickTier();
+  WF3D.governOn = wf3dQuery('wfgov') !== '0';
+  WF3D.uni = { uTime: { value: 0 }, uGust: { value: [new T.Vector4(), new T.Vector4(), new T.Vector4(), new T.Vector4()] } };
+  WF3D.gusts = wfpGustField();
+  WF3D.cs.x = WF.cam; WF3D.cs.v = 0;
+
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-hidden', 'true');
+  const renderer = new T.WebGLRenderer({ canvas, antialias: WF3D.tier !== WF3D_TIERS.low, alpha: true, powerPreference: 'low-power' });
+  renderer.setClearColor(0x000000, 0);
+  renderer.shadowMap.enabled = !!WF3D.tier.shadow;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
+  WF3D.renderer = renderer; WF3D.canvas = canvas;
+  canvas.addEventListener('webglcontextlost', function (e) {
+    e.preventDefault();
+    WF3D.lost = true;
+    setTimeout(function () { if (WF3D.lost && WF3D.state === 'ready') wf3dAbandon('context-lost'); }, 3000);
+  });
+  canvas.addEventListener('webglcontextrestored', function () { WF3D.lost = false; });
+
+  const scene = new T.Scene();
+  // Fog colour = the sky band's horizon colour (wfSkyHTML), so the far
+  // ground dissolves into the painted sky instead of meeting it at a line.
+  scene.fog = new T.FogExp2(0xD3E0D6, 0.0105);
+  WF3D.scene = scene;
+  WF3D.camera = new T.PerspectiveCamera(50, 1.6, 0.3, 700);
+
+  const hemi = new T.HemisphereLight(0xF2F5EC, 0xA2A284, 0.68);
+  scene.add(hemi);
+  const sun = new T.DirectionalLight(0xFFF0D8, 0.44);
+  sun.castShadow = !!WF3D.tier.shadow;
+  if (WF3D.tier.shadow) {
+    sun.shadow.mapSize.set(WF3D.tier.shadow, WF3D.tier.shadow);
+    const sc = sun.shadow.camera;
+    sc.left = -34; sc.right = 34; sc.top = 34; sc.bottom = -34; sc.near = 1; sc.far = 140;
+    sun.shadow.bias = -0.0006;
+    sun.shadow.normalBias = 0.03;
+    sun.shadow.radius = 3;
+  }
+  scene.add(sun); scene.add(sun.target);
+  WF3D.sun = sun;
+
+  wf3dBuildGround();
+  wf3dBuildTrail();
+  wf3dBuildTrees();
+  wf3dBuildShrubsAndStones();
+  wf3dBuildGrass();
+  wf3dBuildSetPieces();
+  wf3dBuildWalker();
+  wf3dBuildParticles();
+  wf3dBuildRays();
+  wf3dBuildLabels();
+  wf3dLoadGltf();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { WF3D.labelLang = ''; });
+
+  wf3dMount();
+  wf3dBindPointer();
+  if (wf3dQuery('wf') === 'debug') {
+    WF3D.debugEl = document.createElement('div');
+    WF3D.debugEl.className = 'wf3d-debug';
+  }
+}
+
+function wf3dMount() {
+  const L = WF.layers || (typeof wfEnsureLayers === 'function' ? wfEnsureLayers() : null);
+  if (!L || !WF3D.canvas) return;
+  if (WF3D.canvas.parentNode !== L.gl) L.gl.appendChild(WF3D.canvas);
+  if (WF3D.debugEl && WF3D.debugEl.parentNode !== L.gl) L.gl.appendChild(WF3D.debugEl);
+}
+
+function wf3dBuildGround() {
+  const T = THREE;
+  const size = 760, seg = 150;
+  const g = new T.PlaneGeometry(size, size, seg, seg);
+  g.rotateX(-Math.PI / 2);
+  const zc = wf3dZ(12);
+  g.translate(0, 0, zc);
+  const pos = g.attributes.position;
+  const col = new Float32Array(pos.count * 3);
+  const a = new T.Color(0x9EA083), b = new T.Color(0x878A66), c = new T.Color(0xAEAF90), moss = new T.Color(0x74845E), tmp = new T.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    pos.setY(i, wf3dGround(x, z));
+    const n = 0.5 + 0.5 * Math.sin(x * 0.21 + Math.sin(z * 0.17) * 2) * Math.cos(z * 0.13 + x * 0.05);
+    tmp.copy(a).lerp(b, n);
+    const nearTrail = 1 - wf3dSmooth(3, 9, Math.abs(x - wfPathLat(-z / WF3D_ALONG) * WF3D_LAT));
+    tmp.lerp(c, nearTrail * 0.5);
+    tmp.lerp(moss, wf3dHash(Math.floor(x / 9), 0, Math.floor(z / 9)) * 0.35 * (1 - nearTrail));
+    col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
+  }
+  g.setAttribute('color', new T.BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  const m = new T.Mesh(g, new T.MeshLambertMaterial({ vertexColors: true }));
+  m.receiveShadow = true;
+  WF3D.scene.add(m);
+}
+
+// The path: a ribbon following wfPathLat, soft-edged via vertex alpha so it
+// blends into the ground rather than sitting on it like a sticker. Light
+// patches along it stand in for the SVG scene's dapple ellipses — the real
+// dappling comes from the canopy's shadows.
+function wf3dBuildTrail() {
+  const T = THREE;
+  const across = [-2.9, -2.2, -1.75, -1.2, -0.4, 0.4, 1.2, 1.75, 2.2, 2.9];
+  const alpha = [0, 0.55, 1, 1, 1, 1, 1, 1, 0.55, 0];
+  const n = ACTIVITIES.length + 12;
+  const steps = Math.ceil((n + 3) / 0.04);
+  const cols = across.length;
+  const pos = new Float32Array(steps * cols * 3);
+  const col = new Float32Array(steps * cols * 4);
+  const base = new T.Color(0xD8CDAF), light = new T.Color(0xE9E0C8), worn = new T.Color(0xC7BA98), tmp = new T.Color();
+  for (let s = 0; s < steps; s++) {
+    const at = -3 + s * 0.04;
+    const z = wf3dZ(at);
+    const cx = wfPathLat(at) * WF3D_LAT;
+    const d1 = wfPathLat(at + 0.01) * WF3D_LAT - cx;
+    const nx = 1, nz = d1 / (0.01 * WF3D_ALONG);
+    const nl = Math.sqrt(nx * nx + nz * nz);
+    for (let k = 0; k < cols; k++) {
+      const o = (s * cols + k);
+      const x = cx + across[k] * nx / nl;
+      const zz = z + across[k] * nz / nl;
+      pos[o * 3] = x; pos[o * 3 + 1] = wf3dGround(x, zz) + 0.035; pos[o * 3 + 2] = zz;
+      const dap = Math.max(0, Math.sin(at * 7.3 + across[k] * 1.9) * Math.sin(at * 3.1 - across[k] * 0.7));
+      tmp.copy(base).lerp(light, dap * dap * 0.9).lerp(worn, Math.abs(across[k]) < 0.8 ? 0.18 : 0);
+      col[o * 4] = tmp.r; col[o * 4 + 1] = tmp.g; col[o * 4 + 2] = tmp.b; col[o * 4 + 3] = alpha[k];
+    }
+  }
+  const idx = [];
+  for (let s = 0; s < steps - 1; s++) for (let k = 0; k < cols - 1; k++) {
+    const a = s * cols + k, b = a + 1, c = a + cols, d = c + 1;
+    idx.push(a, c, b, b, c, d);
+  }
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.BufferAttribute(pos, 3));
+  g.setAttribute('color', new T.BufferAttribute(col, 4));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  const m = new T.Mesh(g, new T.MeshLambertMaterial({ vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  m.receiveShadow = true;
+  m.renderOrder = 1;
+  WF3D.scene.add(m);
+}
+
+// A lumpy blob: a sphere pushed in and out by hash noise, smooth-shaded.
+// Crowns, shrubs and bushes all share it (different scales/colours).
+function wf3dBlobGeometry(seed, rough) {
+  const g = new THREE.SphereGeometry(1, 14, 10);
+  const p = g.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    // Smooth (continuous) lumps, so the shading stays soft like the
+    // illustrated crowns rather than faceted.
+    const n = 0.5 * Math.sin(x * 2.1 + seed) * Math.cos(y * 1.7 + seed * 0.3) +
+      0.35 * Math.sin(z * 2.9 - seed * 0.7 + y) + 0.15 * Math.cos(x * 4.3 + z * 3.1 + seed);
+    const k = 1 + n * rough;
+    p.setXYZ(i, x * k, y * k * (y < 0 ? 0.7 : 0.9), z * k);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
+function wf3dBuildTrees() {
+  const T = THREE;
+  const trees = WF_TREES;
+  const n = trees.length;
+  const benders = wfpBenders(n);
+  WF3D.treeAt = new Float32Array(n);
+
+  const trunkG = new T.CylinderGeometry(0.42, 1, 1, 7, 3);
+  trunkG.translate(0, 0.5, 0);
+  const crownG = wf3dBlobGeometry(3, 0.35);
+  const perTree = 4;
+  const trunkBend = new T.InstancedBufferAttribute(new Float32Array(n * 3), 3);
+  const crownBend = new T.InstancedBufferAttribute(new Float32Array(n * perTree * 3), 3);
+  trunkG.setAttribute('aBend', trunkBend);
+  crownG.setAttribute('aBend', crownBend);
+
+  const trunkMat = wf3dPatch(new T.MeshLambertMaterial({ color: 0xffffff }), 'bend');
+  const crownMat = wf3dPatch(new T.MeshLambertMaterial({ color: 0xffffff }), 'bend');
+  const trunks = new T.InstancedMesh(trunkG, trunkMat, n);
+  const crowns = new T.InstancedMesh(crownG, crownMat, n * perTree);
+  for (const mesh of [trunks, crowns]) {
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    mesh.frustumCulled = false;
+    mesh.customDepthMaterial = wf3dPatch(new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking }), 'bend');
+  }
+
+  const M = new T.Matrix4(), Q = new T.Quaternion(), S = new T.Vector3(), P = new T.Vector3(), E = new T.Euler(), C = new T.Color();
+  const barkA = new T.Color(0x6B5240), barkB = new T.Color(0x5B4636);
+  const crownCols = [0x2E5A4A, 0x3A6B5A, 0x47775F], crown2Cols = [0x234A3E, 0x31604F, 0x3C6B55];
+  trees.forEach(function (tr, i) {
+    const x = wf3dX(tr.at, tr.lat), z = wf3dZ(tr.at);
+    const y = wf3dGround(x, z);
+    const H = 6 + tr.h * 4;
+    const r = 0.2 + 0.13 * tr.w;
+    const crownY = H * 0.66;
+    WF3D.treeAt[i] = tr.at;
+    benders.x[i] = x; benders.z[i] = z; benders.h[i] = H;
+    E.set(tr.lean * 0.05, 0, tr.lean * 0.09);
+    Q.setFromEuler(E);
+    M.compose(P.set(x, y - 0.2, z), Q, S.set(r, crownY + 0.2, r));
+    trunks.setMatrixAt(i, M);
+    trunks.setColorAt(i, C.copy(tr.crown > 0.5 ? barkA : barkB));
+    const R = (1.9 + 1.3 * tr.w) * (0.88 + tr.h * 0.16);
+    const ci = tr.crown > 0.62 ? 0 : (tr.crown > 0.3 ? 1 : 2);
+    const lx = tr.lean * 0.9;
+    // main crown, two lower side lobes (the SVG scene's c1/c2/c3), and a
+    // back lobe for depth from the side.
+    const lobes = [
+      [lx, crownY + R * 0.35, 0, R, R * 0.8, R, crownCols[ci]],
+      [lx - R * 0.62, crownY - R * 0.1, R * 0.15, R * 0.66, R * 0.55, R * 0.66, crown2Cols[ci]],
+      [lx + R * 0.66, crownY - R * 0.05, -R * 0.1, R * 0.6, R * 0.5, R * 0.6, crown2Cols[ci]],
+      [lx + R * 0.1, crownY + R * 0.05, -R * 0.6, R * 0.7, R * 0.6, R * 0.7, crownCols[Math.min(2, ci + 1)]],
+    ];
+    lobes.forEach(function (lb, k) {
+      E.set(0, tr.crown * 6.28 + k, 0); Q.setFromEuler(E);
+      M.compose(P.set(x + lb[0], y + lb[1], z + lb[2]), Q, S.set(lb[3], lb[4], lb[5]));
+      crowns.setMatrixAt(i * perTree + k, M);
+      const shade = 0.94 + wf3dHash(i, k, 7) * 0.12;
+      crowns.setColorAt(i * perTree + k, C.setHex(lb[6]).multiplyScalar(shade));
+    });
+  });
+  trunks.instanceColor.needsUpdate = true; crowns.instanceColor.needsUpdate = true;
+  for (let i = 0; i < n; i++) {
+    trunkBend.setXYZ(i, 0, 0, benders.h[i]);
+    for (let k = 0; k < perTree; k++) crownBend.setXYZ(i * perTree + k, 0, 0, benders.h[i]);
+  }
+  WF3D.scene.add(trunks); WF3D.scene.add(crowns);
+  WF3D.trunks = trunks; WF3D.crowns = crowns; WF3D.benders = benders;
+  WF3D.bendAttrs = { trunk: trunkBend, crown: crownBend, perTree };
+}
+
+function wf3dBuildShrubsAndStones() {
+  const T = THREE;
+  const shrubs = WF_SHRUBS;
+  const geo = wf3dBlobGeometry(11, 0.45);
+  geo.setAttribute('aSway', new T.InstancedBufferAttribute(new Float32Array(shrubs.length * 2 * 2), 2));
+  const mat = wf3dPatch(new T.MeshLambertMaterial({ color: 0xffffff }), 'field');
+  const mesh = new T.InstancedMesh(geo, mat, shrubs.length * 2);
+  mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
+  const M = new T.Matrix4(), Q = new T.Quaternion(), S = new T.Vector3(), P = new T.Vector3(), C = new T.Color();
+  const sway = geo.attributes.aSway;
+  shrubs.forEach(function (sh, i) {
+    const x = wf3dX(sh.at, sh.lat), z = wf3dZ(sh.at), y = wf3dGround(x, z);
+    const k = 0.38 + sh.s * 0.42;
+    const fill = sh.tone > 0.6 ? 0x3A6B5A : (sh.tone > 0.3 ? 0x47775F : 0x5E8C77);
+    Q.setFromAxisAngle(P.set(0, 1, 0), sh.tone * 6.28);
+    M.compose(P.set(x, y + k * 0.3, z), Q, S.set(k * 1.25, k * 0.8, k * 1.1));
+    mesh.setMatrixAt(i * 2, M); mesh.setColorAt(i * 2, C.setHex(fill));
+    M.compose(P.set(x + k * 0.8, y + k * 0.18, z - k * 0.3), Q, S.set(k * 0.8, k * 0.55, k * 0.8));
+    mesh.setMatrixAt(i * 2 + 1, M); mesh.setColorAt(i * 2 + 1, C.setHex(fill).multiplyScalar(0.9));
+    // aSway: 1/height (local blob space is ±1) and bend strength.
+    sway.setXY(i * 2, 0.5, 0.35); sway.setXY(i * 2 + 1, 0.5, 0.35);
+  });
+  mesh.instanceColor.needsUpdate = true;
+  WF3D.scene.add(mesh);
+
+  // Scattered stones and fallen logs along the verges.
+  const stoneG = new T.DodecahedronGeometry(1, 0);
+  const stones = new T.InstancedMesh(stoneG, new T.MeshLambertMaterial({ color: 0xffffff }), 90);
+  stones.castShadow = true; stones.receiveShadow = true; stones.frustumCulled = false;
+  let seed = 91;
+  const rnd = function () { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  for (let i = 0; i < 90; i++) {
+    const at = -1 + i * 0.33 + rnd() * 0.2;
+    const lat = (rnd() < 0.5 ? -1 : 1) * (0.62 + rnd() * 2.4);
+    const x = wf3dX(at, lat), z = wf3dZ(at);
+    const s = 0.12 + rnd() * rnd() * 0.5;
+    Q.setFromEuler(new T.Euler(rnd() * 3, rnd() * 3, rnd() * 3));
+    M.compose(P.set(x, wf3dGround(x, z) + s * 0.25, z), Q, S.set(s * 1.3, s * 0.6, s));
+    stones.setMatrixAt(i, M);
+    stones.setColorAt(i, C.setHex(rnd() < 0.5 ? 0x9A9382 : 0xA8A08C).multiplyScalar(0.9 + rnd() * 0.15));
+  }
+  stones.instanceColor.needsUpdate = true;
+  WF3D.scene.add(stones);
+}
+
+// Grass tufts: five thin blades each, bent on the GPU by the same wind
+// field (and pointer gusts) as everything else. Normals point up so the
+// blades light like the ground they grow from, not like paper cards.
+function wf3dBuildGrass() {
+  const T = THREE;
+  const blades = 5;
+  const pos = [], col = [], nor = [];
+  const root = new T.Color(0x6E7B55), tip = new T.Color(0xB3BC8C);
+  for (let b = 0; b < blades; b++) {
+    const ang = b / blades * Math.PI + 0.3;
+    const lean = 0.08 + (b % 3) * 0.05;
+    const hgt = 0.26 + (b % 2) * 0.14;
+    const cx = Math.cos(ang) * 0.035, cz = Math.sin(ang) * 0.035;
+    const tx = Math.cos(ang + 1.3) * lean, tz = Math.sin(ang + 1.3) * lean;
+    pos.push(-cx, 0, -cz, cx, 0, cz, tx, hgt, tz);
+    col.push(root.r, root.g, root.b, root.r, root.g, root.b, tip.r, tip.g, tip.b);
+    nor.push(0, 1, 0, 0, 1, 0, 0, 1, 0);
+  }
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new T.Float32BufferAttribute(col, 3));
+  g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+  const max = WF3D_TIERS.high.grass;
+  const sway = new Float32Array(max * 2);
+  g.setAttribute('aSway', new T.InstancedBufferAttribute(sway, 2));
+  const mat = wf3dPatch(new T.MeshLambertMaterial({ vertexColors: true, side: T.DoubleSide }), 'field');
+  const mesh = new T.InstancedMesh(g, mat, max);
+  mesh.receiveShadow = true; mesh.frustumCulled = false;
+  const M = new T.Matrix4(), Q = new T.Quaternion(), S = new T.Vector3(), P = new T.Vector3(), Y = new T.Vector3(0, 1, 0);
+  let seed = 17;
+  const rnd = function () { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  const span = ACTIVITIES.length + 6;
+  for (let i = 0; i < max; i++) {
+    const at = -1 + rnd() * span;
+    // Denser along the trail's verges, thinning out into the trees.
+    const off = 1.55 + Math.pow(rnd(), 1.8) * 11;
+    const side = rnd() < 0.5 ? -1 : 1;
+    const x = wfPathLat(at) * WF3D_LAT + side * off, z = wf3dZ(at);
+    const s = 0.7 + rnd() * 0.9;
+    Q.setFromAxisAngle(Y, rnd() * 6.28);
+    M.compose(P.set(x, wf3dGround(x, z) - 0.01, z), Q, S.set(s, s * (0.8 + rnd() * 0.6), s));
+    mesh.setMatrixAt(i, M);
+    sway[i * 2] = 2.2; sway[i * 2 + 1] = 0.16;
+  }
+  mesh.count = WF3D.tier.grass;
+  WF3D.scene.add(mesh);
+  WF3D.grass = mesh;
+}
+
+// ───────── people ─────────
+// A small, soft-edged figure (capsules + sphere) posed like the SVG cast:
+// stand / carry / reach / sit / kneel / lie. Returns the group plus the
+// limb pivots the animators (idle breathing, the walker's gait) move.
+const WF3D_CLOTHES = [0x3A5A50, 0x5B4636, 0x4D6359, 0x6E5A44, 0x2F4A42, 0x7C6A52];
+const WF3D_SKIN = [0xC9A88A, 0xB08A6A, 0xD8BC9E, 0x8E6A50];
+
+function wf3dPerson(pose, height, seed) {
+  const T = THREE;
+  const H = height || 1.7;
+  const g = new T.Group();
+  const cloth = wf3dMat(WF3D_CLOTHES[seed % WF3D_CLOTHES.length]);
+  const trousers = wf3dMat(0x2C3A34);
+  const skin = wf3dMat(WF3D_SKIN[seed % WF3D_SKIN.length]);
+  const cap = function (r, len, mat) {
+    const m = new T.Mesh(new T.CapsuleGeometry(r, len, 3, 7), mat);
+    m.castShadow = true;
+    return m;
+  };
+  const limb = function (r, len, mat) {
+    // Pivot at the top; the capsule hangs down from it.
+    const pivot = new T.Group();
+    const m = cap(r, len, mat);
+    m.position.y = -len / 2 - r * 0.5;
+    pivot.add(m);
+    return pivot;
+  };
+  const s = H / 1.7;
+  const torso = cap(0.17 * s, 0.42 * s, cloth);
+  const head = new T.Mesh(new T.SphereGeometry(0.115 * s, 12, 9), skin);
+  head.castShadow = true;
+  const hips = new T.Group();
+  const legL = limb(0.075 * s, 0.7 * s, trousers), legR = limb(0.075 * s, 0.7 * s, trousers);
+  const armL = limb(0.055 * s, 0.5 * s, cloth), armR = limb(0.055 * s, 0.5 * s, cloth);
+  const footMat = wf3dMat(0x1E2A25);
+  const footL = new T.Mesh(new T.SphereGeometry(0.07 * s, 7, 5), footMat), footR = footL.clone();
+  footL.scale.set(0.9, 0.55, 1.5); footR.scale.copy(footL.scale);
+  footL.position.set(0, -0.82 * s, -0.04 * s); footR.position.copy(footL.position);
+  legL.add(footL); legR.add(footR);
+  g.add(hips); hips.add(torso, head, legL, legR, armL, armR);
+  legL.position.set(-0.09 * s, 0, 0); legR.position.set(0.09 * s, 0, 0);
+  torso.position.y = 0.34 * s; head.position.y = 0.78 * s;
+  armL.position.set(-0.22 * s, 0.56 * s, 0); armR.position.set(0.22 * s, 0.56 * s, 0);
+  armL.rotation.z = -0.08; armR.rotation.z = 0.08;
+  const legLen = 0.9 * s;
+  hips.position.y = legLen;
+  if (pose === 'sit') {
+    hips.position.y = 0.16 * s;
+    legL.rotation.x = legR.rotation.x = -1.35;
+    armL.rotation.x = armR.rotation.x = -0.7;
+  } else if (pose === 'kneel') {
+    hips.position.y = 0.5 * s;
+    legL.rotation.x = legR.rotation.x = 1.45;
+    armL.rotation.x = armR.rotation.x = -0.9;
+    hips.rotation.x = -0.25;
+  } else if (pose === 'lie') {
+    hips.position.y = 0.16 * s;
+    hips.rotation.x = -Math.PI / 2;
+  } else if (pose === 'carry') {
+    armR.rotation.x = -1.35;
+  } else if (pose === 'reach') {
+    armR.rotation.x = -2.3;
+  }
+  return { group: g, hips, torso, head, legL, legR, armL, armR, footL, footR, pose, s };
+}
+
+// ───────── set pieces (the activity at each stop) ─────────
+// Ported case-by-case from wfBuildProps/wfBuildCast (walk-forest.js), same
+// coordinates, as real objects instead of flat shapes. Animated bits —
+// breathing rings, flames, the hammock, the palette line — register
+// themselves in WF3D.anims / WF3D.fire / WF3D.cloth / WF3D.rope.
+function wf3dBuildSetPieces() {
+  WF3D.stopGroups = [];
+  ACTIVITIES.forEach(function (s, i) {
+    const grp = new THREE.Group();
+    grp.name = 'stop-' + s.id;
+    wf3dBuildProps(s, i, grp);
+    wf3dBuildCast(s, i, grp);
+    WF3D.scene.add(grp);
+    WF3D.stopGroups[i] = grp;
+  });
+}
+
+function wf3dSpanLat(s, l) {
+  const SP = WF_SPAN[s.id] || [0, 1];
+  return SP[0] + (l - SP[0]) * SP[1];
+}
+
+function wf3dBuildCast(s, i, grp) {
+  const cast = WF_CAST[s.id];
+  if (!cast) return;
+  const I = i + WF3D_SET_AHEAD;
+  const center = wf3dAt(I, wf3dSpanLat(s, (WF_SPAN[s.id] || [0])[0]) * 1.2, 0);
+  cast.forEach(function (c, k) {
+    const p = wf3dAt(I + c[0], wf3dSpanLat(s, c[1]) * 1.2, 0);
+    const person = wf3dPerson(c[2], 1.72 * (c[3] || 0.95), i * 3 + k);
+    person.group.position.copy(p);
+    if (c[5]) person.group.position.y += c[5] * WF3D_UP;
+    // Face the activity's centre (the SVG figures' l/r facing, made 3D);
+    // fall back to facing the trail when standing on the centre itself.
+    const dx = center.x - p.x, dz = center.z - p.z;
+    // Figures are modelled facing +z; yaw turns +z toward the target.
+    person.group.rotation.y = (dx * dx + dz * dz > 0.3) ? Math.atan2(dx, dz) : (c[4] === 'l' ? -Math.PI / 2 : Math.PI / 2);
+    if (c[2] === 'lie') person.group.rotation.y = Math.PI / 2;
+    grp.add(person.group);
+    WF3D.cast.push({ p: person, stop: i, seed: i * 7 + k, lie: c[2] === 'lie' });
+  });
+}
+
+function wf3dBuildProps(s, i, grp) {
+  const T = THREE;
+  const add = function (m) { m.castShadow = true; m.receiveShadow = true; grp.add(m); return m; };
+  const I = i + WF3D_SET_AHEAD;
+  const P = function (a, l, up) { return wf3dAt(I + a, wf3dSpanLat(s, l) * WF3D_OUT, (up || 0) * WF3D_UP); };
+  const stone = function (a, l, r, hex) {
+    const m = add(new T.Mesh(wf3dStoneGeo(), wf3dMat(hex)));
+    const q = P(a, l); const rr = r * WF3D_SZ;
+    m.position.copy(q); m.position.y += rr * 0.2;
+    m.scale.set(rr, rr * 0.55, rr * 0.9);
+    m.rotation.y = a * 7 + l * 3;
+    return m;
+  };
+  const post = function (a, l, hgt, th, hex) {
+    const b = P(a, l), h = hgt * WF3D_UP, r = Math.max(0.03, th * WF3D_SZ * 0.5);
+    const m = add(new T.Mesh(new T.CylinderGeometry(r * 0.85, r, h, 7), wf3dMat(hex)));
+    m.position.set(b.x, b.y + h / 2, b.z);
+    return m;
+  };
+  const beam = function (a1, l1, u1, a2, l2, u2, th, hex) {
+    const A = P(a1, l1, u1), B = P(a2, l2, u2);
+    const len = A.distanceTo(B), r = Math.max(0.02, th * WF3D_SZ * 0.5);
+    const m = add(new T.Mesh(new T.CylinderGeometry(r, r, len, 7), wf3dMat(hex)));
+    m.position.copy(A).add(B).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+    // Ground-level beams (logs) sit on the ground, not half in it.
+    if (u1 < 0.12 && u2 < 0.12) m.position.y += r;
+    return m;
+  };
+  const ring = function (a, l, r, hex) {
+    const q = P(a, l), rr = r * WF3D_SZ;
+    const m = new T.Mesh(new T.TorusGeometry(rr, 0.025, 6, 40), new T.MeshBasicMaterial({ color: hex || 0x7FA396, transparent: true, opacity: 0.7 }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(q.x, q.y + 0.05, q.z);
+    grp.add(m);
+    WF3D.anims.push({ kind: 'breath', obj: m, stop: i, phase: r * 3 });
+    return m;
+  };
+  const quad = function (c, hex, opacity) {
+    const pts = c.map(function (v) { return P(v[0], v[1], v[2] || 0); });
+    const g = new T.BufferGeometry().setFromPoints(pts);
+    g.setIndex([0, 1, 2, 0, 2, 3]);
+    g.computeVertexNormals();
+    const m = add(new T.Mesh(g, new T.MeshLambertMaterial({ color: hex, side: T.DoubleSide, transparent: opacity != null && opacity < 1, opacity: opacity == null ? 1 : opacity })));
+    return m;
+  };
+  const band = function (a0, a1, hex, opacity) {
+    // A mat laid across the trail (barefoot path sections).
+    const pts = [];
+    const hw = 1.6;
+    [[a0, -1], [a0, 1], [a1, 1], [a1, -1]].forEach(function (v) {
+      const x = wf3dX(I + v[0], 0) + v[1] * hw, z = wf3dZ(I + v[0]);
+      pts.push(new T.Vector3(x, wf3dGround(x, z) + 0.06, z));
+    });
+    const g = new T.BufferGeometry().setFromPoints(pts);
+    g.setIndex([0, 2, 1, 0, 3, 2]); g.computeVertexNormals();
+    const m = new T.Mesh(g, new T.MeshLambertMaterial({ color: hex, transparent: true, opacity: opacity == null ? 1 : opacity, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
+    m.receiveShadow = true; m.renderOrder = 2;
+    grp.add(m);
+    return m;
+  };
+  const bush = function (a, l, r, hex) {
+    const q = P(a, l), rr = Math.max(0.15, r * WF3D_SZ);
+    const m = add(new T.Mesh(wf3dBushGeo(), wf3dMat(hex)));
+    m.position.set(q.x, q.y + rr * 0.25, q.z);
+    m.scale.set(rr, rr * 0.75, rr);
+    return m;
+  };
+  const tree = function (a, l, k) {
+    const b = P(a, l);
+    const trunk = add(new T.Mesh(new T.CylinderGeometry(0.1, 0.16, 3.2, 7), wf3dMat([0x6B5240, 0x5B4636, 0x6B5240][k])));
+    trunk.position.set(b.x, b.y + 1.6, b.z);
+    const crown = add(new T.Mesh(wf3dBushGeo(), wf3dMat([0x3A6B5A, 0x47775F, 0x2E5A4A][k])));
+    crown.position.set(b.x, b.y + 3.4, b.z); crown.scale.set(1.3, 1.1, 1.3);
+    WF3D.anims.push({ kind: 'sway', obj: crown, stop: i, phase: k * 2.1, base: crown.position.clone() });
+  };
+  const flame = function (a, l, up, size) {
+    const q = P(a, l, up);
+    const f = new T.Group();
+    const add = { transparent: true, side: T.DoubleSide, depthWrite: false, blending: T.AdditiveBlending, fog: false };
+    const outer = new T.Mesh(new T.ConeGeometry(0.2 * size, 0.62 * size, 9, 1, true), new T.MeshBasicMaterial(Object.assign({ color: 0xC8501E, opacity: 0.85 }, add)));
+    const inner = new T.Mesh(new T.ConeGeometry(0.11 * size, 0.38 * size, 8, 1, true), new T.MeshBasicMaterial(Object.assign({ color: 0xFFC070, opacity: 0.9 }, add)));
+    const glow = new T.Mesh(new T.CircleGeometry(1.6 * size, 24), new T.MeshBasicMaterial(Object.assign({ map: wf3dGlowTex(), color: 0xFF9A5A, opacity: 0.55 }, add)));
+    outer.position.y = 0.31 * size; inner.position.y = 0.2 * size;
+    glow.rotation.x = -Math.PI / 2; glow.position.y = 0.04;
+    f.add(outer, inner, glow);
+    f.position.copy(q);
+    grp.add(f);
+    let light = null;
+    if (WF3D.tier.light) {
+      light = new T.PointLight(0xFF9A5A, 0.9, 7, 1.6);
+      light.position.set(q.x, q.y + 0.5, q.z);
+      grp.add(light);
+    }
+    WF3D.fire.push({ obj: f, light, stop: i, pos: q.clone(), size, acc: 0 });
+  };
+
+  // Each case mirrors the one of the same name in wfBuildProps.
+  switch (s.id) {
+    case 'introduce':
+      beam(0.28, -0.78, 0, 0.46, -0.72, 0, 0.026, 0x6B5240);
+      beam(0.46, -0.72, 0, 0.41, -0.54, 0, 0.026, 0x6B5240);
+      beam(0.41, -0.54, 0, 0.56, -0.48, 0, 0.026, 0x6B5240);
+      stone(0.35, -0.44, 0.045, 0xA8A08C); stone(0.45, -0.37, 0.038, 0x8F8877); stone(0.55, -0.42, 0.032, 0xA8A08C);
+      bush(0.75, -1.15, 0.3, 0x3A6B5A);
+      break;
+    case 'soundscape':
+      stone(0.02, -0.95, 0.24, 0x9A9382); stone(0.01, -0.97, 0.18, 0xB0A992);
+      ring(0.02, -0.95, 0.34); ring(0.02, -0.95, 0.52, 0x8FAEA0);
+      break;
+    case 'naming':
+      [[-0.32, -0.95], [0.06, 1], [0.44, -1.1]].forEach(function (sp, k) { tree(sp[0], sp[1], k); });
+      break;
+    case 'hammock':
+      // Taller than the SVG's posts: slung at a real hammock height (~1.6m)
+      // so the cloth reads as hanging, not lying on the ground.
+      post(-0.12, 0.3, 1.45, 0.05, 0x5B4636); post(0.34, 1.0, 1.45, 0.05, 0x5B4636);
+      wf3dBuildHammock(P(-0.12, 0.3, 1.2), P(0.34, 1.0, 1.2), i, grp);
+      break;
+    case 'barefoot': {
+      const mat = [0x7FA396, 0x6B5240, 0x9A7B57, 0x3F6B54, 0xA8A08C];
+      const speck = [0x5E8C77, 0x4A3A2C, 0xB08A5E, 0x2F5A46, 0xBDB6A4];
+      for (let k = 0; k < 5; k++) {
+        const a0 = -0.62 + k * 0.26;
+        band(a0, a0 + 0.24, mat[k], 0.7);
+        for (let j = 0; j < 9; j++) {
+          const t = a0 + 0.03 + (j % 3) * 0.08, lat = -0.62 + ((j * 7) % 9) * 0.16;
+          stone(t, lat / WF3D_OUT, 0.05, speck[k]);
+        }
+      }
+      stone(-0.8, -0.6, 0.1, 0x4A3A2C); stone(-0.72, -0.5, 0.1, 0x4A3A2C);
+      break;
+    }
+    case 'palette':
+      post(-0.04, -0.72, 0.5, 0.022, 0x6B5240); post(0.16, 0.72, 0.5, 0.022, 0x6B5240);
+      wf3dBuildPaletteLine(P(-0.04, -0.72, 0.48), P(0.16, 0.72, 0.48), i, grp);
+      break;
+    case 'senses':
+      for (let k = 0; k < 5; k++) stone(-0.44 + k * 0.22, k % 2 ? 0.6 : -0.6, 0.1, 0xA8A08C);
+      break;
+    case 'tinyworld':
+      stone(0, -0.78, 0.36, 0x6B5240); stone(0, -0.78, 0.28, 0x5B4636);
+      bush(-0.08, -0.9, 0.1, 0x47775F); bush(0.06, -0.68, 0.08, 0x3A6B5A);
+      post(-0.02, -0.8, 0.12, 0.012, 0x6B5240); post(0.04, -0.74, 0.16, 0.012, 0x6B5240);
+      stone(0.1, -0.88, 0.05, 0xA8A08C); stone(-0.06, -0.66, 0.04, 0x9A9382);
+      break;
+    case 'sofa':
+      beam(-0.04, 0.42, 0.09, 0.22, 1.04, 0.09, 0.07, 0x6B5240);
+      beam(0.06, 0.44, 0.26, 0.32, 1.06, 0.26, 0.05, 0x5B4636);
+      post(0.06, 0.44, 0.26, 0.035, 0x5B4636); post(0.32, 1.06, 0.26, 0.035, 0x5B4636);
+      stone(-0.14, 0.36, 0.06, 0x9A9382); stone(0.34, 1.16, 0.06, 0x9A9382);
+      break;
+    case 'fire':
+      for (let k = 0; k < 7; k++) { const ang = k / 7 * Math.PI * 2; stone(0.06 + Math.cos(ang) * 0.15, Math.sin(ang) * 0.36, 0.06, 0x9A9382); }
+      beam(-0.04, -0.2, 0.02, 0.16, 0.2, 0.2, 0.028, 0x6B5240); beam(0.16, -0.2, 0.02, -0.04, 0.2, 0.2, 0.028, 0x6B5240);
+      flame(0.06, 0, 0.05, 1.3);
+      break;
+    case 'bivouac':
+      post(-0.06, -1.3, 0.4, 0.022, 0x5B4636); post(0.2, -0.86, 0.4, 0.022, 0x5B4636);
+      beam(-0.06, -1.3, 0.39, 0.2, -0.86, 0.39, 0.014, 0x6B5240);
+      quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.26, -0.66, 0], [0, -1.12, 0]], 0x3F6B54, 0.95);
+      quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.14, -1.06, 0], [-0.12, -1.52, 0]], 0x47775F, 0.95);
+      stone(0.3, -0.6, 0.05, 0x9A9382); stone(-0.16, -1.5, 0.045, 0x9A9382);
+      break;
+    case 'sitspot':
+      stone(0.02, -0.95, 0.25, 0x9A9382); stone(0.03, -0.97, 0.18, 0xB0A992);
+      ring(0.02, -0.95, 0.32); ring(0.02, -0.95, 0.5, 0x8FAEA0);
+      break;
+    case 'roles':
+      beam(-0.12, 0.48, 0.07, 0.24, 1.02, 0.07, 0.11, 0x6B5240);
+      stone(-0.06, 0.58, 0.05, 0xB8552E); stone(0.05, 0.74, 0.05, 0x7FA396); stone(0.16, 0.9, 0.05, 0xC8BFA6);
+      break;
+    case 'project': {
+      const c = [[-0.26, -1.3], [-0.26, -0.58], [0.36, -0.58], [0.36, -1.3]];
+      for (let k = 0; k < 4; k++) post(c[k][0], c[k][1], 0.2, 0.016, 0x6B5240);
+      for (let k = 0; k < 4; k++) { const a = c[k], b = c[(k + 1) % 4]; beam(a[0], a[1], 0.18, b[0], b[1], 0.18, 0.007, 0xC8BFA6); }
+      post(0.05, -0.94, 0.42, 0.02, 0x3A6B5A); bush(0.05, -0.94, 0.17, 0x47775F);
+      break;
+    }
+    case 'object': {
+      stone(0, 0.7, 0.22, 0x9A9382);
+      const q = P(0, 0.7, 0.24);
+      const pebble = add(new T.Mesh(wf3dStoneGeo(), wf3dMat(0x8A6C52)));
+      pebble.position.copy(q); pebble.scale.set(0.11, 0.08, 0.1);
+      WF3D.anims.push({ kind: 'lift', obj: pebble, stop: i, phase: 0, base: q.clone() });
+      break;
+    }
+    case 'checkin':
+      post(0, -0.92, 0.56, 0.02, 0x6B5240); post(0.1, -0.48, 0.56, 0.02, 0x6B5240);
+      quad([[0, -0.92, 0.56], [0.1, -0.48, 0.56], [0.1, -0.48, 0.3], [0, -0.92, 0.3]], 0xE6DCC4);
+      break;
+    case 'campfire':
+      for (let k = 0; k < 6; k++) { const ang = k / 6 * Math.PI * 2 + 0.4; stone(0.05 + Math.cos(ang) * 0.13, Math.sin(ang) * 0.32, 0.055, 0x8F8877); }
+      beam(-0.26, -0.75, 0.05, -0.06, -0.38, 0.05, 0.075, 0x6B5240);
+      beam(0.28, 0.38, 0.05, 0.48, 0.75, 0.05, 0.075, 0x6B5240);
+      flame(0.05, 0, 0.03, 1.0);
+      break;
+    default:
+      break;
+  }
+}
+
+let WF3D_STONE_GEO = null, WF3D_BUSH_GEO = null, WF3D_GLOW_TEX = null;
+function wf3dGlowTex() {
+  if (WF3D_GLOW_TEX) return WF3D_GLOW_TEX;
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.35, 'rgba(255,255,255,0.45)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 64, 64);
+  return (WF3D_GLOW_TEX = new THREE.CanvasTexture(c));
+}
+function wf3dStoneGeo() { return WF3D_STONE_GEO || (WF3D_STONE_GEO = new THREE.DodecahedronGeometry(1, 1)); }
+function wf3dBushGeo() { return WF3D_BUSH_GEO || (WF3D_BUSH_GEO = wf3dBlobGeometry(29, 0.4)); }
+
+// The hammock: a verlet rope between the posts (the physics), weighted in
+// the middle by the person lying in it, with a U-shaped fabric surface
+// rebuilt around it every frame (the look). A free cloth strip pinned only
+// at gathered ends twists to hang edge-down like a curtain — physically
+// right for an empty strip, wrong for a hammock someone is lying in — so
+// the fabric's cross-section is shaped rather than simulated. Wind and
+// pointer gusts swing the rope, and the occupant rides it.
+function wf3dBuildHammock(A, B, stop, grp) {
+  const T = THREE;
+  const cols = 15, across = 5, width = 0.95;
+  const v = wfpVerlet(cols);
+  const dir = B.clone().sub(A);
+  const len = dir.length();
+  dir.normalize();
+  for (let c = 0; c < cols; c++) {
+    const u = c / (cols - 1);
+    const p = A.clone().addScaledVector(dir, u * len);
+    p.y -= Math.sin(u * Math.PI) * 0.55;
+    if (c === 0 || c === cols - 1) wfpVerletPin(v, c, p.x, p.y, p.z); else wfpVerletSet(v, c, p.x, p.y, p.z);
+    if (u > 0.3 && u < 0.7) v.im[c] = 0.3;
+  }
+  for (let c = 0; c < cols - 1; c++) wfpVerletLink(v, c, c + 1);
+  v.area = 0.5; v.drag = 0.012;
+  const geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.BufferAttribute(new Float32Array(cols * across * 3), 3));
+  const idx = [];
+  for (let c = 0; c < cols - 1; c++) for (let r = 0; r < across - 1; r++) {
+    const a = c * across + r, b = a + 1, d = a + across, e = d + 1;
+    idx.push(a, d, b, b, d, e);
+  }
+  geo.setIndex(idx);
+  const mesh = new T.Mesh(geo, new T.MeshLambertMaterial({ color: 0xD87B4F, side: T.DoubleSide }));
+  mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
+  grp.add(mesh);
+  WF3D.cloth = { v, mesh, stop, cols, across, width, dir };
+  wf3dShapeHammock(WF3D.cloth);
+}
+
+function wf3dShapeHammock(cl) {
+  const v = cl.v, pos = cl.mesh.geometry.attributes.position.array;
+  const side = WF3D_TMP.side || (WF3D_TMP.side = new THREE.Vector3());
+  side.set(-cl.dir.z, 0, cl.dir.x).normalize();
+  for (let c = 0; c < cl.cols; c++) {
+    const u = c / (cl.cols - 1);
+    const gather = Math.sin(u * Math.PI);
+    const x = v.x[c * 3], y = v.x[c * 3 + 1], z = v.x[c * 3 + 2];
+    for (let r = 0; r < cl.across; r++) {
+      const w = r / (cl.across - 1) * 2 - 1;          // -1..1 across
+      const off = w * cl.width * 0.5 * (0.1 + 0.9 * gather);
+      const o = (c * cl.across + r) * 3;
+      pos[o] = x + side.x * off;
+      pos[o + 1] = y - 0.22 * gather * (1 - w * w);   // edges at the rope, belly below
+      pos[o + 2] = z + side.z * off;
+    }
+  }
+  cl.mesh.geometry.attributes.position.needsUpdate = true;
+  cl.mesh.geometry.computeVertexNormals();
+}
+
+// The colour palette line: a rope between two posts with four swatches
+// hanging from it on short tethers — each a verlet point, so a gust sets
+// them swinging and knocking against each other's rhythm.
+function wf3dBuildPaletteLine(A, B, stop, grp) {
+  const T = THREE;
+  const segs = 14;
+  const pegs = 4;
+  const v = wfpVerlet(segs + 1 + pegs);
+  for (let k = 0; k <= segs; k++) {
+    const p = A.clone().lerp(B, k / segs);
+    p.y -= Math.sin(k / segs * Math.PI) * 0.06;
+    if (k === 0 || k === segs) wfpVerletPin(v, k, p.x, p.y, p.z); else wfpVerletSet(v, k, p.x, p.y, p.z);
+  }
+  const rest = A.distanceTo(B) / segs * 1.03;
+  for (let k = 0; k < segs; k++) wfpVerletLink(v, k, k + 1, rest);
+  const hangAt = [3, 6, 9, 12];
+  for (let k = 0; k < pegs; k++) {
+    const i = segs + 1 + k, a = hangAt[k];
+    wfpVerletSet(v, i, v.x[a * 3], v.x[a * 3 + 1] - 0.16, v.x[a * 3 + 2]);
+    v.im[i] = 1.6;
+    wfpVerletLink(v, a, i, 0.16);
+  }
+  v.area = 1.4; v.drag = 0.02;
+  const lineGeo = new T.BufferGeometry();
+  lineGeo.setAttribute('position', new T.BufferAttribute(v.x.subarray(0, (segs + 1) * 3), 3));
+  const line = new T.Line(lineGeo, new T.LineBasicMaterial({ color: 0xC8BFA6 }));
+  line.frustumCulled = false;
+  grp.add(line);
+  const cols = [0x3F6B54, 0x7FA396, 0x8A6C52, 0xB8552E];
+  const swatches = [];
+  for (let k = 0; k < pegs; k++) {
+    const m = new T.Mesh(new T.BoxGeometry(0.13, 0.19, 0.015), wf3dMat(cols[k]));
+    m.castShadow = true;
+    grp.add(m);
+    swatches.push(m);
+  }
+  WF3D.rope = { v, line, swatches, stop, segs, hangAt };
+}
+
+// ───────── the walker ─────────
+function wf3dBuildWalker() {
+  const p = wf3dPerson('stand', 1.74, 2);
+  // Seated variant for the sit-down stops (soundscape/sitspot/campfire).
+  const seat = wf3dPerson('sit', 1.74, 2);
+  seat.group.visible = false;
+  WF3D.scene.add(p.group); WF3D.scene.add(seat.group);
+  WF3D.walker = p; WF3D.walkerSeat = seat;
+  WF3D.bareFoot = wf3dMat(0xC9A88A);
+  WF3D.shoe = p.footL.material;
+}
+
+// ───────── particles: leaves, embers/smoke/dust, motes ─────────
+const WF3D_LEAF_COLS = [0xB8552E, 0xD87B4F, 0x7FA396, 0x9A7B57, 0xC9A04E];
+function wf3dBuildParticles() {
+  const T = THREE;
+  const top = WF3D_TIERS.high;
+  // Leaves: instanced little leaf shapes, tumbling in the physics pool.
+  WF3D.leaves = wfpPool(top.leaves);
+  const lg = new T.BufferGeometry();
+  lg.setAttribute('position', new T.Float32BufferAttribute([0, -0.5, 0, 0.32, -0.1, 0, 0, 0.5, 0, -0.32, -0.1, 0], 3));
+  lg.setAttribute('normal', new T.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
+  lg.setIndex([0, 1, 2, 0, 2, 3]);
+  const lm = new T.InstancedMesh(lg, new T.MeshLambertMaterial({ color: 0xffffff, side: T.DoubleSide }), top.leaves);
+  lm.frustumCulled = false; lm.castShadow = false; lm.receiveShadow = true;
+  const C = new T.Color();
+  for (let i = 0; i < top.leaves; i++) lm.setColorAt(i, C.setHex(WF3D_LEAF_COLS[i % WF3D_LEAF_COLS.length]));
+  lm.instanceColor.needsUpdate = true;
+  lm.count = 0;
+  WF3D.scene.add(lm);
+  WF3D.leafMesh = lm;
+
+  // Puffs: embers, smoke and footstep dust share one point cloud with a
+  // per-point size/alpha/colour.
+  const n = top.puffs;
+  WF3D.puffs = wfpPool(n);
+  const pg = new T.BufferGeometry();
+  pg.setAttribute('position', new T.BufferAttribute(new Float32Array(n * 3), 3));
+  pg.setAttribute('aSize', new T.BufferAttribute(new Float32Array(n), 1));
+  pg.setAttribute('aAlpha', new T.BufferAttribute(new Float32Array(n), 1));
+  pg.setAttribute('aColor', new T.BufferAttribute(new Float32Array(n * 3), 3));
+  const pm = new T.ShaderMaterial({
+    uniforms: { uScale: { value: 400 } },
+    vertexShader: [
+      'attribute float aSize; attribute float aAlpha; attribute vec3 aColor;',
+      'uniform float uScale; varying float vAlpha; varying vec3 vColor;',
+      'void main() {',
+      '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
+      '  gl_Position = projectionMatrix * mv;',
+      '  gl_PointSize = aSize * uScale / max(0.1, -mv.z);',
+      '  vAlpha = aAlpha; vColor = aColor;',
+      '}',
+    ].join('\n'),
+    fragmentShader: [
+      'varying float vAlpha; varying vec3 vColor;',
+      'void main() {',
+      '  vec2 d = gl_PointCoord - 0.5; float r = dot(d, d) * 4.0;',
+      '  if (r > 1.0) discard;',
+      '  gl_FragColor = vec4(vColor, vAlpha * (1.0 - r) * (1.0 - r));',
+      '}',
+    ].join('\n'),
+    transparent: true, depthWrite: false,
+  });
+  const pts = new T.Points(pg, pm);
+  pts.frustumCulled = false; pts.renderOrder = 5;
+  WF3D.scene.add(pts);
+  WF3D.puffPts = pts;
+
+  // Motes: sunlit dust drifting in the air near the camera.
+  const mn = top.motes;
+  const mg = new T.BufferGeometry();
+  const mp = new Float32Array(mn * 3);
+  mg.setAttribute('position', new T.BufferAttribute(mp, 3));
+  const mm = new T.PointsMaterial({ color: 0xFBF9F4, size: 0.07, transparent: true, opacity: 0.7, depthWrite: false });
+  const motes = new T.Points(mg, mm);
+  motes.frustumCulled = false;
+  WF3D.scene.add(motes);
+  WF3D.motes = { pts: motes, p: mp, n: mn, seeded: false };
+}
+
+// God rays: soft additive light shafts slanting down through the canopy
+// (the WebGL version of the SVG scene's .wf-glow bands).
+function wf3dBuildRays() {
+  const T = THREE;
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 128;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 128);
+  g.addColorStop(0, 'rgba(255,248,226,0.9)'); g.addColorStop(0.6, 'rgba(255,248,226,0.35)'); g.addColorStop(1, 'rgba(255,248,226,0)');
+  x.fillStyle = g; x.fillRect(0, 0, 32, 128);
+  const h = x.createLinearGradient(0, 0, 32, 0);
+  h.addColorStop(0, 'rgba(0,0,0,1)'); h.addColorStop(0.5, 'rgba(0,0,0,0)'); h.addColorStop(1, 'rgba(0,0,0,1)');
+  x.globalCompositeOperation = 'destination-out';
+  x.fillStyle = h; x.fillRect(0, 0, 32, 128);
+  const tex = new T.CanvasTexture(c);
+  const specs = [[-9, 26, 0.0], [7, 34, 1.7], [-2, 46, 3.1], [13, 22, 4.4]];
+  specs.forEach(function (s) {
+    const m = new T.Mesh(new T.PlaneGeometry(3.4, 30), new T.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.16, blending: T.AdditiveBlending, depthWrite: false, fog: false, side: T.DoubleSide }));
+    m.renderOrder = 6;
+    WF3D.scene.add(m);
+    WF3D.rays.push({ mesh: m, lat: s[0], ahead: s[1], phase: s[2] });
+  });
+}
+
+// ───────── in-world words (wfWords(), same text as the SVG scene) ─────────
+// Mirrors the label() calls in wfBuildProps: [stop-relative a, l, up, word index].
+const WF3D_LABELS = {
+  introduce: [[0.42, -0.62, 0.3, 0]],
+  soundscape: [[1.3, -1.5, 0.62, 0], [1.1, 1.5, 0.72, 1], [0.7, 1.7, 0.42, 2], [0.9, -1.9, 0.46, 3]],
+  naming: [[-0.32, -0.95, 1.55 * 2.8, 0], [0.06, 1, 1.55 * 2.8, 2], [0.44, -1.1, 1.55 * 2.8, 4]],
+  hammock: [[0.11, 0.65, 0.34 * 2.6, 0]],
+  barefoot: [[-0.5, 0.62, 0.16, 0], [-0.24, 0.62, 0.16, 1], [0.02, 0.62, 0.16, 2], [0.28, 0.62, 0.16, 3], [0.54, 0.62, 0.16, 4]],
+  palette: [[0.06, -0.46, 0.3, 0], [0.06, -0.16, 0.3, 1], [0.06, 0.14, 0.3, 2]],
+  senses: [[-0.44, -0.6, 0.13, 5], [-0.22, 0.6, 0.13, 6], [0, -0.6, 0.13, 7], [0.22, 0.6, 0.13, 8], [0.44, -0.6, 0.13, 9],
+    [-0.44, -0.6, 0.27, 0], [-0.22, 0.6, 0.27, 1], [0, -0.6, 0.27, 2], [0.22, 0.6, 0.27, 3], [0.44, -0.6, 0.27, 4]],
+  tinyworld: [[0, -0.78, 0.46, 0]],
+  fire: [[0.06, 0, 0.85, 8]],
+  bivouac: [[0.07, -1.08, 0.5, 0]],
+  sitspot: [[0.55, -1.05, 0.34, 0]],
+  roles: [[-0.06, 0.58, 0.26, 0], [0.05, 0.74, 0.26, 2], [0.16, 0.9, 0.26, 4]],
+  project: [[0.05, -0.94, 0.62, 8]],
+  object: [[0, 0.7, 0.48, 4]],
+  checkin: [[0.05, -0.7, 0.5, 0], [0.05, -0.7, 0.38, 1]],
+  campfire: [[0.05, 0, 0.5, 0]],
+};
+
+function wf3dBuildLabels() {
+  const T = THREE;
+  WF3D.labels.forEach(function (lb) { WF3D.scene.remove(lb.sprite); lb.sprite.material.map.dispose(); lb.sprite.material.dispose(); });
+  WF3D.labels = [];
+  ACTIVITIES.forEach(function (s, i) {
+    const spec = WF3D_LABELS[s.id];
+    if (!spec) return;
+    const words = wfWords(s.id) || [];
+    spec.forEach(function (L) {
+      const txt = words[L[3]];
+      if (!txt || txt.length > 26) return;
+      const c = document.createElement('canvas');
+      const ctx = c.getContext('2d');
+      const fs = 40;
+      ctx.font = '500 ' + fs + 'px "Open Sans", sans-serif';
+      const tw = Math.ceil(ctx.measureText(txt).width) + 24;
+      c.width = tw; c.height = fs + 22;
+      ctx.font = '500 ' + fs + 'px "Open Sans", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = fs * 0.3; ctx.strokeStyle = 'rgba(231,224,206,0.85)';
+      ctx.strokeText(txt, tw / 2, c.height / 2);
+      ctx.fillStyle = '#2C4F44';
+      ctx.fillText(txt, tw / 2, c.height / 2);
+      const tex = new T.CanvasTexture(c);
+      tex.minFilter = T.LinearFilter;
+      const sp = new T.Sprite(new T.SpriteMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
+      const worldH = 0.26;
+      sp.scale.set(worldH * tw / c.height, worldH, 1);
+      sp.position.copy(wf3dAt(i + WF3D_SET_AHEAD + L[0], wf3dSpanLat(s, L[1]) * WF3D_OUT, L[2] * WF3D_UP + 0.25));
+      sp.renderOrder = 10;
+      WF3D.scene.add(sp);
+      WF3D.labels.push({ sprite: sp, stop: i });
+    });
+  });
+  WF3D.labelLang = currentLang;
+}
+
+// glTF drop-in: a model in WF3D_GLTF replaces that stop's procedural set
+// piece (cast and physics props included — the model owns the stop).
+function wf3dLoadGltf() {
+  const ids = Object.keys(WF3D_GLTF);
+  if (!ids.length) return;
+  const go = function () {
+    if (!THREE.GLTFLoader) return;
+    const loader = new THREE.GLTFLoader();
+    ids.forEach(function (id) {
+      const i = ACTIVITIES.findIndex(function (a) { return a.id === id; });
+      if (i < 0) return;
+      loader.load(WF3D_GLTF[id], function (gltf) {
+        const grp = WF3D.stopGroups[i];
+        if (!grp) return;
+        while (grp.children.length) grp.remove(grp.children[0]);
+        if (WF3D.cloth && WF3D.cloth.stop === i) WF3D.cloth = null;
+        if (WF3D.rope && WF3D.rope.stop === i) WF3D.rope = null;
+        WF3D.fire = WF3D.fire.filter(function (f) { return f.stop !== i; });
+        WF3D.cast = WF3D.cast.filter(function (c) { return c.stop !== i; });
+        const root = gltf.scene;
+        root.position.copy(wf3dAt(i + WF3D_SET_AHEAD, 0, 0));
+        root.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+        grp.add(root);
+      }, undefined, function (err) { if (window.console) console.warn('Walk the Forest: could not load', WF3D_GLTF[id], err); });
+    });
+  };
+  if (THREE.GLTFLoader) go(); else wf3dLoadScript(WF3D_GLTF_SRC, go, function () {});
+}
+
+// ───────── pointer: wind, look-around, taps ─────────
+// Listens on #wf-scene (bubbling), so it sees pointer activity over the
+// canvas and the overlay alike; never preventDefault — page scrolling
+// and every button keep working. A drag (moved >6px or held >250ms) is a
+// physics gesture and is flagged so wfOnSceneClick (walk-forest.js) doesn't
+// also treat it as a click on open space.
+function wf3dBindPointer() {
+  const T = THREE;
+  const ray = new T.Raycaster();
+  const ndc = new T.Vector2();
+  const plane = new T.Plane(new T.Vector3(0, 1, 0), 0);
+  const hit = new T.Vector3();
+  const st = { isDown: false, sx: 0, sy: 0, t0: 0, moved: false, lx: null, lz: null, lt: 0 };
+  const aim = function (e) {
+    const r = WF.el.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(ndc, WF3D.camera);
+    return ray.ray.intersectPlane(plane, hit);
+  };
+  const move = function (e) {
+    if (!WF3D.camera || WF3D.deep) return;
+    const now = performance.now();
+    const p = aim(e);
+    WF3D.look.tyaw = -ndc.x * 0.07;
+    WF3D.look.tpitch = ndc.y * 0.035;
+    if (st.isDown && (Math.abs(e.clientX - st.sx) > 6 || Math.abs(e.clientY - st.sy) > 6)) st.moved = true;
+    if (p && st.lx !== null && now - st.lt < 200) {
+      const dt = Math.max(0.008, (now - st.lt) / 1000);
+      const k = st.isDown ? 1.0 : 0.55;
+      wfpAddGust(WF3D.gusts, p.x, p.z, (p.x - st.lx) / dt * k, (p.z - st.lz) / dt * k);
+    }
+    if (p) { st.lx = p.x; st.lz = p.z; st.lt = now; }
+  };
+  const down = function (e) {
+    if (e.target.closest && e.target.closest('button, a')) return;
+    st.isDown = true; st.moved = false; st.sx = e.clientX; st.sy = e.clientY; st.t0 = performance.now();
+  };
+  const up = function (e) {
+    if (!st.isDown) return;
+    st.isDown = false;
+    if (st.moved || performance.now() - st.t0 > 250) { WF.suppressClick = true; return; }
+    if (WF3D.camera) { aim(e); wf3dTap(e, ray); }
+  };
+  const cancel = function () { st.isDown = false; st.moved = false; };
+  WF3D.ptr = { move, down, up, cancel };
+  WF.el.addEventListener('pointermove', move);
+  WF.el.addEventListener('pointerdown', down);
+  WF.el.addEventListener('pointerup', up);
+  WF.el.addEventListener('pointercancel', cancel);
+}
+
+// A tap on a tree shakes it and drops a flurry of leaves. The click still
+// bubbles to wfOnSceneClick as before (open space = appEscapeAction).
+function wf3dTap(e, ray) {
+  // ray was just aimed at the tap point by the pointerup handler.
+  if (!WF3D.crowns || (e.target.closest && e.target.closest('button, a'))) return;
+  const hits = ray.intersectObject(WF3D.crowns, false);
+  if (!hits.length || hits[0].instanceId == null) return;
+  const ti = Math.floor(hits[0].instanceId / WF3D.bendAttrs.perTree);
+  const pt = hits[0].point;
+  const b = WF3D.benders;
+  const dx = b.x[ti] - WF3D.camera.position.x, dz = b.z[ti] - WF3D.camera.position.z;
+  const dl = Math.sqrt(dx * dx + dz * dz) || 1;
+  wfpKickBender(b, ti, dx / dl * 2.2, dz / dl * 2.2);
+  for (let k = 0; k < 14; k++) wf3dSpawnLeaf(pt.x + (Math.random() - 0.5) * 2, pt.y - Math.random(), pt.z + (Math.random() - 0.5) * 2, true);
+}
+
+function wf3dSpawnLeaf(x, y, z, burst) {
+  const pool = WF3D.leaves;
+  if (pool.live >= WF3D.tier.leaves && !burst) return;
+  const r = function () { return wfpRand(pool); };
+  wfpSpawn(pool, WFP_LEAF, x, y, z, (r() - 0.5) * (burst ? 2.5 : 0.6), burst ? r() * 1.5 : 0, (r() - 0.5) * (burst ? 2.5 : 0.6),
+    22 + r() * 14, 0.12 + r() * 0.07, Math.floor(r() * 5));
+}
+
+// ───────── per-frame ─────────
+
+function wf3dProject(at, lat) {
+  const cam = WF3D.camera;
+  if (!cam) return null;
+  const v = wf3dProject._v || (wf3dProject._v = new THREE.Vector3());
+  wf3dAt(at + WF3D_SET_AHEAD, lat, 0, v);
+  v.applyMatrix4(cam.matrixWorldInverse);
+  const depth = -v.z;
+  if (depth < 0.8) return null;
+  v.applyMatrix4(cam.projectionMatrix);
+  return {
+    x: (v.x + 1) / 2 * WF.w,
+    y: (1 - v.y) / 2 * WF.h,
+    scale: WF3D.refDepth / depth,
+    d: at - WF3D.cs.x,
+  };
+}
+
+// Called from wfRender() after every full overlay render.
+function wf3dSync(frame) {
+  wf3dMount();
+  WF3D.pose.seated = !!frame.seated;
+  WF3D.pose.hidden = !!frame.hidden;
+  WF3D.pose.shoeless = !!frame.shoeless;
+  if (WF3D.labelLang !== currentLang) wf3dBuildLabels();
+  wf3dResize();
+  wf3dPlaceCamera(0);
+  wfPlacePins();
+}
+
+function wf3dResize() {
+  const w = WF.w, h = WF.h;
+  const deep = document.body.classList.contains('wf-scene-deep');
+  let dpr = Math.min(window.devicePixelRatio || 1, WF3D.tier.dpr);
+  // Cap total pixels (a 4K display at dpr 2 is 33M pixels per frame).
+  const maxPx = 3.2e6;
+  if (w * h * dpr * dpr > maxPx) dpr = Math.sqrt(maxPx / (w * h));
+  if (deep) dpr = Math.min(dpr, 0.6);
+  if (w === WF3D.w && h === WF3D.h && dpr === WF3D.dpr && deep === WF3D.deep) return;
+  WF3D.w = w; WF3D.h = h; WF3D.dpr = dpr; WF3D.deep = deep;
+  WF3D.renderer.setPixelRatio(dpr);
+  WF3D.renderer.setSize(w, h, false);
+  WF3D.camera.aspect = w / h;
+  WF3D.camera.updateProjectionMatrix();
+  WF3D.puffPts.material.uniforms.uScale.value = h * dpr / (2 * Math.tan(WF3D.camera.fov * Math.PI / 360));
+  WF3D.samples.length = 0;
+}
+
+// Third-person framing: far enough back that ±1.5 lateral units around the
+// walker fit across the screen at any aspect (phones pull back further).
+function wf3dPlaceCamera(dt) {
+  const cam = WF3D.camera;
+  const aspect = (WF.w || 1200) / (WF.h || 640);
+  const hHalf = Math.atan(Math.tan(cam.fov * Math.PI / 360) * aspect);
+  const back = Math.max(7.5, Math.min(20, 4.8 / Math.tan(hHalf)));
+  WF3D.back = back;
+  const c = WF3D.cs.x;
+  const atCam = c - back / WF3D_ALONG;
+  const speed = Math.abs(WF3D.cs.v) * WF3D_ALONG;
+  const bob = Math.sin(WF3D.walkPhase * Math.PI * 2) * 0.03 * Math.min(1, speed);
+  const eye = wf3dAt(atCam, 0, 2.4 + back * 0.2 + bob);
+  eye.y = Math.max(eye.y, wf3dGround(eye.x, eye.z) + 1.5);
+  cam.position.copy(eye);
+  const tgt = wf3dAt(c + 0.9, 0, 1.0);
+  cam.lookAt(tgt);
+  // Look-around (pointer) + a gentle bank into the trail's bends.
+  const L = WF3D.look;
+  if (dt > 0) {
+    wfpSpring(L.yaw, L.tyaw, 2.4, dt);
+    wfpSpring(L.pitch, L.tpitch, 2.4, dt);
+  }
+  const bend = (wfPathLat(c + 0.6) - wfPathLat(c)) * 0.05;
+  cam.rotateY(L.yaw.x);
+  cam.rotateX(L.pitch.x);
+  cam.rotateZ(-bend);
+  cam.updateMatrixWorld();
+  WF3D.refDepth = eye.distanceTo(wf3dAt(c, 0, 0));
+}
+
+function wf3dFrame(now) {
+  if (WF3D.state !== 'ready' || WF3D.lost) return;
+  const dtReal = WF3D.last ? Math.min(0.1, (now - WF3D.last) / 1000) : 0.016;
+  WF3D.last = now;
+  // WF.w/h come from wfMeasure() on resize/full render — not re-read here,
+  // since reading layout right after wfPlacePins' style writes would force
+  // a synchronous layout of the whole page every frame.
+  wf3dResize();
+  wf3dGovern(dtReal * 1000);
+  if (WF3D.state !== 'ready') return;
+  // Deep (blurred behind content): paint ~20fps; physics still integrates
+  // the full elapsed time through the accumulator.
+  WF3D.frameNo++;
+  const skip = WF3D.deep && (WF3D.frameNo % 3 !== 0);
+  WF3D.pendingDt = (WF3D.pendingDt || 0) + dtReal;
+  if (skip) return;
+  const dt = WF3D.pendingDt; WF3D.pendingDt = 0;
+
+  // Camera trail position: spring toward WF.cam (the state machine's own
+  // eased value) — inertia on top of the easing. A wrap-around (end of the
+  // walk back to stop 1) snaps rather than flying back over every stop.
+  if (Math.abs(WF.cam - WF3D.cs.x) > 2.5 && WF.mode === 'hold') { WF3D.cs.x = WF.cam; WF3D.cs.v = 0; }
+  wfpSpring(WF3D.cs, WF.cam, WF.manual ? 3.2 : 2.0, dt);
+
+  wfpAdvance(WF3D.clock, dt, wf3dStepPhysics);
+  WF3D.uni.uTime.value = WF3D.t;
+  wfpTopGusts(WF3D.gusts, 4, wf3dFrame._g || (wf3dFrame._g = new Float32Array(16)));
+  const g = wf3dFrame._g, U = WF3D.uni.uGust.value;
+  for (let k = 0; k < 4; k++) U[k].set(g[k * 4], g[k * 4 + 1], g[k * 4 + 2], g[k * 4 + 3]);
+
+  wf3dUpdateWalker(dt);
+  wf3dPlaceCamera(dt);
+  wf3dUpdateSun();
+  wf3dUpdateVisuals(dt);
+  wfPlacePins();
+  WF3D.renderer.render(WF3D.scene, WF3D.camera);
+  if (WF3D.debugEl) wf3dDebug(dtReal);
+}
+
+function wf3dStepPhysics(dt) {
+  WF3D.t += dt;
+  const t = WF3D.t, c = WF3D.cs.x;
+  wfpStepGusts(WF3D.gusts, dt);
+  // Trees: only the stretch near the camera is simulated; the rest keep
+  // their last pose until they come back into range.
+  const at = WF3D.treeAt;
+  let a = 0, b = at.length;
+  while (a < b && at[a] < c - 1.5) a++;
+  let e = a;
+  while (e < b && at[e] < c + 8) e++;
+  wfpStepBenders(WF3D.benders, WF3D.gusts, t, dt, a, e);
+  wfpStepPool(WF3D.leaves, WF3D.gusts, t, dt, wf3dGround);
+  wfpStepPool(WF3D.puffs, WF3D.gusts, t, dt, wf3dGround);
+  if (WF3D.cloth && Math.abs(WF3D.cloth.stop - c) < 3) wfpStepVerlet(WF3D.cloth.v, WF3D.gusts, t, dt, 8);
+  if (WF3D.rope && Math.abs(WF3D.rope.stop - c) < 3) wfpStepVerlet(WF3D.rope.v, WF3D.gusts, t, dt, 5);
+
+  // Ambient leaf fall from the crowns just ahead, and extra when a gust
+  // (pointer) hits a canopy hard.
+  const B = WF3D.benders;
+  if (wfpRand(WF3D.leaves) < dt * 1.6 && e > a) {
+    const i = a + Math.floor(wfpRand(WF3D.leaves) * (e - a));
+    wf3dSpawnLeaf(B.x[i] + (wfpRand(WF3D.leaves) - 0.5) * 4, B.h[i] * 0.75 + wf3dGround(B.x[i], B.z[i]), B.z[i] + (wfpRand(WF3D.leaves) - 0.5) * 4, false);
+  }
+  for (let i = a; i < e; i++) {
+    const v2 = B.vx[i] * B.vx[i] + B.vz[i] * B.vz[i];
+    if (v2 > 1.2 && wfpRand(WF3D.leaves) < dt * v2 * 1.5) {
+      wf3dSpawnLeaf(B.x[i] + B.bx[i] + (wfpRand(WF3D.leaves) - 0.5) * 3, B.h[i] * 0.72 + wf3dGround(B.x[i], B.z[i]), B.z[i] + B.bz[i] + (wfpRand(WF3D.leaves) - 0.5) * 3, true);
+    }
+  }
+
+  // Fires: embers + smoke, only near the camera.
+  const P = WF3D.puffs;
+  WF3D.fire.forEach(function (f) {
+    if (Math.abs(f.stop - c) > 2.5) return;
+    f.acc += dt;
+    if (P.live < WF3D.tier.puffs && wfpRand(P) < dt * 7) {
+      wfpSpawn(P, WFP_EMBER, f.pos.x + (wfpRand(P) - 0.5) * 0.2, f.pos.y + 0.3 * f.size, f.pos.z + (wfpRand(P) - 0.5) * 0.2, 0, 1 + wfpRand(P), 0, 1.2 + wfpRand(P) * 1.4, 0.035, 0);
+    }
+    if (P.live < WF3D.tier.puffs && wfpRand(P) < dt * 1.4) {
+      wfpSpawn(P, WFP_SMOKE, f.pos.x, f.pos.y + 0.6 * f.size, f.pos.z, 0, 0.4, 0, 5 + wfpRand(P) * 2, 0.5, 0);
+    }
+  });
+}
+
+const WF3D_TMP = {};
+function wf3dUpdateVisuals(dt) {
+  const T = THREE;
+  const t = WF3D.t, c = WF3D.cs.x;
+  const M = WF3D_TMP.M || (WF3D_TMP.M = new T.Matrix4());
+  const Q = WF3D_TMP.Q || (WF3D_TMP.Q = new T.Quaternion());
+  const E = WF3D_TMP.E || (WF3D_TMP.E = new T.Euler());
+  const S = WF3D_TMP.S || (WF3D_TMP.S = new T.Vector3());
+  const P = WF3D_TMP.P || (WF3D_TMP.P = new T.Vector3());
+
+  // Tree bends -> instance attributes.
+  const B = WF3D.benders, A = WF3D.bendAttrs;
+  for (let i = 0; i < B.n; i++) {
+    A.trunk.setXYZ(i, B.bx[i], B.bz[i], B.h[i]);
+    for (let k = 0; k < A.perTree; k++) A.crown.setXYZ(i * A.perTree + k, B.bx[i], B.bz[i], B.h[i]);
+  }
+  A.trunk.needsUpdate = true; A.crown.needsUpdate = true;
+
+  // Leaves (live ones packed to the front of the instance buffer).
+  const L = WF3D.leaves, lm = WF3D.leafMesh;
+  const LC = WF3D_TMP.C || (WF3D_TMP.C = new T.Color());
+  let n = 0;
+  for (let i = 0; i < L.cap; i++) {
+    if (!L.state[i]) continue;
+    const fade = Math.min(1, (L.life[i] - L.age[i]) / 1.5);
+    const s = L.size[i] * Math.max(0.01, fade);
+    E.set(L.rx[i], L.ry[i], L.rz[i]); Q.setFromEuler(E);
+    M.compose(P.set(L.px[i], L.py[i], L.pz[i]), Q, S.set(s, s, s));
+    lm.setMatrixAt(n, M);
+    lm.setColorAt(n, LC.setHex(WF3D_LEAF_COLS[L.tint[i]]));
+    n++;
+  }
+  lm.count = n;
+  lm.instanceMatrix.needsUpdate = true;
+  if (lm.instanceColor) lm.instanceColor.needsUpdate = true;
+
+  // Puffs.
+  const Pf = WF3D.puffs, pg = WF3D.puffPts.geometry;
+  const pos = pg.attributes.position.array, sz = pg.attributes.aSize.array, al = pg.attributes.aAlpha.array, co = pg.attributes.aColor.array;
+  for (let i = 0; i < Pf.cap; i++) {
+    if (!Pf.state[i]) { al[i] = 0; sz[i] = 0; continue; }
+    const u = Pf.age[i] / Pf.life[i];
+    pos[i * 3] = Pf.px[i]; pos[i * 3 + 1] = Pf.py[i]; pos[i * 3 + 2] = Pf.pz[i];
+    const k = Pf.kind[i];
+    if (k === WFP_EMBER) {
+      sz[i] = Pf.size[i] * (1 - u * 0.6); al[i] = (1 - u) * 0.95;
+      co[i * 3] = 1; co[i * 3 + 1] = 0.62 - u * 0.3; co[i * 3 + 2] = 0.3 - u * 0.2;
+    } else if (k === WFP_SMOKE) {
+      sz[i] = Pf.size[i] * (0.5 + u * 2.2); al[i] = Math.sin(u * Math.PI) * 0.28;
+      co[i * 3] = 0.8; co[i * 3 + 1] = 0.85; co[i * 3 + 2] = 0.82;
+    } else {
+      sz[i] = Pf.size[i] * (0.6 + u * 1.2); al[i] = (1 - u) * 0.4;
+      co[i * 3] = 0.85; co[i * 3 + 1] = 0.8; co[i * 3 + 2] = 0.69;
+    }
+  }
+  pg.attributes.position.needsUpdate = true; pg.attributes.aSize.needsUpdate = true;
+  pg.attributes.aAlpha.needsUpdate = true; pg.attributes.aColor.needsUpdate = true;
+
+  // Hammock fabric + its occupant riding the rope.
+  const cl = WF3D.cloth;
+  if (cl && Math.abs(cl.stop - c) < 3) {
+    wf3dShapeHammock(cl);
+    const v = cl.v, mid = Math.floor(cl.cols / 2) * 3;
+    WF3D.cast.forEach(function (cc) {
+      if (cc.stop !== cl.stop || !cc.lie) return;
+      cc.p.group.position.set(v.x[mid], v.x[mid + 1] - 0.2, v.x[mid + 2]);
+      cc.p.group.rotation.y = Math.atan2(cl.dir.x, cl.dir.z) + Math.PI;
+    });
+  }
+
+  // Palette line + swatches.
+  const rp = WF3D.rope;
+  if (rp && Math.abs(rp.stop - c) < 3) {
+    rp.line.geometry.attributes.position.needsUpdate = true;
+    const v = rp.v, up = WF3D_TMP.up || (WF3D_TMP.up = new T.Vector3(0, 1, 0)), d = WF3D_TMP.d || (WF3D_TMP.d = new T.Vector3());
+    rp.swatches.forEach(function (m, k) {
+      const a = rp.hangAt[k] * 3, p = (rp.segs + 1 + k) * 3;
+      m.position.set(v.x[p], v.x[p + 1], v.x[p + 2]);
+      d.set(v.x[a] - v.x[p], v.x[a + 1] - v.x[p + 1], v.x[a + 2] - v.x[p + 2]).normalize();
+      m.quaternion.setFromUnitVectors(up, d);
+    });
+  }
+
+  // Stops well behind or far ahead aren't drawn at all (fog hides them
+  // anyway) — the set pieces are most of the scene's draw calls.
+  WF3D.stopGroups.forEach(function (g, i) { g.visible = i - c > -1.3 && i - c < 7; });
+
+  // Fires, breathing rings, swaying naming trees, the lifted pebble.
+  WF3D.fire.forEach(function (f) {
+    const k = 1 + Math.sin(t * 13 + f.stop) * 0.08 + Math.sin(t * 7.3) * 0.1;
+    f.obj.scale.set(2 - k, k * (1 + Math.sin(t * 17) * 0.06), 2 - k);
+    if (f.light) f.light.intensity = 0.8 + Math.sin(t * 11) * 0.12 + Math.sin(t * 23 + 1) * 0.08;
+  });
+  WF3D.anims.forEach(function (a) {
+    if (Math.abs(a.stop - c) > 3) return;
+    if (a.kind === 'breath') { const s = 0.94 + 0.2 * (0.5 + 0.5 * Math.sin(t * 0.66 + a.phase)); a.obj.scale.set(s, s, s); a.obj.material.opacity = 0.3 + 0.5 * (s - 0.94) / 0.2; }
+    else if (a.kind === 'lift') a.obj.position.y = a.base.y + 0.06 + Math.sin(t * 0.97) * 0.07;
+    else if (a.kind === 'sway') { const w = wfpAmbientWind(a.base.x, a.base.z, t, [0, 0]); a.obj.position.set(a.base.x + w[0] * 0.12, a.base.y, a.base.z + w[1] * 0.12); }
+  });
+  // Cast: slow breathing; reaching arms move.
+  WF3D.cast.forEach(function (cc) {
+    if (Math.abs(cc.stop - c) > 2.5) return;
+    const p = cc.p;
+    p.torso.scale.y = 1 + Math.sin(t * 1.3 + cc.seed) * 0.02;
+    if (p.pose === 'reach') p.armR.rotation.x = -2.3 + Math.sin(t * 0.9 + cc.seed) * 0.25;
+    if (p.pose === 'kneel') p.hips.rotation.x = -0.25 + Math.sin(t * 0.7 + cc.seed) * 0.08;
+  });
+
+  // Labels: fade in only while the camera is at their stop (as in SVG).
+  WF3D.labels.forEach(function (lb) {
+    const near = Math.abs(c - lb.stop);
+    lb.sprite.visible = near < 0.42;
+    lb.sprite.material.opacity = Math.max(0, 1 - near / 0.42);
+  });
+
+  // Rays breathe; they ride along ahead of the camera.
+  WF3D.rays.forEach(function (r) {
+    const p = wf3dAt(c + r.ahead / WF3D_ALONG, r.lat / WF3D_LAT, 13);
+    r.mesh.position.copy(p);
+    r.mesh.rotation.set(0, Math.atan2(WF3D.camera.position.x - p.x, WF3D.camera.position.z - p.z), -0.28);
+    r.mesh.material.opacity = 0.07 + 0.09 * (0.5 + 0.5 * Math.sin(t * 0.5 + r.phase));
+  });
+
+  // Motes: seeded around the camera, drifting on the wind, recycled.
+  const mo = WF3D.motes, mp = mo.p, cp = WF3D.camera.position;
+  const cnt = WF3D.tier.motes;
+  const w = WF3D_TMP.w || (WF3D_TMP.w = [0, 0]);
+  for (let i = 0; i < mo.n; i++) {
+    const o = i * 3;
+    if (i >= cnt) { mp[o + 1] = -999; continue; }
+    const out = !mo.seeded || Math.abs(mp[o] - cp.x) > 14 || mp[o + 2] > cp.z || mp[o + 2] < cp.z - 34 || mp[o + 1] < 0 || mp[o + 1] > 9;
+    if (out) {
+      mp[o] = cp.x + (Math.random() - 0.5) * 22; mp[o + 1] = 0.5 + Math.random() * 6; mp[o + 2] = cp.z - 4 - Math.random() * 28;
+      continue;
+    }
+    wfpWindAt(WF3D.gusts, mp[o], mp[o + 2], t, w);
+    mp[o] += w[0] * 0.3 * dt; mp[o + 2] += w[1] * 0.3 * dt;
+    mp[o + 1] += Math.sin(t * 0.7 + i) * 0.08 * dt;
+  }
+  mo.seeded = true;
+  mo.pts.geometry.attributes.position.needsUpdate = true;
+}
+
+function wf3dUpdateWalker(dt) {
+  const W = WF3D.walker, Seat = WF3D.walkerSeat;
+  const c = WF3D.cs.x;
+  const speed = Math.abs(WF3D.cs.v) * WF3D_ALONG;   // m/s
+  const walking = speed > 0.15;
+  const pos = wf3dAt(c, 0, 0);
+  const ahead = wf3dAt(c + 0.02, 0, 0);
+  const yaw = Math.atan2(ahead.x - pos.x, ahead.z - pos.z) + (WF3D.cs.v < 0 ? Math.PI : 0);
+  const seated = WF3D.pose.seated && !walking;
+  const hidden = WF3D.pose.hidden && !walking;
+  W.group.visible = !seated && !hidden;
+  Seat.group.visible = seated && !hidden;
+  const before = WF3D.walkPhase;
+  WF3D.walkPhase += speed * dt / 1.5;
+  const ph = WF3D.walkPhase * Math.PI * 2;
+  const amp = Math.min(1, speed / 1.2);
+  W.group.position.copy(pos); W.group.rotation.y = yaw;
+  W.legL.rotation.x = Math.sin(ph) * 0.55 * amp;
+  W.legR.rotation.x = -Math.sin(ph) * 0.55 * amp;
+  W.armL.rotation.x = -Math.sin(ph) * 0.4 * amp;
+  W.armR.rotation.x = Math.sin(ph) * 0.4 * amp;
+  W.hips.position.y = 0.9 * W.s + Math.abs(Math.cos(ph)) * 0.035 * amp;
+  W.torso.scale.y = 1 + Math.sin(WF3D.t * 1.2) * 0.015;
+  Seat.group.position.copy(pos); Seat.group.rotation.y = yaw;
+  const foot = WF3D.pose.shoeless ? WF3D.bareFoot : WF3D.shoe;
+  if (W.footL.material !== foot) { W.footL.material = W.footR.material = foot; }
+  // Footfalls kick up a little dust off the path.
+  if (walking && Math.floor(before * 2) !== Math.floor(WF3D.walkPhase * 2)) {
+    const P = WF3D.puffs;
+    for (let k = 0; k < 3 && P.live < WF3D.tier.puffs; k++) {
+      wfpSpawn(P, WFP_DUST, pos.x + (wfpRand(P) - 0.5) * 0.3, pos.y + 0.05, pos.z + (wfpRand(P) - 0.5) * 0.3,
+        (wfpRand(P) - 0.5) * 0.6, 0.4 + wfpRand(P) * 0.3, (wfpRand(P) - 0.5) * 0.6, 0.9 + wfpRand(P) * 0.5, 0.16, 0);
+    }
+  }
+}
+
+// The sun (shadow-casting light) rides along with the camera so shadows
+// stay sharp where you're looking; its position snaps to shadow-map texels
+// so the dappled canopy shadows don't shimmer as the camera moves.
+function wf3dUpdateSun() {
+  const sun = WF3D.sun;
+  const c = wf3dAt(WF3D.cs.x + 1.4, 0, 0);
+  if (WF3D.tier.shadow) {
+    const texel = 68 / WF3D.tier.shadow;
+    c.x = Math.round(c.x / texel) * texel; c.z = Math.round(c.z / texel) * texel;
+  }
+  sun.target.position.copy(c);
+  sun.position.set(c.x - 26, c.y + 42, c.z - 30);
+  sun.target.updateMatrixWorld();
+}
+
+// ───────── governor + tiers ─────────
+function wf3dGovern(ms) {
+  if (!WF3D.governOn || WF3D.deep || document.visibilityState === 'hidden') return;
+  WF3D.samples.push(ms);
+  if (WF3D.samples.length < 150) return;          // ~2.5s at 60fps
+  const s = WF3D.samples.slice(60).sort(function (a, b) { return a - b; });
+  WF3D.samples.length = 0;
+  const median = s[Math.floor(s.length / 2)];
+  WF3D.lastMedian = median;
+  if (median <= WF3D_SLOW_MS) return;
+  if (WF3D.tier === WF3D_TIERS.low) { wf3dAbandon('slow'); return; }
+  wf3dApplyTier(WF3D.tier === WF3D_TIERS.high ? WF3D_TIERS.med : WF3D_TIERS.low);
+}
+
+function wf3dApplyTier(tier) {
+  const prev = WF3D.tier;
+  WF3D.tier = tier;
+  if (!!prev.shadow !== !!tier.shadow) {
+    WF3D.renderer.shadowMap.enabled = !!tier.shadow;
+    WF3D.sun.castShadow = !!tier.shadow;
+    WF3D.scene.traverse(function (o) {
+      if (!o.material) return;
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach(function (m) { m.needsUpdate = true; });
+    });
+  } else if (tier.shadow && tier.shadow !== prev.shadow && WF3D.sun.shadow.map) {
+    WF3D.sun.shadow.mapSize.set(tier.shadow, tier.shadow);
+    WF3D.sun.shadow.map.dispose(); WF3D.sun.shadow.map = null;
+  }
+  if (!tier.light) WF3D.fire.forEach(function (f) { if (f.light) f.light.visible = false; });
+  WF3D.grass.count = Math.min(WF3D.grass.count, tier.grass);
+  WF3D.w = 0;   // force wf3dResize to re-apply the DPR cap
+}
+
+function wf3dDebug(dt) {
+  const el = WF3D.debugEl;
+  WF3D._fps = (WF3D._fps || 60) * 0.95 + (1 / Math.max(dt, 0.001)) * 0.05;
+  if (WF3D.frameNo % 15) return;
+  const info = WF3D.renderer.info.render;
+  el.textContent = Math.round(WF3D._fps) + ' fps · tier ' + WF3D.tier.name + ' · dpr ' + WF3D.dpr.toFixed(2) +
+    ' · ' + info.calls + ' draws · ' + Math.round(info.triangles / 1000) + 'k tris · leaves ' + WF3D.leaves.live +
+    ' · puffs ' + WF3D.puffs.live + ' · gusts ' + WF3D.gusts.list.length +
+    (WF3D.lastMedian ? ' · median ' + WF3D.lastMedian.toFixed(1) + 'ms' : '');
+}
