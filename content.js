@@ -21,6 +21,14 @@ function warnFailure(context, err) {
 }
 
 // ─────────────────────────────────────────
+// APP VERSION
+// ─────────────────────────────────────────
+// Named versions (vMAJOR.MINOR · name), tagged in git and listed in
+// CHANGELOG.md. Shown in every export's footer. Bump it with each release
+// and add the CHANGELOG entry + git tag in the same change.
+const APP_VERSION = { number: '1.3', name: 'Branded exports' };
+
+// ─────────────────────────────────────────
 // LOCALSTORAGE (versioned)
 // ─────────────────────────────────────────
 // Every localStorage key this app writes (pb_session, pb_session_mins,

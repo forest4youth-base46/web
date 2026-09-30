@@ -53,7 +53,7 @@ function pexpFooterHTML(kind) {
       '<p class="pexport-disclaimer-funding">' + toolEsc(t('exp.funding')) + '</p>' +
     '</div>' +
     '<div class="pexport-footer-line">' +
-      '<span>Forest4Youth · Interreg North-West Europe · NWE0400643</span>' +
+      '<span>Forest4Youth · Interreg North-West Europe · NWE0400643 · v' + APP_VERSION.number + '</span>' +
       '<span>' + toolEsc(generated) + ' · ' + lang.toUpperCase() + ' · __PEXPORT_PAGE__</span>' +
     '</div>' +
   '</div>';
