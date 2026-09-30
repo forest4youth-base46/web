@@ -9,7 +9,7 @@ commit listed) when convenient.
 
 | Version | Name | Where | Date |
 |---|---|---|---|
-| v1.3 | Branded exports | `REVAMP` | 2026-09-30 |
+| v1.3 | Branded exports | `REVAMP` `baad8a3` | 2026-09-30 |
 | v1.2 | Walk the Forest 3D | `REVAMP` `ce4ec9f` | 2026-09-30 |
 | v1.1 | Practical Guides | `post-wp1-update` `6d12ebb` | 2026-09-30 |
 | v1.0 | Live | `main` `a4d8fc4` (the public site) | 2026-09-21 |
