@@ -321,15 +321,16 @@ WF3DS.introduce = {
 
 // 2 · The soundscape map — sit still, mark where sounds come from. A seated
 // listener with a clipboard; each source (bird, wind, stream, far voices)
-// sounds in turn, a ripple travels along a faint dashed line to the
-// listener, who turns toward it and marks the board.
+// sounds in turn with a soft ripple where it is, and the listener turns
+// toward it and marks the board. Around them, concentric awareness rings
+// widen and fade — no lines from the sounds to the listener.
 WF3DS.soundscape = {
   build(ctx) {
     const T = THREE;
     const L = ctx.st.listener = ctx.person('sit', 0, 0, -1, 0);
     const board = new T.Mesh(new T.BoxGeometry(0.26, 0.02, 0.2), wf3dMat(0xE6DCC4));
     ctx.hold(L, board); board.rotation.x = 1.2;
-    ctx.ring(0, 0, 1.1, 0x8FAEA0, 0.35); ctx.ring(0, 0, 1.9, 0x8FAEA0, 0.2);
+    ctx.ring(0, 0, 1.1, 0xE8F0E6, 0.55); ctx.ring(0, 0, 1.9, 0xE8F0E6, 0.35);
     const src = [
       { k: 0, x: 2.4, z: 2.4, y: 2.2 },    // birdsong
       { k: 1, x: -0.6, z: 3.4, y: 1.4 },   // wind
@@ -344,26 +345,23 @@ WF3DS.soundscape = {
     ctx.strip([[2.0, -3.4], [2.6, -2.4], [3.0, -1.4], [3.6, -0.6]], 0.7, 0x9FB6B0, 1);   // the stream
     ctx.stone(2.4, -2.9, 0.14); ctx.stone(3.2, -1.2, 0.12);
     ctx.person('stand', 4.6, 0.3, 4.6, 1.3, 1.3); ctx.person('stand', 4.7, 1.0, 4.6, 0, 1.25);   // far voices
-    // The map's lines: a dashed ray from each sound to the listener, drawn
-    // as real little dashes (a 1px GL line vanishes at this distance).
-    const dashMat = new T.MeshBasicMaterial({ color: 0xF2EBD8, transparent: true, opacity: 0.8 });
-    const dashGeo = new T.CylinderGeometry(0.025, 0.025, 0.22, 5);
+    // No lines between the sounds and the listener (Ivo: the concentric
+    // circles are the image of this activity, as in the Pocketbook
+    // drawing). Awareness rings widen gently around the listener; a sound
+    // shows only as a soft ripple where it comes from.
     src.forEach(function (s) {
-      const A = ctx.W(s.x, s.z, s.y), B = ctx.W(0, 0, 0.7);
-      const n = Math.floor(A.distanceTo(B) / 0.4);
-      const q = new T.Quaternion().setFromUnitVectors(new T.Vector3(0, 1, 0), B.clone().sub(A).normalize());
-      for (let k = 1; k < n; k++) {
-        const d = new T.Mesh(dashGeo, dashMat);
-        d.position.copy(A).lerp(B, k / n);
-        d.quaternion.copy(q);
-        ctx.grp.add(d);
-      }
-      s.A = A; s.B = B;
+      s.A = ctx.W(s.x, s.z, s.y);
       s.pulse = new T.Mesh(new T.TorusGeometry(0.3, 0.02, 6, 32), new T.MeshBasicMaterial({ color: 0xFBF9F4, transparent: true, opacity: 0 }));
-      s.pulse.position.copy(A);
-      s.bead = new T.Mesh(new T.SphereGeometry(0.06, 8, 6), new T.MeshBasicMaterial({ color: 0xFBF9F4, transparent: true, opacity: 0 }));
-      ctx.grp.add(s.pulse, s.bead);
+      s.pulse.position.copy(s.A);
+      ctx.grp.add(s.pulse);
       s.label = ctx.word(s.k, s.x, s.z, s.y + 0.6);
+    });
+    ctx.st.waves = [0, 1, 2].map(function () {
+      const m = new T.Mesh(new T.TorusGeometry(1, 0.05, 6, 64), new T.MeshBasicMaterial({ color: 0xE8F0E6, transparent: true, opacity: 0, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2;
+      ctx.W(0, 0, 0.06, m.position);
+      ctx.grp.add(m);
+      return m;
     });
     ctx.st.src = src;
     ctx.join = { x: -1.9, z: -1.5, pose: 'sit', fx: 0, fz: 0.5 };
@@ -379,7 +377,14 @@ WF3DS.soundscape = {
   act(ctx, u, t) {
     const S = ctx.st, L = S.listener.p;
     let hearing = null;
-    S.src.forEach(function (s) { s.label.emph = 0.35; s.pulse.material.opacity = 0; s.bead.material.opacity = 0; });
+    S.src.forEach(function (s) { s.label.emph = 0.35; s.pulse.material.opacity = 0; });
+    // Awareness rings: widening from the listener, staggered, like the drawing.
+    S.waves.forEach(function (m, k) {
+      const ph = ((t / 6) + k / 3) % 1;
+      const r = 0.6 + ph * 2.8;
+      m.scale.set(r, r, 1);   // wider, not thicker
+      m.material.opacity = 0.75 * Math.sin(Math.PI * ph);
+    });
     S.order.forEach(function (idx, k) {
       const s = S.src[idx], a = S.at[k], e = wf3dsSeg(u, a, a + 0.14);
       if (e <= 0 || e >= 1) return;
@@ -387,10 +392,7 @@ WF3DS.soundscape = {
       const pr = wf3dsSeg(e, 0, 0.5);
       s.pulse.scale.setScalar(0.3 + pr * 2.2);
       s.pulse.material.opacity = 0.7 * (1 - pr);
-      s.pulse.lookAt(s.B);
-      const bt = wf3dsSeg(e, 0.1, 0.7);
-      s.bead.position.copy(s.A).lerp(s.B, bt);
-      s.bead.material.opacity = bt > 0 && bt < 1 ? 0.85 : 0;
+      s.pulse.lookAt(ctx.W(0, 0, s.y));
       s.label.emph = 1;
     });
     if (hearing) {
