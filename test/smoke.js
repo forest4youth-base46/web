@@ -364,7 +364,25 @@ const TESTS = [
   ['Walk the Forest ?wf=svg: painted scene, no Three.js download', testWfSvgOverride],
   ['Walk the Forest 3D: falls back without WebGL / under reduced motion', () => testWf3dFallbacks()],
   ['Every export carries the logo and a disclaimer (PDF, print, Ctrl+P)', testExportsBranded],
+  ['Walk the Forest: clicking a rail segment walks to that activity', testWfRailClick],
 ];
+
+async function testWfRailClick(browser) {
+  // The lower rail's segments are buttons: clicking one engages the walk
+  // and moves to that activity; aria-current follows.
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto(`http://localhost:${PORT}/index.html?wf=svg`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const btns = page.locator('.wf-rail .wf-rail-btn');
+  assert.strictEqual(await btns.count(), 17, 'one rail button per activity');
+  await btns.nth(4).click();
+  await page.waitForTimeout(300);
+  const st = await page.evaluate(() => ({ to: WF.to, engaged: WF.engaged }));
+  assert.strictEqual(st.to, 4, 'walks to the clicked activity');
+  assert.ok(st.engaged, 'clicking the rail joins the activity');
+  await page.waitForFunction(() => document.querySelectorAll('.wf-rail .wf-rail-btn')[4].getAttribute('aria-current') === 'step', null, { timeout: 15000 });
+  await page.close();
+}
 
 async function testExportsBranded(browser) {
   // Every PDF/PNG/print export carries the project logo (at no less than

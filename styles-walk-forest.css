@@ -191,10 +191,18 @@ body.wf-scene-deep .wf-blur-layer { filter: blur(3px); }
 }
 
 .wf-rail {
-  position: absolute; display: flex; align-items: flex-end; height: 12px;
+  position: absolute; display: flex; align-items: center; height: 12px;
   padding: 8px 12px; background: rgba(251,249,244,0.82); border-radius: 999px;
-  z-index: 400;
+  z-index: 400; pointer-events: auto;
 }
+/* Rail segments: buttons with a 22px-tall target around the small bar. */
+.wf-rail-btn {
+  display: flex; align-items: center; height: 22px; padding: 0 1px;
+  border: 0; background: none; cursor: pointer; border-radius: 4px;
+}
+.wf-rail-btn > span { display: block; }
+.wf-rail-btn:hover > span, .wf-rail-btn:focus-visible > span { height: 8px !important; opacity: 1 !important; }
+.wf-rail-btn:focus-visible { outline: 2px solid #234A3E; outline-offset: 1px; }
 
 .wf-list-link {
   position: absolute; z-index: 400;

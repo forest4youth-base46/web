@@ -524,6 +524,20 @@ function wfGoNext() {
   WF.openId = null;
   wfRender();
 }
+// Jump straight to any activity: the rail's click target (first added in
+// c555f47 on a branch that was never merged; restored 2026-09-30). Same
+// shape as wfGoNext: tween, or snap under reduced motion, and join it.
+function wfGoTo(idx) {
+  WF.engaged = true;
+  const now = performance.now();
+  const target = Math.max(0, Math.min(wfStops().length - 1, idx));
+  WF.from = WF.cam; WF.to = target; WF.moveStart = now;
+  WF.mode = 'move'; WF.manual = true;
+  WF.paused = false; WF.holdEnd = now + wfDwellMs();
+  if (WF.reduced) { WF.cam = target; WF.mode = 'hold'; }
+  WF.openId = null;
+  wfRender();
+}
 function wfRestart() {
   WF.engaged = true;
   WF.from = WF.cam; WF.to = 0; WF.moveStart = performance.now();
@@ -713,9 +727,10 @@ function wfComputeFrame() {
     const done = i < camIndex;
     const gap = i > 0 && all[i - 1].group !== s.group ? 12 : 3;
     return {
-      title: wfStopName(s),
-      style: 'width:' + (narrow ? 12 : 16) + 'px;height:' + (active ? 8 : 4) + 'px;border-radius:3px;margin-left:' +
-        (i === 0 ? 0 : gap) + 'px;background:' + (active ? 'var(--ember)' : (done ? gMeta.color : 'var(--forest-mist)')) +
+      title: wfStopName(s), index: i, active,
+      gap: i === 0 ? 0 : gap,
+      style: 'width:' + (narrow ? 12 : 16) + 'px;height:' + (active ? 8 : 4) + 'px;border-radius:3px;' +
+        'background:' + (active ? 'var(--ember)' : (done ? gMeta.color : 'var(--forest-mist)')) +
         ';opacity:' + (active || done ? 1 : 0.75) + ';transition:height .25s',
     };
   });
@@ -942,7 +957,12 @@ function wfOverlayHTML(frame) {
     '</div>'
   ).join('');
 
-  const railHtml = frame.rail.map(rn => '<div title="' + wfEsc(rn.title) + '" style="' + rn.style + '"></div>').join('');
+  // Each segment is a real button: clicking one walks to that activity and
+  // joins it (wfGoTo). The visible bar is small (4-8px), so the button
+  // around it gives a finger-sized target.
+  const railHtml = frame.rail.map(rn => '<button type="button" class="wf-rail-btn" onclick="wfGoTo(' + rn.index + ')"' +
+    ' style="margin-left:' + rn.gap + 'px" title="' + wfEsc(rn.title) + '" aria-label="' + wfEsc(rn.title) + '"' +
+    (rn.active ? ' aria-current="step"' : '') + '><span style="' + rn.style + '"></span></button>').join('');
 
   return '' +
     // 3D only: a soft paper-toned haze under the site header. The SVG
