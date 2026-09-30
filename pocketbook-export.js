@@ -121,7 +121,6 @@ function pbBuildSessionExportData() {
     .replace('{groups}', String(groupsUsed))
     .replace('{n}', String(items.length))
     .replace('{mins}', String(totalMin));
-  const generated = t('pbui.planexport.footer.generated').replace('{date}', date);
 
   const headerHTML =
     '<div class="pexport-topbar">' +
@@ -135,9 +134,7 @@ function pbBuildSessionExportData() {
           '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.planexport.label.practitioner')) + '</div><div class="pexport-value">' + pbEscapeHtml(pbSessionMeta.practitioner || '—') + '</div></div>' +
         '</div>' +
       '</div>' +
-      '<div class="pexport-logos">' +
-        '<img class="pexport-logo-img" src="assets/logo-interreg-forest4youth.png" alt="Interreg North-West Europe · Forest4Youth">' +
-      '</div>' +
+      pexpLogoHTML() +
     '</div>';
 
   const titleHTML =
@@ -208,12 +205,8 @@ function pbBuildSessionExportData() {
   // with "current/total" once the real page count is known (only after
   // packing); the continuous on-screen/PNG render has no page concept, so
   // it strips the " · __PEXPORT_PAGE__" chunk entirely.
-  const footerBottomHTML =
-    '<div class="pexport-footer-bottom">' +
-      '<span>Forest4Youth · Interreg North-West Europe</span>' +
-      '<span>' + pbEscapeHtml(t('pbui.planexport.footer.disclaimer')) + '</span>' +
-      '<span>' + pbEscapeHtml(generated) + ' · ' + lang.toUpperCase() + ' · __PEXPORT_PAGE__</span>' +
-    '</div>';
+  // Logo + disclaimer footer shared by every export (export-docs.js).
+  const footerBottomHTML = pexpFooterHTML('plan');
 
   return {
     headerHTML, titleHTML, colHeadersHTML, rowBlocks, sidebarHTML,
@@ -569,7 +562,6 @@ async function exportRunPNG() {
 // screen/PNG) and the paginated PDF path (pbBuildReportPaginatedCanvases).
 // Returns null if there's no session record yet (nothing to export).
 function pbBuildReportExportData() {
-  const lang = typeof currentLang === 'string' ? currentLang : 'en';
   const records = pbLoadSessionRecords();
   if (!records.length) return null;
   const record = records[0];
@@ -655,9 +647,7 @@ function pbBuildReportExportData() {
           '<div class="pexport-meta-block"><div class="pexport-label">' + pbEscapeHtml(t('pbui.reflect.report.label.placeinst')) + '</div><div class="pexport-value">' + pbEscapeHtml(placeInst || '—') + '</div></div>' +
         '</div>' +
       '</div>' +
-      '<div class="pexport-logos">' +
-        '<img class="pexport-logo-img" src="assets/logo-interreg-forest4youth.png" alt="Interreg North-West Europe · Forest4Youth">' +
-      '</div>' +
+      pexpLogoHTML() +
     '</div>';
 
   const titleHTML =
@@ -666,11 +656,7 @@ function pbBuildReportExportData() {
       '<div class="pexport-subtitle">' + pbEscapeHtml(subtitle) + '</div>' +
     '</div>';
 
-  const footerBottomHTML =
-    '<div class="pexport-footer-bottom">' +
-      '<span>Forest4Youth · Interreg North-West Europe</span>' +
-      '<span>' + pbEscapeHtml(t('pbui.planexport.footer.generated').replace('{date}', new Date().toLocaleDateString(lang))) + ' · ' + lang.toUpperCase() + ' · __PEXPORT_PAGE__</span>' +
-    '</div>';
+  const footerBottomHTML = pexpFooterHTML('report');
 
   const sessionLabelHTML = '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.reflect.report.session')) + '</div>';
   const reflectionLabelHTML = '<div class="pexport-section-label">' + pbEscapeHtml(t('pbui.reflect.report.selfreflection')) + '</div>';
@@ -701,29 +687,11 @@ function exportRenderPrintReport() {
 
 // Report pages are single-column (no sidebar) — the topbar repeats on
 // every page, the title only on page 1, and every section's blocks flow
-// across pages just like the plan's rows do.
+// across pages just like the plan's rows do (pexpPaginate, export-docs.js,
+// which the tool documents share).
 async function pbBuildReportPaginatedCanvases(root) {
   const d = pbBuildReportExportData();
-  if (!d) return [];
-
-  const page1ChromeHeight = pbMeasureHeight(root, d.headerHTML + d.titleHTML);
-  const restChromeHeight = pbMeasureHeight(root, d.headerHTML);
-  const footerHeight = pbMeasureHeight(root, d.footerBottomHTML);
-
-  const firstPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - page1ChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
-  const restPageBudget = PEXPORT_PAGE_HEIGHT_CSS_PX - PEXPORT_PAGE_PAD_CSS_PX - restChromeHeight - footerHeight - PEXPORT_PAGE_GAP_CSS_PX;
-  const pages = pbPackBlocks(root, d.blocks, firstPageBudget, restPageBudget);
-
-  const canvases = [];
-  for (let i = 0; i < pages.length; i++) {
-    const isFirst = i === 0;
-    const footer = d.footerBottomHTML.replace('__PEXPORT_PAGE__', (i + 1) + '/' + pages.length);
-    const pageHTML = '<div class="pexport pexport--paged" style="height:' + PEXPORT_PAGE_INNER_HEIGHT_CSS_PX + 'px;">' +
-      d.headerHTML + (isFirst ? d.titleHTML : '') + pages[i].join('') + footer +
-    '</div>';
-    canvases.push(await pbRasterizePage(root, pageHTML));
-  }
-  return canvases;
+  return d ? pexpPaginate(root, d) : [];
 }
 
 // Belt-and-suspenders alongside the button's own disabled state: same two
