@@ -54,7 +54,7 @@ function wf3dsCtx(i, grp) {
   const T = THREE;
   const ivn = i >= ACTIVITIES.length;
   const C = wf3dStopCenter(i);
-  const at = i + (ivn ? WF3D_IVN_AHEAD : WF3D_SET_AHEAD);
+  const at = ivn ? wf3dTrail(i) + WF3D_IVN_AHEAD : i + WF3D_SET_AHEAD;
   const P0 = wf3dAt(at, 0, 0);
   const P1 = wf3dAt(at + 0.01, 0, 0);
   const f = new T.Vector3(P1.x - P0.x, 0, P1.z - P0.z).normalize();
@@ -1374,8 +1374,10 @@ WF3DS.ivn = {
 // the approach to the check-in it fades up out of the forest (~45m off),
 // rather than sitting on the horizon for the whole walk.
 function wf3dsIvnReveal(g, c) {
-  const N = ACTIVITIES.length;
-  const f = wf3dsEase(wf3dsSeg(c, N - 2.5, N - 2.0));
+  // Out of sight until the walker is over the log, well past the campfire,
+  // so it never shares the activities' ambience.
+  const T = wf3dTrail(c), L = wf3dLogAt();
+  const f = wf3dsEase(wf3dsSeg(T, L + 0.05, L + 0.7));
   WF3D.ivnFade = f;
   g.visible = f > 0.001;
   if (!g.visible) return;
@@ -1405,12 +1407,42 @@ function wf3dsIvnReveal(g, c) {
   g.traverse(function (o) { if (o.userData.hideWhileFading) o.visible = !fading; });
 }
 
+// The fallen log across the trail between the campfire and the IVN room:
+// a quiet threshold the walker steps over before the room comes into view.
+function wf3dsBuildLog() {
+  const T = THREE, at = wf3dLogAt();
+  const P = wf3dAt(at, 0, 0), Q = wf3dAt(at + 0.01, 0, 0);
+  const f = new T.Vector3(Q.x - P.x, 0, Q.z - P.z).normalize();
+  const side = new T.Vector3(-f.z, 0, f.x);
+  const grp = new T.Group();
+  const A = P.clone().addScaledVector(side, -3.4), B = P.clone().addScaledVector(side, 3.1);
+  A.y = wf3dGround(A.x, A.z) + 0.22; B.y = wf3dGround(B.x, B.z) + 0.2;
+  const log = new T.Mesh(new T.CylinderGeometry(0.2, 0.25, A.distanceTo(B), 10), wf3dMat(0x7A6452));
+  log.position.copy(A).add(B).multiplyScalar(0.5);
+  log.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+  log.castShadow = true; log.receiveShadow = true;
+  grp.add(log);
+  // Its root plate at one end, and a broken branch or two.
+  const root = new T.Mesh(new T.CylinderGeometry(0.55, 0.6, 0.18, 9), wf3dMat(0x6E5847));
+  root.position.copy(B).addScaledVector(side, 0.1); root.quaternion.copy(log.quaternion);
+  root.castShadow = true; grp.add(root);
+  [[-1.2, 0.5], [0.9, -0.6]].forEach(function (b) {
+    const m = new T.Mesh(new T.CylinderGeometry(0.04, 0.06, 0.9, 6), wf3dMat(0x8A7560));
+    m.position.copy(P).addScaledVector(side, b[0]).addScaledVector(f, b[1] * 0.3);
+    m.position.y = wf3dGround(m.position.x, m.position.z) + 0.45;
+    m.rotation.set(0.5 * b[1], 0, 0.7 * Math.sign(b[0]));
+    m.castShadow = true; grp.add(m);
+  });
+  WF3D.scene.add(grp);
+}
+
 // ───────── runtime ─────────
 
 function wf3dsBuildAll() {
   WF3D.stations = [];
   WF3D.stopGroups = [];
   WF3D.labelSpecs = [];
+  wf3dsBuildLog();
   WF3D.stationLight = new THREE.PointLight(0xFF9A5A, 0, 8, 1.6);
   WF3D.scene.add(WF3D.stationLight);
   ACTIVITIES.concat([{ id: 'ivn' }]).forEach(function (s, i) {
@@ -1569,9 +1601,12 @@ function wf3dsUpdate(dt) {
 // hammock) as WF3D.arrive rises, and back as it falls.
 function wf3dsWalker(dt) {
   const W = WF3D.walker, Seat = WF3D.walkerSeat, Lie = WF3D.walkerLie;
-  const c = WF3D.cs.x;
+  const c = wf3dTrail(WF3D.cs.x);
   const trail = wf3dAt(c, 0, 0);
   const ahead = wf3dAt(c + 0.02, 0, 0);
+  // Stepping over the fallen log: a lift of the body as the walker crosses.
+  const over = 1 - Math.min(1, Math.abs(c - wf3dLogAt()) * WF3D_ALONG / 0.7);
+  trail.y += 0.32 * Math.sin(Math.PI * 0.5 * Math.max(0, over)) * (over > 0 ? 1 : 0);
   let yaw = Math.atan2(ahead.x - trail.x, ahead.z - trail.z) + (WF3D.cs.v < 0 ? Math.PI : 0);
   const st = WF3D.stations[WF3D.arriveAt];
   const a = WF3D.arrive || 0, e = wf3dsEase(a);

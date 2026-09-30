@@ -456,7 +456,13 @@ function wfDwellMs() {
   if (!wfUse3d()) return WF_DWELL_MS;
   return WF.engaged ? 22000 + Math.random() * 8000 : 1500;
 }
-function wfTravelMs() { return WF.manual ? WF_MANUAL_TRAVEL_MS : WF_TRAVEL_MS; }
+function wfTravelMs() {
+  // 3D: the leg from the campfire to the IVN room is ~6 stops of trail —
+  // walk it at a walking pace, not six times as fast.
+  const span = wfUse3d() && typeof wf3dTrail === 'function' ? Math.abs(wf3dTrail(WF.to) - wf3dTrail(WF.from)) : 1;
+  const k = span > 1.5 && WF.to > WF.from ? span * 0.6 : 1;
+  return (WF.manual ? WF_MANUAL_TRAVEL_MS : WF_TRAVEL_MS) * k;
+}
 
 function wfStep(now) {
   const last = WF.openId !== null;

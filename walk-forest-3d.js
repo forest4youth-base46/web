@@ -41,9 +41,27 @@ function wf3dStopSide(i) {
   const v = sp && sp[0] ? sp[0] : (WF_STOP_SIDE[s.id] || 1);
   return v < 0 ? -1 : 1;
 }
+// Walk position (stop units, WF.cam / WF3D.cs.x) -> trail position. The
+// activities sit one stop apart; after the campfire the trail runs on
+// WF3D_IVN_GAP stops further, over a fallen log, to the IVN room — far
+// enough that the room never shares the activities' ambience. Everything
+// that turns the walk position into a place in the world goes through
+// this; station logic (arrival, which stop is near) stays in stop units.
+const WF3D_IVN_GAP = 6;
+function wf3dTrail(s) {
+  const last = ACTIVITIES.length - 1;
+  if (s <= last) return s;
+  if (s <= last + 1) return last + (s - last) * WF3D_IVN_GAP;
+  return s + WF3D_IVN_GAP - 1;
+}
+// Trail stops covered per stop-unit around s (for walking pace).
+function wf3dTrailRate(s) { const last = ACTIVITIES.length - 1; return s > last && s < last + 1 ? WF3D_IVN_GAP : 1; }
+// Where the fallen log lies across the trail, in trail units.
+function wf3dLogAt() { return ACTIVITIES.length - 1 + 1.6; }
+
 function wf3dStopCenter(i, v) {
-  // The 18th stop, the IVN room, stands across the end of the trail itself.
-  if (i >= ACTIVITIES.length) return wf3dAt(i + WF3D_IVN_AHEAD, 0, 0, v);
+  // The 18th stop, the IVN room, stands across the far end of the trail.
+  if (i >= ACTIVITIES.length) return wf3dAt(wf3dTrail(i) + WF3D_IVN_AHEAD, 0, 0, v);
   return wf3dAt(i + WF3D_SET_AHEAD, wf3dStopSide(i) * WF3D_STOP_CLEAR, 0, v);
 }
 const WF3D_IVN_AHEAD = 0.62;   // room centre, in stops ahead of its stop point
@@ -1255,9 +1273,9 @@ function wf3dPlaceCamera(dt) {
   const narrow = aspect < 0.8;
   const back = narrow ? Math.max(6.5, Math.min(8.5, 2.6 / Math.tan(hHalf))) : Math.max(8, Math.min(24, 6.2 / Math.tan(hHalf)));
   WF3D.back = back;
-  const c = WF3D.cs.x;
+  const c = wf3dTrail(WF3D.cs.x);
   const atCam = c - back / WF3D_ALONG;
-  const speed = Math.abs(WF3D.cs.v) * WF3D_ALONG;
+  const speed = Math.abs(WF3D.cs.v) * wf3dTrailRate(WF3D.cs.x) * WF3D_ALONG;
   const bob = Math.sin(WF3D.walkPhase * Math.PI * 2) * 0.03 * Math.min(1, speed);
   // Low, over-the-shoulder: eye a little above head height.
   const eye = wf3dAt(atCam, 0, 1.9 + back * 0.08 + bob);
@@ -1327,7 +1345,7 @@ function wf3dFrame(now) {
 
 function wf3dStepPhysics(dt) {
   WF3D.t += dt;
-  const t = WF3D.t, c = WF3D.cs.x;
+  const t = WF3D.t, c = wf3dTrail(WF3D.cs.x);
   wfpStepGusts(WF3D.gusts, dt);
   // Trees: only the stretch near the camera is simulated; the rest keep
   // their last pose until they come back into range.
@@ -1339,8 +1357,9 @@ function wf3dStepPhysics(dt) {
   wfpStepBenders(WF3D.benders, WF3D.gusts, t, dt, a, e);
   wfpStepPool(WF3D.leaves, WF3D.gusts, t, dt, wf3dGround);
   wfpStepPool(WF3D.puffs, WF3D.gusts, t, dt, wf3dGround);
-  if (WF3D.cloth && Math.abs(WF3D.cloth.stop - c) < 3) wfpStepVerlet(WF3D.cloth.v, WF3D.gusts, t, dt, 8);
-  if (WF3D.rope && Math.abs(WF3D.rope.stop - c) < 3) wfpStepVerlet(WF3D.rope.v, WF3D.gusts, t, dt, 5);
+  const cs = WF3D.cs.x;
+  if (WF3D.cloth && Math.abs(WF3D.cloth.stop - cs) < 3) wfpStepVerlet(WF3D.cloth.v, WF3D.gusts, t, dt, 8);
+  if (WF3D.rope && Math.abs(WF3D.rope.stop - cs) < 3) wfpStepVerlet(WF3D.rope.v, WF3D.gusts, t, dt, 5);
 
   // Ambient leaf fall from the crowns just ahead, and extra when a gust
   // (pointer) hits a canopy hard.
@@ -1359,7 +1378,7 @@ function wf3dStepPhysics(dt) {
   // Fires: embers + smoke, only near the camera.
   const P = WF3D.puffs;
   WF3D.fire.forEach(function (f) {
-    if (Math.abs(f.stop - c) > 2.5) return;
+    if (Math.abs(f.stop - cs) > 2.5) return;
     f.acc += dt;
     const I = f.intensity == null ? 1 : f.intensity;
     if (I < 0.15) return;
@@ -1475,7 +1494,7 @@ function wf3dUpdateVisuals(dt) {
 
   // Rays breathe; they ride along ahead of the camera.
   WF3D.rays.forEach(function (r) {
-    const p = wf3dAt(c + r.ahead / WF3D_ALONG, r.lat / WF3D_LAT, 13);
+    const p = wf3dAt(wf3dTrail(c) + r.ahead / WF3D_ALONG, r.lat / WF3D_LAT, 13);
     r.mesh.position.copy(p);
     r.mesh.rotation.set(0, Math.atan2(WF3D.camera.position.x - p.x, WF3D.camera.position.z - p.z), -0.28);
     r.mesh.material.opacity = 0.07 + 0.09 * (0.5 + 0.5 * Math.sin(t * 0.5 + r.phase));
@@ -1506,7 +1525,7 @@ function wf3dUpdateVisuals(dt) {
 // so the dappled canopy shadows don't shimmer as the camera moves.
 function wf3dUpdateSun() {
   const sun = WF3D.sun;
-  const c = wf3dAt(WF3D.cs.x + 1.4, 0, 0);
+  const c = wf3dAt(wf3dTrail(WF3D.cs.x) + 1.4, 0, 0);
   if (WF3D.tier.shadow) {
     const texel = 68 / WF3D.tier.shadow;
     c.x = Math.round(c.x / texel) * texel; c.z = Math.round(c.z / texel) * texel;
