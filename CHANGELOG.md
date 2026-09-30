@@ -1,8 +1,11 @@
 # Changelog
 
 Named versions of the Forest4Youth web tool: `vMAJOR.MINOR · name`. Each
-is a git tag; the current one is `APP_VERSION` in `content.js` and shows
-in every export's footer.
+points at an exact commit below; the current one is `APP_VERSION` in
+`content.js` and shows in every export's footer. Git tags `v1.0`–`v1.2`
+exist locally but could not be pushed from the working session (tag push
+refused, HTTP 403) — create them on GitHub (Releases → new tag on the
+commit listed) when convenient.
 
 | Version | Name | Where | Date |
 |---|---|---|---|

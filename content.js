@@ -23,9 +23,9 @@ function warnFailure(context, err) {
 // ─────────────────────────────────────────
 // APP VERSION
 // ─────────────────────────────────────────
-// Named versions (vMAJOR.MINOR · name), tagged in git and listed in
+// Named versions (vMAJOR.MINOR · name), each pinned to a commit in
 // CHANGELOG.md. Shown in every export's footer. Bump it with each release
-// and add the CHANGELOG entry + git tag in the same change.
+// and add the CHANGELOG entry in the same change.
 const APP_VERSION = { number: '1.3', name: 'Branded exports' };
 
 // ─────────────────────────────────────────

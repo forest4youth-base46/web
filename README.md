@@ -64,7 +64,7 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── pocketbook-builder.js    # Session Builder: pbSession/pbSessionMins state, arc charts
 ├── pocketbook-export.js     # PDF/PNG/QR export pipeline, standalone timer modal
 ├── export-docs.js           # logo + disclaimer every export carries; the tools' branded PDF/print documents
-├── CHANGELOG.md             # named versions (v1.0 Live … v1.3 Branded exports), each a git tag
+├── CHANGELOG.md             # named versions (v1.0 Live … v1.3 Branded exports) and their commits
 ├── pocketbook-run.js        # Run Mode state machine, its keyboard handling and timer
 ├── pocketbook-reflect.js    # post-session recap/history, self-reflection, indicators
 ├── pocketbook-init.js       # QR/link session restore + pbInit() — loads last, wires it together
