@@ -255,6 +255,12 @@ the site. Depth comes from real perspective, fog, soft shadows and the
 existing CSS blur in deep mode. Revisit only if the device check shows
 headroom.
 
+**Layout in 3D (REVAMP):**
+- Each activity is moved off the path into its own clearing, centred ~5.6m to one side (`wf3dStopOff()`/`wf3dStopCenter()`). The walker keeps the trail. Pins stand over the clearing; their `d`, and so "armed" and the arrival chip, is unchanged. Trees, shrubs, stones and grass are left out inside clearings (`wf3dInClearing()`).
+- A second, cheaper tree set (`wf3dBuildFarForest()`) thickens and deepens the green from ~13m out.
+- People are the prototype's silhouette: the SVG walker's outline lathed into a solid, all in one green.
+- Look-around follows the pointer only over open scene. It holds still over pins and controls, so a pin never slides out from under the cursor.
+
 **glTF drop-in:** see `assets/wf/README.md`. Add an id→path entry to
 `WF3D_GLTF` and that stop's procedural set piece is replaced by the model.
 
