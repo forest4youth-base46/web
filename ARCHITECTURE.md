@@ -15,7 +15,7 @@ The app has to work two ways with no code difference between them:
 1. Opened directly (`index.html` served by any static host).
 2. Embedded in an auto-height `<iframe>` on the Odoo-based
    `forest4youth.nweurope.eu` site, with no scrollbar of its own — see
-   `iframe-bridge.js` and `_headers`.
+   `iframe-bridge.js` and `vercel.json` (frame-ancestors).
 
 Both are just "serve some static files." A build step (bundler, transpiler,
 framework CLI) would add a deploy artifact to manage for zero functional

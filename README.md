@@ -82,7 +82,9 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── scripts/check-i18n-sync.js # dev tooling: verifies the three i18n packs stay in sync
 ├── test/smoke.js         # dev tooling: end-to-end regression checks (see package.json)
 ├── package.json          # test/dev tooling only (Playwright) — the deployed app has no build step
-├── _headers              # Netlify headers (allows iframe embedding)
+├── vercel.json           # security headers: strict CSP (nothing leaves the site), referrer, framing
+├── .vercelignore         # keeps project/ (old prototypes), tests and tooling out of the deployment
+├── fonts.css, assets/fonts/ # self-hosted fonts (no Google Fonts request)
 ├── .gitignore
 └── README.md
 ```
@@ -94,9 +96,11 @@ The app is still plain HTML/CSS/JS with no build step or bundler. It used to be 
 ## Embedding on the Odoo site
 
 This app is designed to sit in an auto-sizing `<iframe>` on the Odoo-based
-forest4youth.nweurope.eu site, not a fixed-height one. `_headers` sets
-`X-Frame-Options: ALLOWALL` and `Content-Security-Policy: frame-ancestors *`
-so the browser allows the embed from that origin. The rest of the contract
+forest4youth.nweurope.eu site, not a fixed-height one. `vercel.json`'s
+Content-Security-Policy allows framing only from this site itself,
+`*.nweurope.eu` and `*.odoo.com` (the Odoo editor); add a host there if the
+tool is embedded anywhere else. (The old `_headers` file was Netlify
+syntax, which Vercel never applied.) The rest of the contract
 lives in `iframe-bridge.js`, and the host page needs to implement both
 sides of it:
 
@@ -175,4 +179,4 @@ context first.
 
 ## Tech stack
 
-Vanilla HTML / CSS / JavaScript — no build toolchain, no framework dependencies. Google Fonts loaded from CDN (requires internet on first load; cached thereafter).
+Vanilla HTML / CSS / JavaScript — no build toolchain, no framework dependencies. Fonts are self-hosted (`fonts.css`, `assets/fonts/`); the app makes no request to any other site (enforced by the CSP in `vercel.json`).

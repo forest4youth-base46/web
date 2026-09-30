@@ -1,0 +1,8 @@
+# Not part of the deployed app: old prototypes (they also load Google Fonts
+# and CDNs), dev tooling and tests.
+project/
+test/
+scripts/
+node_modules/
+package.json
+package-lock.json

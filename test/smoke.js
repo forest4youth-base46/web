@@ -31,7 +31,12 @@ const PORT = 8977;
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.json': 'application/json',
+  '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.glb': 'model/gltf-binary',
 };
+// The same security headers Vercel sends (vercel.json), so every test runs
+// under the real Content-Security-Policy.
+const SEC_HEADERS = Object.fromEntries(
+  JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8')).headers[0].headers.map(h => [h.key, h.value]));
 
 function startServer() {
   return new Promise((resolve) => {
@@ -41,7 +46,7 @@ function startServer() {
       fs.readFile(filePath, (err, data) => {
         if (err) { res.writeHead(404); res.end('Not found'); return; }
         const ext = path.extname(filePath);
-        res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+        res.writeHead(200, Object.assign({ 'Content-Type': MIME[ext] || 'application/octet-stream' }, SEC_HEADERS));
         res.end(data);
       });
     });
@@ -366,7 +371,32 @@ const TESTS = [
   ['Every export carries the logo and a disclaimer (PDF, print, Ctrl+P)', testExportsBranded],
   ['Walk the Forest: clicking a rail segment walks to that activity', testWfRailClick],
   ['Header area switch: Forest Interventions / Immersive Virtual Nature follow the route', testAreaSwitch],
+  ['No request leaves the site: CSP holds through the 3D walk, exports and QR', testNoExternalRequests],
 ];
+
+async function testNoExternalRequests(browser) {
+  // Under the real CSP (vercel.json), the whole app works and nothing is
+  // blocked: 3D walk, a session PDF with its QR, a tool PDF. And no request
+  // at all goes to another host.
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const external = [];
+  page.on('request', r => { const u = r.url(); if (!/^(http:\/\/localhost:|data:|blob:|about:)/.test(u)) external.push(u); });
+  await page.addInitScript(() => {
+    window.__csp = [];
+    document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));
+  });
+  await page.goto(WF3D_URL, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => typeof WF3D !== 'undefined' && WF3D.state === 'ready', null, { timeout: 30000 });
+  await page.evaluate(() => { setRole('practitioner'); pbSession.splice(0, pbSession.length, ACTIVITIES[0].id, ACTIVITIES[1].id); });
+  const [d1] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.evaluate(() => exportRunPDF())]);
+  const [d2] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.evaluate(() => pexpDownloadPDF(fiDebriefDoc()))]);
+  assert.ok(/\.pdf$/.test(d1.suggestedFilename()) && /\.pdf$/.test(d2.suggestedFilename()), 'PDFs still export under the CSP');
+  const fontsOk = await page.evaluate(async () => { await document.fonts.ready; return document.fonts.check('600 16px Montserrat') && document.fonts.check('16px "Open Sans"'); });
+  assert.ok(fontsOk, 'self-hosted fonts load');
+  assert.deepStrictEqual(await page.evaluate(() => window.__csp), [], 'no CSP violations');
+  assert.deepStrictEqual(external, [], 'no request to any other host');
+  await page.close();
+}
 
 async function testAreaSwitch(browser) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
