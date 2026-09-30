@@ -10,6 +10,11 @@
 //  - the footer is gone
 //  - the QR/session-share link round-trips order + timing + language
 //    through a refresh without wiping to empty
+//  - Walk the Forest's WebGL backdrop (?wf=3d) keeps the whole scene
+//    contract: pins are real buttons that open the panel, Esc closes it,
+//    next/back drive the walk, a drag is not a click on open space, a
+//    language switch relabels the pins — and it falls back to the painted
+//    SVG scene without WebGL or under reduced motion
 //
 // Usage: node test/smoke.js
 // Exits 0 on success, 1 (with a report) on any failure.
@@ -46,9 +51,12 @@ function startServer() {
 
 // Allows this sandbox's pre-installed browser path to be used without
 // hardcoding it — a real CI runner just uses Playwright's own install.
-const launchOpts = process.env.PLAYWRIGHT_CHROMIUM_PATH
-  ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
-  : {};
+// SwiftShader gives headless Chromium a (software) WebGL context, so the
+// 3D backdrop tests below run on any CI box without a GPU.
+const GL_ARGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
+const launchOpts = Object.assign(
+  process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {},
+  { args: GL_ARGS });
 
 const BASE = `http://localhost:${PORT}/index.html`;
 
@@ -184,6 +192,142 @@ async function testHeaderSingleLine(browser) {
   }
 }
 
+
+// ── Walk the Forest: 3D backdrop ──
+// wfgov=0 turns off the frame-time governor: SwiftShader is slow enough
+// that it would (correctly) fall back to SVG, which isn't what these test.
+const WF3D_URL = `http://localhost:${PORT}/index.html?wf=3d&wfgov=0`;
+
+// Runs fn(page) on a fresh 3D page and always closes it — a failed test
+// must not leave a SwiftShader page rendering in the background and
+// starving the tests after it.
+async function withWf3d(browser, fn) {
+  const { page, errors } = await wf3dPage(browser);
+  try { await fn(page, errors); } finally { await page.close(); }
+}
+
+async function wf3dPage(browser) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(WF3D_URL, { waitUntil: 'networkidle' });
+  await page.waitForFunction(() => typeof WF3D !== 'undefined' && WF3D.state === 'ready' && wfUse3d(), null, { timeout: 30000 });
+  return { page, errors };
+}
+
+async function testWf3dPinsPanelControls(browser) {
+  await withWf3d(browser, async (page, errors) => {
+    assert.strictEqual(await page.locator('[data-wf-layer="gl"] canvas').count(), 1, 'expected the WebGL canvas');
+    assert.strictEqual(await page.locator('[data-wf-layer="scene"] svg').count(), 0, 'SVG scene should not be painted under 3D');
+    const n = await page.evaluate(() => ACTIVITIES.length);
+    assert.strictEqual(await page.locator('[data-wf-stop] .wf-pin-btn').count(), n, 'every stop keeps a real pin button');
+    // Wait for the per-frame placement to show the first pin, then click it.
+    const pin = page.locator('[data-wf-stop="0"] .wf-pin-btn');
+    await page.waitForFunction(() => document.querySelector('[data-wf-stop="0"]').style.visibility !== 'hidden');
+    await pin.click();
+    await page.waitForSelector('#wf-panel-root .wf-panel');
+    assert.strictEqual(await page.evaluate(() => WF.openId), await page.evaluate(() => ACTIVITIES[0].id));
+    await page.keyboard.press('Escape');
+    assert.strictEqual(await page.locator('#wf-panel-root .wf-panel').count(), 0, 'Esc closes the panel');
+    await page.locator('.wf-ctrl-btn').nth(2).click();   // next
+    assert.strictEqual(await page.evaluate(() => WF.to), 1, 'next moves the walk to stop 2');
+    await page.locator('.wf-ctrl-btn').nth(0).click();   // back
+    assert.strictEqual(await page.evaluate(() => WF.to), 0, 'back returns to stop 1');
+    assert.deepStrictEqual(errors, [], 'no page errors');
+  });
+}
+
+async function testWf3dDragIsNotAClick(browser) {
+  await withWf3d(browser, async (page, errors) => {
+    await page.evaluate(() => {
+      window.__esc = 0;
+      const orig = appEscapeAction;
+      window.appEscapeAction = function () { window.__esc++; return orig.apply(this, arguments); };
+    });
+    // An open patch of scene: not a pin, control, link or header.
+    const pt = await page.evaluate(() => {
+      for (let y = 520; y < 700; y += 20) for (let x = 300; x < 1000; x += 40) {
+        const el = document.elementFromPoint(x, y);
+        if (el && el.closest('#wf-scene') && !el.closest('button, a')) return { x, y };
+      }
+      return null;
+    });
+    assert.ok(pt, 'found an open patch of scene');
+    await page.mouse.move(pt.x, pt.y);
+    await page.mouse.down();
+    await page.mouse.move(pt.x + 90, pt.y + 10, { steps: 6 });
+    await page.mouse.up();
+    assert.strictEqual(await page.evaluate(() => window.__esc), 0, 'a drag must not count as a click on open space');
+    assert.ok(await page.evaluate(() => WF3D.gusts.list.length > 0), 'a drag pushes air (gusts)');
+    await page.mouse.click(pt.x, pt.y);
+    assert.strictEqual(await page.evaluate(() => window.__esc), 1, 'a plain click still reaches appEscapeAction');
+  });
+}
+
+async function testWf3dLanguageRelabels(browser) {
+  await withWf3d(browser, async (page, errors) => {
+    const before = await page.locator('[data-wf-stop="0"] .wf-pin-btn').getAttribute('aria-label');
+    await page.locator('.lang-btn', { hasText: 'FR' }).click();
+    await page.waitForFunction((b) => document.querySelector('[data-wf-stop="0"] .wf-pin-btn').getAttribute('aria-label') !== b, before);
+    assert.strictEqual(await page.evaluate(() => WF3D.labelLang), 'fr', 'in-world words rebuilt for the new language');
+  });
+}
+
+async function testWf3dGovernorFallsBack(browser) {
+  await withWf3d(browser, async (page) => {
+    // Force the ladder: at the lowest tier, a slow median frame hands the
+    // scene back to the SVG painter — pins and all — rather than stuttering.
+    await page.evaluate(() => {
+      WF3D.governOn = true;
+      wf3dApplyTier(WF3D_TIERS.low);
+      for (let i = 0; i < 149; i++) WF3D.samples.push(45);
+      wf3dGovern(45);
+    });
+    assert.strictEqual(await page.evaluate(() => WF.renderer), 'svg');
+    assert.strictEqual(await page.locator('#wf-scene canvas').count(), 0, 'canvas removed');
+    assert.ok(await page.locator('[data-wf-layer="scene"] svg').count() > 0, 'painted scene back');
+    await page.locator('.wf-pin-btn').first().click();
+    await page.waitForSelector('#wf-panel-root .wf-panel');
+  });
+}
+
+async function testWfSvgOverride(browser) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto(`http://localhost:${PORT}/index.html?wf=svg`, { waitUntil: 'networkidle' });
+  await page.waitForTimeout(500);
+  assert.strictEqual(await page.locator('#wf-scene canvas').count(), 0, '?wf=svg paints no canvas');
+  assert.ok(await page.locator('[data-wf-layer="scene"] svg').count() > 0, '?wf=svg paints the SVG scene');
+  assert.strictEqual(await page.evaluate(() => typeof THREE), 'undefined', 'Three.js is not even downloaded');
+  await page.close();
+}
+
+async function testWf3dFallbacks() {
+  // No WebGL at all -> the painted scene, silently.
+  const noGl = await chromium.launch(Object.assign({}, launchOpts, { args: ['--disable-webgl', '--disable-3d-apis'] }));
+  try {
+    const page = await noGl.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto(WF3D_URL, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(800);
+    assert.strictEqual(await page.locator('#wf-scene canvas').count(), 0, 'no canvas without WebGL');
+    assert.ok(await page.locator('[data-wf-layer="scene"] svg').count() > 0, 'SVG scene without WebGL');
+    assert.ok(await page.locator('.wf-pin-btn').count() > 0, 'pins still there');
+    assert.deepStrictEqual(errors, [], 'no page errors without WebGL');
+  } finally { await noGl.close(); }
+
+  // Reduced motion -> never boots the 3D layer (static scene, no loop).
+  const b = await chromium.launch(launchOpts);
+  try {
+    const ctx = await b.newContext({ reducedMotion: 'reduce' });
+    const p2 = await ctx.newPage();
+    await p2.goto(WF3D_URL, { waitUntil: 'networkidle' });
+    await p2.waitForTimeout(800);
+    assert.strictEqual(await p2.evaluate(() => WF3D.state), 'off', 'reduced motion never boots 3D');
+    assert.strictEqual(await p2.evaluate(() => WF.raf), null, 'reduced motion runs no animation loop');
+  } finally { await b.close(); }
+}
+
 const TESTS = [
   ['footer is absent, role switch still present', testFooterAbsent],
   ['header is a single straight line at every width/lang/role', testHeaderSingleLine],
@@ -194,6 +338,12 @@ const TESTS = [
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
   ['Forest and IVN hubs — tools work end to end, guidance content, no codes', testToolHubs],
   ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
+  ['Walk the Forest 3D: pins, panel, Esc, next/back', testWf3dPinsPanelControls],
+  ['Walk the Forest 3D: a drag is not a click on open space', testWf3dDragIsNotAClick],
+  ['Walk the Forest 3D: language switch relabels pins + in-world words', testWf3dLanguageRelabels],
+  ['Walk the Forest 3D: governor falls back to the painted scene', testWf3dGovernorFallsBack],
+  ['Walk the Forest ?wf=svg: painted scene, no Three.js download', testWfSvgOverride],
+  ['Walk the Forest 3D: falls back without WebGL / under reduced motion', () => testWf3dFallbacks()],
 ];
 
 async function testPracticalGuides(browser) {

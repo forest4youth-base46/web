@@ -170,6 +170,94 @@ organization. If a file's tunables are genuinely scattered *and*
 unexplained, group and comment them — but check whether they're already
 adequately placed first, since most of this codebase's are.
 
+## Walk the Forest renderer layers
+
+The animated backdrop (`#wf-scene`) has **two interchangeable painters**
+behind **one interactive overlay**:
+
+```
+WF state machine (walk-forest.js)   WF.cam, WF.openId, stop timing: the single source of truth
+  ├── overlay (DOM, identical in both modes): pins, arrival chip, title chip, controls, rail, list link, panel
+  └── backdrop painter, one of:
+        wfSvg*   painted SVG scene (walk-forest.js), the default and the fallback
+        wf3d*    WebGL scene (walk-forest-3d.js + walk-forest-physics.js), opt-in via ?wf=3d
+```
+
+`#wf-scene` holds four stacked wrappers built once by `wfEnsureLayers()`:
+`sky`, `gl` (the canvas), `scene` (SVG), `ui`. They're positioned with no
+z-index, so they form no stacking contexts, and paint order is exactly what
+it was when all of this was one `innerHTML` string. This was verified
+pixel-identical against the pre-split version at 1280×800 and 390×844.
+
+**The contract the 3D painter keeps:**
+
+- It owns no state and no UI. Pins stay real `<button class="wf-pin-btn">`
+  with the same aria labels and `onclick="wfOpenStop(...)"`. Only their
+  screen positions come from a different projection (`wfStopProject()` →
+  `wf3dProject()`).
+- Per frame it only *moves* existing pins (`wfPlacePins()`, style writes).
+  The overlay's `innerHTML` is rebuilt only when `wfOverlayKey()` changes
+  (stop, armed stop, open panel, status text, language, size), never per
+  frame. That's the same lesson as the comment in `wfStep()` about
+  rebuilding under the pointer.
+- `wfRender()` is still the one public entry (router.js and content.js
+  unchanged). In 3D mode it also calls `wf3dSync()` (pose, in-world words
+  for the current language).
+- A **drag** across the scene (moved >6px or held >250ms) is a physics
+  gesture (pointer wind). It sets `WF.suppressClick`, so `wfOnSceneClick()`
+  doesn't also treat it as a click on open space. A plain click still
+  reaches `appEscapeAction()` as before. Nothing calls `preventDefault`, so
+  page scrolling on touch is untouched.
+- In 3D mode the funder credit sits *above* the canvas, not behind the
+  canopy, because real perspective trees would hide it for most of the walk.
+  A paper-toned haze (`.wf3d-haze`) keeps the site header legible over the
+  trees.
+
+**Fallback ladder** (automatic; each rung lands on the SVG painter, pins and
+all):
+
+1. `prefers-reduced-motion`: 3D never boots.
+2. No WebGL: never boots, and Three.js is never downloaded (it's
+   lazy-injected only after the capability check).
+3. `vendor/three.min.js` fails to load, or scene init throws.
+4. WebGL context lost and not restored within 3s.
+5. The governor (`wf3dGovern`) measures the median frame interval every ~2.5s,
+   outside deep/hidden states. Above 28ms it steps the tier down
+   (high → med → low: shadows, DPR, grass, particles). Still slow at `low`,
+   it gives up.
+
+**Query switches** (for testing and device checks): `?wf=3d`, `?wf=svg`,
+`?wf=debug` (3d plus an fps/tier/draw-call readout), `&wftier=low|med|high`,
+`&wfgov=0` (governor off; the smoke tests use it because SwiftShader is slow).
+
+**Why the default is still SVG:** `WF_3D_DEFAULT` in walk-forest.js stays
+`false` until the 3D scene has been checked on the real Odoo-embedded page
+and the older WebView (README "Older WebView note"). Flipping it is a
+one-line change. Everything else, including the fallbacks, already runs.
+
+**Why Three.js r147 specifically:** it's the last release that still ships
+a classic-script UMD build (`build/three.min.js`) *and* `examples/js/*`
+(the classic GLTFLoader), and it still supports WebGL1. Later versions are
+ES-module only, which this app doesn't use (see "Why not ES modules").
+The vendored files are unmodified apart from a license header on the loader.
+
+**Why hand-rolled physics:** the scene needs springs, a wind field, falling
+particles and a couple of verlet ropes, not rigid bodies. The engines that
+exist (rapier, cannon-es) are ES-module/WASM only. `walk-forest-physics.js`
+is plain functions over typed arrays, with no DOM and no THREE, which is
+why `test/unit.js` can pin its behaviour down in Node (terminal velocity of
+a leaf, spring overshoot, rope length).
+
+**Depth of field / bloom were deliberately left out.** Post-processing
+needs the whole frame in WebGL render targets. That would pull the sky and
+funder logo into WebGL and roughly double GPU cost behind every screen of
+the site. Depth comes from real perspective, fog, soft shadows and the
+existing CSS blur in deep mode. Revisit only if the device check shows
+headroom.
+
+**glTF drop-in:** see `assets/wf/README.md`. Add an id→path entry to
+`WF3D_GLTF` and that stop's procedural set piece is replaced by the model.
+
 ## Dev tooling (new this session)
 
 - `scripts/check-i18n-sync.js` — verifies `i18n-en.js`/`i18n-fr.js`/

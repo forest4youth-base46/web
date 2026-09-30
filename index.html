@@ -1820,6 +1820,14 @@
      ACTIVITIES/GROUPS/VISUAL/PB_I18N/pbT()/pbTagT()/pbGroupT()/
      pbFmtDuration()/pbLocalizeVisual()/pbSession/pbToggleInSession()/
      exportRunPDF()/exportRunPNG() — all defined by then. -->
+<!-- Walk the Forest's optional WebGL backdrop (?wf=3d). Both load before
+     walk-forest.js because its last line starts the scene, which may boot
+     the 3D layer. They define functions only; walk-forest-3d.js lazy-loads
+     vendor/three.min.js itself, and only when the 3D layer is actually
+     requested and WebGL works (see ARCHITECTURE.md "Walk the Forest
+     renderer layers"). -->
+<script src="walk-forest-physics.js"></script>
+<script src="walk-forest-3d.js"></script>
 <script src="walk-forest.js"></script>
 <script src="ui-behaviors.js"></script>
 

@@ -70,10 +70,13 @@ No build step required. Open `index.html` directly, or serve the folder with any
 ├── guide-fi-data.js      # GENERATED — D1.2.1 FI Practical Guide (built in admin/…/web-app/scripts/)
 ├── guide-ivn-data.js     # GENERATED — D1.3.2 IVN Practical Guide (same generator)
 ├── guide-render.js       # renders both guides into #guide-screen (tabs, contents, chapter accordions)
+├── walk-forest.js        # Walk the Forest backdrop: state machine, overlay (pins/controls), SVG painter
+├── walk-forest-3d.js     # optional WebGL painter for it (?wf=3d), lazy-loads vendor/three.min.js
+├── walk-forest-physics.js # its physics core: springs, wind, leaves/embers, verlet rope (no DOM)
 ├── search.js             # ⌘K / Ctrl+K search dialog (activities, reference, guide chapters)
 ├── iframe-bridge.js      # iframe embed: reports document height, requests parent scroll
-├── vendor/               # vendored html2canvas + qrcodejs + jsPDF (no CDN at runtime)
-├── assets/               # brand assets used in exports (Interreg NWE / Forest4Youth logo)
+├── vendor/               # vendored html2canvas + qrcodejs + jsPDF + three.js r147 (no CDN at runtime)
+├── assets/               # brand assets used in exports (Interreg NWE / Forest4Youth logo); assets/wf/ = optional glTF models
 ├── scripts/check-i18n-sync.js # dev tooling: verifies the three i18n packs stay in sync
 ├── test/smoke.js         # dev tooling: end-to-end regression checks (see package.json)
 ├── package.json          # test/dev tooling only (Playwright) — the deployed app has no build step
@@ -152,6 +155,13 @@ into a specific screen or role by setting the iframe's `src`:
   `#implement/mod-pocket` for the Pocketbook (also the target of the
   persistent header's "Plan" nav item). Combine with a hash and a
   query string in the usual way, e.g. `index.html?role=practitioner#implement/mod-pocket`.
+
+**Walk the Forest 3D (opt-in).** Append `?wf=3d` to any of the URLs above
+to get the WebGL version of the animated backdrop: real perspective,
+lighting and shadows, plus physics (pointer wind, falling leaves, a
+swinging hammock). `?wf=debug` adds an fps readout. It falls back to the
+normal painted scene automatically when WebGL is missing or the device is
+too slow. See ARCHITECTURE.md "Walk the Forest renderer layers".
 
 **Older WebView note.** The production embed has been tested against an
 older/non-evergreen WebView (see the comments in `styles-responsive.css`
