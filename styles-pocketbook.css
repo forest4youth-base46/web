@@ -1111,13 +1111,13 @@
    exportRenderPrintSession()) and #print-report (the post-session report,
    from exportRenderPrintReport()) — both built with the shared .pexport
    visual language below. ─── */
-#print-session, #print-report {
+#print-session, #print-report, #print-doc {
   position: absolute; left: -9999px; top: 0;
   width: 794px;   /* A4 @ 96dpi */
   background: #fff; color: #111;
   font: 14px/1.5 'Open Sans', sans-serif;
   padding: 32px; box-sizing: border-box;
 }
-body.is-exporting-png #print-session, body.is-exporting-png #print-report { left: 0; }
+body.is-exporting-png #print-session, body.is-exporting-png #print-report, body.is-exporting-png #print-doc { left: 0; }
 #print-qr-slot canvas, #print-qr-slot img { display: block; }
 

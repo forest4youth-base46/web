@@ -363,7 +363,74 @@ const TESTS = [
   ['Walk the Forest 3D: governor falls back to the painted scene', testWf3dGovernorFallsBack],
   ['Walk the Forest ?wf=svg: painted scene, no Three.js download', testWfSvgOverride],
   ['Walk the Forest 3D: falls back without WebGL / under reduced motion', () => testWf3dFallbacks()],
+  ['Every export carries the logo and a disclaimer (PDF, print, Ctrl+P)', testExportsBranded],
 ];
+
+async function testExportsBranded(browser) {
+  // Every PDF/PNG/print export carries the project logo (at no less than
+  // the branding guide's A4 minimum) and a disclaimer block: the note for
+  // that kind of document plus the funding statement (export-docs.js).
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    localStorage.clear(); setRole('practitioner');
+    storageSave('f4y.ivn.records', [{ id: 'ivn-t', youngId: 'T-9', clinician: 'C', date: '2026-09-30', run: { elapsed: 60000 } }]);
+    storageSave('f4y.sessions', [{ when: new Date().toISOString(), target: 15, items: [{ id: ACTIVITIES[0].id, plannedMins: 15, actualSecs: 900, note: 'n' }] }]);
+    pbSession.splice(0, pbSession.length, ACTIVITIES[0].id);
+  });
+  const docs = await page.evaluate(() => {
+    const funding = toolEsc(t('exp.funding'));
+    const check = (footer, kind) => footer.includes(funding) && PEXP_NOTES[kind].every(k => footer.includes(toolEsc(t(k))));
+    const tools = { fiPrepDoc: fiPrepDoc(), fiScreenDoc: fiScreenDoc(), fiDebriefDoc: fiDebriefDoc(),
+      ivnRecordDoc: ivnRecordDoc(ivnRecords()[0]), ivnYoungDoc: ivnYoungDoc() };
+    const out = {};
+    Object.keys(tools).forEach(k => {
+      const d = pexpDocParts(tools[k]);
+      out[k] = { logo: d.headerHTML.includes(PEXP_LOGO_SRC), footer: check(d.footerBottomHTML, tools[k].kind), blocks: d.blocks.length };
+    });
+    out.sessionPlan = { logo: pbBuildSessionExportData().headerHTML.includes(PEXP_LOGO_SRC), footer: check(pbBuildSessionExportData().footerBottomHTML, 'plan'), blocks: 1 };
+    const rep = pbBuildReportExportData();
+    out.report = { logo: rep.headerHTML.includes(PEXP_LOGO_SRC), footer: check(rep.footerBottomHTML, 'report'), blocks: rep.blocks.length };
+    return out;
+  });
+  Object.keys(docs).forEach(k => {
+    assert.ok(docs[k].logo, k + ': logo in the header');
+    assert.ok(docs[k].footer, k + ': funding statement + its note in the footer');
+    assert.ok(docs[k].blocks > 0, k + ': has content');
+  });
+
+  // Logo size: Interreg logotype + EU emblem (220 of the file's 435 px)
+  // at least 52.5 mm on the 210 mm / 794 px page.
+  const logoPx = await page.evaluate(async () => {
+    const root = document.getElementById('print-doc');
+    document.body.classList.add('is-exporting-png');
+    root.innerHTML = '<div class="pexport">' + pexpDocParts(fiDebriefDoc()).headerHTML + '</div>';
+    const img = root.querySelector('.pexport-logo-img');
+    await img.decode();
+    const w = img.getBoundingClientRect().width * 220 / 435;
+    document.body.classList.remove('is-exporting-png'); root.innerHTML = '';
+    return w;
+  });
+  assert.ok(logoPx >= 52.5 * 794 / 210, 'logo at least 52.5 mm wide on A4 (got ' + (logoPx * 210 / 794).toFixed(1) + ' mm)');
+
+  // A real tool PDF downloads.
+  const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.evaluate(() => pexpDownloadPDF(fiDebriefDoc()))]);
+  assert.ok(/\.pdf$/.test(dl.suggestedFilename()), 'tool download is a PDF');
+
+  // Ctrl+P of an ordinary page: no forest, logo on top, disclaimer at the end.
+  await page.evaluate(() => { window.location.hash = 'fi/structure'; window.dispatchEvent(new Event('beforeprint')); });
+  await page.emulateMedia({ media: 'print' });
+  const printed = await page.evaluate(() => ({
+    scene: getComputedStyle(document.getElementById('wf-scene')).display,
+    top: getComputedStyle(document.querySelector('.print-brand-top')).display,
+    foot: document.getElementById('print-brand-foot').innerText.includes(t('exp.funding')),
+  }));
+  await page.emulateMedia({ media: 'screen' });
+  assert.strictEqual(printed.scene, 'none', 'forest hidden in print');
+  assert.strictEqual(printed.top, 'block', 'logo shown on top in print');
+  assert.ok(printed.foot, 'disclaimer at the end in print');
+  await page.close();
+}
 
 async function testPracticalGuides(browser) {
   // #guide renders both practical guides as readable sections

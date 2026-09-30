@@ -114,22 +114,6 @@ function toolDownload(filename, text, mime) {
   } catch (e) { warnFailure('downloading ' + filename, e); }
 }
 
-// Print just one element (styles-print rules in styles-tools.css show only
-// .print-target while body.printing-tool is set).
-function toolPrint(el) {
-  if (!el) return;
-  el.classList.add('print-target');
-  document.body.classList.add('printing-tool');
-  const done = () => {
-    el.classList.remove('print-target');
-    document.body.classList.remove('printing-tool');
-    window.removeEventListener('afterprint', done);
-  };
-  window.addEventListener('afterprint', done);
-  window.print();
-  setTimeout(done, 1000);
-}
-
 function toolFocusTitle(root) {
   requestAnimationFrame(() => {
     const h = root.querySelector('.tool-title') || root.querySelector('h2');

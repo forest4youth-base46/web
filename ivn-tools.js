@@ -311,10 +311,6 @@ function ivnRecordRows(r) {
   ];
 }
 
-function ivnRecordText(r) {
-  return t('ivn.rec.title') + '\n\n' + ivnRecordRows(r).map(([k, v]) => k + ': ' + v).join('\n') + '\n';
-}
-
 function ivnRecords_view(arg) {
   const all = ivnRecords();
   const r = arg && all.find(x => x.id === arg);
@@ -322,8 +318,8 @@ function ivnRecords_view(arg) {
     const body = '<section class="tool-card" id="ivn-record-print"><h3 class="tool-h">' + toolEsc(t('ivn.rec.title')) + '</h3><dl class="ivn-record">' +
       ivnRecordRows(r).map(([k, v]) => '<dt>' + toolEsc(k) + '</dt><dd>' + toolEsc(v) + '</dd>').join('') + '</dl></section>' +
       '<div class="tool-actions">' +
-        '<button type="button" class="gd-button" onclick="ivnDownloadOne(\'' + r.id + '\')">' + toolEsc(t('tools.download')) + '</button>' +
-        '<button type="button" class="tool-btn" onclick="toolPrint(document.getElementById(\'ivn-record-print\'))">' + toolEsc(t('tools.print')) + '</button>' +
+        '<button type="button" class="gd-button" onclick="ivnDownloadOne(\'' + r.id + '\')">' + toolEsc(t('tools.pdf')) + '</button>' +
+        '<button type="button" class="tool-btn" onclick="ivnPrintOne(\'' + r.id + '\')">' + toolEsc(t('tools.print')) + '</button>' +
         '<button type="button" class="tool-btn tool-btn-quiet" onclick="ivnDelete(\'' + r.id + '\')">' + toolEsc(ivnConfirmDelete === r.id ? t('ivn.rec.confirm') : t('ivn.rec.delete')) + '</button>' +
         '<a class="tool-btn tool-btn-quiet" href="#ivn/records">' + toolEsc(t('ivn.rec.all')) + '</a>' +
       '</div>';
@@ -332,14 +328,26 @@ function ivnRecords_view(arg) {
   const list = all.length
     ? '<ul class="ivn-rec-list">' + all.map(x => '<li><a href="#ivn/records/' + x.id + '"><strong>' + toolEsc(x.youngId || '—') + '</strong>' +
         '<span>' + toolEsc((x.date || '') + (x.module ? ' · ' + t('ivn.module') + ' ' + x.module : '') + (x.intention ? ' · ' + x.intention : '')) + '</span></a></li>').join('') + '</ul>' +
-      '<div class="tool-actions"><button type="button" class="gd-button" onclick="ivnDownloadCsv()">' + toolEsc(t('ivn.rec.csv')) + '</button></div>'
+      '<div class="tool-actions"><button type="button" class="gd-button" onclick="ivnDownloadCsv()">' + toolEsc(t('ivn.rec.csv')) + '</button></div>' +
+      '<p class="tool-muted">' + toolEsc(t('exp.csv.note')) + '</p>'
     : '<p class="tool-muted">' + toolEsc(t('ivn.rec.empty')) + '</p><a class="gd-button" href="#ivn/plan">' + toolEsc(t('ivn.card.plan.title')) + ' →</a>';
   return ivnPage(t('ivn.group.evaluate'), t('ivn.card.records.title'), t('ivn.rec.lead'), list + '<p class="tool-muted">' + toolEsc(t('tools.stored')) + '</p>');
 }
 
+// One saved record as a branded document.
+function ivnRecordDoc(r) {
+  return { kind: 'record', title: t('ivn.rec.title'),
+           meta: [[t('tools.youngid'), r.youngId], [t('ivn.f.clinician'), r.clinician]],
+           blocks: ivnRecordRows(r).map(([k, v]) => pexpField(k, v)),
+           filename: 'ivn-session-' + (pexpFileSafe(r.youngId) || 'record') };
+}
 function ivnDownloadOne(id) {
   const r = ivnRecords().find(x => x.id === id);
-  if (r) toolDownload('ivn-session-' + (r.youngId || 'record') + '-' + (r.date || '') + '.txt', ivnRecordText(r));
+  if (r) pexpDownloadPDF(ivnRecordDoc(r));
+}
+function ivnPrintOne(id) {
+  const r = ivnRecords().find(x => x.id === id);
+  if (r) pexpPrint(ivnRecordDoc(r));
 }
 function ivnDownloadCsv() {
   const all = ivnRecords();
@@ -382,8 +390,17 @@ function ivnYoung() {
   const qa = (sec.blocks.find(b => b.t === 'qa') || { items: [] }).items;
   const body = '<div id="ivn-young-print" class="ivn-young">' + intro + '<div class="gd-qa">' +
     qa.map(i => '<div class="gd-qa-item"><h5>' + toolEsc(i.q) + '</h5><p>' + toolEsc(i.a) + '</p></div>').join('') + '</div></div>' +
-    '<div class="tool-actions"><button type="button" class="gd-button" onclick="toolPrint(document.getElementById(\'ivn-young-print\'))">' + toolEsc(t('ivn.young.print')) + '</button></div>';
+    '<div class="tool-actions"><button type="button" class="gd-button" onclick="pexpPrint(ivnYoungDoc())">' + toolEsc(t('ivn.young.print')) + '</button>' +
+      '<button type="button" class="tool-btn" onclick="pexpDownloadPDF(ivnYoungDoc())">' + toolEsc(t('tools.pdf')) + '</button></div>';
   return ivnPage(t('ivn.group.read'), t('ivn.card.young.title'), t('ivn.young.lead'), body);
+}
+
+// The page for young people as a branded document.
+function ivnYoungDoc() {
+  const sec = GUIDE_IVN.sections.find(s => s.id === 'ivn-young');
+  const qa = (sec.blocks.find(b => b.t === 'qa') || { items: [] }).items;
+  const blocks = sec.blocks.filter(b => b.t === 'p').map(b => pexpPara(b.text)).concat(qa.map(i => pexpQA(i.q, i.a)));
+  return { kind: 'young', title: t('ivn.card.young.title'), blocks, filename: 'forest4youth-ivn-for-young-people' };
 }
 
 // ── Render + routing ──────────────────────────────────────

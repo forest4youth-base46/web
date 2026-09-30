@@ -88,10 +88,24 @@ function fiPrepare() {
   };
   const body = '<div id="fi-prep-print">' + block('programme', P.programme) + block('before', P.before) + block('briefing', P.briefing) + '</div>' +
     '<div class="tool-actions">' +
-      '<button type="button" class="tool-btn" onclick="toolPrint(document.getElementById(\'fi-prep-print\'))">' + toolEsc(t('tools.print')) + '</button>' +
+      '<button type="button" class="tool-btn" onclick="pexpDownloadPDF(fiPrepDoc())">' + toolEsc(t('tools.pdf')) + '</button>' +
+      '<button type="button" class="tool-btn tool-btn-quiet" onclick="pexpPrint(fiPrepDoc())">' + toolEsc(t('tools.print')) + '</button>' +
       '<button type="button" class="tool-btn tool-btn-quiet" onclick="fiPrepReset()">' + toolEsc(t('tools.reset')) + '</button>' +
     '</div><p class="tool-muted">' + toolEsc(t('fi.prepare.stored')) + '</p>';
   return toolPage({ hub: 'fi', back: t('fi.back'), kicker: t('fi.group.prepare'), title: t('fi.card.prepare.title'), lead: t('fi.prepare.lead'), body });
+}
+
+// The preparation lists as a branded document, ticks included.
+function fiPrepDoc() {
+  const P = FI_TOOLS.prepare;
+  const st = fiPrepState();
+  let blocks = [];
+  [['programme', P.programme], ['before', P.before], ['briefing', P.briefing]].forEach(([key, part]) => {
+    const vals = st[key] || [];
+    blocks = blocks.concat(pexpSection(pexpHeading(part.title, part.intro),
+      part.items.map((it, i) => typeof it === 'string' ? pexpCheck(it, '', !!vals[i]) : pexpCheck(it.title, it.text, !!vals[i]))));
+  });
+  return { kind: 'guide', title: t('fi.card.prepare.title'), blocks, filename: 'forest4youth-preparation' };
 }
 
 function fiPrepReset() {
@@ -120,22 +134,26 @@ function fiScreening() {
       }).join('') +
     '</section>' +
     '<div class="tool-actions">' +
-      '<button type="button" class="tool-btn" onclick="fiScreenDownload()">' + toolEsc(t('tools.download')) + '</button>' +
-      '<button type="button" class="tool-btn tool-btn-quiet" onclick="toolPrint(document.getElementById(\'fi-screen-print\'))">' + toolEsc(t('tools.print')) + '</button>' +
+      '<button type="button" class="tool-btn" onclick="pexpDownloadPDF(fiScreenDoc())">' + toolEsc(t('tools.pdf')) + '</button>' +
+      '<button type="button" class="tool-btn tool-btn-quiet" onclick="pexpPrint(fiScreenDoc())">' + toolEsc(t('tools.print')) + '</button>' +
       '<button type="button" class="tool-btn tool-btn-quiet" onclick="fiScreen={id:\'\',areas:{}};fiRender()">' + toolEsc(t('tools.clear')) + '</button>' +
     '</div><p class="tool-muted">' + toolEsc(t('tools.notstored')) + '</p>';
   return toolPage({ hub: 'fi', back: t('fi.back'), kicker: t('fi.group.prepare'), title: t('fi.card.screening.title'), lead: S.intro, body });
 }
 
-function fiScreenDownload() {
+// The six-area assessment as a branded document (never stored: this is
+// the only way it leaves the page).
+function fiScreenDoc() {
   const S = FI_TOOLS.screening;
-  const lines = [t('fi.screen.assess') + ' — ' + toolToday(), t('tools.youngid') + ': ' + (fiScreen.id || '—'), ''];
-  S.assessment.forEach((a, i) => {
+  const items = S.assessment.map((a, i) => {
     const cur = fiScreen.areas[i] || {};
-    lines.push(a.area + ': ' + (cur.state || '—'));
-    if (cur.note) lines.push('  ' + cur.note);
+    return '<div class="pexp-item">' + pexpHeading(a.area, a.q) +
+      pexpField(t('exp.screen.state'), cur.state || '—') +
+      (cur.note ? pexpField(t('tools.notes'), cur.note) : '') + '</div>';
   });
-  toolDownload('screening-' + (fiScreen.id || 'young-person') + '-' + toolToday() + '.txt', lines.join('\n'));
+  return { kind: 'screening', title: t('fi.screen.assess'), subtitle: S.assessment_intro,
+           meta: [[t('tools.youngid'), fiScreen.id || '—']], blocks: items,
+           filename: 'screening-' + (pexpFileSafe(fiScreen.id) || 'young-person') };
 }
 
 // ── Debrief ───────────────────────────────────────────────
@@ -150,8 +168,17 @@ function fiDebrief() {
     '<h3 class="tool-h">' + toolEsc(t('fi.debrief.circle')) + '</h3>' +
     '<div class="gd-qa fi-prompts" id="fi-prompts-print">' + D.circle.map(g =>
       '<div class="gd-qa-item"><h5>' + toolEsc(g.title) + '</h5><ul class="gd-list">' + g.prompts.map(p => '<li>' + toolEsc(p) + '</li>').join('') + '</ul></div>').join('') + '</div>' +
-    '<div class="tool-actions"><button type="button" class="tool-btn" onclick="toolPrint(document.getElementById(\'fi-prompts-print\'))">' + toolEsc(t('fi.debrief.print')) + '</button></div>';
+    '<div class="tool-actions"><button type="button" class="tool-btn" onclick="pexpDownloadPDF(fiDebriefDoc())">' + toolEsc(t('tools.pdf')) + '</button>' +
+      '<button type="button" class="tool-btn tool-btn-quiet" onclick="pexpPrint(fiDebriefDoc())">' + toolEsc(t('fi.debrief.print')) + '</button></div>';
   return toolPage({ hub: 'fi', back: t('fi.back'), kicker: t('fi.group.after'), title: t('fi.card.debrief.title'), lead: D.intro, body });
+}
+
+// The closing-circle prompts as a branded document.
+function fiDebriefDoc() {
+  const D = FI_TOOLS.debrief;
+  let blocks = [];
+  D.circle.forEach(g => { blocks = blocks.concat(pexpSection(pexpHeading(g.title), g.prompts.map(pexpBullet))); });
+  return { kind: 'guide', title: t('fi.card.debrief.title'), subtitle: t('fi.debrief.circle'), blocks, filename: 'forest4youth-debrief-prompts' };
 }
 
 // Implement → "Session structure guide" (door module #mod-plan): the arc

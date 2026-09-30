@@ -24,8 +24,15 @@
   font-size: 13px; font-weight: 600; color: #14302A;
   overflow-wrap: break-word; word-break: break-word;
 }
-.pexport-logos { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-.pexport-logo-img { height: 115px; width: auto; display: block; } /* 125px - 8% */
+/* The logo file carries ~65 px of empty space under "Forest4Youth"; the
+   box keeps one clear-space unit of it (u = half the EU flag's height,
+   ~21 px here) and trims the rest, so the title isn't pushed down. */
+.pexport-logos { display: flex; gap: 12px; align-items: flex-start; flex-shrink: 0; height: 128px; overflow: hidden; }
+/* Branding guide (reference/F4Y_branding_guide_summary.md in admin): on A4
+   the Interreg logotype + EU emblem must be at least 52.5 mm wide, about a
+   quarter of the page. They span 220 of the file's 435 px, so 166 px of
+   height puts them at ~202 px = 53.5 mm on the 794 px (210 mm) page. */
+.pexport-logo-img { height: 166px; width: auto; display: block; }
 
 .pexport-title-block { margin-bottom: 8px; }
 .pexport-title {
@@ -117,10 +124,17 @@
   flex-shrink: 0; margin-top: 2px;
 }
 .pexport-footer-bottom {
-  display: flex; justify-content: space-between; gap: 12px;
-  padding-top: 40px; border-top: 1px solid #234A3E; /* ~2 lines of clear space above the rule */
+  margin-top: 28px; /* ~2 lines of clear space above the rule */
+  padding-top: 8px; border-top: 1px solid #234A3E;
   font-size: 9.5px; color: #7C8E85;
 }
+/* Disclaimer block every export carries (pexpFooterHTML, export-docs.js):
+   the note for this kind of document, then the funding statement. */
+.pexport-disclaimer { margin-bottom: 6px; }
+.pexport-disclaimer p { margin: 0 0 3px; line-height: 1.4; }
+.pexport-disclaimer-note { font-size: 10px; font-weight: 600; color: #234A3E; }
+.pexport-disclaimer-funding { font-size: 9px; color: #4D6359; }
+.pexport-footer-line { display: flex; justify-content: space-between; gap: 12px; }
 
 /* Paginated PDF pages only (see pbBuildSessionPaginatedCanvases()/
    pbBuildReportPaginatedCanvases() in pocketbook-export.js) — the continuous
@@ -162,3 +176,63 @@
 .pexport-indicator-item { padding: 3px 0; font-size: 11px; color: #666; }
 .pexport-indicator-item.is-checked { color: #14302A; font-weight: 600; }
 
+
+/* ─── TOOL DOCUMENTS (#print-doc, export-docs.js): the Forest and IVN
+   tools' checklists, screening, prompts and records in the same .pexport
+   language. ─── */
+.pexp-h {
+  font-size: 13.5px; font-weight: 700; color: #14302A;
+  margin: 14px 0 4px; padding-top: 6px; border-top: 1px solid #C8D8D0;
+}
+.pexp-p { font-size: 12px; color: #333; line-height: 1.55; margin: 0 0 8px; }
+.pexp-muted { font-size: 11px; color: #4D6359; line-height: 1.45; margin: 0 0 6px; }
+.pexp-check { display: flex; gap: 8px; align-items: flex-start; padding: 4px 0; border-bottom: 1px solid #eee; }
+.pexp-check .pexport-checkbox {
+  width: 11px; height: 11px; margin-top: 1px;
+  font-size: 9px; line-height: 11px; text-align: center; font-weight: 700; color: #234A3E;
+}
+.pexp-check.is-on .pexport-checkbox { border-color: #234A3E; background: #E4EEE9; }
+.pexp-check-title { font-size: 11.5px; font-weight: 600; color: #14302A; }
+.pexp-check-title:only-child { font-weight: 400; }
+.pexp-check-text { font-size: 10.5px; color: #4D6359; line-height: 1.4; margin-top: 1px; }
+.pexp-field { display: flex; gap: 12px; padding: 5px 0; border-bottom: 1px solid #eee; }
+.pexp-field-k { width: 150px; flex-shrink: 0; font-size: 10.5px; font-weight: 600; color: #4D6359; }
+.pexp-field-v { flex: 1; min-width: 0; font-size: 11.5px; color: #1B2A24; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word; }
+.pexp-item { padding-bottom: 4px; }
+.pexp-li { display: flex; gap: 8px; font-size: 11.5px; color: #333; line-height: 1.45; padding: 2px 0; }
+.pexp-li > span:first-child { color: #7FA396; flex-shrink: 0; }
+
+/* Print: only the document, with its header (logo) and footer
+   (disclaimer) repeated on every page by the table's thead/tfoot. */
+.pexp-print { width: 100%; border-collapse: collapse; }
+.pexp-print td { padding: 0; vertical-align: top; }
+@media print {
+  @page { size: A4; margin: 12mm 12mm 10mm; }
+  html:has(body.printing-doc), body.printing-doc { background: #fff !important; zoom: 1 !important; }
+  body.printing-doc > *:not(#print-doc) { display: none !important; }
+  body.printing-doc #print-doc {
+    position: static; left: auto; width: auto; padding: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  body.printing-doc .pexp-print thead td { padding-bottom: 4mm; }
+  body.printing-doc .pexp-print tfoot td { padding-top: 2mm; }
+  body.printing-doc .pexport-footer-bottom { margin-top: 0; }
+  body.printing-doc .pexp-h, body.printing-doc .pexp-check, body.printing-doc .pexp-field,
+  body.printing-doc .pexport-qa-card { break-inside: avoid; }
+}
+
+/* Ordinary browser print (Ctrl+P) of any page: no forest behind the text,
+   no menus or floating buttons, the logo on top and the disclaimer at the
+   end (#print-brand-foot, filled by export-docs.js on beforeprint). */
+.print-brand { display: none; }
+@media print {
+  html:has(body:not(.printing-doc)), body:not(.printing-doc) { background: #fff !important; zoom: 1 !important; }
+  body:not(.printing-doc) > *:not(.container) { display: none !important; }
+  body:not(.printing-doc) #site-header, body:not(.printing-doc) .wf-back-btn,
+  body:not(.printing-doc) .skip-link { display: none !important; }
+  body:not(.printing-doc) .print-brand { display: block; }
+  body:not(.printing-doc) .print-brand-top { height: 110px; overflow: hidden; margin-bottom: 6mm; }
+  body:not(.printing-doc) .print-brand-top .pexport-logo-img { height: 140px; }
+  body:not(.printing-doc) .print-brand-foot { break-inside: avoid; margin-top: 8mm; }
+  body:not(.printing-doc) * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

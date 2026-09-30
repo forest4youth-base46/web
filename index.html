@@ -64,6 +64,12 @@
 
 <div class="container">
 
+  <!-- Print-only branding for an ordinary browser print (Ctrl+P) of any
+       page: the logo on top, the disclaimer at the end (filled on
+       beforeprint by export-docs.js). The tools' own Print buttons use
+       #print-doc instead. -->
+  <div class="print-brand print-brand-top" aria-hidden="true"><img class="pexport-logo-img" src="assets/logo-interreg-forest4youth.png" alt=""></div>
+
   <header id="site-header">
     <div class="header-inner">
       <div class="header-text">
@@ -1663,6 +1669,8 @@
 
   </main>
 
+  <div class="print-brand print-brand-foot pexport" id="print-brand-foot" aria-hidden="true"></div>
+
 </div>
 
 <!-- ─── SEARCH DIALOG (⌘K / Ctrl+K) ─── -->
@@ -1817,6 +1825,7 @@
 <script src="guide-render.js"></script>
 <script src="fi-tools-data.js"></script>
 <script src="tools-common.js"></script>
+<script src="export-docs.js"></script>
 <script src="fi-tools.js"></script>
 <script src="ivn-tools.js"></script>
 <!-- Role-screen hero: the animated trail scene behind the two role
@@ -1862,6 +1871,11 @@
      record, self-reflection answers, and outcome indicators combined.
      Shares the #print-session base styles and reveal mechanism. -->
 <section id="print-report" aria-hidden="true"></section>
+
+<!-- Populated by export-docs.js for the Forest and IVN tools' documents:
+     rasterized for "Download PDF" (same reveal as the two above), or laid
+     out as a print table for "Print" (body.printing-doc). -->
+<section id="print-doc" aria-hidden="true"></section>
 
 <!-- ─── INLINED LIBRARIES (no CDN at runtime) ─── -->
 <!-- html2canvas + qrcodejs are vendored here as <script> blocks. -->
