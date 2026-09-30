@@ -125,12 +125,12 @@ function fiScreening() {
       '<a class="gd-button" href="#ivn">' + toolEsc(t('fi.screen.ivn')) + ' →</a></div>' +
     '<section class="tool-card" id="fi-screen-print"><div class="tool-card-head"><h3 class="tool-h">' + toolEsc(t('fi.screen.assess')) + '</h3></div>' +
       '<p class="tool-muted">' + toolEsc(S.assessment_intro) + '</p>' +
-      '<label class="tool-field"><span>' + toolEsc(t('tools.youngid')) + '</span><input type="text" id="fi-screen-id" autocomplete="off" value="' + toolEsc(fiScreen.id) + '" placeholder="' + toolEsc(t('tools.youngid.ph')) + '"></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('tools.youngid')) + '</span><input type="text" id="fi-screen-id" autocomplete="off" value="' + toolAttr(fiScreen.id) + '" placeholder="' + toolEsc(t('tools.youngid.ph')) + '"></label>' +
       S.assessment.map((a, i) => {
         const cur = fiScreen.areas[i] || {};
         return '<div class="fi-assess"><h4>' + toolEsc(a.area) + '</h4><p>' + toolEsc(a.q) + '</p>' +
           toolChips('area-' + i, states, cur.state ? [cur.state] : [], true) +
-          '<textarea class="tool-note" data-area="' + i + '" rows="2" placeholder="' + toolEsc(t('tools.notes')) + '">' + toolEsc(cur.note || '') + '</textarea></div>';
+          '<textarea class="tool-note" data-area="' + i + '" rows="2" placeholder="' + toolEsc(t('tools.notes')) + '">' + toolAttr(cur.note || '') + '</textarea></div>';
       }).join('') +
     '</section>' +
     '<div class="tool-actions">' +

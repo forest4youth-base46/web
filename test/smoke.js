@@ -372,7 +372,35 @@ const TESTS = [
   ['Walk the Forest: clicking a rail segment walks to that activity', testWfRailClick],
   ['Header area switch: Forest Interventions / Immersive Virtual Nature follow the route', testAreaSwitch],
   ['No request leaves the site: CSP holds through the 3D walk, exports and QR', testNoExternalRequests],
+  ['Guides and tools are translated (FR/DE) while stored values stay English', testContentTranslated],
 ];
+
+async function testContentTranslated(browser) {
+  // content-i18n-fr/-de.js translate the guides and tools at display time;
+  // chip values (what gets stored, and compared in code) stay English.
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => { localStorage.clear(); setRole('practitioner'); setLang('fr'); window.location.hash = 'guide/g-ivn-safety'; });
+  await page.waitForTimeout(250);
+  const fr = await page.evaluate(() => document.querySelector('.screen.active').innerText);
+  assert.ok(/Risques, signes d'alerte/.test(fr), 'IVN guide shows French');
+  assert.ok(!/Risks, warning signs/.test(fr), 'no English left in that section');
+  await page.evaluate(() => { window.location.hash = 'ivn/plan'; });
+  await page.waitForTimeout(250);
+  const chip = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('#ivn-root .gd-chip')].find(x => x.dataset.value === 'Forest');
+    return b ? { label: b.textContent, value: b.dataset.value } : null;
+  });
+  assert.ok(chip, 'environment chip present');
+  assert.strictEqual(chip.label, 'Forêt', 'chip label translated');
+  assert.strictEqual(chip.value, 'Forest', 'chip value stays English (stored and compared in code)');
+  await page.evaluate(() => { setLang('de'); window.location.hash = 'fi/screening'; });
+  await page.waitForTimeout(250);
+  const de = await page.evaluate(() => document.querySelector('.screen.active').innerText);
+  assert.ok(/Mobilität und körperlicher Zugang/.test(de), 'Forest tools show German');
+  await page.evaluate(() => setLang('en'));
+  await page.close();
+}
 
 async function testNoExternalRequests(browser) {
   // Under the real CSP (vercel.json), the whole app works and nothing is

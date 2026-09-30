@@ -25,7 +25,10 @@ const GUIDES = { fi: typeof GUIDE_FI !== 'undefined' ? GUIDE_FI : null,
 let guideActive = 'fi';
 const guideSection = { fi: 'fi-start', ivn: 'ivn-start' };
 
+// Escapes guide text for HTML, translating it on the way (contentT,
+// content.js). Only ever used for text shown to the reader.
 function guideEsc(s) {
+  if (typeof contentT === 'function') s = contentT(s);
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 

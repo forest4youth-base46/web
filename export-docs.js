@@ -136,7 +136,7 @@ function pexpFileSafe(s) {
 
 async function pexpDownloadPDF(opts) {
   if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
-    alert('Export library not loaded.');
+    alert(t('exp.err.lib'));
     return;
   }
   const root = document.getElementById('print-doc');
@@ -149,7 +149,7 @@ async function pexpDownloadPDF(opts) {
     pbSavePDFFromCanvases(canvases, opts.filename || 'forest4youth');
   } catch (err) {
     console.error('PDF export failed', err);
-    alert('PDF export failed. Try Print instead.');
+    alert(t('exp.err.pdfprint'));
   } finally {
     restoreZoom();
     document.body.classList.remove('is-exporting-png');

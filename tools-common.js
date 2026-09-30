@@ -7,8 +7,15 @@
 // data (fi-tools-data.js, guide-ivn-data.js → GUIDE_IVN.tools); the UI
 // chrome strings come from the i18n packs via t().
 
-function toolEsc(s) {
+// Escapes text for HTML. toolEsc() is for text shown to the reader and
+// translates guide/tool content on the way (contentT, content.js); toolAttr()
+// is for values that must stay as they are: data-* keys, and what the user
+// typed or saved (input values, textarea contents).
+function toolAttr(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function toolEsc(s) {
+  return toolAttr(typeof contentT === 'function' ? contentT(s) : s);
 }
 
 // Route helper: '#ivn/plan' → { hub: 'ivn', tool: 'plan', arg: undefined }.
@@ -52,8 +59,8 @@ function toolQuote(q) {
 // Chip group. single: one choice at a time. Calls onchange(name, values[]).
 function toolChips(name, options, selected, single) {
   const sel = [].concat(selected || []);
-  return '<div class="gd-chips" role="group" data-name="' + toolEsc(name) + '"' + (single ? ' data-single="1"' : '') + '>' +
-    options.map(o => '<button type="button" class="gd-chip" data-value="' + toolEsc(o) + '" aria-pressed="' + (sel.indexOf(o) !== -1) + '">' + toolEsc(o) + '</button>').join('') +
+  return '<div class="gd-chips" role="group" data-name="' + toolAttr(name) + '"' + (single ? ' data-single="1"' : '') + '>' +
+    options.map(o => '<button type="button" class="gd-chip" data-value="' + toolAttr(o) + '" aria-pressed="' + (sel.indexOf(o) !== -1) + '">' + toolEsc(o) + '</button>').join('') +
     '</div>';
 }
 
@@ -73,7 +80,7 @@ function toolBindChips(root, cb) {
 
 // Tickable list; checked: array of booleans.
 function toolChecklist(name, items, checked) {
-  return '<ul class="gd-check" data-name="' + toolEsc(name) + '">' + items.map((it, i) => {
+  return '<ul class="gd-check" data-name="' + toolAttr(name) + '">' + items.map((it, i) => {
     const title = typeof it === 'string' ? it : it.title;
     const text = typeof it === 'string' ? '' : it.text;
     return '<li><button type="button" role="checkbox" data-i="' + i + '" aria-checked="' + !!(checked && checked[i]) + '">' +

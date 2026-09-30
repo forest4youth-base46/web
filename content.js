@@ -84,6 +84,21 @@ function storageLoad(key, fallback) {
 // any of those files for what "in sync" means in practice.
 const T = { en: T_EN, fr: T_FR, de: T_DE };
 
+// Content (the practical guides and the Forest / IVN tools) is generated in
+// English (guide-*-data.js, fi-tools-data.js). Its FR/DE translations live
+// in content-i18n-fr.js / -de.js, keyed by the exact English string, and are
+// applied at display time by contentT() (called from toolEsc() and
+// guideEsc()), so data, stored records and logic keep stable English values.
+const CONTENT_I18N = {
+  fr: typeof CONTENT_FR !== 'undefined' ? CONTENT_FR : null,
+  de: typeof CONTENT_DE !== 'undefined' ? CONTENT_DE : null,
+};
+function contentT(s) {
+  if (typeof s !== 'string' || typeof currentLang !== 'string' || currentLang === 'en') return s;
+  const d = CONTENT_I18N[currentLang];
+  return d && Object.prototype.hasOwnProperty.call(d, s) ? d[s] : s;
+}
+
 // ─────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────

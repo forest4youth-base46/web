@@ -118,9 +118,9 @@ function ivnPlan() {
   const sc = c.intention && ivnScale(c.intention);
   const body =
     '<section class="tool-card"><h3 class="tool-h">' + toolEsc(t('ivn.plan.who')) + '</h3><div class="tool-grid">' +
-      '<label class="tool-field"><span>' + toolEsc(t('tools.youngid')) + '</span><input type="text" data-f="youngId" autocomplete="off" value="' + toolEsc(c.youngId) + '" placeholder="' + toolEsc(t('tools.youngid.ph')) + '"></label>' +
-      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.clinician')) + '</span><input type="text" data-f="clinician" value="' + toolEsc(c.clinician) + '"></label>' +
-      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.date')) + '</span><input type="date" data-f="date" value="' + toolEsc(c.date) + '"></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('tools.youngid')) + '</span><input type="text" data-f="youngId" autocomplete="off" value="' + toolAttr(c.youngId) + '" placeholder="' + toolEsc(t('tools.youngid.ph')) + '"></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.clinician')) + '</span><input type="text" data-f="clinician" value="' + toolAttr(c.clinician) + '"></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.date')) + '</span><input type="date" data-f="date" value="' + toolAttr(c.date) + '"></label>' +
       '<div class="tool-field"><span>' + toolEsc(t('ivn.f.setting')) + '</span>' + toolChips('setting', [t('ivn.setting.room'), t('ivn.setting.headset')], c.setting ? [c.setting] : [], true) + '</div>' +
     '</div></section>' +
     '<section class="tool-card"><h3 class="tool-h">' + toolEsc(t('ivn.plan.module')) + '</h3><div class="ivn-modules">' +
@@ -177,7 +177,7 @@ function ivnRun() {
   const mod = c.module && ivnModule(c.module);
   const running = !!c.run.startedAt;
   const measureRow = (m, when) => '<label class="tool-field tool-field-inline"><span>' + toolEsc(m) + '</span>' +
-    '<input type="text" inputmode="decimal" data-m="' + toolEsc(m) + '" data-when="' + when + '" value="' + toolEsc((c[when] || {})[m] || '') + '"></label>';
+    '<input type="text" inputmode="decimal" data-m="' + toolAttr(m) + '" data-when="' + when + '" value="' + toolAttr((c[when] || {})[m] || '') + '"></label>';
   const body =
     '<section class="tool-card ivn-run">' +
       '<div class="ivn-clock" aria-live="off"><span id="ivn-clock">' + ivnClock(ivnElapsed(c.run)) + '</span>' +
@@ -192,12 +192,12 @@ function ivnRun() {
     '</section>' +
     '<section class="tool-card"><h3 class="tool-h">' + toolEsc(t('ivn.run.before')) + '</h3>' +
       (c.measures.length ? c.measures.map(m => measureRow(m, 'before')).join('') : '<p class="tool-muted">' + toolEsc(t('ivn.run.nomeasure')) + '</p>') +
-      '<label class="tool-field tool-field-inline"><span>' + toolEsc(t('ivn.f.tolerability')) + '</span><input type="text" data-f="tolBefore" value="' + toolEsc(c.tolBefore) + '"></label>' +
+      '<label class="tool-field tool-field-inline"><span>' + toolEsc(t('ivn.f.tolerability')) + '</span><input type="text" data-f="tolBefore" value="' + toolAttr(c.tolBefore) + '"></label>' +
     '</section>' +
     '<section class="tool-card"><h3 class="tool-h">' + toolEsc(t('ivn.run.watch')) + '</h3><p>' + toolEsc(IVN.signs) + '</p>' +
       '<p class="tool-muted">' + toolEsc(t('ivn.run.exit')) + '</p>' +
-      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.observations')) + '</span><textarea data-f="observations" rows="3">' + toolEsc(c.observations) + '</textarea></label>' +
-      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.incident')) + '</span><textarea data-f="incident" rows="2">' + toolEsc(c.incident) + '</textarea></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.observations')) + '</span><textarea data-f="observations" rows="3">' + toolAttr(c.observations) + '</textarea></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.incident')) + '</span><textarea data-f="incident" rows="2">' + toolAttr(c.incident) + '</textarea></label>' +
     '</section>' +
     '<div class="tool-actions"><a class="gd-button" href="#ivn/debrief">' + toolEsc(t('ivn.run.next')) + ' →</a></div>';
   return ivnPage(t('ivn.step.run'), t('ivn.card.run.title'), mod ? mod.title + ' — ' + mod.sub : t('ivn.run.lead'), body, 'run');
@@ -246,11 +246,11 @@ function ivnDebrief() {
   const F = IVN.debriefFields;
   const byLabel = l => F.find(f => f.label.indexOf(l) === 0) || { label: l };
   const d = c.debrief;
-  const text = (key, f, rows) => '<label class="tool-field"><span>' + toolEsc(f.label) + '</span><textarea data-d="' + key + '" rows="' + (rows || 2) + '">' + toolEsc(d[key] || '') + '</textarea></label>';
+  const text = (key, f, rows) => '<label class="tool-field"><span>' + toolEsc(f.label) + '</span><textarea data-d="' + key + '" rows="' + (rows || 2) + '">' + toolAttr(d[key] || '') + '</textarea></label>';
   const chips = (key, f) => '<div class="tool-field"><span>' + toolEsc(f.label) + '</span>' + toolChips('d:' + key, f.options, d[key] ? [d[key]] : [], true) + '</div>';
   const measureRow = m => '<label class="tool-field tool-field-inline"><span>' + toolEsc(m) +
     (c.before[m] ? ' <small>(' + toolEsc(t('ivn.before')) + ': ' + toolEsc(c.before[m]) + ')</small>' : '') + '</span>' +
-    '<input type="text" inputmode="decimal" data-m="' + toolEsc(m) + '" data-when="after" value="' + toolEsc(c.after[m] || '') + '"></label>';
+    '<input type="text" inputmode="decimal" data-m="' + toolAttr(m) + '" data-when="after" value="' + toolAttr(c.after[m] || '') + '"></label>';
   const body =
     '<section class="tool-card"><h3 class="tool-h">' + toolEsc(t('ivn.debrief.talk')) + '</h3><p class="tool-muted">' + toolEsc(t('ivn.debrief.talk.lead')) + '</p>' +
       chips('overall', byLabel('Overall')) + text('like', byLabel('What was it like')) + text('stood', byLabel('Anything that stood out')) +
@@ -260,12 +260,12 @@ function ivnDebrief() {
     '</section>' +
     '<section class="tool-card"><h3 class="tool-h">' + toolEsc(t('ivn.debrief.after')) + '</h3>' +
       (c.measures.length ? c.measures.map(measureRow).join('') : '<p class="tool-muted">' + toolEsc(t('ivn.run.nomeasure')) + '</p>') +
-      '<label class="tool-field tool-field-inline"><span>' + toolEsc(t('ivn.f.tolerability')) + (c.tolBefore ? ' <small>(' + toolEsc(t('ivn.before')) + ': ' + toolEsc(c.tolBefore) + ')</small>' : '') + '</span><input type="text" data-f="tolAfter" value="' + toolEsc(c.tolAfter) + '"></label>' +
+      '<label class="tool-field tool-field-inline"><span>' + toolEsc(t('ivn.f.tolerability')) + (c.tolBefore ? ' <small>(' + toolEsc(t('ivn.before')) + ': ' + toolEsc(c.tolBefore) + ')</small>' : '') + '</span><input type="text" data-f="tolAfter" value="' + toolAttr(c.tolAfter) + '"></label>' +
       '<p class="tool-muted">' + toolEsc(IVN.scalesSafety) + '</p>' +
     '</section>' +
     '<section class="tool-card"><h3 class="tool-h">' + toolEsc(t('ivn.debrief.record')) + '</h3>' +
-      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.summary')) + '</span><textarea data-f="summary" rows="2">' + toolEsc(c.summary) + '</textarea></label>' +
-      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.carry')) + '</span><textarea data-f="carry" rows="2">' + toolEsc(c.carry) + '</textarea></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.summary')) + '</span><textarea data-f="summary" rows="2">' + toolAttr(c.summary) + '</textarea></label>' +
+      '<label class="tool-field"><span>' + toolEsc(t('ivn.f.carry')) + '</span><textarea data-f="carry" rows="2">' + toolAttr(c.carry) + '</textarea></label>' +
     '</section>' +
     '<div class="tool-actions"><button type="button" class="gd-button" onclick="ivnSaveRecord()">' + toolEsc(t('ivn.debrief.save')) + '</button></div>' +
     '<p class="tool-muted">' + toolEsc(t('tools.stored')) + '</p>';
@@ -288,19 +288,22 @@ function ivnSaveRecord() {
 function ivnRecordRows(r) {
   const mod = r.module && ivnModule(r.module);
   const p = r.perso || {};
-  const pj = k => (p[k] || []).join(', ') || '—';
-  const measures = (r.measures || []).map(m => m + ': ' + ((r.before || {})[m] || '—') + ' → ' + ((r.after || {})[m] || '—')).join('; ') || '—';
+  // Stored values stay in English; each piece is translated for display
+  // before being joined into a line (contentT, content.js).
+  const tc = typeof contentT === 'function' ? contentT : (x => x);
+  const pj = k => (p[k] || []).map(tc).join(', ') || '—';
+  const measures = (r.measures || []).map(m => tc(m) + ': ' + ((r.before || {})[m] || '—') + ' → ' + ((r.after || {})[m] || '—')).join('; ') || '—';
   const d = r.debrief || {};
-  const debrief = [d.overall, d.like, d.stood, d.change && (t('ivn.rec.change') + ': ' + d.change), d.discomfort && (t('ivn.rec.discomfort') + ': ' + d.discomfort),
-    d.ready && (t('ivn.rec.ready') + ': ' + d.ready), d.keep && (t('ivn.rec.keep') + ': ' + d.keep), d.word && (t('ivn.rec.word') + ': ' + d.word)].filter(Boolean).join(' · ') || '—';
+  const debrief = [tc(d.overall), d.like, d.stood, d.change && (t('ivn.rec.change') + ': ' + d.change), d.discomfort && (t('ivn.rec.discomfort') + ': ' + tc(d.discomfort)),
+    d.ready && (t('ivn.rec.ready') + ': ' + tc(d.ready)), d.keep && (t('ivn.rec.keep') + ': ' + d.keep), d.word && (t('ivn.rec.word') + ': ' + d.word)].filter(Boolean).join(' · ') || '—';
   return [
     [t('ivn.rec.when'), (r.date || '—') + (r.run && r.run.start ? ' · ' + r.run.start : '') + ' · ' + Math.round(((r.run && r.run.elapsed) || 0) / 60000) + ' min'],
     [t('ivn.f.clinician'), r.clinician || '—'],
     [t('tools.youngid'), r.youngId || '—'],
-    [t('ivn.module'), mod ? r.module + ' — ' + mod.title : '—'],
+    [t('ivn.module'), mod ? r.module + ' — ' + tc(mod.title) : '—'],
     [t('ivn.f.setting'), r.setting || '—'],
-    [t('ivn.plan.intention'), r.intention || '—'],
-    [t('ivn.rec.perso'), ['Environment', 'Mode', 'Sensory level', 'Social format', 'Add-ons', 'Purpose'].map(k => k + ': ' + pj(k)).join(' · ')],
+    [t('ivn.plan.intention'), tc(r.intention) || '—'],
+    [t('ivn.rec.perso'), ['Environment', 'Mode', 'Sensory level', 'Social format', 'Add-ons', 'Purpose'].map(k => tc(k) + ': ' + pj(k)).join(' · ')],
     [t('ivn.rec.measures'), measures],
     [t('ivn.f.tolerability'), (r.tolBefore || '—') + ' → ' + (r.tolAfter || '—')],
     [t('ivn.f.observations'), r.observations || '—'],
