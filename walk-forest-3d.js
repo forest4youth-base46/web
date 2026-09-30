@@ -54,6 +54,36 @@ function wf3dInIvn(x, z) {
   const dx = x - c.x, dz = z - c.z;
   return dx * dx + dz * dz < 5.6 * 5.6;
 }
+// Where the arrival camera glides to at stop i (wf3dsCameraBlend), for a
+// typical phone and desktop framing — trees are kept off the line from
+// there to the clearing, so the calm sideways glide never ends behind a
+// trunk. Mirrors the camera maths; keep the two in step.
+const WF3D_SIGHT_TRUCK = { narrow: 0.9, wide: 0.32 };
+function wf3dSightlines() {
+  if (wf3dSightlines._s) return wf3dSightlines._s;
+  const out = [];
+  ACTIVITIES.forEach(function (a, i) {
+    const S = wf3dStopCenter(i);
+    [[7.5, WF3D_SIGHT_TRUCK.narrow, 2.5], [11, WF3D_SIGHT_TRUCK.wide, 0]].forEach(function (cfg) {
+      const E = wf3dAt(i - cfg[0] / WF3D_ALONG, 0, 0), G = wf3dAt(i + 0.9, 0, 0);
+      let fx = G.x - E.x, fz = G.z - E.z; const fl = Math.hypot(fx, fz) || 1; fx /= fl; fz /= fl;
+      const rx = -fz, rz = fx, d = (S.x - E.x) * rx + (S.z - E.z) * rz;
+      out.push([E.x + rx * d * cfg[1] - fx * cfg[2], E.z + rz * d * cfg[1] - fz * cfg[2], S.x, S.z]);
+    });
+  });
+  return (wf3dSightlines._s = out);
+}
+function wf3dInSight(x, z, r) {
+  const L = wf3dSightlines();
+  for (let k = 0; k < L.length; k++) {
+    const s = L[k], ax = s[2] - s[0], az = s[3] - s[1];
+    const t = Math.max(0, Math.min(1, ((x - s[0]) * ax + (z - s[1]) * az) / (ax * ax + az * az)));
+    const dx = x - (s[0] + ax * t), dz = z - (s[1] + az * t);
+    if (dx * dx + dz * dz < r * r) return true;
+  }
+  return false;
+}
+
 function wf3dInClearing(x, z, r) {
   const c = wf3dInClearing._c || (wf3dInClearing._c = ACTIVITIES.concat([null]).map(function (a, i) { return wf3dStopCenter(i); }));
   for (let k = 0; k < c.length; k++) {
@@ -488,7 +518,7 @@ function wf3dBuildTrees() {
     const y = wf3dGround(x, z);
     // Trees standing in an activity's clearing are left out (scaled to 0,
     // kept in the arrays so indices stay aligned with WF_TREES).
-    const cleared = wf3dInClearing(x, z, WF3D_CLEARING_R);
+    const cleared = wf3dInClearing(x, z, WF3D_CLEARING_R) || wf3dInSight(x, z, 2.6);
     const H = 6 + tr.h * 4;
     const r = 0.2 + 0.13 * tr.w;
     const crownY = H * 0.66;
@@ -598,7 +628,7 @@ function wf3dBuildShrubsAndStones() {
   const sway = geo.attributes.aSway;
   shrubs.forEach(function (sh, i) {
     const x = wf3dX(sh.at, sh.lat), z = wf3dZ(sh.at), y = wf3dGround(x, z);
-    const k = wf3dInClearing(x, z, 6.5) || wf3dInIvn(x, z) ? 0 : 0.38 + sh.s * 0.42;
+    const k = wf3dInClearing(x, z, 6.5) || wf3dInSight(x, z, 1.8) || wf3dInIvn(x, z) ? 0 : 0.38 + sh.s * 0.42;
     const fill = sh.tone > 0.6 ? 0x55826C : (sh.tone > 0.3 ? 0x62907A : 0x74A088);
     Q.setFromAxisAngle(P.set(0, 1, 0), sh.tone * 6.28);
     M.compose(P.set(x, y + k * 0.3, z), Q, S.set(k * 1.25, k * 0.8, k * 1.1));
@@ -822,16 +852,32 @@ function wf3dShapeHammock(cl) {
   const v = cl.v, pos = cl.mesh.geometry.attributes.position.array;
   const side = WF3D_TMP.side || (WF3D_TMP.side = new THREE.Vector3());
   side.set(-cl.dir.z, 0, cl.dir.x).normalize();
+  // With someone lying in it (cl.body, set by wf3dsWalker), the cloth
+  // wraps under them: wherever the body lies, the belly deepens to just
+  // below its underside and the sides rise round it — the fabric carries
+  // the body instead of the body cutting through the fabric.
+  const n = cl.cols - 1;
+  const len = Math.hypot(v.x[n * 3] - v.x[0], v.x[n * 3 + 2] - v.x[2]);
+  const body = cl.body;
   for (let c = 0; c < cl.cols; c++) {
     const u = c / (cl.cols - 1);
     const gather = Math.sin(u * Math.PI);
     const x = v.x[c * 3], y = v.x[c * 3 + 1], z = v.x[c * 3 + 2];
+    let belly = 0.22 * gather, wrap = 1;
+    if (body) {
+      const s = Math.abs(u - 0.5) * len;               // metres from the middle
+      const under = s < body.half ? 1 : Math.max(0, 1 - (s - body.half) / 0.25);
+      if (under > 0) {
+        belly = Math.max(belly, (y - (body.under - 0.02)) * under + belly * (1 - under));
+        wrap = 1 + 0.5 * under;                        // sides hug the body
+      }
+    }
     for (let r = 0; r < cl.across; r++) {
       const w = r / (cl.across - 1) * 2 - 1;          // -1..1 across
-      const off = w * cl.width * 0.5 * (0.1 + 0.9 * gather);
+      const off = w * cl.width * 0.5 * (0.1 + 0.9 * gather) / wrap;
       const o = (c * cl.across + r) * 3;
       pos[o] = x + side.x * off;
-      pos[o + 1] = y - 0.22 * gather * (1 - w * w);   // edges at the rope, belly below
+      pos[o + 1] = y - belly * (1 - w * w);           // edges at the rope, belly below
       pos[o + 2] = z + side.z * off;
     }
   }
@@ -994,7 +1040,10 @@ function wf3dBuildLabels() {
     if (spec.sprite) { WF3D.scene.remove(spec.sprite); spec.sprite.material.map.dispose(); spec.sprite.material.dispose(); spec.sprite = null; }
     const words = wfWords(spec.id) || [];
     const txt = spec.key ? t(spec.key) : spec.words.map(function (k) { return words[k] || ''; }).join(' ').trim();
-    if (!txt) return;
+    // The in-world captions were dropped (Ivo, 2026-09-30): the bubbles
+    // and their name chip are enough. Only the IVN room's sign stays — it
+    // is part of the building.
+    if (!txt || !spec.key) return;
     const c = document.createElement('canvas');
     const ctx = c.getContext('2d');
     const fs = 40;
@@ -1147,6 +1196,7 @@ function wf3dProject(at, lat) {
   // SVG scene's pin side, which the 3D layout replaces).
   void lat;
   const st = WF3D.stations && WF3D.stations[Math.round(at)];
+  if (Math.round(at) >= ACTIVITIES.length && (WF3D.ivnFade || 0) < 0.5) return null;   // room not in sight yet
   if (st && st.pin) st.W(st.pin[0], st.pin[1], st.pin[2], v);
   else { wf3dStopCenter(Math.round(at), v); v.y += 2.0; }   // above heads, not over the focal object
   v.applyMatrix4(cam.matrixWorldInverse);
@@ -1184,7 +1234,8 @@ function wf3dResize() {
   WF3D.renderer.setPixelRatio(dpr);
   WF3D.renderer.setSize(w, h, false);
   WF3D.camera.aspect = w / h;
-  WF3D.camera.fov = w / h < 0.8 ? 62 : 50;    // phones: a wider lens, closer in
+  WF3D.baseFov = w / h < 0.8 ? 62 : 50;    // phones: a wider lens, closer in
+  WF3D.camera.fov = WF3D.baseFov;
   WF3D.camera.updateProjectionMatrix();
   WF3D.puffPts.material.uniforms.uScale.value = h * dpr / (2 * Math.tan(WF3D.camera.fov * Math.PI / 360));
   WF3D.samples.length = 0;
@@ -1216,6 +1267,10 @@ function wf3dPlaceCamera(dt) {
   wf3dsCameraBlend(eye, tgt, narrow);
   cam.position.copy(eye);
   cam.lookAt(tgt);
+  // On arrival the lens opens to about 0.8× zoom — a touch of wide angle,
+  // so the clearing and the walker both fit without the view turning.
+  const fov = 2 * Math.atan(Math.tan((WF3D.baseFov || cam.fov) * Math.PI / 360) * (1 + 0.25 * (WF3D.zoomOut || 0))) * 180 / Math.PI;
+  if (Math.abs(fov - cam.fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
   // Look-around (pointer) + a gentle bank into the trail's bends.
   const L = WF3D.look;
   if (dt > 0) {
@@ -1399,7 +1454,10 @@ function wf3dUpdateVisuals(dt) {
 
   // Stops well behind or far ahead aren't drawn at all (fog hides them
   // anyway) — the set pieces are most of the scene's draw calls.
-  WF3D.stopGroups.forEach(function (g, i) { g.visible = i - c > -1.3 && i - c < 7; });
+  WF3D.stopGroups.forEach(function (g, i) {
+    if (i >= ACTIVITIES.length) { wf3dsIvnReveal(g, c); return; }
+    g.visible = i - c > -1.3 && i - c < 7;
+  });
 
   // Fires flicker at whatever strength their station has them at.
   WF3D.fire.forEach(function (f) {

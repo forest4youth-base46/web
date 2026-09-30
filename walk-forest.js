@@ -446,7 +446,16 @@ function wfBuildSet(s, i) { return wfBuildProps(s, i) + wfBuildCast(s, i); }
 // In 3D each station plays a loose 20–30s loop and arriving is its own
 // moment, so the walk lingers about one loop there, a different length each
 // time; the painted scene keeps its original pacing.
-function wfDwellMs() { return wfUse3d() ? 22000 + Math.random() * 8000 : WF_DWELL_MS; }
+// In 3D the default is an idle walk: the walker strolls the trail, easing
+// past each station without stopping to join it. Stepping to a stop
+// (next/back/restart, or opening one) "engages" it: the walker joins the
+// activity and the walk lingers there ~22–30s, then goes back to idling.
+// WF.engaged is only set by those user actions and cleared when the walk
+// moves on by itself.
+function wfDwellMs() {
+  if (!wfUse3d()) return WF_DWELL_MS;
+  return WF.engaged ? 22000 + Math.random() * 8000 : 1500;
+}
 function wfTravelMs() { return WF.manual ? WF_MANUAL_TRAVEL_MS : WF_TRAVEL_MS; }
 
 function wfStep(now) {
@@ -466,7 +475,7 @@ function wfStep(now) {
              (!wfUse3d() || typeof wf3dsReadyToLeave !== 'function' || wf3dsReadyToLeave())) {
     const at = Math.round(WF.cam);
     if (at >= wfStops().length - 1) { WF.cam = 0; WF.holdEnd = now + wfDwellMs(); }
-    else { WF.mode = 'move'; WF.from = at; WF.to = at + 1; WF.moveStart = now; }
+    else { WF.mode = 'move'; WF.from = at; WF.to = at + 1; WF.moveStart = now; WF.engaged = false; }
   }
   // Only repaint while the camera is actually moving — holding still
   // doesn't change anything wfRender() would draw differently (the
@@ -489,6 +498,7 @@ function wfStep(now) {
 }
 
 function wfGoBack() {
+  WF.engaged = true;
   const target = Math.max(0, Math.round(WF.cam) - 1);
   WF.from = WF.cam; WF.to = target; WF.moveStart = performance.now();
   WF.mode = 'move'; WF.manual = true;
@@ -497,6 +507,7 @@ function wfGoBack() {
   wfRender();
 }
 function wfGoNext() {
+  WF.engaged = true;
   const now = performance.now();
   const at = Math.round(WF.cam);
   const target = at >= wfStops().length - 1 ? 0 : at + 1;
@@ -508,6 +519,7 @@ function wfGoNext() {
   wfRender();
 }
 function wfRestart() {
+  WF.engaged = true;
   WF.from = WF.cam; WF.to = 0; WF.moveStart = performance.now();
   WF.mode = 'move'; WF.manual = true;
   WF.paused = false; WF.holdEnd = performance.now() + wfDwellMs();
@@ -516,6 +528,7 @@ function wfRestart() {
   wfRender();
 }
 function wfOpenStop(id) {
+  WF.engaged = true;
   WF.paused = true; WF.resumeAt = Infinity;
   WF.openId = id;
   WF.sessionDrawerOpen = false;
@@ -543,7 +556,7 @@ function wfStopGeom(s, p, w, narrow) {
   const hit = Math.max(44, size + 18);
   const near = p.scale;
   const baseRx = w * 0.062 * near;
-  const chipW = Math.max(170, Math.min(300, w * 0.26));
+  const chipW = Math.min(w - 20, Math.max(170, Math.min(300, w * 0.26)));
   return {
     id: s.id, name: wfStopName(s), sub: wfStopSub(s),
     color: gMeta.color, glyph: gMeta.glyph,
@@ -560,7 +573,9 @@ function wfStopGeom(s, p, w, narrow) {
     // where the site's own persistent header sits (#wf-scene is a fixed
     // viewport-relative background behind every screen — see the
     // comment on #wf-scene in index.html).
-    chipStyle: narrow
+    // (3D: the caption sits on top of its bubble at every width, like the
+    // desktop scene — the bubbles move with the camera there.)
+    chipStyle: narrow && !wfUse3d()
       ? 'position:absolute;left:' + (12 - p.x).toFixed(1) + 'px;bottom:' + (230 + (p.y - baseRx * 0.5) - WF.h).toFixed(1) +
         'px;width:' + (w - 24).toFixed(0) + 'px'
       : 'position:absolute;left:' +

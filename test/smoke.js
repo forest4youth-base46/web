@@ -228,7 +228,7 @@ async function testWf3dPinsPanelControls(browser) {
     // Hold at stop 1 with the arrival swing already complete: at SwiftShader's
     // ~1fps the 2.4s camera swing takes half a minute, and Playwright (rightly)
     // won't click a pin that is still moving.
-    await page.evaluate(() => { WF.holdEnd = performance.now() + 600000; WF3D.arriveAt = 0; WF3D.arrive = 1; WF3D.look.tyaw = WF3D.look.tpitch = 0; });
+    await page.evaluate(() => { WF.cam = WF.to = WF.from = 0; WF.mode = 'hold'; WF3D.cs.x = 0; WF3D.cs.v = 0; WF.engaged = true; WF.holdEnd = performance.now() + 600000; WF3D.arriveAt = 0; WF3D.arrive = 1; WF3D.look.tyaw = WF3D.look.tpitch = 0; });
     await page.waitForFunction(() => document.querySelector('[data-wf-stop="0"]').style.visibility !== 'hidden');
     await pin.click();
     await page.waitForSelector('#wf-panel-root .wf-panel');

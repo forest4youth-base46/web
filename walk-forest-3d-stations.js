@@ -26,7 +26,7 @@
 'use strict';
 
 const WF3DS_LOOP_MIN = 20, WF3DS_LOOP_MAX = 30;   // seconds per loop
-const WF3DS_ARRIVE_S = 2.4, WF3DS_LEAVE_S = 1.8, WF3DS_MANUAL_S = 0.6;
+const WF3DS_ARRIVE_S = 3.6, WF3DS_LEAVE_S = 2.6, WF3DS_MANUAL_S = 1.2;
 
 // ───────── small timing helpers ─────────
 function wf3dsClamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
@@ -275,58 +275,47 @@ function wf3dsCtx(i, grp) {
 const WF3DS = {};
 
 // 1 · Introduce yourself — spell your name there in sticks, leaves and
-// stones. One person on their knees working along the name, laying the
-// pieces one by one; they kneel at each letter as they make it, so they
-// read as its author (the redraw note: not a spectator standing apart).
-// Seen from a little higher than elsewhere, since the work is on the ground.
+// stones. The name is already nearly done when we arrive; the maker, on
+// their knees beside it, sets the last two stones of the O in place, sits
+// back to look, and (as the loop turns) lifts them to set them again.
 WF3DS.introduce = {
   build(ctx) {
-    const pieces = [];
-    const stick = function (x1, z1, x2, z2) { const m = ctx.log(x1, z1, 0.05, x2, z2, 0.05, 0.05, 0x7E6654); pieces.push({ m, x: (x1 + x2) / 2, z: (z1 + z2) / 2 }); };
-    const stone = function (x, z) { const m = ctx.stone(x, z, 0.17, 0xB6AE98); pieces.push({ m, x, z }); };
-    const leaf = function (x, z, hex) { const m = ctx.disc(x, z, 0.16, hex, 1, 0.04); m.scale.set(1, 1.6, 1); pieces.push({ m, x, z }); };
-    // Three big letters across the clearing floor, read from the path side:
-    // L, O (a ring of stones), E — then a flourish of leaves.
+    const stick = function (x1, z1, x2, z2) { ctx.log(x1, z1, 0.05, x2, z2, 0.05, 0.05, 0x7E6654); };
+    const leaf = function (x, z, hex) { ctx.disc(x, z, 0.16, hex, 1, 0.04).scale.set(1, 1.6, 1); };
+    // L, O (a ring of stones), E, then a flourish of leaves — read from the path side.
     stick(-0.7, -2.2, 0.5, -2.2); stick(0.5, -2.2, 0.5, -1.5);
-    stone(-0.55, -0.9); stone(-0.05, -0.55); stone(0.45, -0.9); stone(-0.05, -1.25);
+    ctx.stone(-0.55, -0.9, 0.17, 0xB6AE98); ctx.stone(-0.05, -0.55, 0.17, 0xB6AE98);
     stick(-0.7, 0.1, 0.5, 0.1); stick(-0.7, 0.1, -0.7, 0.75); stick(-0.1, 0.1, -0.1, 0.65); stick(0.5, 0.1, 0.5, 0.75);
     leaf(0.0, 1.3, 0xB8552E); leaf(-0.4, 1.6, 0xC9A04E); leaf(0.35, 1.7, 0x7FA396);
-    pieces.forEach(function (p) { p.base = p.m.scale.clone(); p.m.scale.multiplyScalar(0.001); });
-    ctx.st.pieces = pieces;
-    ctx.st.maker = ctx.person('kneel', 1.2, -1.9, -1, -1.9);
-    ctx.word(0, 0, -0.3, 1.5);
+    // The two stones still to place: resting in a little pile by the maker.
+    const last = [[0.45, -0.9], [-0.05, -1.25]].map(function (q, k) {
+      const m = ctx.stone(q[0], q[1], 0.17, 0xB6AE98);
+      return { m, x: q[0], z: q[1], pile: [1.05, -1.45 + k * 0.25] };
+    });
+    ctx.st.last = last;
+    ctx.st.maker = ctx.person('kneel', 0.95, -1.05, 0.2, -1.05);
     ctx.join = { x: -2.3, z: -2.4, pose: 'stand' };
     ctx.camH = 3.6;
     ctx.pin = [0.2, -0.3, 2.2];
   },
   act(ctx, u, t, dt) {
-    const S = ctx.st, P = S.pieces, n = P.length;
-    const build = wf3dsSeg(u, 0.05, 0.74) * n;
-    const fade = 1 - wf3dsEase(wf3dsSeg(u, 0.93, 1));
-    let cur = null, ci = 0;
-    P.forEach(function (p, k) {
-      const g = wf3dsEase(wf3dsClamp(build - k)) * fade;
-      p.m.scale.copy(p.base).multiplyScalar(Math.max(0.001, g));
-      if (build >= k && build < k + 1) { cur = p; ci = k; }
+    const S = ctx.st, M = S.maker, m = M.p;
+    // Stone 1 goes in over 0.12–0.38, stone 2 over 0.46–0.72; sit back;
+    // then both drift back to the pile (0.9–1) so the next loop can place them.
+    const spans = [[0.12, 0.38], [0.46, 0.72]];
+    let reach = 0, tx = -0.2, tz = -1.05;
+    S.last.forEach(function (st, k) {
+      const e = wf3dsEase(wf3dsSeg(u, spans[k][0], spans[k][1]));
+      const back = wf3dsEase(wf3dsSeg(u, 0.9, 1));
+      const f = e * (1 - back);
+      const x = wf3dsLerp(st.pile[0], st.x, f), z = wf3dsLerp(st.pile[1], st.z, f);
+      ctx.W(x, z, 0.03 + 0.28 * Math.sin(Math.PI * wf3dsSeg(u, spans[k][0], spans[k][1])) * (1 - back), st.m.position);
+      const r = wf3dsBell(u, spans[k][0] - 0.03, spans[k][1] + 0.03);
+      if (r > reach) { reach = r; tx = x; tz = z; }
     });
-    const M = S.maker, m = M.p;
-    if (cur && u < 0.76) {
-      // Shuffle along on the knees to the piece, reach down and set it.
-      const tx = cur.x + 0.7, tz = cur.z + 0.1;
-      const k = Math.min(1, dt * 2.5);                // ~0.4s to shuffle over
-      ctx.place(M, wf3dsLerp(M.x, tx, k), wf3dsLerp(M.z, tz, k));
-      ctx.face(M, cur.x, cur.z, k);
-      const r = Math.sin((build - ci) * Math.PI);
-      m.armR.rotation.x = -0.35 - 0.4 * r;            // down and forward, to the ground
-      m.armL.rotation.x = -0.2 - 0.2 * r;
-      m.chest.rotation.x = -0.2 - 0.25 * r;
-    } else {
-      // Sit up and look over what's there.
-      ctx.face(M, -0.1, -0.2, 0.03);
-      m.armR.rotation.x = wf3dsTo(m.armR.rotation.x, -0.3, 0.05);
-      m.armL.rotation.x = wf3dsTo(m.armL.rotation.x, -0.3, 0.05);
-      m.chest.rotation.x = wf3dsTo(m.chest.rotation.x, -0.05 + 0.03 * wf3dsWob(t, 1), 0.05);
-    }
+    ctx.face(M, tx, tz, 0.08);
+    m.armR.rotation.x = wf3dsTo(m.armR.rotation.x, -0.3 - 0.55 * reach, 0.12);
+    m.chest.rotation.x = wf3dsTo(m.chest.rotation.x, -0.08 - 0.35 * reach + 0.03 * wf3dsWob(t, 1), 0.1);
   },
 };
 
@@ -478,9 +467,11 @@ WF3DS.naming = {
 // Now and then a breath of wind rocks it.
 WF3DS.hammock = {
   build(ctx) {
-    ctx.tree(-0.4, -2.2, 7, 0x5B8872);
-    ctx.tree(0.6, 2.2, 7.5, 0x62907A);
-    wf3dBuildHammock(ctx.W(-0.25, -2.0, 1.55), ctx.W(0.45, 2.0, 1.55), ctx.i, ctx.grp);
+    // Hung across the view (out from the path), so it's seen broadside
+    // from the trail instead of end-on through a trunk.
+    ctx.tree(-2.0, 0.6, 7, 0x5B8872);
+    ctx.tree(2.4, 0.9, 7.5, 0x62907A);
+    wf3dBuildHammock(ctx.W(-1.8, 0.6, 1.55), ctx.W(2.2, 0.9, 1.55), ctx.i, ctx.grp);
     ctx.word(0, 1.2, 0.3, 2.1);
     ctx.join = { x: 0.1, z: 0, pose: 'hammock' };
     ctx.pin = [0.6, 0, 2.6];
@@ -1345,8 +1336,9 @@ WF3DS.ivn = {
     // Doors open as the walker reaches them; close again behind them.
     const open = wf3dsEase(wf3dsSeg(here, 0.12, 0.45));
     S.leaves.forEach(function (l) { l.piv.rotation.y = -l.sgn * 1.45 * open; });
-    S.spill.material.opacity = 0.35 * open;
-    S.rays.forEach(function (m) { m.material.opacity = (0.06 + 0.1 * open) * (0.7 + 0.3 * Math.sin(t * 0.6 + m.userData.k * 1.7)); });
+    const fade = WF3D.ivnFade == null ? 1 : WF3D.ivnFade;
+    S.spill.material.opacity = 0.35 * open * fade;
+    S.rays.forEach(function (m) { m.material.opacity = fade * (0.06 + 0.1 * open) * (0.7 + 0.3 * Math.sin(t * 0.6 + m.userData.k * 1.7)); });
     // Once the walker is through the doors the facade steps aside: the
     // room is seen open-fronted, as in the sketch, the camera just outside.
     S.fac.visible = here < 0.62;
@@ -1377,6 +1369,41 @@ WF3DS.ivn = {
     }
   },
 };
+
+// The IVN room comes into sight only for the last two activities: from
+// the approach to the check-in it fades up out of the forest (~45m off),
+// rather than sitting on the horizon for the whole walk.
+function wf3dsIvnReveal(g, c) {
+  const N = ACTIVITIES.length;
+  const f = wf3dsEase(wf3dsSeg(c, N - 2.5, N - 2.0));
+  WF3D.ivnFade = f;
+  g.visible = f > 0.001;
+  if (!g.visible) return;
+  if (!g.userData.fadeMats) {
+    const list = [];
+    g.traverse(function (o) {
+      if (!o.material) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      const own = mats.map(function (m) {
+        if (m.isShaderMaterial) { o.userData.hideWhileFading = true; return m; }
+        const cm = m.clone();                     // don't fade materials other stations share
+        cm.userData.baseOpacity = m.opacity;
+        cm.userData.baseTransparent = m.transparent;
+        list.push(cm);
+        return cm;
+      });
+      o.material = Array.isArray(o.material) ? own : own[0];
+    });
+    g.userData.fadeMats = list;
+  }
+  const fading = f < 0.999;
+  g.userData.fadeMats.forEach(function (m) {
+    const tr = fading || m.userData.baseTransparent;
+    if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; }
+    m.opacity = m.userData.baseOpacity * f;
+  });
+  g.traverse(function (o) { if (o.userData.hideWhileFading) o.visible = !fading; });
+}
 
 // ───────── runtime ─────────
 
@@ -1410,7 +1437,9 @@ function wf3dsBuildAll() {
 // path before it sets off).
 function wf3dsStepArrival(dt) {
   const i = Math.round(WF3D.cs.x);
-  const atStop = WF.mode === 'hold' && Math.abs(WF3D.cs.x - i) < 0.03 && Math.abs(WF3D.cs.v) < 0.02 && !WF3D.leaving;
+  // Only an engaged stop draws the walker in (see wfDwellMs): idling, they
+  // just walk on past.
+  const atStop = WF.engaged && WF.mode === 'hold' && Math.abs(WF3D.cs.x - i) < 0.03 && Math.abs(WF3D.cs.v) < 0.02 && !WF3D.leaving;
   if (atStop && WF3D.arriveAt !== i) { WF3D.arriveAt = i; }
   const target = atStop && WF3D.arriveAt === i ? 1 : 0;
   const speed = target ? WF3DS_ARRIVE_S : (WF.manual ? WF3DS_MANUAL_S : WF3DS_LEAVE_S);
@@ -1433,29 +1462,35 @@ function wf3dsReadyToLeave() {
 // The arrival framing for the camera: a spot a few metres behind the
 // walker's joining place, a little to one side (so the walker stands off
 // centre in the foreground), looking at the heart of the clearing.
+// The arrival framing. No swing, no turn — the view keeps its direction,
+// which is calmer on the eye (and on a phone): camera and aim glide
+// sideways together toward the station's clearing, slowly, and the lens
+// opens a little (wf3dPlaceCamera, WF3D.zoomOut) so the scene fits.
+// The IVN room keeps its own framing (st.cam), from Ivo's sketches.
 function wf3dsCameraBlend(eye, tgt, narrow) {
-  const e = wf3dsEase(WF3D.arrive || 0);
+  const a = WF3D.arrive || 0;
+  const e = a * a * a * (a * (a * 6 - 15) + 10);     // smootherstep: no jolt at either end
+  WF3D.zoomOut = 0;
   const st = WF3D.stations && WF3D.stations[WF3D.arriveAt];
   if (!st || e <= 0) return;
-  const T = THREE;
   if (st.cam) {
     const c = narrow && st.camNarrow ? st.camNarrow : st.cam;
     eye.lerp(st.W(c.eye[0], c.eye[1], c.eye[2]), e);
     tgt.lerp(st.W(c.look[0], c.look[1], c.look[2]), e);
     return;
   }
-  const S = st.W(0.3, 0, 0.9);
-  const J = st.W(st.join.x, st.join.z, 0);
-  let dx = J.x - S.x, dz = J.z - S.z;
-  const l = Math.sqrt(dx * dx + dz * dz) || 1;
-  dx /= l; dz /= l;
-  const rot = 0.38;
-  const rx = dx * Math.cos(rot) - dz * Math.sin(rot), rz = dx * Math.sin(rot) + dz * Math.cos(rot);
-  const back = l + (st.camBack || 0) + (narrow ? 6.2 : 4.6);
-  const V = new T.Vector3(S.x + rx * back, 0, S.z + rz * back);
-  V.y = wf3dGround(V.x, V.z) + (st.camH || (narrow ? 2.6 : 2.2));
-  eye.lerp(V, e);
-  tgt.lerp(S, e);
+  const S = st.W(0, 0, 0);
+  let fx = tgt.x - eye.x, fz = tgt.z - eye.z;
+  const fl = Math.sqrt(fx * fx + fz * fz) || 1;
+  fx /= fl; fz /= fl;
+  const rx = -fz, rz = fx;                              // camera's right, on the ground
+  const d = (S.x - eye.x) * rx + (S.z - eye.z) * rz;    // how far right the clearing is
+  const k = d * (narrow ? WF3D_SIGHT_TRUCK.narrow : WF3D_SIGHT_TRUCK.wide) * e;
+  eye.x += rx * k; eye.z += rz * k;
+  tgt.x += rx * k; tgt.z += rz * k;
+  // Phones also ease back a couple of metres (straight back, no turn).
+  if (narrow) { eye.x -= fx * 2.5 * e; eye.z -= fz * 2.5 * e; }
+  WF3D.zoomOut = e;
 }
 
 // One real point light for all stations, moved each frame to the brightest
@@ -1577,9 +1612,12 @@ function wf3dsWalker(dt) {
   const br = W.k * (1 + Math.sin(WF3D.t * 1.2) * 0.015);
   W.torso.scale.set(br, W.k, br);
   Seat.group.position.copy(pos); Seat.group.rotation.y = yaw;
+  if (WF3D.cloth && pose !== 'hammock') WF3D.cloth.body = null;
   if (pose === 'hammock' && WF3D.cloth && WF3D.cloth.stop === WF3D.arriveAt) {
     const v = WF3D.cloth.v, mid = Math.floor(WF3D.cloth.cols / 2) * 3;
-    Lie.group.position.set(v.x[mid], v.x[mid + 1] - 0.2, v.x[mid + 2]);
+    Lie.group.position.set(v.x[mid], v.x[mid + 1] - 0.15, v.x[mid + 2]);
+    // Tell the cloth where the body is, so it wraps under it.
+    WF3D.cloth.body = { under: Lie.group.position.y + Lie.hipY - 14 * Lie.k, half: 0.9 };
     Lie.group.rotation.y = Math.atan2(WF3D.cloth.dir.x, WF3D.cloth.dir.z) + Math.PI;
   }
   const foot = WF3D.pose.shoeless ? WF3D.bareFoot : WF3D.shoe;
