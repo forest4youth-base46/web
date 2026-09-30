@@ -141,11 +141,23 @@ window.addEventListener('hashchange', applyRoute);
 // (#pb-runMode) is a fixed full-screen overlay that already covers the
 // header entirely while active, so there's no separate "Run" state to
 // track here — closing it reveals whatever the hash already says.
+// Both areas are practitioner tools: switching to one from the young
+// people / families pages switches role too (the link then navigates).
+function navToArea() {
+  if (currentRole !== 'practitioner') setRole('practitioner');
+}
+
 function updateHeaderChrome() {
+  // Area switch (Forest Interventions / Immersive Virtual Nature): active
+  // from the route. IVN: its hub/tools and its guide. Forest: its hub/tools,
+  // the Pocketbook (Plan/Run/Reflect), Reference and its guide.
+  const hash = window.location.hash.replace('#', '');
+  const area = /^(ivn\b|guide\/g-ivn)/.test(hash) ? 'ivn'
+    : /^(fi\b|implement|reflect|reference|guide(\/g-fi|$))/.test(hash) ? 'fi' : null;
   document.querySelectorAll('.mode-btn').forEach(function(b) {
-    const isActive = b.getAttribute('data-role') === currentRole;
+    const isActive = b.getAttribute('data-area') === area;
     b.classList.toggle('active', isActive);
-    b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    if (isActive) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
 
   const section = window.location.hash.replace('#', '').split('/')[0];

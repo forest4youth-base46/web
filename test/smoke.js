@@ -365,7 +365,28 @@ const TESTS = [
   ['Walk the Forest 3D: falls back without WebGL / under reduced motion', () => testWf3dFallbacks()],
   ['Every export carries the logo and a disclaimer (PDF, print, Ctrl+P)', testExportsBranded],
   ['Walk the Forest: clicking a rail segment walks to that activity', testWfRailClick],
+  ['Header area switch: Forest Interventions / Immersive Virtual Nature follow the route', testAreaSwitch],
 ];
+
+async function testAreaSwitch(browser) {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  const active = async hash => {
+    await page.evaluate(h => { window.location.hash = h; }, hash);
+    await page.waitForTimeout(150);
+    return page.evaluate(() => [...document.querySelectorAll('.mode-btn[aria-current="page"]')].map(b => b.dataset.area).join(','));
+  };
+  assert.strictEqual(await active('ivn/run'), 'ivn', 'IVN tools mark IVN');
+  assert.strictEqual(await active('guide/g-ivn-sheets'), 'ivn', 'IVN guide marks IVN');
+  assert.strictEqual(await active('implement/mod-pocket'), 'fi', 'Pocketbook marks Forest');
+  assert.strictEqual(await active('fi'), 'fi', 'Forest hub marks Forest');
+  // From the young people / families pages, the switch goes back to practitioner.
+  await page.evaluate(() => { setRole('participant', true); });
+  await page.click('.mode-btn[data-area="ivn"]');
+  await page.waitForTimeout(200);
+  assert.strictEqual(await page.evaluate(() => currentRole + ' ' + window.location.hash), 'practitioner #ivn');
+  await page.close();
+}
 
 async function testWfRailClick(browser) {
   // The lower rail's segments are buttons: clicking one engages the walk

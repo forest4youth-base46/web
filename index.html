@@ -113,10 +113,15 @@
           <span class="search-trigger-kbd" aria-hidden="true">⌘K</span>
         </button>
 
-        <div class="mode-switch" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label">
-          <button type="button" class="mode-btn" data-role="practitioner" aria-pressed="true" onclick="setRole('practitioner', true)" data-i18n="role.bar.practitioner">Practitioner</button>
-          <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant', true)" data-i18n="role.bar.participant">Exploring</button>
-        </div>
+        <!-- The two areas of the tool, always one click away (Ivo,
+             2026-09-30: replaces the old Practitioner / Exploring role
+             switch; the young people / families pages stay reachable
+             through #role and the guides' "Find your part" cards). Active
+             state follows the route (updateHeaderChrome, router.js). -->
+        <nav class="mode-switch" aria-label="Areas" data-i18n-attr="aria-label:nav.switch.label">
+          <a class="mode-btn" data-area="fi" href="#fi" onclick="navToArea()" title="Forest Interventions" aria-label="Forest Interventions" data-i18n-attr="title,aria-label:nav.switch.fi"><span class="mode-btn-full" data-i18n="nav.switch.fi">Forest Interventions</span><span class="mode-btn-short" data-i18n="nav.switch.fi.short">Forest</span></a>
+          <a class="mode-btn" data-area="ivn" href="#ivn" onclick="navToArea()" title="Immersive Virtual Nature" aria-label="Immersive Virtual Nature" data-i18n-attr="title,aria-label:nav.switch.ivn"><span class="mode-btn-full" data-i18n="nav.switch.ivn">Immersive Virtual Nature</span><span class="mode-btn-short" data-i18n="nav.switch.ivn.short">Virtual</span></a>
+        </nav>
 
         <div class="lang-bar">
           <button class="lang-btn active" onclick="setLang('en')">EN</button>
