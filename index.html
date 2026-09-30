@@ -1384,6 +1384,7 @@
                 <div class="pb-builder-title" data-i18n="pbui.builder.title">Session Builder</div>
                 <div class="pb-builder-tagline" data-i18n="pbui.builder.tagline">Compose a session by adding activities. Sequence reflects the therapeutic arc.</div>
               </header>
+              <p class="data-notice data-notice--compact" data-i18n="data.notice.short">Saved only on this device. Nothing is sent to a server.</p>
               <div class="pb-builder-stats">
                 <div class="pb-stat">
                   <div class="pb-stat-label" data-i18n="pbui.builder.stat.activities">Activities</div>
@@ -1512,6 +1513,7 @@
       <h2 data-i18n="reflect.heading">Post-Session Reflection</h2>
       <p data-i18n="reflect.sub">Prompts and indicators to support practitioner reflection after each session.</p>
     </div>
+    <p class="data-notice" data-i18n="data.notice">Saved only on this device, in this browser. Nothing is sent to a server: there is no account and no online database. Anyone using this browser can see it; clearing the browser's data for this site erases it.</p>
 
     <!-- "Session just run" recap — only shown once a Run Mode record
          exists (pbRenderReflectSummary() in pocketbook-reflect.js toggles [hidden]).
@@ -1667,6 +1669,7 @@
          the same per-group colors as the Session Builder. -->
     <section class="reflect-history" id="reflect-history" hidden>
       <h3 data-i18n="pbui.reflect.history.title">Session history</h3>
+      <p class="data-notice" data-i18n="data.notice">Saved only on this device, in this browser. Nothing is sent to a server: there is no account and no online database. Anyone using this browser can see it; clearing the browser's data for this site erases it.</p>
       <div class="reflect-history-list" id="reflect-history-list"></div>
     </section>
 
@@ -1783,6 +1786,7 @@
       <div class="pb-run-section pb-run-notes-block">
         <label class="pb-run-notes-label" for="pb-runNotes" data-i18n="pbui.run.notes.label">Notes</label>
         <p class="pb-run-notes-hint" data-i18n="pbui.run.notes.hint">Anything you want to bring to reflection or supervision. Saved with this session.</p>
+        <p class="data-notice data-notice--compact" data-i18n="data.notice.short">Saved only on this device. Nothing is sent to a server.</p>
         <textarea class="pb-run-notes" id="pb-runNotes" rows="3" oninput="pbRunNoteInput(event)"
                   placeholder="What happened, what you noticed…" data-i18n-attr="placeholder:pbui.run.notes.placeholder"></textarea>
       </div>

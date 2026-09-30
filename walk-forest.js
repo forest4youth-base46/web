@@ -884,6 +884,7 @@ function wfPanelHTML(frame) {
               '<button type="button" class="wf-session-export" onclick="exportRunPNG()" ' + (exportDisabled ? 'disabled aria-disabled="true"' : '') + ' aria-label="' + wfEsc(t('export.png')) + '" title="' + wfEsc(t('export.png')) + '">PNG</button>' +
               '<a href="#implement/mod-pocket" class="wf-session-open">' + wfEsc(t('walk.session.open')) + '</a>' +
             '</div>' +
+            '<p class="data-notice data-notice--compact">' + wfEsc(t('data.notice.short')) + '</p>' +
           '</div>'
         ) : '') +
       '</div>' +

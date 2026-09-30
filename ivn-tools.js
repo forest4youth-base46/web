@@ -66,8 +66,11 @@ function ivnSteps(active) {
       (c.module ? ' · ' + toolEsc(t('ivn.module')) + ' ' + toolEsc(c.module) + ' — ' + toolEsc(ivnModule(c.module).title) : '') + '</p>' : '');
 }
 
+// The four session steps keep what is entered (f4y.ivn.current, the
+// screening, the saved record), so each ends with the on-device notice.
 function ivnPage(kicker, title, lead, body, step) {
-  return toolPage({ hub: 'ivn', back: t('ivn.back'), kicker, title, lead, body: (step ? ivnSteps(step) : '') + body });
+  return toolPage({ hub: 'ivn', back: t('ivn.back'), kicker, title, lead,
+    body: (step ? ivnSteps(step) : '') + body + (step ? toolNotice('data.notice.id') : '') });
 }
 
 // ── Hub ───────────────────────────────────────────────────
@@ -137,8 +140,7 @@ function ivnPlan() {
       (sc ? ivnMeasurePicker(sc, c.measures) : '') +
       '<p class="tool-muted">' + toolEsc(t('ivn.plan.tolerability')) + '</p></section>' +
     '<div class="tool-actions"><a class="gd-button" href="#ivn/check">' + toolEsc(t('ivn.plan.next')) + ' →</a>' +
-      '<button type="button" class="tool-btn tool-btn-quiet" onclick="ivnStartOver()">' + toolEsc(t('ivn.startover')) + '</button></div>' +
-    '<p class="tool-muted">' + toolEsc(t('tools.stored')) + '</p>';
+      '<button type="button" class="tool-btn tool-btn-quiet" onclick="ivnStartOver()">' + toolEsc(t('ivn.startover')) + '</button></div>';
   return ivnPage(t('ivn.step.plan'), t('ivn.card.plan.title'), t('ivn.plan.lead'), body, 'plan');
 }
 
@@ -267,8 +269,7 @@ function ivnDebrief() {
       '<label class="tool-field"><span>' + toolEsc(t('ivn.f.summary')) + '</span><textarea data-f="summary" rows="2">' + toolAttr(c.summary) + '</textarea></label>' +
       '<label class="tool-field"><span>' + toolEsc(t('ivn.f.carry')) + '</span><textarea data-f="carry" rows="2">' + toolAttr(c.carry) + '</textarea></label>' +
     '</section>' +
-    '<div class="tool-actions"><button type="button" class="gd-button" onclick="ivnSaveRecord()">' + toolEsc(t('ivn.debrief.save')) + '</button></div>' +
-    '<p class="tool-muted">' + toolEsc(t('tools.stored')) + '</p>';
+    '<div class="tool-actions"><button type="button" class="gd-button" onclick="ivnSaveRecord()">' + toolEsc(t('ivn.debrief.save')) + '</button></div>';
   return ivnPage(t('ivn.step.debrief'), t('ivn.card.debrief.title'), t('ivn.debrief.lead'), body, 'debrief');
 }
 
@@ -326,7 +327,7 @@ function ivnRecords_view(arg) {
         '<button type="button" class="tool-btn tool-btn-quiet" onclick="ivnDelete(\'' + r.id + '\')">' + toolEsc(ivnConfirmDelete === r.id ? t('ivn.rec.confirm') : t('ivn.rec.delete')) + '</button>' +
         '<a class="tool-btn tool-btn-quiet" href="#ivn/records">' + toolEsc(t('ivn.rec.all')) + '</a>' +
       '</div>';
-    return ivnPage(t('ivn.group.evaluate'), t('ivn.card.records.title'), '', body);
+    return ivnPage(t('ivn.group.evaluate'), t('ivn.card.records.title'), '', body + toolNotice('data.notice.id'));
   }
   const list = all.length
     ? '<ul class="ivn-rec-list">' + all.map(x => '<li><a href="#ivn/records/' + x.id + '"><strong>' + toolEsc(x.youngId || '—') + '</strong>' +
@@ -334,7 +335,7 @@ function ivnRecords_view(arg) {
       '<div class="tool-actions"><button type="button" class="gd-button" onclick="ivnDownloadCsv()">' + toolEsc(t('ivn.rec.csv')) + '</button></div>' +
       '<p class="tool-muted">' + toolEsc(t('exp.csv.note')) + '</p>'
     : '<p class="tool-muted">' + toolEsc(t('ivn.rec.empty')) + '</p><a class="gd-button" href="#ivn/plan">' + toolEsc(t('ivn.card.plan.title')) + ' →</a>';
-  return ivnPage(t('ivn.group.evaluate'), t('ivn.card.records.title'), t('ivn.rec.lead'), list + '<p class="tool-muted">' + toolEsc(t('tools.stored')) + '</p>');
+  return ivnPage(t('ivn.group.evaluate'), t('ivn.card.records.title'), t('ivn.rec.lead'), list + toolNotice('data.notice.id'));
 }
 
 // One saved record as a branded document.

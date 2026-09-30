@@ -373,7 +373,50 @@ const TESTS = [
   ['Header area switch: Forest Interventions / Immersive Virtual Nature follow the route', testAreaSwitch],
   ['No request leaves the site: CSP holds through the 3D walk, exports and QR', testNoExternalRequests],
   ['Guides and tools are translated (FR/DE) while stored values stay English', testContentTranslated],
+  ['Every screen that keeps data says it stays on this device (EN/FR/DE)', testDataNotices],
 ];
+
+async function testDataNotices(browser) {
+  // Wherever the app keeps what is entered, an on-device notice says so:
+  // nothing goes to a server. The Forest screening says it keeps nothing.
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    localStorage.clear(); setRole('practitioner');
+    storageSave('f4y.sessions', [{ when: new Date().toISOString(), target: 15, items: [{ id: ACTIVITIES[0].id, plannedMins: 15, actualSecs: 900, note: '' }] }]);
+    storageSave('f4y.ivn.records', [{ id: 'ivn-n', youngId: 'T-1', date: '2026-09-30', run: { elapsed: 0 } }]);
+    pbRenderReflectSummary();
+  });
+  const SCREENS = [
+    ['reflect', '#reflect-screen', 'data.notice'],
+    ['implement/mod-pocket', '#pb-builder', 'data.notice.short'],
+    ['fi/prepare', '#fi-root', 'data.notice'],
+    ['fi/screening', '#fi-root', 'data.notice.none'],
+    ['ivn/plan', '#ivn-root', 'data.notice.id'],
+    ['ivn/check', '#ivn-root', 'data.notice.id'],
+    ['ivn/run', '#ivn-root', 'data.notice.id'],
+    ['ivn/debrief', '#ivn-root', 'data.notice.id'],
+    ['ivn/records', '#ivn-root', 'data.notice.id'],
+    ['ivn/records/ivn-n', '#ivn-root', 'data.notice.id'],
+  ];
+  for (const lang of ['en', 'fr', 'de']) {
+    await page.evaluate(l => setLang(l), lang);
+    for (const [hash, root, key] of SCREENS) {
+      await page.evaluate(h => { window.location.hash = h; }, hash);
+      await page.waitForTimeout(150);
+      const ok = await page.evaluate(([root, key]) => {
+        const want = t(key);
+        return [...document.querySelectorAll(root + ' .data-notice')].some(el => el.textContent.trim() === want && el.offsetParent !== null);
+      }, [root, key]);
+      assert.ok(ok, lang + ' #' + hash + ': visible ' + key + ' notice');
+    }
+    await page.evaluate(() => { window.location.hash = 'reflect'; });
+    await page.waitForTimeout(150);
+    assert.ok(await page.evaluate(() => !!document.querySelector('#reflect-history:not([hidden]) .data-notice')), lang + ': session history carries the notice');
+  }
+  await page.evaluate(() => setLang('en'));
+  await page.close();
+}
 
 async function testContentTranslated(browser) {
   // content-i18n-fr/-de.js translate the guides and tools at display time;
@@ -477,7 +520,8 @@ async function testExportsBranded(browser) {
   });
   const docs = await page.evaluate(() => {
     const funding = toolEsc(t('exp.funding'));
-    const check = (footer, kind) => footer.includes(funding) && PEXP_NOTES[kind].every(k => footer.includes(toolEsc(t(k))));
+    const legal = toolEsc(t('exp.legal'));
+    const check = (footer, kind) => footer.includes(funding) && footer.includes(legal) && PEXP_NOTES[kind].every(k => footer.includes(toolEsc(t(k))));
     const tools = { fiPrepDoc: fiPrepDoc(), fiScreenDoc: fiScreenDoc(), fiDebriefDoc: fiDebriefDoc(),
       ivnRecordDoc: ivnRecordDoc(ivnRecords()[0]), ivnYoungDoc: ivnYoungDoc() };
     const out = {};

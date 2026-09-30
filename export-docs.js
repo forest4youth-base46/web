@@ -7,7 +7,8 @@
 //     "Co-funded by the European Union" statement), top of every page, at
 //     no less than the branding guide's A4 minimum (see .pexport-logo-img);
 //   - a disclaimer block at the foot of every page: a note fitting the
-//     document (PEXP_NOTES) and the project's funding statement.
+//     document (PEXP_NOTES), the project's funding statement, and the legal
+//     notice from the D1.2.1 practical guide (views and liability).
 //
 // The session plan and the post-session report (pocketbook-export.js)
 // build their own header and body but take their footer from
@@ -51,6 +52,7 @@ function pexpFooterHTML(kind) {
     '<div class="pexport-disclaimer">' +
       (note ? '<p class="pexport-disclaimer-note">' + toolEsc(note) + '</p>' : '') +
       '<p class="pexport-disclaimer-funding">' + toolEsc(t('exp.funding')) + '</p>' +
+      '<p class="pexport-disclaimer-funding">' + toolEsc(t('exp.legal')) + '</p>' +
     '</div>' +
     '<div class="pexport-footer-line">' +
       '<span>Forest4Youth · Interreg North-West Europe · NWE0400643 · v' + APP_VERSION.number + '</span>' +

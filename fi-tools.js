@@ -91,7 +91,7 @@ function fiPrepare() {
       '<button type="button" class="tool-btn" onclick="pexpDownloadPDF(fiPrepDoc())">' + toolEsc(t('tools.pdf')) + '</button>' +
       '<button type="button" class="tool-btn tool-btn-quiet" onclick="pexpPrint(fiPrepDoc())">' + toolEsc(t('tools.print')) + '</button>' +
       '<button type="button" class="tool-btn tool-btn-quiet" onclick="fiPrepReset()">' + toolEsc(t('tools.reset')) + '</button>' +
-    '</div><p class="tool-muted">' + toolEsc(t('fi.prepare.stored')) + '</p>';
+    '</div>' + toolNotice('data.notice');
   return toolPage({ hub: 'fi', back: t('fi.back'), kicker: t('fi.group.prepare'), title: t('fi.card.prepare.title'), lead: t('fi.prepare.lead'), body });
 }
 
@@ -137,7 +137,7 @@ function fiScreening() {
       '<button type="button" class="tool-btn" onclick="pexpDownloadPDF(fiScreenDoc())">' + toolEsc(t('tools.pdf')) + '</button>' +
       '<button type="button" class="tool-btn tool-btn-quiet" onclick="pexpPrint(fiScreenDoc())">' + toolEsc(t('tools.print')) + '</button>' +
       '<button type="button" class="tool-btn tool-btn-quiet" onclick="fiScreen={id:\'\',areas:{}};fiRender()">' + toolEsc(t('tools.clear')) + '</button>' +
-    '</div><p class="tool-muted">' + toolEsc(t('tools.notstored')) + '</p>';
+    '</div>' + toolNotice('data.notice.none');
   return toolPage({ hub: 'fi', back: t('fi.back'), kicker: t('fi.group.prepare'), title: t('fi.card.screening.title'), lead: S.intro, body });
 }
 

@@ -121,6 +121,12 @@ function toolDownload(filename, text, mime) {
   } catch (e) { warnFailure('downloading ' + filename, e); }
 }
 
+// The on-device storage notice, on every tool screen that keeps (or, for
+// data.notice.none, deliberately doesn't keep) what is entered.
+function toolNotice(key) {
+  return '<p class="data-notice">' + toolEsc(t(key || 'data.notice')) + '</p>';
+}
+
 function toolFocusTitle(root) {
   requestAnimationFrame(() => {
     const h = root.querySelector('.tool-title') || root.querySelector('h2');
