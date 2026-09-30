@@ -1226,6 +1226,46 @@ function wf3dsPaintPanorama(kind, W, H) {
   return tex;
 }
 
+// A door leaf's outer face, after the real SAM+ door: lilac above, a soft
+// pink sweep rising from the latch side, and (on the logo leaf) the white
+// Sam logo: a heart with a plus, and the word. Canvas left = the hinge side
+// of the left leaf as the walker sees it.
+function wf3dsPaintSamDoor(withLogo) {
+  const W = 256, H = 664;
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#A9A5CC'); g.addColorStop(0.55, '#C8BCDC'); g.addColorStop(1, '#E6D9E6');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#F2C8D3';
+  x.beginPath();
+  x.moveTo(withLogo ? W : 0, H * 0.12);
+  x.bezierCurveTo(withLogo ? W * 0.2 : W * 0.8, H * 0.2, withLogo ? -W * 0.1 : W * 1.1, H * 0.62, withLogo ? W * 0.35 : W * 0.65, H);
+  x.lineTo(withLogo ? W : 0, H); x.closePath(); x.fill();
+  x.fillStyle = 'rgba(250,238,242,0.55)';
+  x.beginPath();
+  x.moveTo(withLogo ? W : 0, H * 0.5);
+  x.bezierCurveTo(withLogo ? W * 0.55 : W * 0.45, H * 0.62, withLogo ? W * 0.5 : W * 0.5, H * 0.85, withLogo ? W * 0.62 : W * 0.38, H);
+  x.lineTo(withLogo ? W : 0, H); x.closePath(); x.fill();
+  if (withLogo) {
+    const cx = W * 0.3, cy = H * 0.12, s = 15;
+    x.strokeStyle = '#FFFFFF'; x.lineWidth = 3; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath();
+    x.moveTo(cx, cy + s * 0.75);
+    x.bezierCurveTo(cx - s * 1.2, cy, cx - s * 0.7, cy - s * 0.9, cx, cy - s * 0.3);
+    x.bezierCurveTo(cx + s * 0.7, cy - s * 0.9, cx + s * 1.2, cy, cx, cy + s * 0.75);
+    x.stroke();
+    x.beginPath(); x.moveTo(cx + s * 0.95, cy - s * 0.95); x.lineTo(cx + s * 0.95, cy - s * 0.45);
+    x.moveTo(cx + s * 0.7, cy - s * 0.7); x.lineTo(cx + s * 1.2, cy - s * 0.7); x.stroke();
+    x.fillStyle = '#FFFFFF'; x.font = '600 23px Montserrat, "Open Sans", sans-serif'; x.textAlign = 'center';
+    x.fillText('Sam', cx, cy + s * 2.3);
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.minFilter = THREE.LinearFilter;
+  return tex;
+}
+
 WF3DS.ivn = {
   build(ctx) {
     const T = THREE, R = WF3DS_IVN;
@@ -1299,13 +1339,31 @@ WF3DS.ivn = {
     block(side, R.h + 0.3, -(dw / 2 + side / 2), (R.h + 0.3) / 2);
     block(side, R.h + 0.3, dw / 2 + side / 2, (R.h + 0.3) / 2);
     block(dw, R.h + 0.3 - dh, 0, dh + (R.h + 0.3 - dh) / 2);
+    // The leaves are dressed like the real SAM+ door (photo in the SAM
+    // presentation, admin projects/sam/communication/presentation): lilac
+    // with a pink sweep and the white Sam logo, and the permanent project
+    // plaque (assets/wf/sam-plaque.jpg, from Porte_du_SAM_-_Permanent_Plaque)
+    // at hand height on the leaf that carries the logo. sgn 1 is the leaf on
+    // the left as the walker faces the doors.
+    const lw = dw / 2 - 0.02, lh = dh - 0.02;
     const leaves = [-1, 1].map(function (sgn) {
       const piv = new T.Group();
       piv.position.set(sgn * dw / 2, 0, -0.08);
-      const leaf = new T.Mesh(new T.BoxGeometry(dw / 2 - 0.02, dh - 0.02, 0.06), wf3dMat(0x7FA396));
+      const edge = wf3dMat(0xB9B2D2);
+      const face = new T.MeshLambertMaterial({ map: wf3dsPaintSamDoor(sgn > 0) });
+      const leaf = new T.Mesh(new T.BoxGeometry(lw, lh, 0.06), [edge, edge, edge, edge, edge, face]);
       leaf.position.set(-sgn * (dw / 4), dh / 2, 0);
       leaf.castShadow = true;
       piv.add(leaf);
+      if (sgn > 0) {
+        const pw = 0.6, ph = pw * 766 / 640;
+        const frame = new T.Mesh(new T.BoxGeometry(pw + 0.02, ph + 0.02, 0.008), wf3dMat(0xC4C8CB));
+        frame.position.set(-0.06, 1.2 - dh / 2, -0.034);
+        const plaque = new T.Mesh(new T.PlaneGeometry(pw, ph), new T.MeshLambertMaterial({ map: new T.TextureLoader().load('assets/wf/sam-plaque.jpg') }));
+        plaque.position.set(-0.06, 1.2 - dh / 2, -0.039);
+        plaque.rotation.y = Math.PI;
+        leaf.add(frame, plaque);
+      }
       fac.add(piv);
       return { piv, sgn };
     });
