@@ -20,9 +20,6 @@ const WF3D_THREE_SRC = 'vendor/three.min.js';
 const WF3D_GLTF_SRC = 'vendor/three-GLTFLoader.js';
 const WF3D_ALONG = 14;    // metres between consecutive stops
 const WF3D_LAT = 3.2;     // metres per SVG-scene lateral unit
-const WF3D_UP = 0.42 * WF3D_LAT;  // metres per SVG "up" unit (matches wfBuildProps' UP·u)
-const WF3D_SZ = 0.45 * WF3D_LAT;  // metres per SVG prop-size unit (wfBuildProps' SZ·u)
-const WF3D_OUT = 1.2;     // wfBuildProps' lateral spread for set dressing
 // Each stop's activity is staged this far (in stops) ahead of where the
 // walker stops, so on arrival it's framed in front of the walker instead
 // of half of it sitting behind them, filling the foreground. Pins move
@@ -44,18 +41,21 @@ function wf3dStopSide(i) {
   const v = sp && sp[0] ? sp[0] : (WF_STOP_SIDE[s.id] || 1);
   return v < 0 ? -1 : 1;
 }
-// Lateral shift (SVG lateral units) applied to everything at stop i.
-function wf3dStopOff(i) {
-  const s = ACTIVITIES[i];
-  const sp = (s && WF_SPAN[s.id]) || [0, 1];
-  return wf3dStopSide(i) * WF3D_STOP_CLEAR - sp[0] * WF3D_OUT;
-}
 function wf3dStopCenter(i, v) {
+  // The 18th stop, the IVN room, stands across the end of the trail itself.
+  if (i >= ACTIVITIES.length) return wf3dAt(i + WF3D_IVN_AHEAD, 0, 0, v);
   return wf3dAt(i + WF3D_SET_AHEAD, wf3dStopSide(i) * WF3D_STOP_CLEAR, 0, v);
 }
+const WF3D_IVN_AHEAD = 0.62;   // room centre, in stops ahead of its stop point
 // True when (x, z) is inside some activity's clearing (radius r, metres).
+// Inside (or right beside) the IVN room at the end of the trail.
+function wf3dInIvn(x, z) {
+  const c = wf3dInIvn._c || (wf3dInIvn._c = wf3dStopCenter(ACTIVITIES.length));
+  const dx = x - c.x, dz = z - c.z;
+  return dx * dx + dz * dz < 5.6 * 5.6;
+}
 function wf3dInClearing(x, z, r) {
-  const c = wf3dInClearing._c || (wf3dInClearing._c = ACTIVITIES.map(function (a, i) { return wf3dStopCenter(i); }));
+  const c = wf3dInClearing._c || (wf3dInClearing._c = ACTIVITIES.concat([null]).map(function (a, i) { return wf3dStopCenter(i); }));
   for (let k = 0; k < c.length; k++) {
     const dx = x - c[k].x, dz = z - c[k].z;
     if (dx * dx + dz * dz < r * r) return true;
@@ -93,9 +93,10 @@ const WF3D = {
   uni: null,
   trees: null, crowns: null, trunks: null, benders: null, treeAt: null,
   grass: null, leaves: null, leafMesh: null, puffs: null, puffPts: null,
-  motes: null, rays: [], labels: [], labelLang: '',
-  cloth: null, rope: null, anims: [], cast: [],
-  walker: null, walkPhase: 0, pose: { seated: false, hidden: false, shoeless: false },
+  motes: null, rays: [], labelSpecs: [], labelLang: '',
+  cloth: null, rope: null, stations: [], stopGroups: [],
+  arrive: 0, arriveAt: -1, leaving: false,            // see wf3dsStepArrival
+  walker: null, walkPhase: 0, pose: { shoeless: false },
   gusts: null, ptr: null,
   samples: [], governOn: true, debugEl: null, lost: false,
 };
@@ -336,7 +337,7 @@ function wf3dInit() {
   wf3dBuildFarForest();
   wf3dBuildShrubsAndStones();
   wf3dBuildGrass();
-  wf3dBuildSetPieces();
+  wf3dsBuildAll();
   wf3dBuildWalker();
   wf3dBuildParticles();
   wf3dBuildRays();
@@ -597,7 +598,7 @@ function wf3dBuildShrubsAndStones() {
   const sway = geo.attributes.aSway;
   shrubs.forEach(function (sh, i) {
     const x = wf3dX(sh.at, sh.lat), z = wf3dZ(sh.at), y = wf3dGround(x, z);
-    const k = wf3dInClearing(x, z, 3.2) ? 0 : 0.38 + sh.s * 0.42;
+    const k = wf3dInClearing(x, z, 6.5) || wf3dInIvn(x, z) ? 0 : 0.38 + sh.s * 0.42;
     const fill = sh.tone > 0.6 ? 0x55826C : (sh.tone > 0.3 ? 0x62907A : 0x74A088);
     Q.setFromAxisAngle(P.set(0, 1, 0), sh.tone * 6.28);
     M.compose(P.set(x, y + k * 0.3, z), Q, S.set(k * 1.25, k * 0.8, k * 1.1));
@@ -620,7 +621,7 @@ function wf3dBuildShrubsAndStones() {
     const at = -1 + i * 0.33 + rnd() * 0.2;
     const lat = (rnd() < 0.5 ? -1 : 1) * (0.62 + rnd() * 2.4);
     const x = wf3dX(at, lat), z = wf3dZ(at);
-    const s = wf3dInClearing(x, z, 2.5) ? 0 : 0.12 + rnd() * rnd() * 0.5;
+    const s = wf3dInClearing(x, z, 2.5) || wf3dInIvn(x, z) ? 0 : 0.12 + rnd() * rnd() * 0.5;
     Q.setFromEuler(new T.Euler(rnd() * 3, rnd() * 3, rnd() * 3));
     M.compose(P.set(x, wf3dGround(x, z) + s * 0.25, z), Q, S.set(s * 1.3, s * 0.6, s));
     stones.setMatrixAt(i, M);
@@ -668,7 +669,7 @@ function wf3dBuildGrass() {
     const off = 1.55 + Math.pow(rnd(), 1.8) * 11;
     const side = rnd() < 0.5 ? -1 : 1;
     const x = wfPathLat(at) * WF3D_LAT + side * off, z = wf3dZ(at);
-    const s = wf3dInClearing(x, z, 2.2) ? 0 : 0.7 + rnd() * 0.9;
+    const s = wf3dInClearing(x, z, 2.2) || wf3dInIvn(x, z) ? 0 : 0.7 + rnd() * 0.9;
     Q.setFromAxisAngle(Y, rnd() * 6.28);
     M.compose(P.set(x, wf3dGround(x, z) - 0.01, z), Q, S.set(s, s * (0.8 + rnd() * 0.6), s));
     mesh.setMatrixAt(i, M);
@@ -727,7 +728,12 @@ function wf3dPerson(pose, height) {
   const armL = limb(2.6 * k, 40 * k), armR = limb(2.6 * k, 40 * k);
   armL.position.set(-13.5 * k, 104 * k - hipY, 0); armR.position.set(13.5 * k, 104 * k - hipY, 0);
   armL.rotation.z = -0.06; armR.rotation.z = 0.06;
-  hips.add(torso, head, armL, armR, legL, legR);
+  // The upper body hangs from its own pivot at the hips, so a person can
+  // bend at the waist (reaching down, leaning in) without their legs
+  // tipping over with them.
+  const chest = new T.Group();
+  chest.add(torso, head, armL, armR);
+  hips.add(chest, legL, legR);
   g.add(hips);
   hips.position.y = hipY;
   if (pose === 'sit') {
@@ -735,10 +741,20 @@ function wf3dPerson(pose, height) {
     legL.rotation.x = legR.rotation.x = -1.4;
     armL.rotation.x = armR.rotation.x = -0.5;
   } else if (pose === 'kneel') {
-    hips.position.y = 0.36 * H / 1.7;
-    legL.rotation.x = legR.rotation.x = 1.5;
-    armL.rotation.x = armR.rotation.x = -0.8;
-    hips.rotation.x = -0.2;
+    // Upright on the knees: thighs down to the ground, shins folded back
+    // along it — the L of a kneeling body (without the shins a kneeler
+    // just reads as a short person standing).
+    hips.position.y = 44 * k + 3 * k;
+    legL.rotation.x = legR.rotation.x = 0.1;
+    [legL, legR].forEach(function (leg) {
+      const shin = mesh(new T.CapsuleGeometry(3.2 * k, 36 * k, 3, 6));
+      shin.position.set(0, -44 * k, -18 * k);
+      shin.rotation.x = -Math.PI / 2;
+      leg.add(shin);
+    });
+    footL.position.set(0, -44 * k, -38 * k); footR.position.copy(footL.position);
+    armL.rotation.x = armR.rotation.x = -0.6;
+    chest.rotation.x = -0.1;
   } else if (pose === 'lie') {
     hips.position.y = 0.12 * H / 1.7;
     hips.rotation.x = -Math.PI / 2;
@@ -747,252 +763,7 @@ function wf3dPerson(pose, height) {
   } else if (pose === 'reach') {
     armR.rotation.x = -2.3;
   }
-  return { group: g, hips, torso, head, legL, legR, armL, armR, footL, footR, pose, hipY: hips.position.y, k };
-}
-
-// ───────── set pieces (the activity at each stop) ─────────
-// Ported case-by-case from wfBuildProps/wfBuildCast (walk-forest.js), same
-// coordinates, as real objects instead of flat shapes. Animated bits —
-// breathing rings, flames, the hammock, the palette line — register
-// themselves in WF3D.anims / WF3D.fire / WF3D.cloth / WF3D.rope.
-function wf3dBuildSetPieces() {
-  WF3D.stopGroups = [];
-  ACTIVITIES.forEach(function (s, i) {
-    const grp = new THREE.Group();
-    grp.name = 'stop-' + s.id;
-    wf3dBuildProps(s, i, grp);
-    wf3dBuildCast(s, i, grp);
-    WF3D.scene.add(grp);
-    WF3D.stopGroups[i] = grp;
-  });
-}
-
-function wf3dSpanLat(s, l) {
-  const SP = WF_SPAN[s.id] || [0, 1];
-  return SP[0] + (l - SP[0]) * SP[1];
-}
-
-function wf3dBuildCast(s, i, grp) {
-  const cast = WF_CAST[s.id];
-  if (!cast) return;
-  const I = i + WF3D_SET_AHEAD, off = wf3dStopOff(i);
-  const center = wf3dAt(I, wf3dSpanLat(s, (WF_SPAN[s.id] || [0])[0]) * 1.2 + off, 0);
-  cast.forEach(function (c, k) {
-    const p = wf3dAt(I + c[0], wf3dSpanLat(s, c[1]) * 1.2 + off, 0);
-    const person = wf3dPerson(c[2], 1.72 * (c[3] || 0.95));
-    person.group.position.copy(p);
-    if (c[5]) person.group.position.y += c[5] * WF3D_UP;
-    // Face the activity's centre (the SVG figures' l/r facing, made 3D);
-    // fall back to facing the trail when standing on the centre itself.
-    const dx = center.x - p.x, dz = center.z - p.z;
-    // Figures are modelled facing +z; yaw turns +z toward the target.
-    person.group.rotation.y = (dx * dx + dz * dz > 0.3) ? Math.atan2(dx, dz) : (c[4] === 'l' ? -Math.PI / 2 : Math.PI / 2);
-    if (c[2] === 'lie') person.group.rotation.y = Math.PI / 2;
-    grp.add(person.group);
-    WF3D.cast.push({ p: person, stop: i, seed: i * 7 + k, lie: c[2] === 'lie' });
-  });
-}
-
-function wf3dBuildProps(s, i, grp) {
-  const T = THREE;
-  const add = function (m) { m.castShadow = true; m.receiveShadow = true; grp.add(m); return m; };
-  const I = i + WF3D_SET_AHEAD, off = wf3dStopOff(i);
-  const P = function (a, l, up) { return wf3dAt(I + a, wf3dSpanLat(s, l) * WF3D_OUT + off, (up || 0) * WF3D_UP); };
-  const stone = function (a, l, r, hex) {
-    const m = add(new T.Mesh(wf3dStoneGeo(), wf3dMat(hex)));
-    const q = P(a, l); const rr = r * WF3D_SZ;
-    m.position.copy(q); m.position.y += rr * 0.2;
-    m.scale.set(rr, rr * 0.55, rr * 0.9);
-    m.rotation.y = a * 7 + l * 3;
-    return m;
-  };
-  const post = function (a, l, hgt, th, hex) {
-    const b = P(a, l), h = hgt * WF3D_UP, r = Math.max(0.03, th * WF3D_SZ * 0.5);
-    const m = add(new T.Mesh(new T.CylinderGeometry(r * 0.85, r, h, 7), wf3dMat(hex)));
-    m.position.set(b.x, b.y + h / 2, b.z);
-    return m;
-  };
-  const beam = function (a1, l1, u1, a2, l2, u2, th, hex) {
-    const A = P(a1, l1, u1), B = P(a2, l2, u2);
-    const len = A.distanceTo(B), r = Math.max(0.02, th * WF3D_SZ * 0.5);
-    const m = add(new T.Mesh(new T.CylinderGeometry(r, r, len, 7), wf3dMat(hex)));
-    m.position.copy(A).add(B).multiplyScalar(0.5);
-    m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), B.clone().sub(A).normalize());
-    // Ground-level beams (logs) sit on the ground, not half in it.
-    if (u1 < 0.12 && u2 < 0.12) m.position.y += r;
-    return m;
-  };
-  const ring = function (a, l, r, hex) {
-    const q = P(a, l), rr = r * WF3D_SZ;
-    const m = new T.Mesh(new T.TorusGeometry(rr, 0.025, 6, 40), new T.MeshBasicMaterial({ color: hex || 0x7FA396, transparent: true, opacity: 0.7 }));
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(q.x, q.y + 0.05, q.z);
-    grp.add(m);
-    WF3D.anims.push({ kind: 'breath', obj: m, stop: i, phase: r * 3 });
-    return m;
-  };
-  const quad = function (c, hex, opacity) {
-    const pts = c.map(function (v) { return P(v[0], v[1], v[2] || 0); });
-    const g = new T.BufferGeometry().setFromPoints(pts);
-    g.setIndex([0, 1, 2, 0, 2, 3]);
-    g.computeVertexNormals();
-    const m = add(new T.Mesh(g, new T.MeshLambertMaterial({ color: hex, side: T.DoubleSide, transparent: opacity != null && opacity < 1, opacity: opacity == null ? 1 : opacity })));
-    return m;
-  };
-  const band = function (a0, a1, hex, opacity) {
-    // A mat laid across the trail (barefoot path sections).
-    const pts = [];
-    const hw = 1.6;
-    [[a0, -1], [a0, 1], [a1, 1], [a1, -1]].forEach(function (v) {
-      const x = wf3dX(I + v[0], off) + v[1] * hw, z = wf3dZ(I + v[0]);
-      pts.push(new T.Vector3(x, wf3dGround(x, z) + 0.06, z));
-    });
-    const g = new T.BufferGeometry().setFromPoints(pts);
-    g.setIndex([0, 2, 1, 0, 3, 2]); g.computeVertexNormals();
-    const m = new T.Mesh(g, new T.MeshLambertMaterial({ color: hex, transparent: true, opacity: opacity == null ? 1 : opacity, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 }));
-    m.receiveShadow = true; m.renderOrder = 2;
-    grp.add(m);
-    return m;
-  };
-  const bush = function (a, l, r, hex) {
-    const q = P(a, l), rr = Math.max(0.15, r * WF3D_SZ);
-    const m = add(new T.Mesh(wf3dBushGeo(), wf3dMat(hex)));
-    m.position.set(q.x, q.y + rr * 0.25, q.z);
-    m.scale.set(rr, rr * 0.75, rr);
-    return m;
-  };
-  const tree = function (a, l, k) {
-    const b = P(a, l);
-    const trunk = add(new T.Mesh(new T.CylinderGeometry(0.1, 0.16, 3.2, 7), wf3dMat([0x6B5240, 0x5B4636, 0x6B5240][k])));
-    trunk.position.set(b.x, b.y + 1.6, b.z);
-    const crown = add(new T.Mesh(wf3dBushGeo(), wf3dMat([0x3A6B5A, 0x47775F, 0x2E5A4A][k])));
-    crown.position.set(b.x, b.y + 3.4, b.z); crown.scale.set(1.3, 1.1, 1.3);
-    WF3D.anims.push({ kind: 'sway', obj: crown, stop: i, phase: k * 2.1, base: crown.position.clone() });
-  };
-  const flame = function (a, l, up, size) {
-    const q = P(a, l, up);
-    const f = new T.Group();
-    const add = { transparent: true, side: T.DoubleSide, depthWrite: false, blending: T.AdditiveBlending, fog: false };
-    const outer = new T.Mesh(new T.ConeGeometry(0.2 * size, 0.62 * size, 9, 1, true), new T.MeshBasicMaterial(Object.assign({ color: 0xC8501E, opacity: 0.85 }, add)));
-    const inner = new T.Mesh(new T.ConeGeometry(0.11 * size, 0.38 * size, 8, 1, true), new T.MeshBasicMaterial(Object.assign({ color: 0xFFC070, opacity: 0.9 }, add)));
-    const glow = new T.Mesh(new T.CircleGeometry(1.6 * size, 24), new T.MeshBasicMaterial(Object.assign({ map: wf3dGlowTex(), color: 0xFF9A5A, opacity: 0.55 }, add)));
-    outer.position.y = 0.31 * size; inner.position.y = 0.2 * size;
-    glow.rotation.x = -Math.PI / 2; glow.position.y = 0.04;
-    f.add(outer, inner, glow);
-    f.position.copy(q);
-    grp.add(f);
-    let light = null;
-    if (WF3D.tier.light) {
-      light = new T.PointLight(0xFF9A5A, 0.9, 7, 1.6);
-      light.position.set(q.x, q.y + 0.5, q.z);
-      grp.add(light);
-    }
-    WF3D.fire.push({ obj: f, light, stop: i, pos: q.clone(), size, acc: 0 });
-  };
-
-  // Each case mirrors the one of the same name in wfBuildProps.
-  switch (s.id) {
-    case 'introduce':
-      beam(0.28, -0.78, 0, 0.46, -0.72, 0, 0.026, 0x6B5240);
-      beam(0.46, -0.72, 0, 0.41, -0.54, 0, 0.026, 0x6B5240);
-      beam(0.41, -0.54, 0, 0.56, -0.48, 0, 0.026, 0x6B5240);
-      stone(0.35, -0.44, 0.045, 0xA8A08C); stone(0.45, -0.37, 0.038, 0x8F8877); stone(0.55, -0.42, 0.032, 0xA8A08C);
-      bush(0.75, -1.15, 0.3, 0x3A6B5A);
-      break;
-    case 'soundscape':
-      stone(0.02, -0.95, 0.24, 0x9A9382); stone(0.01, -0.97, 0.18, 0xB0A992);
-      ring(0.02, -0.95, 0.34); ring(0.02, -0.95, 0.52, 0x8FAEA0);
-      break;
-    case 'naming':
-      [[-0.32, -0.95], [0.06, 1], [0.44, -1.1]].forEach(function (sp, k) { tree(sp[0], sp[1], k); });
-      break;
-    case 'hammock':
-      // Taller than the SVG's posts: slung at a real hammock height (~1.6m)
-      // so the cloth reads as hanging, not lying on the ground.
-      post(-0.12, 0.3, 1.45, 0.05, 0x5B4636); post(0.34, 1.0, 1.45, 0.05, 0x5B4636);
-      wf3dBuildHammock(P(-0.12, 0.3, 1.2), P(0.34, 1.0, 1.2), i, grp);
-      break;
-    case 'barefoot': {
-      const mat = [0x7FA396, 0x6B5240, 0x9A7B57, 0x3F6B54, 0xA8A08C];
-      const speck = [0x5E8C77, 0x4A3A2C, 0xB08A5E, 0x2F5A46, 0xBDB6A4];
-      for (let k = 0; k < 5; k++) {
-        const a0 = -0.62 + k * 0.26;
-        band(a0, a0 + 0.24, mat[k], 0.7);
-        for (let j = 0; j < 9; j++) {
-          const t = a0 + 0.03 + (j % 3) * 0.08, lat = -0.62 + ((j * 7) % 9) * 0.16;
-          stone(t, lat / WF3D_OUT, 0.05, speck[k]);
-        }
-      }
-      stone(-0.8, -0.6, 0.1, 0x4A3A2C); stone(-0.72, -0.5, 0.1, 0x4A3A2C);
-      break;
-    }
-    case 'palette':
-      post(-0.04, -0.72, 0.5, 0.022, 0x6B5240); post(0.16, 0.72, 0.5, 0.022, 0x6B5240);
-      wf3dBuildPaletteLine(P(-0.04, -0.72, 0.48), P(0.16, 0.72, 0.48), i, grp);
-      break;
-    case 'senses':
-      for (let k = 0; k < 5; k++) stone(-0.44 + k * 0.22, k % 2 ? 0.6 : -0.6, 0.1, 0xA8A08C);
-      break;
-    case 'tinyworld':
-      stone(0, -0.78, 0.36, 0x6B5240); stone(0, -0.78, 0.28, 0x5B4636);
-      bush(-0.08, -0.9, 0.1, 0x47775F); bush(0.06, -0.68, 0.08, 0x3A6B5A);
-      post(-0.02, -0.8, 0.12, 0.012, 0x6B5240); post(0.04, -0.74, 0.16, 0.012, 0x6B5240);
-      stone(0.1, -0.88, 0.05, 0xA8A08C); stone(-0.06, -0.66, 0.04, 0x9A9382);
-      break;
-    case 'sofa':
-      beam(-0.04, 0.42, 0.09, 0.22, 1.04, 0.09, 0.07, 0x6B5240);
-      beam(0.06, 0.44, 0.26, 0.32, 1.06, 0.26, 0.05, 0x5B4636);
-      post(0.06, 0.44, 0.26, 0.035, 0x5B4636); post(0.32, 1.06, 0.26, 0.035, 0x5B4636);
-      stone(-0.14, 0.36, 0.06, 0x9A9382); stone(0.34, 1.16, 0.06, 0x9A9382);
-      break;
-    case 'fire':
-      for (let k = 0; k < 7; k++) { const ang = k / 7 * Math.PI * 2; stone(0.06 + Math.cos(ang) * 0.15, Math.sin(ang) * 0.36, 0.06, 0x9A9382); }
-      beam(-0.04, -0.2, 0.02, 0.16, 0.2, 0.2, 0.028, 0x6B5240); beam(0.16, -0.2, 0.02, -0.04, 0.2, 0.2, 0.028, 0x6B5240);
-      flame(0.06, 0, 0.05, 1.3);
-      break;
-    case 'bivouac':
-      post(-0.06, -1.3, 0.4, 0.022, 0x5B4636); post(0.2, -0.86, 0.4, 0.022, 0x5B4636);
-      beam(-0.06, -1.3, 0.39, 0.2, -0.86, 0.39, 0.014, 0x6B5240);
-      quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.26, -0.66, 0], [0, -1.12, 0]], 0x3F6B54, 0.95);
-      quad([[-0.06, -1.3, 0.39], [0.2, -0.86, 0.39], [0.14, -1.06, 0], [-0.12, -1.52, 0]], 0x47775F, 0.95);
-      stone(0.3, -0.6, 0.05, 0x9A9382); stone(-0.16, -1.5, 0.045, 0x9A9382);
-      break;
-    case 'sitspot':
-      stone(0.02, -0.95, 0.25, 0x9A9382); stone(0.03, -0.97, 0.18, 0xB0A992);
-      ring(0.02, -0.95, 0.32); ring(0.02, -0.95, 0.5, 0x8FAEA0);
-      break;
-    case 'roles':
-      beam(-0.12, 0.48, 0.07, 0.24, 1.02, 0.07, 0.11, 0x6B5240);
-      stone(-0.06, 0.58, 0.05, 0xB8552E); stone(0.05, 0.74, 0.05, 0x7FA396); stone(0.16, 0.9, 0.05, 0xC8BFA6);
-      break;
-    case 'project': {
-      const c = [[-0.26, -1.3], [-0.26, -0.58], [0.36, -0.58], [0.36, -1.3]];
-      for (let k = 0; k < 4; k++) post(c[k][0], c[k][1], 0.2, 0.016, 0x6B5240);
-      for (let k = 0; k < 4; k++) { const a = c[k], b = c[(k + 1) % 4]; beam(a[0], a[1], 0.18, b[0], b[1], 0.18, 0.007, 0xC8BFA6); }
-      post(0.05, -0.94, 0.42, 0.02, 0x3A6B5A); bush(0.05, -0.94, 0.17, 0x47775F);
-      break;
-    }
-    case 'object': {
-      stone(0, 0.7, 0.22, 0x9A9382);
-      const q = P(0, 0.7, 0.24);
-      const pebble = add(new T.Mesh(wf3dStoneGeo(), wf3dMat(0x8A6C52)));
-      pebble.position.copy(q); pebble.scale.set(0.11, 0.08, 0.1);
-      WF3D.anims.push({ kind: 'lift', obj: pebble, stop: i, phase: 0, base: q.clone() });
-      break;
-    }
-    case 'checkin':
-      post(0, -0.92, 0.56, 0.02, 0x6B5240); post(0.1, -0.48, 0.56, 0.02, 0x6B5240);
-      quad([[0, -0.92, 0.56], [0.1, -0.48, 0.56], [0.1, -0.48, 0.3], [0, -0.92, 0.3]], 0xE6DCC4);
-      break;
-    case 'campfire':
-      for (let k = 0; k < 6; k++) { const ang = k / 6 * Math.PI * 2 + 0.4; stone(0.05 + Math.cos(ang) * 0.13, Math.sin(ang) * 0.32, 0.055, 0x8F8877); }
-      beam(-0.26, -0.75, 0.05, -0.06, -0.38, 0.05, 0.075, 0x6B5240);
-      beam(0.28, 0.38, 0.05, 0.48, 0.75, 0.05, 0.075, 0x6B5240);
-      flame(0.05, 0, 0.03, 1.0);
-      break;
-    default:
-      break;
-  }
+  return { group: g, hips, chest, torso, head, legL, legR, armL, armR, footL, footR, pose, hipY: hips.position.y, k };
 }
 
 let WF3D_STONE_GEO = null, WF3D_BUSH_GEO = null, WF3D_GLOW_TEX = null;
@@ -1113,8 +884,11 @@ function wf3dBuildWalker() {
   // Seated variant for the sit-down stops (soundscape/sitspot/campfire).
   const seat = wf3dPerson('sit', 1.74);
   seat.group.visible = false;
-  WF3D.scene.add(p.group); WF3D.scene.add(seat.group);
-  WF3D.walker = p; WF3D.walkerSeat = seat;
+  // Lying variant for climbing into the hammock.
+  const lie = wf3dPerson('lie', 1.74);
+  lie.group.visible = false;
+  WF3D.scene.add(p.group); WF3D.scene.add(seat.group); WF3D.scene.add(lie.group);
+  WF3D.walker = p; WF3D.walkerSeat = seat; WF3D.walkerLie = lie;
   WF3D.bareFoot = wf3dMat(0xC9A88A);
   WF3D.shoe = p.footL.material;
 }
@@ -1212,61 +986,38 @@ function wf3dBuildRays() {
 }
 
 // ───────── in-world words (wfWords(), same text as the SVG scene) ─────────
-// Mirrors the label() calls in wfBuildProps: [stop-relative a, l, up, word index].
-const WF3D_LABELS = {
-  introduce: [[0.42, -0.62, 0.3, 0]],
-  soundscape: [[1.3, -1.5, 0.62, 0], [1.1, 1.5, 0.72, 1], [0.7, 1.7, 0.42, 2], [0.9, -1.9, 0.46, 3]],
-  naming: [[-0.32, -0.95, 1.55 * 2.8, 0], [0.06, 1, 1.55 * 2.8, 2], [0.44, -1.1, 1.55 * 2.8, 4]],
-  hammock: [[0.11, 0.65, 0.34 * 2.6, 0]],
-  barefoot: [[-0.5, 0.62, 0.16, 0], [-0.24, 0.62, 0.16, 1], [0.02, 0.62, 0.16, 2], [0.28, 0.62, 0.16, 3], [0.54, 0.62, 0.16, 4]],
-  palette: [[0.06, -0.46, 0.3, 0], [0.06, -0.16, 0.3, 1], [0.06, 0.14, 0.3, 2]],
-  senses: [[-0.44, -0.6, 0.13, 5], [-0.22, 0.6, 0.13, 6], [0, -0.6, 0.13, 7], [0.22, 0.6, 0.13, 8], [0.44, -0.6, 0.13, 9],
-    [-0.44, -0.6, 0.27, 0], [-0.22, 0.6, 0.27, 1], [0, -0.6, 0.27, 2], [0.22, 0.6, 0.27, 3], [0.44, -0.6, 0.27, 4]],
-  tinyworld: [[0, -0.78, 0.46, 0]],
-  fire: [[0.06, 0, 0.85, 8]],
-  bivouac: [[0.07, -1.08, 0.5, 0]],
-  sitspot: [[0.55, -1.05, 0.34, 0]],
-  roles: [[-0.06, 0.58, 0.26, 0], [0.05, 0.74, 0.26, 2], [0.16, 0.9, 0.26, 4]],
-  project: [[0.05, -0.94, 0.62, 8]],
-  object: [[0, 0.7, 0.48, 4]],
-  checkin: [[0.05, -0.7, 0.5, 0], [0.05, -0.7, 0.38, 1]],
-  campfire: [[0.05, 0, 0.5, 0]],
-};
-
+// Each station registers where its words go (ctx.word in
+// walk-forest-3d-stations.js); this paints them for the current language.
 function wf3dBuildLabels() {
   const T = THREE;
-  WF3D.labels.forEach(function (lb) { WF3D.scene.remove(lb.sprite); lb.sprite.material.map.dispose(); lb.sprite.material.dispose(); });
-  WF3D.labels = [];
-  ACTIVITIES.forEach(function (s, i) {
-    const spec = WF3D_LABELS[s.id];
-    if (!spec) return;
-    const words = wfWords(s.id) || [];
-    spec.forEach(function (L) {
-      const txt = words[L[3]];
-      if (!txt || txt.length > 26) return;
-      const c = document.createElement('canvas');
-      const ctx = c.getContext('2d');
-      const fs = 40;
-      ctx.font = '500 ' + fs + 'px "Open Sans", sans-serif';
-      const tw = Math.ceil(ctx.measureText(txt).width) + 24;
-      c.width = tw; c.height = fs + 22;
-      ctx.font = '500 ' + fs + 'px "Open Sans", sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.lineJoin = 'round';
-      ctx.lineWidth = fs * 0.3; ctx.strokeStyle = 'rgba(231,224,206,0.85)';
-      ctx.strokeText(txt, tw / 2, c.height / 2);
-      ctx.fillStyle = '#2C4F44';
-      ctx.fillText(txt, tw / 2, c.height / 2);
-      const tex = new T.CanvasTexture(c);
-      tex.minFilter = T.LinearFilter;
-      const sp = new T.Sprite(new T.SpriteMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
-      const worldH = 0.26;
-      sp.scale.set(worldH * tw / c.height, worldH, 1);
-      sp.position.copy(wf3dAt(i + WF3D_SET_AHEAD + L[0], wf3dSpanLat(s, L[1]) * WF3D_OUT + wf3dStopOff(i), L[2] * WF3D_UP + 0.25));
-      sp.renderOrder = 10;
-      WF3D.scene.add(sp);
-      WF3D.labels.push({ sprite: sp, stop: i });
-    });
+  (WF3D.labelSpecs || []).forEach(function (spec) {
+    if (spec.sprite) { WF3D.scene.remove(spec.sprite); spec.sprite.material.map.dispose(); spec.sprite.material.dispose(); spec.sprite = null; }
+    const words = wfWords(spec.id) || [];
+    const txt = spec.key ? t(spec.key) : spec.words.map(function (k) { return words[k] || ''; }).join(' ').trim();
+    if (!txt) return;
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    const fs = 40;
+    ctx.font = '500 ' + fs + 'px "Open Sans", sans-serif';
+    const tw = Math.ceil(ctx.measureText(txt).width) + 24;
+    c.width = tw; c.height = fs + 22;
+    ctx.font = '500 ' + fs + 'px "Open Sans", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = fs * 0.3; ctx.strokeStyle = 'rgba(231,224,206,0.85)';
+    ctx.strokeText(txt, tw / 2, c.height / 2);
+    ctx.fillStyle = '#2C4F44';
+    ctx.fillText(txt, tw / 2, c.height / 2);
+    const tex = new T.CanvasTexture(c);
+    tex.minFilter = T.LinearFilter;
+    const sp = new T.Sprite(new T.SpriteMaterial({ map: tex, transparent: true, depthTest: false, fog: false }));
+    const worldH = 0.24;
+    sp.scale.set(worldH * tw / c.height, worldH, 1);
+    sp.position.copy(spec.pos);
+    sp.renderOrder = 10;
+    sp.visible = false;
+    WF3D.scene.add(sp);
+    spec.sprite = sp;
   });
   WF3D.labelLang = currentLang;
 }
@@ -1289,7 +1040,9 @@ function wf3dLoadGltf() {
         if (WF3D.cloth && WF3D.cloth.stop === i) WF3D.cloth = null;
         if (WF3D.rope && WF3D.rope.stop === i) WF3D.rope = null;
         WF3D.fire = WF3D.fire.filter(function (f) { return f.stop !== i; });
-        WF3D.cast = WF3D.cast.filter(function (c) { return c.stop !== i; });
+        WF3D.labelSpecs.forEach(function (lb) { if (lb.stop === i && lb.sprite) lb.sprite.visible = false; });
+        WF3D.labelSpecs = WF3D.labelSpecs.filter(function (lb) { return lb.stop !== i; });
+        if (WF3D.stations[i]) { WF3D.stations[i].disabled = true; WF3D.stations[i].people = []; }
         const root = gltf.scene;
         wf3dStopCenter(i, root.position);
         root.traverse(function (o) { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
@@ -1321,7 +1074,9 @@ function wf3dBindPointer() {
   };
   const move = function (e) {
     if (!WF3D.camera || WF3D.deep) return;
-    const now = performance.now();
+    // When the pointer actually moved, not when we got round to handling
+    // it (a busy frame would otherwise read as a slow drag).
+    const now = e.timeStamp || performance.now();
     const p = aim(e);
     // Look-around follows the pointer only over open scene. Over a pin,
     // control or link it holds still — otherwise the view turns as you
@@ -1342,12 +1097,12 @@ function wf3dBindPointer() {
   };
   const down = function (e) {
     if (e.target.closest && e.target.closest('button, a')) return;
-    st.isDown = true; st.moved = false; st.sx = e.clientX; st.sy = e.clientY; st.t0 = performance.now();
+    st.isDown = true; st.moved = false; st.sx = e.clientX; st.sy = e.clientY; st.t0 = e.timeStamp || performance.now();
   };
   const up = function (e) {
     if (!st.isDown) return;
     st.isDown = false;
-    if (st.moved || performance.now() - st.t0 > 250) { WF.suppressClick = true; return; }
+    if (st.moved || (e.timeStamp || performance.now()) - st.t0 > 250) { WF.suppressClick = true; return; }
     if (WF3D.camera) { aim(e); wf3dTap(e, ray); }
   };
   const cancel = function () { st.isDown = false; st.moved = false; };
@@ -1391,7 +1146,9 @@ function wf3dProject(at, lat) {
   // Pins stand over their activity's clearing (the lat passed in is the
   // SVG scene's pin side, which the 3D layout replaces).
   void lat;
-  wf3dStopCenter(Math.round(at), v);
+  const st = WF3D.stations && WF3D.stations[Math.round(at)];
+  if (st && st.pin) st.W(st.pin[0], st.pin[1], st.pin[2], v);
+  else { wf3dStopCenter(Math.round(at), v); v.y += 2.0; }   // above heads, not over the focal object
   v.applyMatrix4(cam.matrixWorldInverse);
   const depth = -v.z;
   if (depth < 0.8) return null;
@@ -1407,8 +1164,6 @@ function wf3dProject(at, lat) {
 // Called from wfRender() after every full overlay render.
 function wf3dSync(frame) {
   wf3dMount();
-  WF3D.pose.seated = !!frame.seated;
-  WF3D.pose.hidden = !!frame.hidden;
   WF3D.pose.shoeless = !!frame.shoeless;
   if (WF3D.labelLang !== currentLang) wf3dBuildLabels();
   wf3dResize();
@@ -1429,6 +1184,7 @@ function wf3dResize() {
   WF3D.renderer.setPixelRatio(dpr);
   WF3D.renderer.setSize(w, h, false);
   WF3D.camera.aspect = w / h;
+  WF3D.camera.fov = w / h < 0.8 ? 62 : 50;    // phones: a wider lens, closer in
   WF3D.camera.updateProjectionMatrix();
   WF3D.puffPts.material.uniforms.uScale.value = h * dpr / (2 * Math.tan(WF3D.camera.fov * Math.PI / 360));
   WF3D.samples.length = 0;
@@ -1440,8 +1196,13 @@ function wf3dPlaceCamera(dt) {
   const cam = WF3D.camera;
   const aspect = (WF.w || 1200) / (WF.h || 640);
   const hHalf = Math.atan(Math.tan(cam.fov * Math.PI / 360) * aspect);
-  // ±6.2m must fit at the walker: the activities now sit ~5.6m off the path.
-  const back = Math.max(8, Math.min(24, 6.2 / Math.tan(hHalf)));
+  // Landscape: ±6.2m fits at the walker, so the clearings beside the path
+  // stay in view while walking. Portrait (phones): fitting that width put
+  // the camera ~24m back and the walker became a speck — instead stay
+  // close behind them (a wider lens, see wf3dResize) and let the arrival
+  // swing (wf3dsCameraBlend) bring each clearing into view.
+  const narrow = aspect < 0.8;
+  const back = narrow ? Math.max(6.5, Math.min(8.5, 2.6 / Math.tan(hHalf))) : Math.max(8, Math.min(24, 6.2 / Math.tan(hHalf)));
   WF3D.back = back;
   const c = WF3D.cs.x;
   const atCam = c - back / WF3D_ALONG;
@@ -1452,6 +1213,8 @@ function wf3dPlaceCamera(dt) {
   eye.y = Math.max(eye.y, wf3dGround(eye.x, eye.z) + 1.6);
   cam.position.copy(eye);
   const tgt = wf3dAt(c + 0.9, 0, 1.35);
+  wf3dsCameraBlend(eye, tgt, narrow);
+  cam.position.copy(eye);
   cam.lookAt(tgt);
   // Look-around (pointer) + a gentle bank into the trail's bends.
   const L = WF3D.look;
@@ -1464,7 +1227,7 @@ function wf3dPlaceCamera(dt) {
   cam.rotateX(L.pitch.x);
   cam.rotateZ(-bend);
   cam.updateMatrixWorld();
-  WF3D.refDepth = eye.distanceTo(wf3dAt(c, 0, 0));
+  WF3D.refDepth = eye.distanceTo(WF3D.walker ? WF3D.walker.group.position : wf3dAt(c, 0, 0));
 }
 
 function wf3dFrame(now) {
@@ -1497,7 +1260,8 @@ function wf3dFrame(now) {
   const g = wf3dFrame._g, U = WF3D.uni.uGust.value;
   for (let k = 0; k < 4; k++) U[k].set(g[k * 4], g[k * 4 + 1], g[k * 4 + 2], g[k * 4 + 3]);
 
-  wf3dUpdateWalker(dt);
+  wf3dsStepArrival(dt);
+  wf3dsWalker(dt);
   wf3dPlaceCamera(dt);
   wf3dUpdateSun();
   wf3dUpdateVisuals(dt);
@@ -1542,10 +1306,12 @@ function wf3dStepPhysics(dt) {
   WF3D.fire.forEach(function (f) {
     if (Math.abs(f.stop - c) > 2.5) return;
     f.acc += dt;
-    if (P.live < WF3D.tier.puffs && wfpRand(P) < dt * 7) {
+    const I = f.intensity == null ? 1 : f.intensity;
+    if (I < 0.15) return;
+    if (P.live < WF3D.tier.puffs && wfpRand(P) < dt * 7 * I) {
       wfpSpawn(P, WFP_EMBER, f.pos.x + (wfpRand(P) - 0.5) * 0.2, f.pos.y + 0.3 * f.size, f.pos.z + (wfpRand(P) - 0.5) * 0.2, 0, 1 + wfpRand(P), 0, 1.2 + wfpRand(P) * 1.4, 0.035, 0);
     }
-    if (P.live < WF3D.tier.puffs && wfpRand(P) < dt * 1.4) {
+    if (P.live < WF3D.tier.puffs && wfpRand(P) < dt * 1.4 * I) {
       wfpSpawn(P, WFP_SMOKE, f.pos.x, f.pos.y + 0.6 * f.size, f.pos.z, 0, 0.4, 0, 5 + wfpRand(P) * 2, 0.5, 0);
     }
   });
@@ -1609,17 +1375,9 @@ function wf3dUpdateVisuals(dt) {
   pg.attributes.position.needsUpdate = true; pg.attributes.aSize.needsUpdate = true;
   pg.attributes.aAlpha.needsUpdate = true; pg.attributes.aColor.needsUpdate = true;
 
-  // Hammock fabric + its occupant riding the rope.
+  // Hammock fabric (its occupant, the walker, rides it — wf3dsWalker).
   const cl = WF3D.cloth;
-  if (cl && Math.abs(cl.stop - c) < 3) {
-    wf3dShapeHammock(cl);
-    const v = cl.v, mid = Math.floor(cl.cols / 2) * 3;
-    WF3D.cast.forEach(function (cc) {
-      if (cc.stop !== cl.stop || !cc.lie) return;
-      cc.p.group.position.set(v.x[mid], v.x[mid + 1] - 0.2, v.x[mid + 2]);
-      cc.p.group.rotation.y = Math.atan2(cl.dir.x, cl.dir.z) + Math.PI;
-    });
-  }
+  if (cl && Math.abs(cl.stop - c) < 3) wf3dShapeHammock(cl);
 
   // Palette line + swatches.
   const rp = WF3D.rope;
@@ -1631,6 +1389,11 @@ function wf3dUpdateVisuals(dt) {
       m.position.set(v.x[p], v.x[p + 1], v.x[p + 2]);
       d.set(v.x[a] - v.x[p], v.x[a + 1] - v.x[p + 1], v.x[a + 2] - v.x[p + 2]).normalize();
       m.quaternion.setFromUnitVectors(up, d);
+      // Turn the swatch about its hanging line to face the viewer.
+      if (m.userData.face) {
+        const cp = WF3D.camera.position;
+        m.rotateY(Math.atan2(cp.x - m.position.x, cp.z - m.position.z));
+      }
     });
   }
 
@@ -1638,34 +1401,19 @@ function wf3dUpdateVisuals(dt) {
   // anyway) — the set pieces are most of the scene's draw calls.
   WF3D.stopGroups.forEach(function (g, i) { g.visible = i - c > -1.3 && i - c < 7; });
 
-  // Fires, breathing rings, swaying naming trees, the lifted pebble.
+  // Fires flicker at whatever strength their station has them at.
   WF3D.fire.forEach(function (f) {
+    const I = Math.max(0, f.intensity == null ? 1 : f.intensity);
     const k = 1 + Math.sin(t * 13 + f.stop) * 0.08 + Math.sin(t * 7.3) * 0.1;
-    f.obj.scale.set(2 - k, k * (1 + Math.sin(t * 17) * 0.06), 2 - k);
-    if (f.light) f.light.intensity = 0.8 + Math.sin(t * 11) * 0.12 + Math.sin(t * 23 + 1) * 0.08;
-  });
-  WF3D.anims.forEach(function (a) {
-    if (Math.abs(a.stop - c) > 3) return;
-    if (a.kind === 'breath') { const s = 0.94 + 0.2 * (0.5 + 0.5 * Math.sin(t * 0.66 + a.phase)); a.obj.scale.set(s, s, s); a.obj.material.opacity = 0.3 + 0.5 * (s - 0.94) / 0.2; }
-    else if (a.kind === 'lift') a.obj.position.y = a.base.y + 0.06 + Math.sin(t * 0.97) * 0.07;
-    else if (a.kind === 'sway') { const w = wfpAmbientWind(a.base.x, a.base.z, t, [0, 0]); a.obj.position.set(a.base.x + w[0] * 0.12, a.base.y, a.base.z + w[1] * 0.12); }
-  });
-  // Cast: slow breathing; reaching arms move.
-  WF3D.cast.forEach(function (cc) {
-    if (Math.abs(cc.stop - c) > 2.5) return;
-    const p = cc.p;
-    const br = p.k * (1 + Math.sin(t * 1.3 + cc.seed) * 0.02);
-    p.torso.scale.set(br, p.k, br);
-    if (p.pose === 'reach') p.armR.rotation.x = -2.3 + Math.sin(t * 0.9 + cc.seed) * 0.25;
-    if (p.pose === 'kneel') p.hips.rotation.x = -0.2 + Math.sin(t * 0.7 + cc.seed) * 0.08;
+    f.flame.visible = I > 0.03;
+    f.flame.scale.set((2 - k) * (0.35 + 0.65 * I), k * (1 + Math.sin(t * 17) * 0.06) * I, (2 - k) * (0.35 + 0.65 * I));
+    f.glow.material.opacity = 0.55 * Math.min(1, I);
+    if (f.light) f.light.intensity = (0.8 + Math.sin(t * 11) * 0.12 + Math.sin(t * 23 + 1) * 0.08) * Math.min(1.2, I);
   });
 
-  // Labels: fade in only while the camera is at their stop (as in SVG).
-  WF3D.labels.forEach(function (lb) {
-    const near = Math.abs(c - lb.stop);
-    lb.sprite.visible = near < 0.42;
-    lb.sprite.material.opacity = Math.max(0, 1 - near / 0.42);
-  });
+  // Stations: their people and ongoing action, labels, arrival light.
+  wf3dsUpdate(dt);
+  wf3dsSharedLight();
 
   // Rays breathe; they ride along ahead of the camera.
   WF3D.rays.forEach(function (r) {
@@ -1693,43 +1441,6 @@ function wf3dUpdateVisuals(dt) {
   }
   mo.seeded = true;
   mo.pts.geometry.attributes.position.needsUpdate = true;
-}
-
-function wf3dUpdateWalker(dt) {
-  const W = WF3D.walker, Seat = WF3D.walkerSeat;
-  const c = WF3D.cs.x;
-  const speed = Math.abs(WF3D.cs.v) * WF3D_ALONG;   // m/s
-  const walking = speed > 0.15;
-  const pos = wf3dAt(c, 0, 0);
-  const ahead = wf3dAt(c + 0.02, 0, 0);
-  const yaw = Math.atan2(ahead.x - pos.x, ahead.z - pos.z) + (WF3D.cs.v < 0 ? Math.PI : 0);
-  const seated = WF3D.pose.seated && !walking;
-  const hidden = WF3D.pose.hidden && !walking;
-  W.group.visible = !seated && !hidden;
-  Seat.group.visible = seated && !hidden;
-  const before = WF3D.walkPhase;
-  WF3D.walkPhase += speed * dt / 1.5;
-  const ph = WF3D.walkPhase * Math.PI * 2;
-  const amp = Math.min(1, speed / 1.2);
-  W.group.position.copy(pos); W.group.rotation.y = yaw;
-  W.legL.rotation.x = Math.sin(ph) * 0.55 * amp;
-  W.legR.rotation.x = -Math.sin(ph) * 0.55 * amp;
-  W.armL.rotation.x = -Math.sin(ph) * 0.4 * amp;
-  W.armR.rotation.x = Math.sin(ph) * 0.4 * amp;
-  W.hips.position.y = W.hipY + Math.abs(Math.cos(ph)) * 0.035 * amp;
-  const br = W.k * (1 + Math.sin(WF3D.t * 1.2) * 0.015);
-  W.torso.scale.set(br, W.k, br);
-  Seat.group.position.copy(pos); Seat.group.rotation.y = yaw;
-  const foot = WF3D.pose.shoeless ? WF3D.bareFoot : WF3D.shoe;
-  if (W.footL.material !== foot) { W.footL.material = W.footR.material = foot; }
-  // Footfalls kick up a little dust off the path.
-  if (walking && Math.floor(before * 2) !== Math.floor(WF3D.walkPhase * 2)) {
-    const P = WF3D.puffs;
-    for (let k = 0; k < 3 && P.live < WF3D.tier.puffs; k++) {
-      wfpSpawn(P, WFP_DUST, pos.x + (wfpRand(P) - 0.5) * 0.3, pos.y + 0.05, pos.z + (wfpRand(P) - 0.5) * 0.3,
-        (wfpRand(P) - 0.5) * 0.6, 0.4 + wfpRand(P) * 0.3, (wfpRand(P) - 0.5) * 0.6, 0.9 + wfpRand(P) * 0.5, 0.16, 0);
-    }
-  }
 }
 
 // The sun (shadow-casting light) rides along with the camera so shadows
@@ -1775,7 +1486,6 @@ function wf3dApplyTier(tier) {
     WF3D.sun.shadow.mapSize.set(tier.shadow, tier.shadow);
     WF3D.sun.shadow.map.dispose(); WF3D.sun.shadow.map = null;
   }
-  if (!tier.light) WF3D.fire.forEach(function (f) { if (f.light) f.light.visible = false; });
   WF3D.grass.count = Math.min(WF3D.grass.count, tier.grass);
   WF3D.w = 0;   // force wf3dResize to re-apply the DPR cap
 }

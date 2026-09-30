@@ -172,6 +172,7 @@
   .mode-btn { padding: 0 10px; font-size: 11px; }
   .lang-btn { padding: 5px 9px; }
   .header-text h1 { font-size: 18px; }
+  .header-text h1.header-logo img { height: 48px; }
   /* "← Back to the forest" is ~150px of the nav's remaining width at this
      size. Collapsed to the arrow alone via font-size:0 on the button and
      a ::before that re-states it, rather than display:none on a label
@@ -188,6 +189,11 @@
   }
 }
 
+/* Phone: the logo gets a little extra height to offset this breakpoint's
+   body zoom (0.75), so "Forest4Youth" stays legible. */
+@media (max-width: 768px) {
+  .header-text h1.header-logo img { height: 60px; }
+}
 @media (max-width: 768px) {
   #site-header {
     transition: transform 0.25s ease, opacity 0.25s ease;

@@ -261,6 +261,19 @@ headroom.
 - People are the prototype's silhouette: the SVG walker's outline lathed into a solid, all in one green.
 - Look-around follows the pointer only over open scene. It holds still over pins and controls, so a pin never slides out from under the cursor.
 
+**Stations (`walk-forest-3d-stations.js`, prefix `wf3ds`):**
+- Each activity's scene, people and ongoing action is defined in `WF3DS[id]`:
+  - `build(ctx)` lays it out once, in the station's own local frame (x out from the path, z along it).
+  - `act(ctx, u, t, dt)` animates it through a loop of 20–30s. Every cycle picks a new length and new timings (`cycle(ctx)`), so it never repeats exactly.
+- The content follows each activity's brief and the illustration redraw decisions (admin `ILLUSTRATION_RECOMMENDATIONS.md`, `illustration-critique` process).
+- **Arrival:** while the walk holds at a stop, `WF3D.arrive` rises 0→1 (`wf3dsStepArrival`).
+  - The walker steps off the path to the station's joining place and stands, sits in the circle, or climbs into the hammock.
+  - The camera swings round to frame the clearing (`wf3dsCameraBlend`), the people there glance up, and a pool of light gathers.
+  - The walk waits for the walker to rejoin the path before moving on (`wf3dsReadyToLeave`, checked in `wfStep`). In 3D it lingers ~22–30s per stop (`wfDwellMs`).
+- **The 18th stop, 3D only:** the immersive virtual nature room at the end of the trail (`WF3DS.ivn`, `WF_IVN_STOP`). Its panel links to `#ivn`. `wfStops()` is the stop list for whichever painter is live. Falling back to SVG while at the room restarts the walk at stop 1.
+- **One shared point light** (`wf3dsSharedLight`) serves every fire, stove and the IVN room. A point light per fire would cost every lit pixel in the scene on every frame.
+- **Easing:** per-frame smoothing uses `wf3dsTo`/`wf3dsK`, so poses settle in the same time at any frame rate.
+
 **glTF drop-in:** see `assets/wf/README.md`. Add an id→path entry to
 `WF3D_GLTF` and that stop's procedural set piece is replaced by the model.
 

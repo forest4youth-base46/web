@@ -219,10 +219,16 @@ async function testWf3dPinsPanelControls(browser) {
   await withWf3d(browser, async (page, errors) => {
     assert.strictEqual(await page.locator('[data-wf-layer="gl"] canvas').count(), 1, 'expected the WebGL canvas');
     assert.strictEqual(await page.locator('[data-wf-layer="scene"] svg').count(), 0, 'SVG scene should not be painted under 3D');
-    const n = await page.evaluate(() => ACTIVITIES.length);
+    // 17 activities + the IVN room (3D only), each a real pin button.
+    const n = await page.evaluate(() => ACTIVITIES.length + 1);
     assert.strictEqual(await page.locator('[data-wf-stop] .wf-pin-btn').count(), n, 'every stop keeps a real pin button');
+    assert.ok(await page.locator('.wf-pin-btn[onclick="wfOpenStop(\'ivn\')"]').count() === 1, 'the IVN room has its pin');
     // Wait for the per-frame placement to show the first pin, then click it.
     const pin = page.locator('[data-wf-stop="0"] .wf-pin-btn');
+    // Hold at stop 1 with the arrival swing already complete: at SwiftShader's
+    // ~1fps the 2.4s camera swing takes half a minute, and Playwright (rightly)
+    // won't click a pin that is still moving.
+    await page.evaluate(() => { WF.holdEnd = performance.now() + 600000; WF3D.arriveAt = 0; WF3D.arrive = 1; WF3D.look.tyaw = WF3D.look.tpitch = 0; });
     await page.waitForFunction(() => document.querySelector('[data-wf-stop="0"]').style.visibility !== 'hidden');
     await pin.click();
     await page.waitForSelector('#wf-panel-root .wf-panel');
@@ -258,7 +264,20 @@ async function testWf3dDragIsNotAClick(browser) {
     await page.mouse.move(pt.x + 90, pt.y + 10, { steps: 6 });
     await page.mouse.up();
     assert.strictEqual(await page.evaluate(() => window.__esc), 0, 'a drag must not count as a click on open space');
-    assert.ok(await page.evaluate(() => WF3D.gusts.list.length > 0), 'a drag pushes air (gusts)');
+    // Pointer movement pushes air. Sent as a 60Hz stream from inside the
+    // page: under SwiftShader, driven mouse events arrive ~1s apart, which
+    // is (rightly) too slow to count as a gust.
+    const gusts = await page.evaluate(({ x, y }) => {
+      WF3D.gusts.list.length = 0;
+      const t0 = performance.now();
+      for (let k = 0; k < 8; k++) {
+        const e = new PointerEvent('pointermove', { clientX: x + k * 12, clientY: y, bubbles: true });
+        Object.defineProperty(e, 'timeStamp', { value: t0 + k * 16 });
+        WF.el.dispatchEvent(e);
+      }
+      return WF3D.gusts.list.length;
+    }, pt);
+    assert.ok(gusts > 0, 'pointer movement pushes air (gusts)');
     await page.mouse.click(pt.x, pt.y);
     assert.strictEqual(await page.evaluate(() => window.__esc), 1, 'a plain click still reaches appEscapeAction');
   });

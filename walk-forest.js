@@ -35,7 +35,21 @@ const WF_GROUP_META = {
   3: { color: '#234A3E', glyph: 'M6 11c0-1.7 4.5-3 10-3s10 1.3 10 3-4.5 3-10 3-10-1.3-10-3Z M6 11v10c0 1.7 4.5 3 10 3s10-1.3 10-3V11' },
   4: { color: '#6B5240', glyph: 'M16 26v-8 M16 18c-4 0-7-2-7-7 4 0 7 2 7 7Z M16 18c4 0 7-3 7-8-4 0-7 3-7 8Z M8 26h16' },
   5: { color: '#B8552E', glyph: 'M16 6c2 5 6 6 6 11a6 6 0 0 1-12 0c0-2 1-3 2-4 1 2 2 2 3 0 1-2 1-4 1-7Z M6 26h20' },
+  // The IVN room (3D only): a doorway with a horizon inside.
+  ivn: { color: '#4D6359', glyph: 'M7 26V9h18v17 M12 26V14h8v12 M12 19c2-2 4-2 8 0' },
 };
+
+// The walk's stops. The painted scene walks the 17 activities; the 3D scene
+// adds an 18th after the campfire: the immersive virtual nature room (a
+// building at the end of the trail — walk-forest-3d-stations.js WF3DS.ivn),
+// whose panel points to the IVN tools rather than to a Pocketbook activity.
+const WF_IVN_STOP = { id: 'ivn', group: 'ivn', ivn: true };
+function wfStops() { return wfUse3d() ? ACTIVITIES.concat([WF_IVN_STOP]) : ACTIVITIES; }
+function wfStopName(s) { return s.ivn ? t('pathway.ivn.title') : pbT(s, 'name'); }
+function wfStopSub(s) {
+  if (s.ivn) return t('fi.card.ivn.title');
+  return pbGroupT(GROUPS.find(g => g.id === s.group), 'title') + ' · ' + pbFmtDuration(s);
+}
 
 // [centre lateral, span factor] — a prop's own width, compressed about its
 // place on the verge, so a hammock is ~3m of fabric rather than 8m across.
@@ -429,7 +443,10 @@ function wfBuildProps(s, i) {
 function wfBuildSet(s, i) { return wfBuildProps(s, i) + wfBuildCast(s, i); }
 
 // ───────── state machine ─────────
-function wfDwellMs() { return WF_DWELL_MS; }
+// In 3D each station plays a loose 20–30s loop and arriving is its own
+// moment, so the walk lingers about one loop there, a different length each
+// time; the painted scene keeps its original pacing.
+function wfDwellMs() { return wfUse3d() ? 22000 + Math.random() * 8000 : WF_DWELL_MS; }
 function wfTravelMs() { return WF.manual ? WF_MANUAL_TRAVEL_MS : WF_TRAVEL_MS; }
 
 function wfStep(now) {
@@ -444,9 +461,11 @@ function wfStep(now) {
     const e = 0.5 - 0.5 * Math.cos(Math.PI * p);
     WF.cam = WF.from + (WF.to - WF.from) * e;
     if (p >= 1) { WF.cam = WF.to; WF.mode = 'hold'; WF.manual = false; WF.holdEnd = now + wfDwellMs(); }
-  } else if (!WF.paused && !last && now >= WF.holdEnd) {
+  } else if (!WF.paused && !last && now >= WF.holdEnd &&
+             // 3D: the walker first walks back from the station to the path.
+             (!wfUse3d() || typeof wf3dsReadyToLeave !== 'function' || wf3dsReadyToLeave())) {
     const at = Math.round(WF.cam);
-    if (at >= ACTIVITIES.length - 1) { WF.cam = 0; WF.holdEnd = now + wfDwellMs(); }
+    if (at >= wfStops().length - 1) { WF.cam = 0; WF.holdEnd = now + wfDwellMs(); }
     else { WF.mode = 'move'; WF.from = at; WF.to = at + 1; WF.moveStart = now; }
   }
   // Only repaint while the camera is actually moving — holding still
@@ -480,7 +499,7 @@ function wfGoBack() {
 function wfGoNext() {
   const now = performance.now();
   const at = Math.round(WF.cam);
-  const target = at >= ACTIVITIES.length - 1 ? 0 : at + 1;
+  const target = at >= wfStops().length - 1 ? 0 : at + 1;
   WF.from = WF.cam; WF.to = target; WF.moveStart = now;
   WF.mode = 'move'; WF.manual = true;
   WF.paused = false; WF.holdEnd = now + wfDwellMs();
@@ -525,11 +544,10 @@ function wfStopGeom(s, p, w, narrow) {
   const near = p.scale;
   const baseRx = w * 0.062 * near;
   const chipW = Math.max(170, Math.min(300, w * 0.26));
-  const group = GROUPS.find(g => g.id === s.group);
   return {
-    id: s.id, name: pbT(s, 'name'), sub: pbGroupT(group, 'title') + ' · ' + pbFmtDuration(s),
+    id: s.id, name: wfStopName(s), sub: wfStopSub(s),
     color: gMeta.color, glyph: gMeta.glyph,
-    aria: pbT(s, 'name') + ' — ' + pbGroupT(group, 'title') + ', ' + pbFmtDuration(s),
+    aria: wfStopName(s) + ' — ' + wfStopSub(s).replace(' · ', ', '),
     expanded: WF.openId === s.id, armed, showChip: armed || WF.openId === s.id,
     op: Math.min(1, 0.35 + near * 1.1).toFixed(2),
     cx: p.x.toFixed(1), baseY: p.y.toFixed(1),
@@ -632,8 +650,9 @@ function wfComputeFrame() {
     });
   });
 
+  const all = wfStops();
   const stops = [];
-  ACTIVITIES.forEach((s, i) => {
+  all.forEach((s, i) => {
     const p = wfStopProject(i, WF_STOP_SIDE[s.id] || 0);
     if (!p || p.scale < 0.16 || p.d > 6.4) {
       // The 3D backdrop keeps every pin in the DOM (hidden) so wfPlacePins()
@@ -661,20 +680,19 @@ function wfComputeFrame() {
   setPieces.sort((a, b) => b.d - a.d);
   const setLayer = setPieces.map(x => x.html).join('');
 
-  const atStop = Math.abs(WF.cam - camIndex) < 0.3 ? ACTIVITIES[camIndex] : null;
+  const atStop = Math.abs(WF.cam - camIndex) < 0.3 ? all[camIndex] : null;
   const atId = atStop ? atStop.id : '';
   const seated = atId === 'soundscape' || atId === 'sitspot' || atId === 'campfire';
   const hidden = atId === 'hammock';
   const shoeless = atId === 'barefoot';
 
-  const rail = ACTIVITIES.map((s, i) => {
-    const group = GROUPS.find(g => g.id === s.group);
+  const rail = all.map((s, i) => {
     const gMeta = WF_GROUP_META[s.group];
     const active = i === camIndex;
     const done = i < camIndex;
-    const gap = i > 0 && ACTIVITIES[i - 1].group !== s.group ? 12 : 3;
+    const gap = i > 0 && all[i - 1].group !== s.group ? 12 : 3;
     return {
-      title: pbT(s, 'name'),
+      title: wfStopName(s),
       style: 'width:' + (narrow ? 12 : 16) + 'px;height:' + (active ? 8 : 4) + 'px;border-radius:3px;margin-left:' +
         (i === 0 ? 0 : gap) + 'px;background:' + (active ? 'var(--ember)' : (done ? gMeta.color : 'var(--forest-mist)')) +
         ';opacity:' + (active || done ? 1 : 0.75) + ';transition:height .25s',
@@ -682,7 +700,7 @@ function wfComputeFrame() {
   });
 
   const walking = WF.mode === 'move' && !WF.paused && !WF.openId && !WF.reduced;
-  const openStop = ACTIVITIES.find(s => s.id === WF.openId) || null;
+  const openStop = all.find(s => s.id === WF.openId) || null;
   const now = typeof performance !== 'undefined' ? performance.now() : 0;
   const status = wfStatusText(now);
 
@@ -693,30 +711,24 @@ function wfComputeFrame() {
   // canopy for scale.
   const charH = Math.max(120, Math.min(h * 0.22, 220));
 
-  // Funder credit "sun": grows and brightens as the walk approaches its
-  // final stop, reusing the same distance→scale falloff wfProject() uses
-  // for trees/pins (closer = bigger) — computed directly rather than via
-  // wfProject() itself, since the sun stays fixed in the sky rather than
-  // following the trail's lateral curve or migrating toward the ground
-  // plane the way ground-level objects do as they scale up.
-  const sunD = (ACTIVITIES.length - 1) - WF.cam;
-  const sunZ = 1 + Math.max(sunD, -0.85) * 0.66;
-  const sunScale = 1 / Math.max(sunZ, 0.18);
-  const sunT = Math.max(0, Math.min(1, (sunScale - 0.08) / (0.6 - 0.08)));
-  const sunOpacity = (0.86 + sunT * 0.14).toFixed(2);
-  const sunWidth = Math.round((narrow ? 110 : 150) * (0.85 + sunT * 0.5));
-  const sunGlow = (8 + sunT * 16).toFixed(0);
-
   return {
     trailD, farTrees, nearTrees, dapples, shrubs, stops, rail, setLayer,
-    narrow, walking, three, seated, shoeless, atId, sunOpacity, sunWidth, sunGlow,
-    stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + ACTIVITIES.length,
+    narrow, walking, three, seated, shoeless, atId,
+    stepLabel: t('walk.stop') + ' ' + (camIndex + 1) + ' ' + t('walk.of') + ' ' + all.length,
     status,
     useArtSlot: false, poseStand: !seated, poseSeated: seated,
     footFill: shoeless ? '#C9A88A' : '#14302A',
     charH, hidden,
     isOpen: !!openStop,
-    open: openStop ? {
+    open: openStop && openStop.ivn ? {
+      ivn: true,
+      name: wfStopName(openStop),
+      groupTitle: t('fi.card.ivn.title'),
+      text: t('fi.card.ivn.text'),
+      link: t('ivn.title'),
+      color: WF_GROUP_META.ivn.color,
+      id: openStop.id,
+    } : openStop ? {
       visual: pbLocalizeVisual(VISUAL[openStop.visual || openStop.id] || '', openStop.id),
       name: pbT(openStop, 'name'),
       purpose: pbT(openStop, 'purpose'),
@@ -789,6 +801,7 @@ function wfCharacterSVG(frame) {
 function wfPanelHTML(frame) {
   if (!frame.isOpen) return '';
   const o = frame.open;
+  if (o.ivn) return wfIvnPanelHTML(frame, o);
   const inSession = typeof pbSession !== 'undefined' && pbSession.includes(o.id);
   const count = typeof pbSession !== 'undefined' ? pbSession.length : 0;
   const mins = (typeof pbSession !== 'undefined' && typeof pbGetItemMins === 'function')
@@ -842,9 +855,9 @@ function wfPanelHTML(frame) {
     '</div>';
 }
 
-// Sky band + funder "sun": shared by both backdrops. The 3D canvas is
-// transparent above its horizon, so this shows through it and trees
-// occlude the sun exactly as they do in the SVG scene.
+// Sky band: shared by both backdrops. The 3D canvas is transparent above
+// its horizon, so this shows through it. (The funder logo that used to
+// float here as a "sun" now lives in the site header instead.)
 function wfSkyHTML(frame) {
   return '' +
     '<div style="position:absolute;left:0;right:0;top:0;height:47%;background:linear-gradient(180deg,#E7EEE4 0%,#DCE6DE 58%,#D3E0D6 100%)"></div>' +
@@ -853,26 +866,7 @@ function wfSkyHTML(frame) {
     '<div class="wf-drift" style="position:absolute;left:34%;top:-6%;width:32%;height:18%;border-radius:50%;background:#EEF3EB;opacity:.4;filter:blur(1px)"></div>' +
     (frame.three ? '' : wfSvgHillsHTML()) +
     '<div class="wf-glow" style="position:absolute;left:22%;top:-8%;width:6%;height:62%;background:linear-gradient(180deg,rgba(251,249,244,.55),rgba(251,249,244,0));transform:skewX(-9deg);filter:blur(4px);pointer-events:none"></div>' +
-    '<div class="wf-glow2" style="position:absolute;left:64%;top:-6%;width:5%;height:58%;background:linear-gradient(180deg,rgba(251,249,244,.5),rgba(251,249,244,0));transform:skewX(-7deg);filter:blur(4px);pointer-events:none"></div>' +
-    // Funder credit (Interreg North-West Europe / Forest4Youth), sitting
-    // up in the sky band like a sun — horizontally fixed regardless of
-    // trail position, painted before the trees so their canopies
-    // naturally sit in front of it where they overlap, same as the
-    // sky/cloud layers above it. Grows and brightens as the walk nears
-    // its end (frame.sunOpacity/sunWidth, computed in wfComputeFrame()) —
-    // a soft warm drop-shadow (frame.sunGlow) stands in for actual
-    // sunlight, since the logo itself is flat art with no glow of its own.
-    // The centering transform lives on this wrapper, not the <img>, so
-    // .wf-sun's own idle-drift animation (styles-walk-forest.css) can
-    // freely animate the <img>'s transform without a CSS animation and an
-    // inline style fighting over the same property on the same element.
-    // In 3D mode the credit sits above the canvas (z-index:1) rather than
-    // behind the canopy: real perspective trees would otherwise cover it
-    // for most of the walk, and it's a funder acknowledgement that has to
-    // stay visible, not decoration.
-    '<div style="position:absolute;left:50%;top:' + (frame.narrow ? 195 : 225) + 'px;transform:translateX(-50%)' + (frame.three ? ';z-index:1' : '') + '">' +
-      '<img src="assets/logo-interreg-forest4youth.png" alt="' + wfEsc(t('walk.funder')) + '" class="wf-sun" style="display:block;width:' + frame.sunWidth + 'px;height:auto;opacity:' + frame.sunOpacity + ';filter:drop-shadow(0 0 ' + frame.sunGlow + 'px rgba(255,241,196,0.35));pointer-events:none" />' +
-    '</div>';
+    '<div class="wf-glow2" style="position:absolute;left:64%;top:-6%;width:5%;height:58%;background:linear-gradient(180deg,rgba(251,249,244,.5),rgba(251,249,244,0));transform:skewX(-7deg);filter:blur(4px);pointer-events:none"></div>';
 }
 
 function wfSvgHillsHTML() {
@@ -981,6 +975,27 @@ function wfUse3d() {
   return WF.renderer === '3d' && typeof wf3dReady === 'function' && wf3dReady();
 }
 
+// The IVN room's panel: what it is, and the way to the IVN tools. No
+// session strip — it isn't a Pocketbook activity.
+function wfIvnPanelHTML(frame, o) {
+  return '' +
+    '<div onclick="wfClose()" style="position:absolute;inset:0;background:#14302A;opacity:.28;cursor:pointer"></div>' +
+    '<div role="dialog" aria-label="' + wfEsc(o.name) + '" class="wf-panel ' + (frame.narrow ? 'wf-panel--sheet' : 'wf-panel--side') + '">' +
+      '<div style="display:flex;align-items:flex-start;gap:12px;padding:52px 22px 0">' +
+        '<div style="flex:1">' +
+          '<div style="font:400 9.5px/1 \'Open Sans\',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:' + o.color + '">' + wfEsc(o.groupTitle) + '</div>' +
+          '<div style="margin-top:7px;font:600 20px/1.2 \'Montserrat\',sans-serif;color:#14302A;letter-spacing:-0.01em">' + wfEsc(o.name) + '</div>' +
+        '</div>' +
+        '<button type="button" onclick="wfClose()" aria-label="' + wfEsc(t('pbui.timer.close')) + '" class="wf-panel-close">×</button>' +
+      '</div>' +
+      '<div style="padding:18px 22px 8px;overflow-y:auto;flex:1">' +
+        '<div class="wf-panel-text">' + wfEsc(o.text) + '</div>' +
+        '<div style="margin-top:18px"><a href="#ivn" class="wf-session-open" onclick="wfClose()">' + wfEsc(o.link) + ' →</a></div>' +
+      '</div>' +
+      '<div class="wf-panel-foot">' + wfEsc(t('walk.panelfoot')) + '</div>' +
+    '</div>';
+}
+
 function wfRender() {
   if (!WF.el) return;
   wfMeasure();
@@ -1008,8 +1023,7 @@ function wfRender() {
 function wfOverlayKey(now) {
   const at = Math.round(WF.cam);
   const armed = Math.abs(WF.cam - at) < 0.34 ? at : -1;
-  return [at, armed, WF.openId, wfStatusText(now), currentLang, WF.w, WF.h,
-    Math.round(WF.cam * 4)].join('|');
+  return [at, armed, WF.openId, wfStatusText(now), currentLang, WF.w, WF.h].join('|');
 }
 
 // 3D mode only: reposition the already-rendered pins from the 3D camera's
@@ -1023,7 +1037,8 @@ function wfPlacePins() {
   for (let k = 0; k < nodes.length; k++) {
     const wrap = nodes[k];
     const i = +wrap.getAttribute('data-wf-stop');
-    const s = ACTIVITIES[i];
+    const s = wfStops()[i];
+    if (!s) { wrap.style.visibility = 'hidden'; continue; }
     const p = wfStopProject(i, WF_STOP_SIDE[s.id] || 0);
     if (!p || p.scale < 0.16 || p.d > 6.4) { wrap.style.visibility = 'hidden'; continue; }
     const g = wfStopGeom(s, p, WF.w, narrow);
@@ -1056,8 +1071,16 @@ function wfStopProject(at, lat) {
 // depends on it (the canvas's presence, a full render) on every call.
 function wfSetRenderer(kind) {
   WF.renderer = kind === '3d' ? '3d' : 'svg';
+  // The 18th stop (the IVN room) only exists in 3D: if the walk is there
+  // when 3D gives way to the painted scene, start again from stop 1.
+  if (WF.renderer === 'svg' && Math.round(WF.cam) > ACTIVITIES.length - 1) {
+    WF.cam = WF.to = WF.from = 0; WF.mode = 'hold'; WF.openId = null;
+  }
   if (WF.renderer === 'svg' && typeof wf3dUnmount === 'function') wf3dUnmount();
   WF.overlayKey = '';
+  // The 3D walk lingers longer at each stop (wfDwellMs): re-time the
+  // current hold for whichever scene now paints it.
+  if (WF.mode === 'hold' && !WF.paused) WF.holdEnd = performance.now() + wfDwellMs();
   if (WF.el && WF.active) wfRender();
 }
 

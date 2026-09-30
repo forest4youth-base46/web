@@ -67,7 +67,11 @@
   <header id="site-header">
     <div class="header-inner">
       <div class="header-text">
-        <h1 data-i18n="header.title">Forest4Youth Practical Guide</h1>
+        <!-- The project logo (Interreg NWE co-funded lockup + Forest4Youth)
+             stands in for the text title; the title stays as the image's
+             alt text, so the heading's accessible name is unchanged and
+             still translated (data-i18n-attr). -->
+        <h1 class="header-logo"><img src="assets/logo-forest4youth-header.png" alt="Forest4Youth Practical Guide" data-i18n-attr="alt:header.title" width="374" height="120"></h1>
       </div>
 
       <!-- Persistent, role-aware nav. Replaces the old full-screen role
@@ -1828,6 +1832,7 @@
      renderer layers"). -->
 <script src="walk-forest-physics.js"></script>
 <script src="walk-forest-3d.js"></script>
+<script src="walk-forest-3d-stations.js"></script>
 <script src="walk-forest.js"></script>
 <script src="ui-behaviors.js"></script>
 
