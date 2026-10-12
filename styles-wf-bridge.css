@@ -1,5 +1,5 @@
 /* ─── styles-wf-bridge.css: the tree ↔ Walk the Forest join (iframed-2.0).
-   The trail on the tree screen, the fog veil of the transition, and the bits
+   The trail on the tree screen, the hand-over into the forest, and the bits
    of REVAMP's app shell that Walk the Forest expects around it (copied from
    REVAMP's styles-base.css, scoped to while the forest is on). Walk the
    Forest's own styles stay in styles-walk-forest.css, unchanged. ─── */
@@ -14,12 +14,6 @@
 @media (prefers-reduced-motion: reduce) { #tree-entry .walk-cta { animation: none; } }
 #tree-entry.open-c .walk-cta, #tree-entry.open-d .walk-cta, #tree-entry.deep .walk-cta { display: none; }
 #tree-entry.walking .doors, #tree-entry.walking .hint, #tree-entry.walking .cue, #tree-entry.walking .top { opacity: 0; pointer-events: none; transition: opacity .6s ease; }
-
-/* The fog that carries you from the tree into Walk the Forest (its fog
-   colour, #D6E3D9, so the two scenes meet in the same mist). */
-.wf-veil { position: fixed; inset: 0; z-index: 400; background: radial-gradient(ellipse at 50% 60%, #E4ECE5 0%, #D6E3D9 70%); opacity: 0; pointer-events: none; transition: opacity .9s ease; }
-.wf-veil.on { opacity: 1; }
-@media (prefers-reduced-motion: reduce) { .wf-veil { transition: none; } }
 
 /* While walking, the start screen is the forest itself. */
 body.walking #entry-screen > * { display: none !important; }
@@ -66,9 +60,13 @@ body.walking.wf-screen-open .wf-home-forest { display: inline-flex; }
 body.walking.wf-screen-open #main-content { padding-top: 64px; }
 @media (max-width: 720px) { .wf-home-tree img { height: 24px; } .wf-home-tree { font-size: 12px; padding: 4px 12px 4px 6px; } }
 
-/* The hand-over into the forest: the tree scene dissolves over Walk the
-   Forest (already running underneath); the home button comes up gently. */
-#tree-entry { transition: opacity 2s ease; }
+/* Into the forest: the tree screen gives way to the same view in Walk the
+   Forest's world (wf-bridge.js); the home button comes up gently. */
+#tree-entry { transition: opacity .8s ease; }
+/* Walk the Forest's own interface (stop title, rail, pins) comes up as the
+   walker nears activity 1 (body.wf-ui-on, wf-bridge.js). */
+#wf-scene [data-wf-layer="ui"] { transition: opacity 1.6s ease; }
+body.walk-arriving:not(.wf-ui-on) #wf-scene [data-wf-layer="ui"] { opacity: 0; pointer-events: none; }
 #tree-entry.dissolve { opacity: 0; pointer-events: none; }
 body.walk-arriving #site-header { opacity: 0; pointer-events: none; }
 body.walk-arriving #entry-screen > * { visibility: hidden; }

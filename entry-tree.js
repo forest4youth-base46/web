@@ -68,10 +68,10 @@ document.addEventListener('keydown', function (e) {
   if (S.mode === 'A' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { $(e.key === 'ArrowLeft' ? 'pick-ivn' : 'pick-fi').focus(); }
 });
 // ───── Walk the Forest (iframed-2.0) ─────
-// The trail on the tree screen. The walker from Walk the Forest steps onto
-// the footpath, the camera follows him in the third person past the tree
-// and into the trees, the fog closes in, and Walk the Forest opens exactly
-// as it is on REVAMP (wf-bridge.js). Its own toggle brings you back here.
+// The trail on the tree screen. The walker from Walk the Forest comes in
+// from the right and steps onto the path behind the tree; the tree stands in
+// Walk the Forest's own world, so the walk carries on there, from this very
+// view, to activity 1 (wf-bridge.js). "Back to the tree" brings you here.
 function walkIn() {
   if (S.mode !== 'A' || ROOT.classList.contains('walking')) return;
   ROOT.classList.add('walking');
@@ -80,7 +80,13 @@ function walkIn() {
   gl.follow(enter);
 }
 if ($('walk')) $('walk').addEventListener('click', walkIn);
-window.F4Y_TREE = { reset: function () { ROOT.classList.remove('walking'); if (gl) gl.unfollow(); } };
+window.F4Y_TREE = {
+  reset: function () { ROOT.classList.remove('walking'); if (gl) gl.unfollow(); },
+  // For wf-bridge.js: the tree as it stands (to place the same tree in Walk
+  // the Forest's world), the camera looking at it, where the walker joins
+  // the path behind it and how far past that point he has walked.
+  world: function () { return gl && gl.world ? gl.world() : null; }
+};
 ROOT.querySelectorAll('.menu [data-go]').forEach(function (b) { b.addEventListener('click', function () { openPane(b.dataset.go, b); }); });
 ROOT.querySelectorAll('[data-lang]').forEach(function (b) { b.addEventListener('click', function () { if (typeof setLang === 'function') setLang(b.dataset.lang); syncLang(); if (gl) gl.frame(); }); });
 var sb = $('search'); if (sb) sb.addEventListener('click', function () { if (typeof openSearchDialog === 'function') openSearchDialog(sb); });
@@ -304,10 +310,9 @@ function blobGeometry(seed, rough) {
 }
 // the clearing's gentle ground swell (shared by the ground and the footpath)
 /* The trail into the forest (V2). It comes in from the right, passes just
-   behind the tree, then turns away into the depth. Only the near part is
-   drawn at first; the deep part and the trees along it fade in once the
-   walker has crossed the tree (as Walk the Forest reveals its IVN room past
-   the fallen log). */
+   behind the tree, then turns away into the depth: the start of Walk the
+   Forest's own path, which the tree stands beside (wf-bridge.js). It fades
+   in when you choose Walk the Forest. */
 var TRAIL_PTS = [[14, -2.2], [9, -2.6], [5.6, -3.2], [4.0, -4.6], [3.6, -7], [3.6, -14], [3.6, -28], [3.6, -50], [3.6, -80]];
 var trailCurve = new T.CatmullRomCurve3(TRAIL_PTS.map(function (p) { return new T.Vector3(p[0], 0, p[1]); }), false, 'centripetal');
 var TRAIL_N = 420, trailPts = trailCurve.getSpacedPoints(TRAIL_N), TRAIL_LEN = trailCurve.getLength();
@@ -643,32 +648,11 @@ var trail = (function () {
     m.receiveShadow = true; m.renderOrder = 1; m.visible = false; scene.add(m);
     return m;
   }
-  var near = ribbon(0, TRAIL_CROSS + 0.03), deep = ribbon(TRAIL_CROSS, 1);
-  // the trees that line the deep part of the trail
-  var n = 46, tg = new T.CylinderGeometry(0.42, 1, 1, 7, 1); tg.translate(0, 0.5, 0);
-  var cg = blobGeometry(7, 0.3);
-  var tMat = bendPatch(new T.MeshLambertMaterial({ color: 0x6E5847, transparent: true, opacity: 0 }), 12);
-  var cMat = bendPatch(new T.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0 }), 12);
-  var trunks = new T.InstancedMesh(tg, tMat, n), crowns = new T.InstancedMesh(cg, cMat, n * 2);
-  var Mx = new T.Matrix4(), Q = new T.Quaternion(), Sv = new T.Vector3(), P = new T.Vector3(), C = new T.Color(), cols = [0x4E7A68, 0x5B8872, 0x507D67, 0x446F5E];
-  for (var i = 0; i < n; i++) {
-    var u = TRAIL_CROSS + 0.05 + (1 - TRAIL_CROSS - 0.08) * (i / n), p = trailCurve.getPointAt(Math.min(1, u)), t2 = trailCurve.getTangentAt(Math.min(1, u));
-    var side = i % 2 ? 1 : -1, off = 2.6 + hash(i, 4, 1) * 2.4;
-    var x = p.x - t2.z * side * off, z = p.z + t2.x * side * off, h = 6.5 + hash(i, 5, 2) * 4.5, w = 0.22 + hash(i, 6, 3) * 0.12;
-    Mx.compose(P.set(x, groundY(x, z) - 0.2, z), Q, Sv.set(w, h * 0.7, w)); trunks.setMatrixAt(i, Mx);
-    var R = 1.5 + hash(i, 7, 4) * 1.2;
-    for (var k = 0; k < 2; k++) {
-      Mx.compose(P.set(x + (k ? R * 0.45 : -R * 0.3), h * (0.72 + k * 0.12), z + (k ? -0.4 : 0.3)), Q, Sv.set(R * (1 - k * 0.25), R * 0.85, R)); crowns.setMatrixAt(i * 2 + k, Mx);
-      crowns.setColorAt(i * 2 + k, C.setHex(cols[(i + k) % 4]).multiplyScalar(0.94 + hash(i, k, 9) * 0.12));
-    }
-  }
-  crowns.instanceColor.needsUpdate = true;
-  trunks.castShadow = crowns.castShadow = true; trunks.visible = crowns.visible = false;
-  scene.add(trunks); scene.add(crowns);
-  function fade(objs, mats, f) { objs.forEach(function (o) { o.visible = f > 0.001; }); mats.forEach(function (m) { m.opacity = f; m.transparent = f < 0.999 || m === near.material || m === deep.material; m.depthWrite = !(m === near.material || m === deep.material) && f > 0.999; }); }
+  // the whole path, as it carries on in Walk the Forest's world
+  var near = ribbon(0, 1);
+  function fade(objs, mats, f) { objs.forEach(function (o) { o.visible = f > 0.001; }); mats.forEach(function (m) { m.opacity = f; m.transparent = true; m.depthWrite = false; }); }
   return {
-    near: function (f) { fade([near], [near.material], f); },
-    deep: function (f) { fade([deep, trunks, crowns], [deep.material, tMat, cMat], f); }
+    near: function (f) { fade([near], [near.material], f); }
   };
 })();
 
@@ -739,8 +723,17 @@ gl = {
     for (var i = 0; i < trailPts.length; i++) if (trailPts[i].x <= edge) { u0 = i / TRAIL_N; break; }
     cam.follow = { t0: performance.now(), u0: u0, cross: 0, done: done, fired: false, last: null, phase: 0 };
   },
-  unfollow: function () { cam.follow = null; cam.tw = 0; cam.w = 0; if (cam.walker) cam.walker.group.visible = false; trail.near(0); trail.deep(0); },
+  unfollow: function () { cam.follow = null; cam.tw = 0; cam.w = 0; if (cam.walker) cam.walker.group.visible = false; trail.near(0); },
   frame: reframe,
+  world: function () {
+    var J = trailCurve.getPointAt(TRAIL_CROSS);
+    return {
+      camera: camera, view: view,
+      objects: [fiHalf.grp, pxHalf.mesh, shadowA],
+      join: { x: J.x, y: groundY(J.x, J.z), z: J.z },
+      past: cam.follow && cam.follow.u != null ? Math.max(0, cam.follow.u - TRAIL_CROSS) * TRAIL_LEN : 0
+    };
+  },
   open: function (side) {
     var sw = slideW();
     requestAnimationFrame(reframe);
@@ -870,27 +863,12 @@ function frame(now) {
     W.armL.rotation.x = -Math.sin(ph) * 0.4 * amp; W.armR.rotation.x = Math.sin(ph) * 0.4 * amp;
     W.hips.position.y = W.hipY + Math.abs(Math.cos(ph)) * 0.035 * amp;
     trail.near(Math.min(1, el / 1.2));
-    // The picture holds still while he walks in. Once he is on the straight
-    // past the tree, the camera simply moves along behind him (no turning),
-    // the forest beyond slowly appears, and Walk the Forest fades in under
-    // the tree scene.
-    if (!F.cross && u >= TRAIL_CROSS) F.cross = now;
-    if (F.cross) {
-      var since = (now - F.cross) / 1000;
-      var fb = Math.min(1, since / 4); fb = fb * fb * (3 - 2 * fb);
-      trail.deep(Math.min(1, since / 3.5));
-      cam.tw = 1;
-      if (!F.from) { F.from = camera.position.clone(); F.look = new T.Vector3(px * 0.3, TREE.cy, 0).sub(F.from).normalize(); }
-      var behind = new T.Vector3(x, y + 2.2, z + 5.2);
-      camera.position.copy(F.from).lerp(behind, fb);
-      var dir = F.look.clone().lerp(new T.Vector3(0, -0.12, -1).normalize(), fb);
-      camera.lookAt(camera.position.clone().add(dir));
-      scene.fog.density = scene.fog.density * (1 - fb) + 0.016 * fb;
-      if (since > 2.6 && !F.fired) { F.fired = true; F.done(); }
-    }
+    // The picture holds still while he walks in. Once he is on the path
+    // behind the tree, the walk carries on in Walk the Forest itself: the
+    // same tree stands in its world, 84 m before activity 1 (wf-bridge.js).
+    F.u = u;
+    if (u >= TRAIL_CROSS && !F.fired) { F.fired = true; F.done(); }
   }
-
-
 
   if (S.mode === 'A') { placeCue('cue-ivn', -1.7); placeCue('cue-fi', 1.7); }
   renderer.render(scene, camera);

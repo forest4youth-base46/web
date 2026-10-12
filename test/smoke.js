@@ -159,11 +159,19 @@ async function testWalkRoundTrip(browser) {
   await page.goto(BASE, { waitUntil: 'networkidle' });
   await page.click('#tr-walk');
   await page.waitForFunction(() => document.body.classList.contains('wf-scene-on'), null, { timeout: 30000 });
-  // the tree fades out over the forest, then hands over (body.walking)
+  // the same view carries on in Walk the Forest's world; its camera settles
+  // behind the walker (body.walking), and its stop interface comes up as he
+  // nears activity 1 (body.wf-ui-on)
   await page.waitForFunction(() => document.body.classList.contains('walking'), null, { timeout: 60000 });
+  await page.waitForFunction(() => document.body.classList.contains('wf-ui-on'), null, { timeout: 120000 });
   assert.ok(await page.evaluate(() => !document.getElementById('tree-entry').classList.contains('on')), 'the tree steps aside for the forest');
   assert.ok(await page.evaluate(() => !document.querySelector('.screen.active')), 'the forest view has no screen open, as on REVAMP');
   await page.waitForTimeout(1600); // the Back to the tree button fades in
+  // The rail's segments walk to their activity (a real mouse press and release).
+  const seg = await page.evaluate(() => { const b = document.querySelectorAll('.wf-rail-btn')[6]; const r = b.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
+  await page.mouse.click(seg[0], seg[1]);
+  await page.waitForTimeout(300);
+  assert.strictEqual(await page.evaluate(() => WF.to), 6, 'a rail segment walks to its activity');
   assert.ok(await page.isVisible('#wf-home-tree'), 'top left: Back to the tree');
   assert.ok(!(await page.isVisible('#site-header')), 'no app header in the forest');
   await page.click('#wf-home-tree');
