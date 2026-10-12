@@ -1,0 +1,132 @@
+/* ─── styles-entry-tree.css: the practitioner entry screen as one split tree
+   (Ivo's sketches, 2026-10-12; admin/projects/forest4youth/web-app/sketches/).
+   Left half IVN, rebuilt from pixels of light; right half FI, crowns and bark.
+   Touch a side: the other half slides to a strip at the edge and that side's
+   menu opens; touch the strip or press Escape to return. 3D in entry-tree.js
+   with vendor/three.min.js (the Walk the Forest's r147). Everything is scoped
+   to #tree-entry. ─── */
+#tree-entry { position: fixed; inset: 0; z-index: 200; overflow: hidden; display: none; background: linear-gradient(180deg, #F4F7EF 0%, #D6E3D9 62%, #C9D6C8 100%); color: #14302A; font-family: 'Open Sans', -apple-system, 'Segoe UI', Arial, sans-serif; }
+#tree-entry.on { display: block; }
+#tree-entry [hidden] { display: none !important; }
+#tree-entry .langs { display: inline-flex; gap: 2px; pointer-events: auto; background: rgba(251,249,244,.7); border: 1px solid #C8D8D0; border-radius: 999px; padding: 2px; }
+#tree-entry .langs button { font: 600 10.5px/1 'Open Sans', sans-serif; letter-spacing: .08em; border: 0; background: none; color: #3E5A50; padding: 6px 8px; border-radius: 999px; cursor: pointer; }
+#tree-entry .langs button[aria-pressed="true"] { background: #234A3E; color: #fff; }
+#tree-entry .langs button:focus-visible { outline: 2px solid #234A3E; outline-offset: 1px; }
+/* iframed-1.1 prototype, from Ivo's sketches (2026-10-12).
+   A: one tree, split — left half IVN in holographic pixels, right half FI in
+   crowns and bark. B: touch a side, the other half slides to the edge.
+   C: FI menu, IVN strip on the left. D: IVN menu, FI strip on the right.
+   Touch the strip (or press Escape) to go back to A.
+   3D: three.js r147 and the Walk the Forest's own rig (REVAMP,
+   walk-forest-3d.js): FogExp2 #D6E3D9, hemisphere #F4F7EF/#B6BA98, sun
+   #FFF3E0, soft PCF shadows, lumpy blob crowns, the shared wind GLSL for
+   grass, sunlit motes, pointer = gust. Single light theme, as the app. */
+#tree-entry {
+  color-scheme: light;
+  --sky-top: #F4F7EF; --sky-low: #D6E3D9;
+  --ink: #14302A; --ink-soft: #3E5A50; --deep: #234A3E; --mist: #C8D8D0;
+  --paper: rgba(251, 249, 244, .9); --paper-solid: #FBF9F4;
+  --holo: #3D7A6E; --holo-soft: #8FD6D2;
+  --display: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+  --body: 'Open Sans', -apple-system, 'Segoe UI', Arial, sans-serif;
+}
+#tree-entry * { box-sizing: border-box; }
+#tree-entry [hidden] { display: none !important; }
+#tree-entry canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+#tree-entry .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#tree-entry .top { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; z-index: 6; pointer-events: none; }
+#tree-entry .mark { font: 600 13px/1 var(--display); letter-spacing: .02em; color: var(--deep); }
+#tree-entry .chip { font: 500 10.5px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); border: 1px solid var(--mist); border-radius: 999px; padding: 5px 9px; background: rgba(251,249,244,.6); }
+#tree-entry .esc { margin-left: auto; pointer-events: auto; font: 500 12.5px var(--body); color: var(--deep); background: var(--paper); border: 1px solid var(--mist); border-radius: 999px; padding: 8px 14px 8px 12px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; box-shadow: 0 4px 14px rgba(20,48,42,.08); }
+#tree-entry .esc kbd { font: 600 10px var(--body); border: 1px solid var(--mist); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; color: var(--ink-soft); }
+#tree-entry .esc[hidden] { display: none !important; }
+#tree-entry.open-c .top { padding-left: 82px; }
+#tree-entry.open-d .top { padding-right: 82px; }
+/* A — the two halves are the two doors (real buttons over the canvas). */
+#tree-entry .doors { position: fixed; inset: 0; display: grid; grid-template-columns: 1fr 1fr; z-index: 4; }
+#tree-entry .half { position: relative; border: 0; margin: 0; padding: 0; background: transparent; cursor: pointer; color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
+#tree-entry .half .veil { position: absolute; inset: 0; background: rgba(244,247,239,.5); opacity: 0; transition: opacity .45s ease; pointer-events: none; }
+#tree-entry .doors.hover-ivn .half.fi .veil, #tree-entry .doors.hover-fi .half.ivn .veil { opacity: 1; }
+#tree-entry .half .lab { position: absolute; top: calc(78px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 10px; max-width: 280px; }
+#tree-entry .half.ivn .lab { left: clamp(18px, 6vw, 80px); align-items: flex-start; text-align: left; }
+#tree-entry .half.fi .lab { right: clamp(18px, 6vw, 80px); align-items: flex-end; text-align: right; }
+#tree-entry .lab .kicker { font: 600 10.5px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; }
+#tree-entry .half.ivn .kicker { color: var(--holo); }
+#tree-entry .half.fi .kicker { color: #5A7E4E; }
+#tree-entry .lab .name { font: 500 clamp(22px, 2.6vw, 34px)/1.12 var(--display); letter-spacing: -.01em; color: var(--ink); text-wrap: balance; }
+#tree-entry .lab .go { display: inline-flex; align-items: center; gap: 8px; font: 600 11px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--deep); }
+#tree-entry .lab .go i { display: block; width: 34px; height: 1.5px; background: currentColor; position: relative; transition: width .4s cubic-bezier(.2,.7,.2,1); }
+#tree-entry .half.ivn .go i::before, #tree-entry .half.fi .go i::after { content: ''; position: absolute; top: -3.5px; width: 8px; height: 8px; border: solid currentColor; border-width: 1.5px 1.5px 0 0; }
+#tree-entry .half.ivn .go i::before { left: 0; transform: rotate(-135deg); }
+#tree-entry .half.fi .go i::after { right: 0; transform: rotate(45deg); }
+#tree-entry .half:hover .go i, #tree-entry .half:focus-visible .go i { width: 52px; }
+#tree-entry .half:focus-visible { outline: none; }
+#tree-entry .half:focus-visible::after { content: ''; position: absolute; inset: 10px; border: 2px solid var(--deep); border-radius: 18px; pointer-events: none; }
+/* small touch cue on each half of the crown (positioned from 3D) */
+#tree-entry .cue { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .6s ease; }
+#tree-entry .cue::before, #tree-entry .cue::after { content: ''; position: absolute; inset: 0; border-radius: 50%; }
+#tree-entry .cue::before { background: var(--paper-solid); box-shadow: 0 0 0 2px var(--deep); transform: scale(.45); }
+#tree-entry .cue::after { border: 1.5px solid var(--deep); animation: trPing 2.4s ease-out infinite; }
+#tree-entry .cue.on { opacity: .9; }
+@keyframes trPing { 0% { transform: scale(.5); opacity: .9; } 80%, 100% { transform: scale(2.4); opacity: 0; } }
+#tree-entry .hint { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 5; font: 500 12.5px var(--body); color: var(--ink-soft); background: var(--paper); border: 1px solid var(--mist); border-radius: 999px; padding: 8px 14px; white-space: nowrap; pointer-events: none; transition: opacity .4s; }
+/* C / D — the open side */
+#tree-entry .room { position: fixed; inset: 0; z-index: 5; display: flex; pointer-events: none; }
+#tree-entry .room[hidden] { display: none !important; }
+#tree-entry .room.d { flex-direction: row-reverse; }
+#tree-entry .strip { pointer-events: auto; width: 64px; flex: none; border: 0; padding: 0; cursor: pointer; position: relative; display: flex; align-items: center; justify-content: center; color: var(--paper-solid); font: inherit; transform: translateX(var(--sx, 0)); transition: transform .9s cubic-bezier(.2,.75,.15,1); }
+#tree-entry .room.c .strip { background: linear-gradient(180deg, #4E8A7C, #2F5F55); --sx: -100%; }
+#tree-entry .room.d .strip { background: linear-gradient(180deg, #5B8872, #3A6B5A); --sx: 100%; }
+#tree-entry .room.in .strip { --sx: 0; }
+#tree-entry .strip .v { writing-mode: vertical-rl; transform: rotate(180deg); font: 600 12px/1 var(--display); letter-spacing: .2em; text-transform: uppercase; display: flex; align-items: center; gap: 14px; }
+#tree-entry .room.d .strip .v { transform: none; }
+#tree-entry .strip .v small { font: 500 10px var(--body); letter-spacing: .14em; opacity: .85; }
+#tree-entry .strip:hover, #tree-entry .strip:focus-visible { filter: brightness(1.1); }
+#tree-entry .strip:focus-visible { outline: 3px solid var(--ink); outline-offset: -6px; }
+#tree-entry .strip::after { content: ''; position: absolute; top: 0; bottom: 0; width: 10px; }
+#tree-entry .room.c .strip::after { right: -10px; background: linear-gradient(90deg, rgba(20,48,42,.14), transparent); }
+#tree-entry .room.d .strip::after { left: -10px; background: linear-gradient(270deg, rgba(20,48,42,.14), transparent); }
+#tree-entry .menu { pointer-events: auto; align-self: center; margin: 0 clamp(18px, 4vw, 64px); width: min(460px, 44vw); background: var(--paper); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--mist); border-radius: 22px; padding: 26px 30px 18px; box-shadow: 0 18px 50px rgba(20,48,42,.12); opacity: 0; transform: translateY(14px); transition: opacity .6s ease .35s, transform .8s cubic-bezier(.2,.75,.15,1) .35s; }
+#tree-entry .room.in .menu { opacity: 1; transform: none; }
+#tree-entry .menu .kicker { font: 600 10.5px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; }
+#tree-entry .room.c .menu .kicker { color: #5A7E4E; }
+#tree-entry .room.d .menu .kicker { color: var(--holo); }
+#tree-entry .menu h2 { font: 500 26px/1.15 var(--display); margin: 10px 0 14px; letter-spacing: -.01em; text-wrap: balance; }
+#tree-entry .menu ul { list-style: none; margin: 0; padding: 0; }
+#tree-entry .menu li + li { border-top: 1px solid var(--mist); }
+#tree-entry .menu li button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: none; border: 0; padding: 16px 4px; cursor: pointer; font: 500 19px/1.2 var(--display); color: var(--ink); text-align: left; border-radius: 10px; transition: padding .3s cubic-bezier(.2,.7,.2,1), background .3s; }
+#tree-entry .menu li button::after { content: '→'; font: 400 18px var(--body); color: var(--deep); opacity: .45; transition: opacity .3s, transform .3s; }
+#tree-entry .menu li button:hover, #tree-entry .menu li button:focus-visible { padding-left: 12px; background: rgba(214,227,217,.45); }
+#tree-entry .menu li button:hover::after, #tree-entry .menu li button:focus-visible::after { opacity: 1; transform: translateX(3px); }
+#tree-entry .menu li button:focus-visible { outline: 2px solid var(--deep); outline-offset: 2px; }
+#tree-entry .room.c .menu { margin-right: auto; }
+#tree-entry .room.d .menu { margin-left: auto; }
+#tree-entry .toast { position: fixed; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); translate: -50% 0; z-index: 9; background: var(--ink); color: #fff; font: 500 13px var(--body); padding: 10px 16px; border-radius: 999px; opacity: 0; transition: opacity .3s; pointer-events: none; }
+#tree-entry .toast.on { opacity: 1; }
+#tree-entry.nogl .hint::after { content: ' (3D off on this device)'; }
+@media (max-width: 720px) {
+#tree-entry .half .lab { top: calc(64px + env(safe-area-inset-top, 0px)); max-width: 42vw; }
+#tree-entry .lab .name { font-size: 19px; }
+#tree-entry .room { align-items: flex-end; }
+#tree-entry .strip { width: 48px; align-self: stretch; }
+#tree-entry .menu { width: auto; flex: 1; margin: 0 12px 14px; align-self: flex-end; padding: 18px 20px 10px; }
+#tree-entry .menu h2 { font-size: 21px; margin-bottom: 6px; }
+#tree-entry .menu li button { padding: 13px 4px; font-size: 17px; }
+#tree-entry .room.c .menu, #tree-entry .room.d .menu { margin: 0 12px 14px; }
+#tree-entry .chip { display: none; }
+#tree-entry .esc { white-space: nowrap; padding: 7px 10px; }
+#tree-entry.open-c .top { padding-left: 62px; }
+#tree-entry.open-d .top { padding-right: 62px; }
+}
+@media (max-height: 560px) {
+#tree-entry .top { padding: 8px 14px; }
+#tree-entry .half .lab { top: calc(42px + env(safe-area-inset-top, 0px)); gap: 6px; }
+#tree-entry .lab .name { font-size: 18px; }
+#tree-entry .hint { bottom: calc(8px + env(safe-area-inset-bottom, 0px)); padding: 6px 12px; }
+#tree-entry .menu { padding: 12px 20px 6px; border-radius: 16px; }
+#tree-entry .menu h2 { font-size: 18px; margin: 4px 0 2px; }
+#tree-entry .menu li button { padding: 8px 4px; font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+#tree-entry *, #tree-entry *::before, #tree-entry *::after { animation: none !important; transition-duration: .01s !important; transition-delay: 0s !important; }
+}

@@ -20,7 +20,7 @@
      styles-responsive.css (media queries) loads last on purpose. -->
 <link rel="stylesheet" href="styles-base.css">
 <link rel="stylesheet" href="styles-screens-entry.css">
-<link rel="stylesheet" href="styles-doors.css">
+<link rel="stylesheet" href="styles-entry-tree.css">
 <link rel="stylesheet" href="styles-screens-reflect.css">
 <link rel="stylesheet" href="styles-screens-reference.css">
 <link rel="stylesheet" href="styles-pocketbook.css">
@@ -851,6 +851,58 @@
   </div>
 </div>
 
+<!-- Practitioner entry: one tree, split (styles-entry-tree.css, entry-tree.js).
+     Shown over the app while #entry-screen is active for a practitioner. -->
+<div id="tree-entry" role="region" aria-label="Forest4Youth">
+  <canvas id="tr-gl" aria-hidden="true"></canvas>
+  <div class="top">
+    <span class="mark">Forest4Youth</span>
+    <span class="langs" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="de">DE</button></span>
+    <button type="button" class="esc" id="tr-esc" hidden data-i18n-attr="aria-label:tree.back.aria" aria-label="Back to the tree (Escape)"><span data-i18n="tree.back">Back to the tree</span> <kbd>Esc</kbd></button>
+  </div>
+  <h2 class="sr" data-i18n="tree.choose">Choose a side of the tree.</h2>
+  <div class="doors" id="tr-doors">
+    <button type="button" class="half ivn" id="tr-pick-ivn" data-i18n-attr="aria-label:tree.open.ivn" aria-label="Open Immersive Virtual Nature">
+      <span class="veil"></span>
+      <span class="lab" aria-hidden="true"><span class="kicker">IVN</span><span class="name" data-i18n="guide.tab.ivn">Immersive Virtual Nature</span><span class="go"><i></i></span></span>
+    </button>
+    <button type="button" class="half fi" id="tr-pick-fi" data-i18n-attr="aria-label:tree.open.fi" aria-label="Open Forest-Based Interventions">
+      <span class="veil"></span>
+      <span class="lab" aria-hidden="true"><span class="kicker">FI</span><span class="name" data-i18n="guide.tab.fi">Forest-Based Interventions</span><span class="go"><i></i></span></span>
+    </button>
+    <span class="cue" id="tr-cue-ivn"></span><span class="cue" id="tr-cue-fi"></span>
+  </div>
+  <p class="hint" id="tr-hint" data-i18n="tree.hint">Touch a side of the tree</p>
+
+  <section class="room c" id="tr-room-fi" hidden aria-labelledby="tr-fi-h">
+    <button type="button" class="strip" id="tr-strip-ivn" data-i18n-attr="aria-label:tree.back" aria-label="Back to the tree"><span class="v">IVN <small data-i18n="nav.back">Back</small></span></button>
+    <nav class="menu" aria-labelledby="tr-fi-h">
+      <span class="kicker">FI</span>
+      <h2 id="tr-fi-h" data-i18n="guide.tab.fi">Forest-Based Interventions</h2>
+      <ul>
+        <li><button type="button" data-go="guide/g-fi-start" data-i18n="tree.guide">Practical Guide</button></li>
+        <li><button type="button" data-go="implement/mod-pocket" data-i18n="tree.plan">Plan a Session</button></li>
+        <li><button type="button" data-go="run" data-i18n="tree.run">Implement</button></li>
+        <li><button type="button" data-go="reflect" data-i18n="nav.reflect">Reflect</button></li>
+      </ul>
+    </nav>
+  </section>
+
+  <section class="room d" id="tr-room-ivn" hidden aria-labelledby="tr-ivn-h">
+    <button type="button" class="strip" id="tr-strip-fi" data-i18n-attr="aria-label:tree.back" aria-label="Back to the tree"><span class="v">FI <small data-i18n="nav.back">Back</small></span></button>
+    <nav class="menu" aria-labelledby="tr-ivn-h">
+      <span class="kicker">IVN</span>
+      <h2 id="tr-ivn-h" data-i18n="guide.tab.ivn">Immersive Virtual Nature</h2>
+      <ul>
+        <li><button type="button" data-go="guide/g-ivn-start" data-i18n="tree.guide">Practical Guide</button></li>
+        <li><button type="button" data-go="guide/g-ivn-sheets" data-i18n="tree.appendix">Appendixes</button></li>
+        <li><button type="button" data-go="reflect" data-i18n="nav.reflect">Reflect</button></li>
+      </ul>
+    </nav>
+  </section>
+  <div class="sr" id="tr-say" aria-live="polite"></div>
+</div>
+
 <script src="i18n-en.js"></script>
 <script src="i18n-fr.js"></script>
 <script src="i18n-de.js"></script>
@@ -884,7 +936,8 @@
 <script src="guide-ivn-data.js"></script>
 <script src="guide-render.js"></script>
 <script src="ui-behaviors.js"></script>
-<script src="doors.js"></script>
+<script src="vendor/three.min.js"></script>
+<script src="entry-tree.js"></script>
 
 <!-- Search dialog (⌘K / Ctrl+K). Loaded last so ACTIVITIES, pbT(), t(),
      and the router's navigation helpers all already exist — it only

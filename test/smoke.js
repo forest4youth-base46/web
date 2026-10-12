@@ -147,7 +147,39 @@ const TESTS = [
   ['role/nav state survives a real refresh', testRoleSurvivesRefresh],
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
   ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
+  ['Entry tree — open each side, go back with Escape, menu items route into the app', testTreeEntry],
 ];
+
+async function testTreeEntry(browser) {
+  // The practitioner entry is one split tree (entry-tree.js). It must work
+  // as plain buttons even if WebGL is unavailable, so this drives the DOM.
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => { setRole('practitioner'); window.location.hash = ''; });
+  await page.waitForTimeout(400);
+  const on = () => page.evaluate(() => document.getElementById('tree-entry').classList.contains('on'));
+  assert.ok(await on(), 'tree shows on the practitioner entry');
+  assert.ok(await page.evaluate(() => document.querySelector('.container').hasAttribute('inert')), 'app underneath is inert');
+  await page.click('#tr-pick-fi');
+  await page.waitForTimeout(300);
+  assert.ok(await page.isVisible('#tr-room-fi .menu'), 'FI menu opens');
+  assert.strictEqual(await page.locator('#tr-room-fi .menu li').count(), 4, 'FI menu has four items');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(700);
+  assert.ok(await page.isVisible('#tr-pick-ivn'), 'Escape returns to the tree');
+  await page.click('#tr-pick-ivn');
+  await page.waitForTimeout(300);
+  assert.strictEqual(await page.locator('#tr-room-ivn .menu li').count(), 3, 'IVN menu has three items');
+  await page.click('#tr-room-ivn [data-go="guide/g-ivn-sheets"]');
+  await page.waitForTimeout(400);
+  assert.strictEqual(await page.evaluate(() => location.hash), '#guide/g-ivn-sheets', 'Appendixes opens the IVN guide\'s sheets');
+  assert.ok(!(await on()), 'tree hides once you are in the app');
+  assert.ok(!(await page.evaluate(() => document.querySelector('.container').hasAttribute('inert'))), 'app is reachable again');
+  await page.evaluate(() => { setRole('participant'); window.location.hash = ''; });
+  await page.waitForTimeout(300);
+  assert.ok(!(await on()), 'the Exploring role keeps its own entry');
+  await page.close();
+}
 
 async function testParticipantDoors(browser) {
   // The Exploring role has no pages of its own any more: its doors open the
