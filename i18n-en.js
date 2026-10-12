@@ -362,7 +362,7 @@ const T_EN = {
     "pbefore.q.q8": "What should I do if something isn't working, or if I want to stop?",
     "ref.badge": "Reference",
     "ref.heading": "Clinical reference",
-    "ref.sub": "Indications, contraindications, population-specific guidance, dosage framing, and integration with other modalities. Evidence-informed starting points — not protocols. Clinical judgement governs all applications.",
+    "ref.sub": "Contraindications for forest-based and immersive virtual nature work. Evidence-informed starting points — not protocols. Clinical judgement governs all applications.",
     "ref.search.label": "Search this page",
     "ref.search.placeholder": "Search indications, contraindications, dosage…",
     "ref.search.empty": "Nothing on this page matches that.",

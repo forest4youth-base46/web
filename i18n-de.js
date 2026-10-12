@@ -264,7 +264,7 @@ const T_DE = {
     "pbefore.q.q8": "Was soll ich tun, wenn etwas nicht funktioniert oder ich aufhören möchte?",
     "ref.badge": "Referenz",
     "ref.heading": "Klinische Referenz",
-    "ref.sub": "Indikationen, Kontraindikationen, populationsspezifische Leitlinien, Dosierungsrahmen und Integration mit anderen Modalitäten. Forschungsinformierte Ausgangspunkte — keine Protokolle. Klinisches Urteil bestimmt alle Anwendungen.",
+    "ref.sub": "Kontraindikationen für Waldinterventionen und immersive virtuelle Natur. Forschungsinformierte Ausgangspunkte — keine Protokolle. Klinisches Urteil bestimmt alle Anwendungen.",
     "ref.ind.title": "Klinische Indikationen",
     "ref.ind.tag": "Drei Ebenen · Evidenzstufe · empfohlenes Format",
     "ref.ind.tier1": "Ebene 1 · Primäre Indikationen — WI kann Erstlinie sein",

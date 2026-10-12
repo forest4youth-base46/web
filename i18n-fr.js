@@ -336,7 +336,7 @@ const T_FR = {
     "pbefore.q.q8": "Que faire si quelque chose ne marche pas, ou si je veux arrêter ?",
     "ref.badge": "Référence",
     "ref.heading": "Référence clinique",
-    "ref.sub": "Indications, contre-indications, guidance par population, cadrage des doses, et intégration avec d'autres modalités. Points de départ étayés par la recherche — pas des protocoles. Le jugement clinique gouverne toutes les applications.",
+    "ref.sub": "Contre-indications pour les interventions en forêt et la nature virtuelle immersive. Points de départ étayés par la recherche — pas des protocoles. Le jugement clinique gouverne toutes les applications.",
     "ref.ind.title": "Indications cliniques",
     "ref.ind.tag": "Trois niveaux · niveau de preuve · format recommandé",
     "ref.ind.tier1": "Niveau 1 · Indications primaires — l'intervention en milieu forestier peut être première ligne",
