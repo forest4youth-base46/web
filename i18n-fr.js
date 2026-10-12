@@ -80,7 +80,7 @@ const T_FR = {
     "role.part.cta": "Continuer →",
     "role.prac.sub": "Pratiquer l'intervention en milieu forestier",
     "role.prac.title": "Je suis praticien·ne",
-    "role.prac.desc": "Référence clinique, outils de séance, carnet de 17 activités, indications et contre-indications, intégration avec d'autres modalités, et réflexion.",
+    "role.prac.desc": "Les guides pratiques, le carnet de 17 activités pour planifier et animer une séance, et des pistes de réflexion.",
     "role.prac.eg": "Thérapeute · facilitateur·rice · formateur·rice · chercheur·se",
     "role.prac.cta": "Continuer →",
     "pathway.reference.title": "Référence clinique",
@@ -161,7 +161,7 @@ const T_FR = {
     "nav.mode.label": "Mode",
     "nav.search": "Rechercher",
     "nav.search.aria": "Rechercher (Ctrl+K)",
-    "search.placeholder": "Rechercher des activités, indications, chapitres…",
+    "search.placeholder": "Rechercher des activités et des chapitres des guides…",
     "search.close": "Fermer la recherche",
     "search.empty": "Aucun résultat.",
     "search.count": "{n} résultats",
@@ -322,4 +322,5 @@ const T_FR = {
     "tree.plan": "Planifier une séance",
     "tree.run": "Mettre en œuvre",
     "tree.appendix": "Annexes",
+    "tree.menu.aria": "Retour au menu (Échap)",
 };

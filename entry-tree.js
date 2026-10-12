@@ -20,7 +20,7 @@ if (!ROOT) return;
 var $ = function (id) { return document.getElementById('tr-' + id); };
 
 /* ───────── UI state machine (works with or without WebGL) ───────── */
-var S = { mode: 'A', last: null };
+var S = { mode: 'A', last: null, pane: null };
 var gl = null; // 3D hooks, set below if WebGL starts
 
 function tr(k) { return typeof t === 'function' ? t(k) : k; }
@@ -38,6 +38,7 @@ function open(side) {
   setTimeout(function () { var b = room.querySelector('.menu button'); if (b) b.focus({ preventScroll: true }); }, still ? 0 : 450);
 }
 function back() {
+  if (S.pane) { closePane(back); return; }
   if (S.mode === 'A') return;
   var side = S.last;
   ['room-fi', 'room-ivn'].forEach(function (id) { var r = $(id); r.classList.remove('in'); });
@@ -54,12 +55,19 @@ $('pick-ivn').addEventListener('click', function () { open('ivn'); });
 $('strip-ivn').addEventListener('click', back);
 $('strip-fi').addEventListener('click', back);
 $('esc').addEventListener('click', back);
+function appModalOpen() {
+  var so = document.getElementById('search-overlay');
+  if (so && so.classList.contains('active')) return true;
+  return ['.pb-run-mode', '.pb-timer-modal'].some(function (sel) { var el = document.querySelector(sel); return el && getComputedStyle(el).display !== 'none'; });
+}
 document.addEventListener('keydown', function (e) {
   if (!visible()) return;
-  if (e.key === 'Escape') { back(); return; }
+  // Escape steps back one level at a time, as in Walk the Forest:
+  // open page -> menu -> tree. Search, Run Mode and the timer keep their own.
+  if (e.key === 'Escape') { if (appModalOpen()) return; if (S.pane) closePane(); else back(); return; }
   if (S.mode === 'A' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { $(e.key === 'ArrowLeft' ? 'pick-ivn' : 'pick-fi').focus(); }
 });
-ROOT.querySelectorAll('[data-go]').forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.go); }); });
+ROOT.querySelectorAll('.menu [data-go]').forEach(function (b) { b.addEventListener('click', function () { openPane(b.dataset.go, b); }); });
 ROOT.querySelectorAll('[data-lang]').forEach(function (b) { b.addEventListener('click', function () { if (typeof setLang === 'function') setLang(b.dataset.lang); syncLang(); if (gl) gl.frame(); }); });
 var sb = $('search'); if (sb) sb.addEventListener('click', function () { if (typeof openSearchDialog === 'function') openSearchDialog(sb); });
 ROOT.querySelectorAll('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { if (typeof setRole === 'function') setRole(b.dataset.mode); }); });
@@ -72,19 +80,117 @@ syncLang();
 if (typeof window.setLang === 'function') { var appSetLang = window.setLang; window.setLang = function (l) { appSetLang(l); syncLang(); }; }
 // Menu items are ordinary app routes; Implement starts Run Mode (navGoRun).
 function go(route) {
-  // Run Mode opens over the Implement screen, so leave the entry first
+  // Run Mode opens over the Implement screen, so show that first
   if (route === 'run') { window.location.hash = 'implement/mod-pocket'; setTimeout(function () { if (typeof navGoRun === 'function') navGoRun(); }, 60); return; }
   window.location.hash = route;
 }
+
+/* ───────── the pane: a menu item opens inside the menu card, which grows
+   into a large reading pane; the tree stays behind it, softly blurred.
+   Learned from Walk the Forest (REVAMP): the 3D scene is a persistent
+   backdrop and the app is the foreground; the scene blurs once you are
+   inside real content and stays crisp on the landing; Escape steps back
+   one level at a time; a side panel on wide screens, a sheet on phones. */
+var container = document.querySelector('.container');
+var head = $('panehead'), ghost = $('ghost'), tabs = $('panetabs');
+function routeFor(btn) { return btn.dataset.go === 'run' ? 'implement/mod-pocket' : btn.dataset.go; }
+function paneRect() {
+  var W = innerWidth, Hh = innerHeight, tb = ROOT.querySelector('.top').getBoundingClientRect().bottom;
+  var narrow = W <= 720, strip = narrow ? 48 : 64, c = S.last === 'fi';
+  if (narrow) return { l: c ? strip + 8 : 8, r: c ? 8 : strip + 8, t: tb + 6, b: 8 };
+  var room = W >= 1280 ? 320 : 140, w = Math.max(520, Math.min(1080, W - strip - 40 - room));
+  var near = strip + 20;
+  return c ? { l: near, r: Math.max(20, W - near - w), t: tb + 8, b: 20 } : { l: Math.max(20, W - near - w), r: near, t: tb + 8, b: 20 };
+}
+function setPaneVars(r) {
+  var s = document.documentElement.style;
+  s.setProperty('--pane-l', r.l + 'px'); s.setProperty('--pane-r', r.r + 'px'); s.setProperty('--pane-t', r.t + 'px'); s.setProperty('--pane-b', r.b + 'px');
+}
+function ghostTo(rect, instant) {
+  ghost.style.transition = instant || still ? 'none' : '';
+  ghost.style.left = rect.left + 'px'; ghost.style.top = rect.top + 'px'; ghost.style.width = rect.width + 'px'; ghost.style.height = rect.height + 'px';
+  void ghost.offsetWidth;
+}
+function paneBox(r) { return { left: r.l, top: r.t, width: innerWidth - r.l - r.r, height: innerHeight - r.t - r.b }; }
+function menuEl() { return ROOT.querySelector((S.last === 'fi' ? '#tr-room-fi' : '#tr-room-ivn') + ' .menu'); }
+function markTab() {
+  var h = (location.hash || '').replace(/^#/, ''), btns = [].slice.call(tabs.querySelectorAll('button'));
+  // exact route first; otherwise the guide tab stays lit while you read any of its chapters
+  var hit = btns.filter(function (b) { var r = routeFor(b); return b.dataset.go !== 'run' && (h === r || h.indexOf(r + '/') === 0); })[0];
+  if (!hit) hit = btns.filter(function (b) { var m = /^guide\/g-(fi|ivn)-/.exec(b.dataset.go); return m && (h === 'guide' || h.indexOf('guide/g-' + m[1] + '-') === 0); })[0];
+  btns.forEach(function (b) { b.setAttribute('aria-current', b === hit ? 'page' : 'false'); });
+}
+function buildTabs() {
+  tabs.innerHTML = '';
+  menuEl().querySelectorAll('[data-go]').forEach(function (src) {
+    var b = document.createElement('button'); b.type = 'button';
+    b.dataset.go = src.dataset.go; b.setAttribute('data-i18n', src.getAttribute('data-i18n')); b.textContent = src.textContent;
+    b.addEventListener('click', function () { go(b.dataset.go); if (container) container.scrollTop = 0; });
+    tabs.appendChild(b);
+  });
+  $('panekick').textContent = S.last === 'fi' ? 'FI' : 'IVN';
+}
+function openPane(route, fromBtn) {
+  if (!S.last) return;
+  S.pane = S.last;
+  var r = paneRect(); setPaneVars(r);
+  buildTabs();
+  // the card grows from where the menu is to the pane
+  ghost.hidden = false; ghostTo(menuEl().getBoundingClientRect(), true);
+  ROOT.classList.add('deep', 'paning');
+  ghostTo(paneBox(r));
+  document.body.classList.add('tree-pane');
+  if (container) container.removeAttribute('inert');
+  go(route);
+  setTimeout(function () {
+    document.body.classList.add('tree-pane-in'); head.hidden = false;
+    setTimeout(function () { ghost.hidden = true; }, still ? 0 : 260);
+    markTab(); if (container) container.scrollTop = 0;
+    var h = head.querySelector('[aria-current="page"]') || head.querySelector('button'); if (h) h.focus({ preventScroll: true });
+  }, still ? 0 : 520);
+  if (gl) gl.frame();
+}
+function closePane(then) {
+  if (!S.pane) { if (then) then(); return; }
+  var r = paneRect();
+  ghost.hidden = false; ghostTo(paneBox(r), true);
+  document.body.classList.remove('tree-pane-in'); head.hidden = true;
+  setTimeout(function () {
+    document.body.classList.remove('tree-pane');
+    S.pane = null; closing = true;
+    if ((location.hash || '').replace('#', '')) location.hash = '';
+    closing = false;
+    ghostTo(menuEl().getBoundingClientRect());
+    ROOT.classList.remove('deep');
+    setTimeout(function () {
+      ghost.hidden = true; ROOT.classList.remove('paning');
+      if (container) container.setAttribute('inert', '');
+      var b = menuEl().querySelector('button'); if (b && !then) b.focus({ preventScroll: true });
+      if (gl) gl.frame();
+      if (then) then();
+    }, still ? 0 : 480);
+  }, still ? 0 : 180);
+}
+var closing = false;
+$('paneclose').addEventListener('click', function () { closePane(); });
+addEventListener('hashchange', function () {
+  if (!S.pane || closing) return;
+  if (document.body.getAttribute('data-role') === 'participant') { document.body.classList.remove('tree-pane', 'tree-pane-in'); head.hidden = true; ghost.hidden = true; ROOT.classList.remove('deep', 'paning'); S.pane = null; return; }
+  if (entry.classList.contains('active')) { closePane(); return; }   // browser Back to the start
+  markTab();
+});
+addEventListener('resize', function () { if (S.pane) setPaneVars(paneRect()); });
+// the app scrolls "to the top of the view" on navigation: inside the pane that is the pane
+if (typeof window.scrollToViewTop === 'function') { var appScrollTop = window.scrollToViewTop; window.scrollToViewTop = function () { if (S.pane && container) container.scrollTop = 0; else appScrollTop(); }; }
 // Visible only while the entry screen is showing for a practitioner.
 var entry = document.getElementById('entry-screen');
-function visible() { return !!entry && entry.classList.contains('active') && document.body.getAttribute('data-role') !== 'participant'; }
+function visible() { return !!entry && (entry.classList.contains('active') || !!S.pane) && document.body.getAttribute('data-role') !== 'participant'; }
 var shown = null;
 function syncShown() {
   var v = visible();
   if (v !== shown) { shown = v; ROOT.classList.toggle('on', v); document.documentElement.style.overflow = v ? 'hidden' : '';
     // the app underneath is out of reach (keyboard, screen readers) while the tree is up
-    var c = document.querySelector('.container'); if (c) { if (v) c.setAttribute('inert', ''); else c.removeAttribute('inert'); } if (v) { syncLang(); if (gl) gl.frame(); }
+    var c = document.querySelector('.container'); if (c) { if (v && !S.pane) c.setAttribute('inert', ''); else c.removeAttribute('inert'); } if (v) { syncLang(); if (gl) gl.frame(); }
     // embedded in the Odoo page: the iframe sizes itself to the document, so give the tree room
     if (window.self !== window.top) document.documentElement.style.minHeight = v ? '760px' : ''; }
   return v;
@@ -494,6 +600,10 @@ function freeRect() {
     // on wide screens the labels sit in the corners, beside the tree
     var y0 = (view.narrow || W / Hh < 1.25) ? lb + 8 : top;
     return { x: 0, y: y0, w: W, h: Math.max(160, hint - 8 - y0) };
+  }
+  if (S.pane) {
+    var pr = paneRect(), gap = S.last === 'fi' ? pr.r : pr.l;
+    if (!view.narrow && gap >= 240) return S.last === 'fi' ? { x: W - gap + 8, y: top, w: gap - 24, h: Hh - top - 16 } : { x: 16, y: top, w: gap - 24, h: Hh - top - 16 };
   }
   var menu = ROOT.querySelector((S.mode === 'C' ? '#tr-room-fi' : '#tr-room-ivn') + ' .menu').getBoundingClientRect();
   var strip = view.narrow ? 48 : 64;

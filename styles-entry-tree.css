@@ -5,7 +5,7 @@
    menu opens; touch the strip or press Escape to return. 3D in entry-tree.js
    with vendor/three.min.js (the Walk the Forest's r147). Everything is scoped
    to #tree-entry. ─── */
-#tree-entry { position: fixed; inset: 0; z-index: 200; overflow: hidden; display: none; background: linear-gradient(180deg, #F4F7EF 0%, #D6E3D9 62%, #C9D6C8 100%); color: #14302A; font-family: 'Open Sans', -apple-system, 'Segoe UI', Arial, sans-serif; }
+#tree-entry { position: fixed; inset: 0; z-index: 150; overflow: hidden; display: none; background: linear-gradient(180deg, #F4F7EF 0%, #D6E3D9 62%, #C9D6C8 100%); color: #14302A; font-family: 'Open Sans', -apple-system, 'Segoe UI', Arial, sans-serif; }
 #tree-entry.on { display: block; }
 #tree-entry [hidden] { display: none !important; }
 /* top bar: the app header's own tools (search, reference, mode, language),
@@ -140,3 +140,36 @@
 @media (prefers-reduced-motion: reduce) {
 #tree-entry *, #tree-entry *::before, #tree-entry *::after { animation: none !important; transition-duration: .01s !important; transition-delay: 0s !important; }
 }
+
+/* ── the pane: a menu item opens inside the menu card, which grows into a
+   large reading pane (the app's own screen, .container) while the tree
+   stays behind, softly blurred. Same two-layer idea as Walk the Forest:
+   3D backdrop, app in front; blur only once you are inside content. ── */
+#tree-entry canvas { transition: filter .6s ease, transform .8s cubic-bezier(.2,.75,.15,1); }
+#tree-entry.deep canvas { filter: blur(3px) saturate(.9); transform: scale(1.02); }
+#tree-entry.deep .room .menu, #tree-entry.paning .room .menu { opacity: 0 !important; pointer-events: none; transition: opacity .2s ease; }
+#tree-entry .ghost { position: fixed; z-index: 7; background: #F4F1EA; border: 1px solid #C8D8D0; border-radius: 22px; box-shadow: 0 24px 60px rgba(20,48,42,.16); transition: left .52s cubic-bezier(.2,.75,.15,1), top .52s cubic-bezier(.2,.75,.15,1), width .52s cubic-bezier(.2,.75,.15,1), height .52s cubic-bezier(.2,.75,.15,1); pointer-events: none; }
+#tree-entry .panehead { position: fixed; z-index: 8; left: var(--pane-l); right: var(--pane-r); top: var(--pane-t); height: 56px; display: flex; align-items: center; gap: 14px; padding: 0 10px 0 22px; background: #FBF9F4; border: 1px solid #C8D8D0; border-bottom-color: #DCE6E0; border-radius: 20px 20px 0 0; opacity: 0; transition: opacity .25s ease; }
+body.tree-pane-in #tree-entry .panehead { opacity: 1; }
+#tree-entry .panehead .kicker { font: 600 10.5px/1 var(--body); letter-spacing: .16em; color: var(--deep); flex: none; }
+#tree-entry .panetabs { display: flex; gap: 4px; overflow-x: auto; flex: 1; min-width: 0; scrollbar-width: none; }
+#tree-entry .panetabs button { flex: none; border: 0; background: none; font: 500 14px/1 var(--display); color: var(--ink-soft); padding: 10px 12px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+#tree-entry .panetabs button:hover { background: rgba(214,227,217,.5); color: var(--ink); }
+#tree-entry .panetabs button[aria-current="page"] { background: #234A3E; color: #fff; }
+#tree-entry .panetabs button:focus-visible, #tree-entry .paneclose:focus-visible { outline: 2px solid #234A3E; outline-offset: 2px; }
+#tree-entry .paneclose { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #C8D8D0; background: #fff; color: var(--deep); font: 300 24px/1 var(--body); cursor: pointer; }
+#tree-entry .paneclose:hover { background: #F4F1EA; }
+body.tree-pane #site-header { display: none; }
+body.tree-pane .container { position: fixed; left: var(--pane-l); right: var(--pane-r); top: calc(var(--pane-t) + 56px); bottom: var(--pane-b); max-width: none; margin: 0; padding: 4px 28px 48px; overflow-y: auto; overscroll-behavior: contain; background: #F4F1EA; border: 1px solid #C8D8D0; border-top: 0; border-radius: 0 0 20px 20px; box-shadow: 0 24px 60px rgba(20,48,42,.16); z-index: 160; opacity: 0; transition: opacity .25s ease; }
+body.tree-pane-in .container { opacity: 1; }
+@media (max-width: 720px) {
+  #tree-entry .panehead { padding: 0 6px 0 14px; gap: 8px; height: 52px; }
+  #tree-entry .panetabs button { font-size: 13px; padding: 9px 10px; }
+  body.tree-pane .container { top: calc(var(--pane-t) + 52px); padding: 4px 14px 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #tree-entry canvas, #tree-entry .ghost, body.tree-pane .container, #tree-entry .panehead { transition: none !important; }
+}
+/* inside the pane the × and the tabs do the app's own back link and guide
+   switch: each side's pane stays on its own guide */
+body.tree-pane .back-btn, body.tree-pane #guide-screen .gd-tabs { display: none; }

@@ -170,11 +170,29 @@ async function testTreeEntry(browser) {
   await page.click('#tr-pick-ivn');
   await page.waitForTimeout(300);
   assert.strictEqual(await page.locator('#tr-room-ivn .menu li').count(), 3, 'IVN menu has three items');
+  // a menu item opens inside the pane; the tree stays behind
   await page.click('#tr-room-ivn [data-go="guide/g-ivn-sheets"]');
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(900);
   assert.strictEqual(await page.evaluate(() => location.hash), '#guide/g-ivn-sheets', 'Appendixes opens the IVN guide\'s sheets');
-  assert.ok(!(await on()), 'tree hides once you are in the app');
-  assert.ok(!(await page.evaluate(() => document.querySelector('.container').hasAttribute('inert'))), 'app is reachable again');
+  assert.ok(await on(), 'the tree stays behind the pane');
+  assert.ok(await page.evaluate(() => document.body.classList.contains('tree-pane') && !document.querySelector('.container').hasAttribute('inert')), 'the app is open in the pane and reachable');
+  assert.ok(await page.isVisible('#guide-screen'), 'the guide shows in the pane');
+  assert.strictEqual(await page.evaluate(() => document.querySelector('#tr-panetabs [aria-current="page"]').textContent), 'Appendixes', 'the open section is marked');
+  await page.click('#tr-panetabs [data-go="guide/g-ivn-start"]');
+  await page.waitForTimeout(300);
+  assert.strictEqual(await page.evaluate(() => location.hash), '#guide/g-ivn-start', 'tabs move between sections in the pane');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(900);
+  assert.ok(await page.isVisible('#tr-room-ivn .menu'), 'Escape closes the pane back to the menu');
+  assert.ok(await page.evaluate(() => !document.body.classList.contains('tree-pane') && document.querySelector('.container').hasAttribute('inert')), 'the app is behind the tree again');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(700);
+  assert.ok(await page.isVisible('#tr-pick-fi'), 'a second Escape returns to the tree');
+  // Reference is parked (features.js): no screen, no route, no search entries
+  assert.strictEqual(await page.evaluate(() => !!document.getElementById('reference-screen')), false, 'Reference screen is parked');
+  await page.evaluate(() => { location.hash = 'reference'; });
+  await page.waitForTimeout(300);
+  assert.ok(await page.evaluate(() => document.getElementById('entry-screen').classList.contains('active')), '#reference falls back to the start');
   // back on the tree: every label follows the language (FR, DE)
   await page.evaluate(() => { window.location.hash = ''; });
   await page.waitForTimeout(400);

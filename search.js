@@ -42,6 +42,7 @@ function searchActivityEntries() {
 }
 
 function searchReferenceEntries() {
+  if (typeof featureOn === 'function' && !featureOn('reference')) return [];
   const out = [];
   // ref.ind.*.name (wrapping span, first child of its <h4>) + ref.adj.*.name
   // and ref.flag.*.name (data-i18n directly on the <h4>) all live in

@@ -35,7 +35,7 @@ const T_EN = {
     "nav.mode.label": "Mode",
     "nav.search": "Search",
     "nav.search.aria": "Search (Ctrl+K)",
-    "search.placeholder": "Search activities, indications, chapters…",
+    "search.placeholder": "Search activities and guide chapters…",
     "search.close": "Close search",
     "search.empty": "No results.",
     "search.count": "{n} results",
@@ -105,7 +105,7 @@ const T_EN = {
     "role.part.cta": "Continue →",
     "role.prac.sub": "Practising FI",
     "role.prac.title": "I'm a practitioner",
-    "role.prac.desc": "Clinical reference, session tools, the 17-activity Pocketbook, indications and contraindications, integration with other modalities, and reflection prompts.",
+    "role.prac.desc": "The Practical Guides, the 17-activity Pocketbook to plan and run a session, and reflection prompts.",
     "role.prac.eg": "Therapist · facilitator · educator · researcher",
     "role.prac.cta": "Continue →",
     "pathway.reference.title": "Clinical Reference",
@@ -331,4 +331,5 @@ const T_EN = {
     "tree.plan": "Plan a Session",
     "tree.run": "Implement",
     "tree.appendix": "Appendixes",
+    "tree.menu.aria": "Back to the menu (Escape)",
 };

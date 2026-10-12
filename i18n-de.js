@@ -53,7 +53,7 @@ const T_DE = {
     "role.part.cta": "Weiter →",
     "role.prac.sub": "WI praktizieren",
     "role.prac.title": "Ich bin Praktiker·in",
-    "role.prac.desc": "Klinische Referenz, Sitzungswerkzeuge, Aktivitäten-Handbuch mit 17 Aktivitäten, Indikationen und Kontraindikationen, Integration mit anderen Modalitäten und Reflexion.",
+    "role.prac.desc": "Die Praxisleitfäden, das Handbuch mit 17 Aktivitäten zum Planen und Durchführen einer Sitzung und Reflexionsimpulse.",
     "role.prac.eg": "Therapeut·in · Facilitator·in · Dozent·in · Forscher·in",
     "role.prac.cta": "Weiter →",
     "pathway.reference.title": "Klinische Referenz",
@@ -134,7 +134,7 @@ const T_DE = {
     "nav.mode.label": "Modus",
     "nav.search": "Suchen",
     "nav.search.aria": "Suchen (Strg+K)",
-    "search.placeholder": "Aktivitäten, Indikationen, Kapitel durchsuchen…",
+    "search.placeholder": "Aktivitäten und Leitfadenkapitel durchsuchen…",
     "search.close": "Suche schließen",
     "search.empty": "Keine Treffer.",
     "search.count": "{n} Treffer",
@@ -295,4 +295,5 @@ const T_DE = {
     "tree.plan": "Sitzung planen",
     "tree.run": "Durchführen",
     "tree.appendix": "Anhänge",
+    "tree.menu.aria": "Zurück zum Menü (Esc)",
 };
