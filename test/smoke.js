@@ -187,9 +187,8 @@ async function testHeaderSingleLine(browser) {
 const TESTS = [
   ['footer is absent, role switch still present', testFooterAbsent],
   ['header is a single straight line at every width/lang/role', testHeaderSingleLine],
-  ['What is FI? — accordion + single column', (b) => testAccordionScreen(b, '#pwhat', 'participant', ['pw-def', 'pw-vs', 'pw-works'])],
   ['Before your first session — accordion + single column', (b) => testAccordionScreen(b, '#pbefore', 'participant', ['pb-share', 'pb-normal'])],
-  ['Learn More — accordion + single column', (b) => testAccordionScreen(b, '#learn', 'practitioner', ['mod-what', 'mod-evidence'])],
+  ['Learn More — accordion + single column', (b) => testAccordionScreen(b, '#learn', 'practitioner', ['mod-what', 'mod-contra'])],
   ['role/nav state survives a real refresh', testRoleSurvivesRefresh],
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
   ['Forest and IVN hubs — tools work end to end, guidance content, no codes', testToolHubs],
@@ -237,10 +236,12 @@ async function testPracticalGuides(browser) {
 }
 
 async function testToolHubs(browser) {
-  // Forest and IVN hubs (fi-tools.js, ivn-tools.js): cards render, a full
-  // IVN session (plan → check → run → debrief) saves a record carrying the
-  // plan's choices and before/after measures, first-use screening is
-  // remembered per young-person ID, and Reference/Implement show the
+  // Forest hub (fi-tools.js) is the interactive session tool it always
+  // was. IVN (ivn-tools.js) is informational only since 2026-10-12 (Ivo:
+  // "no run for IVN, only informational and drawn from the guides") — no
+  // session state, no timer, no records. Its hub links straight into the
+  // real IVN guide plus the two standalone informational pages (safety
+  // steps, for young people). Reference/Implement show the
   // guidance-for-professionals content. No document codes anywhere.
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE, { waitUntil: 'networkidle' });
@@ -249,31 +250,23 @@ async function testToolHubs(browser) {
   assert.ok(await page.locator('#fi-root .hub-card').count() >= 7, 'forest hub shows its tool cards');
   await page.evaluate(() => { window.location.hash = 'ivn'; });
   await page.waitForTimeout(200);
-  assert.ok(await page.locator('#ivn-root .hub-card').count() >= 9, 'IVN hub shows its tool cards');
+  assert.strictEqual(await page.locator('#ivn-root .hub-card').count(), 4, 'IVN hub shows exactly its 4 informational cards (guide, young, forest tools, distress)');
+  assert.strictEqual(await page.locator('#ivn-root [href="#ivn/plan"], #ivn-root [href="#ivn/run"], #ivn-root [href="#ivn/records"]').count(), 0,
+    'IVN hub no longer links to a plan/run/records session tool');
 
-  await page.evaluate(() => { window.location.hash = 'ivn/plan'; });
+  await page.evaluate(() => { window.location.hash = 'ivn/distress'; });
   await page.waitForTimeout(200);
-  await page.fill('input[data-f="youngId"]', 'T-1');
-  await page.click('.ivn-module[data-module="C"]');
-  await page.click('.gd-chips[data-name="intention"] .gd-chip >> nth=0');
-  await page.click('.gd-chips[data-name="measures"] .gd-chip >> nth=0');
-  await page.evaluate(() => { window.location.hash = 'ivn/check'; });
+  const distress = await page.locator('#ivn-root').innerText();
+  assert.ok(/Act/i.test(distress) && !/Stop — the young person is overwhelmed/.test(distress),
+    'distress page shows the act/watch/after steps without the removed Run-mode stop button');
+
+  await page.evaluate(() => { window.location.hash = 'ivn/young'; });
   await page.waitForTimeout(200);
-  for (const btn of await page.$$('.gd-check[data-name="first"] button')) await btn.click();
-  await page.evaluate(() => { window.location.hash = 'ivn/run'; });
-  await page.waitForTimeout(200);
-  await page.fill('input[data-when="before"]', '8');
-  await page.evaluate(() => ivnEnd());
-  await page.waitForTimeout(200);
-  await page.fill('input[data-when="after"]', '4');
-  await page.fill('textarea[data-d="keep"]', 'the stream');
-  await page.evaluate(() => ivnSaveRecord());
+  assert.ok((await page.locator('#ivn-root .gd-qa-item').count()) > 0, 'for-young-people page renders its Q&A content');
+
+  await page.evaluate(() => { window.location.hash = 'guide/g-ivn-start'; });
   await page.waitForTimeout(250);
-  const rec = await page.locator('.ivn-record').innerText();
-  assert.ok(/T-1/.test(rec) && /C — After the forest/.test(rec) && /8 → 4/.test(rec) && /the stream/.test(rec),
-    'saved record carries ID, module, before→after measure and the module C question');
-  const screened = await page.evaluate(() => (storageLoad('f4y.ivn.screening', {})['T-1'] || {}).items);
-  assert.ok(screened && screened.length === 6 && screened.every(Boolean), 'first-use screening remembered for the ID');
+  assert.strictEqual(await page.getAttribute('#guide-tab-ivn', 'aria-selected'), 'true', 'IVN hub\'s guide card reaches the real IVN guide');
 
   await page.evaluate(() => { window.location.hash = 'reference'; });
   await page.waitForTimeout(200);
@@ -285,7 +278,7 @@ async function testToolHubs(browser) {
   assert.ok(/Threshold/.test(plan) && /2–3 hours/.test(plan), 'session structure shows the arc and session lengths');
 
   let text = '';
-  for (const h of ['fi', 'fi/structure', 'fi/prepare', 'fi/screening', 'fi/debrief', 'ivn', 'ivn/plan', 'ivn/check', 'ivn/run', 'ivn/measures', 'ivn/distress', 'ivn/young']) {
+  for (const h of ['fi', 'fi/structure', 'fi/prepare', 'fi/screening', 'fi/debrief', 'ivn', 'ivn/distress', 'ivn/young']) {
     await page.evaluate(h => { window.location.hash = h; }, h);
     await page.waitForTimeout(120);
     text += await page.locator('.screen.active').innerText();
