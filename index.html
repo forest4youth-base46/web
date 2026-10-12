@@ -61,7 +61,7 @@
           <a class="site-nav-link" data-navkey="reflect" href="#reflect" data-i18n="nav.reflect">Reflect</a>
           <a class="site-nav-link" data-navkey="reference" href="#reference" data-i18n="nav.reference" data-feature="reference">Reference</a>
         </div>
-        <div class="site-nav-group" data-role-only="participant">
+        <div class="site-nav-group" data-role-only="participant" data-feature="participant">
           <a class="site-nav-link" data-navkey="g-fi-young" href="#guide/g-fi-young" data-i18n="ppath.young.title">Young people</a>
           <a class="site-nav-link" data-navkey="g-fi-families" href="#guide/g-fi-families" data-i18n="ppath.families.title">Family and carers</a>
           <a class="site-nav-link" data-navkey="g-ivn-young" href="#guide/g-ivn-young" data-i18n="ppath.ivn.title">The nature room</a>
@@ -75,7 +75,7 @@
           <span class="search-trigger-kbd" aria-hidden="true">⌘K</span>
         </button>
 
-        <div class="mode-switch" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label">
+        <div class="mode-switch" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label" data-feature="participant">
           <button type="button" class="mode-btn" data-role="practitioner" aria-pressed="true" onclick="setRole('practitioner')" data-i18n="role.bar.practitioner">Practitioner</button>
           <button type="button" class="mode-btn" data-role="participant" aria-pressed="false" onclick="setRole('participant')" data-i18n="role.bar.participant">Exploring</button>
         </div>
@@ -97,7 +97,7 @@
        longer a blocking gate: applyRoute() never routes here
        automatically, and currentRole always defaults to 'practitioner'
        before any route is applied. See router.js ensureRole(). -->
-  <div id="role-screen" class="screen">
+  <div id="role-screen" class="screen" data-feature="participant">
     <div class="role-screen-inner">
       <div class="entry-label" data-i18n="role.label">Welcome</div>
       <h1 class="entry-title" data-i18n="role.title">Who is this for?</h1>
@@ -158,7 +158,7 @@
     </div>
 
     <!-- PARTICIPANT ENTRY -->
-    <div data-role-only="participant">
+    <div data-role-only="participant" data-feature="participant">
       <div class="entry-label" data-i18n="pentry.label">Welcome</div>
       <h1 class="entry-title" data-i18n="pentry.title">What would be helpful today?</h1>
       <p class="entry-sub" data-i18n="pentry.sub">The Practical Guide's own pages for young people and for the people around them.</p>
@@ -860,7 +860,7 @@
     <div class="tools">
       <button type="button" class="esc" id="tr-esc" hidden data-i18n-attr="aria-label:tree.back.aria" aria-label="Back to the tree (Escape)"><span data-i18n="tree.back">Back to the tree</span> <kbd>Esc</kbd></button>
       <button type="button" class="tool" id="tr-search" data-i18n-attr="aria-label:nav.search.aria" aria-label="Search (Ctrl+K)"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg><span data-i18n="nav.search">Search</span></button>
-      <span class="pills" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label"><button type="button" data-mode="practitioner" aria-pressed="true" data-i18n="role.bar.practitioner">Practitioner</button><button type="button" data-mode="participant" aria-pressed="false" data-i18n="role.bar.participant">Exploring</button></span>
+      <span class="pills" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label" data-feature="participant"><button type="button" data-mode="practitioner" aria-pressed="true" data-i18n="role.bar.practitioner">Practitioner</button><button type="button" data-mode="participant" aria-pressed="false" data-i18n="role.bar.participant">Exploring</button></span>
       <span class="pills" role="group" aria-label="Language"><button type="button" data-lang="en">EN</button><button type="button" data-lang="fr">FR</button><button type="button" data-lang="de">DE</button></span>
     </div>
   </div>

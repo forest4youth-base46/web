@@ -27,7 +27,8 @@ function navigate(section) {
 // branches, none of which have anything else left to do afterward.
 function applyRouteActivateOnly(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  const el = document.getElementById(screenId);
+  // A parked screen (features.js) is gone from the page: land on the entry.
+  const el = document.getElementById(screenId) || document.getElementById('entry-screen');
   if (el) el.classList.add('active');
   updateHeaderChrome();
 }

@@ -57,8 +57,10 @@ async function testFooterAbsent(browser) {
   await page.goto(BASE, { waitUntil: 'networkidle' });
   const footerCount = await page.locator('footer').count();
   assert.strictEqual(footerCount, 0, 'expected no <footer> element');
+  // The Exploring role is parked (features.js): no role switch while it is off.
+  const parked = await page.evaluate(() => !featureOn('participant'));
   const modeBtnCount = await page.locator('.mode-btn').count();
-  assert.strictEqual(modeBtnCount, 2, 'expected role-switch buttons (.mode-btn) to still be present');
+  assert.strictEqual(modeBtnCount, parked ? 0 : 2, parked ? 'role switch is parked with the Exploring role' : 'expected role-switch buttons (.mode-btn)');
   await page.close();
 }
 
@@ -141,9 +143,9 @@ async function testQrShareRoundTrip(browser) {
 }
 
 const TESTS = [
-  ['footer is absent, role switch still present', testFooterAbsent],
+  ['footer is absent; role switch present only when Exploring is on', testFooterAbsent],
   ['Reflect — accordion + single column', (b) => testAccordionScreen(b, '#reflect', 'practitioner', ['mod-reflect-self', 'mod-indicators'])],
-  ['Exploring doors open the guide\'s own pages for young people and families', testParticipantDoors],
+  ['Exploring role: parked (or, when on, its doors open the guide\'s pages)', testParticipantDoors],
   ['role/nav state survives a real refresh', testRoleSurvivesRefresh],
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
   ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
@@ -213,9 +215,7 @@ async function testTreeEntry(browser) {
   assert.ok(await page.isVisible('#search-input'), 'search opens from the tree');
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
-  await page.click('#tree-entry [data-mode="participant"]');
-  await page.waitForTimeout(300);
-  assert.ok(!(await on()), 'Exploring (from the tree) keeps its own entry');
+  assert.strictEqual(await page.locator('#tree-entry [data-mode]').count(), 0, 'no Practitioner/Exploring switch on the tree while Exploring is parked');
   await page.close();
 }
 
@@ -224,6 +224,18 @@ async function testParticipantDoors(browser) {
   // Practical Guide's chapters for young people, families and the IVN room.
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE, { waitUntil: 'networkidle' });
+  if (await page.evaluate(() => !featureOn('participant'))) {
+    // Parked: nothing can switch to it, and a ?role=participant link lands as a practitioner.
+    await page.evaluate(() => { setRole('participant'); });
+    assert.strictEqual(await page.evaluate(() => document.body.getAttribute('data-role')), 'practitioner', 'setRole(participant) is refused while parked');
+    await page.goto(BASE + '?role=participant', { waitUntil: 'networkidle' });
+    assert.strictEqual(await page.evaluate(() => document.body.getAttribute('data-role')), 'practitioner', '?role=participant lands as a practitioner');
+    await page.evaluate(() => { location.hash = 'role'; });
+    await page.waitForTimeout(250);
+    assert.ok(await page.evaluate(() => document.getElementById('entry-screen').classList.contains('active')), '#role falls back to the entry');
+    await page.close();
+    return;
+  }
   await page.evaluate(() => { setRole('participant'); window.location.hash = ''; });
   await page.waitForTimeout(250);
   const doors = await page.locator('#entry-screen [data-role-only="participant"] .pathway-card').count();

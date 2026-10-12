@@ -157,6 +157,7 @@ function closePane(then) {
   document.body.classList.remove('tree-pane-in'); head.hidden = true;
   setTimeout(function () {
     document.body.classList.remove('tree-pane');
+    if (container) container.setAttribute('inert', '');
     S.pane = null; closing = true;
     if ((location.hash || '').replace('#', '')) location.hash = '';
     closing = false;
@@ -164,7 +165,6 @@ function closePane(then) {
     ROOT.classList.remove('deep');
     setTimeout(function () {
       ghost.hidden = true; ROOT.classList.remove('paning');
-      if (container) container.setAttribute('inert', '');
       var b = menuEl().querySelector('button'); if (b && !then) b.focus({ preventScroll: true });
       if (gl) gl.frame();
       if (then) then();
