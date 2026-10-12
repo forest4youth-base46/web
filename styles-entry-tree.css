@@ -8,10 +8,15 @@
 #tree-entry { position: fixed; inset: 0; z-index: 200; overflow: hidden; display: none; background: linear-gradient(180deg, #F4F7EF 0%, #D6E3D9 62%, #C9D6C8 100%); color: #14302A; font-family: 'Open Sans', -apple-system, 'Segoe UI', Arial, sans-serif; }
 #tree-entry.on { display: block; }
 #tree-entry [hidden] { display: none !important; }
-#tree-entry .langs { display: inline-flex; gap: 2px; pointer-events: auto; background: rgba(251,249,244,.7); border: 1px solid #C8D8D0; border-radius: 999px; padding: 2px; }
-#tree-entry .langs button { font: 600 10.5px/1 'Open Sans', sans-serif; letter-spacing: .08em; border: 0; background: none; color: #3E5A50; padding: 6px 8px; border-radius: 999px; cursor: pointer; }
-#tree-entry .langs button[aria-pressed="true"] { background: #234A3E; color: #fff; }
-#tree-entry .langs button:focus-visible { outline: 2px solid #234A3E; outline-offset: 1px; }
+/* top bar: the app header's own tools (search, reference, mode, language),
+   since the tree covers the header */
+#tree-entry .tools { margin-left: auto; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px 8px; pointer-events: auto; }
+#tree-entry .tool { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 'Open Sans', sans-serif; color: #234A3E; background: rgba(251,249,244,.78); border: 1px solid #C8D8D0; border-radius: 999px; padding: 7px 11px; cursor: pointer; }
+#tree-entry .tool:hover { background: #FBF9F4; }
+#tree-entry .pills { display: inline-flex; gap: 2px; background: rgba(251,249,244,.78); border: 1px solid #C8D8D0; border-radius: 999px; padding: 2px; }
+#tree-entry .pills button { font: 600 10.5px/1 'Open Sans', sans-serif; letter-spacing: .06em; border: 0; background: none; color: #3E5A50; padding: 6px 9px; border-radius: 999px; cursor: pointer; }
+#tree-entry .pills button[aria-pressed="true"] { background: #234A3E; color: #fff; }
+#tree-entry .tool:focus-visible, #tree-entry .pills button:focus-visible { outline: 2px solid #234A3E; outline-offset: 2px; }
 /* iframed-1.1 prototype, from Ivo's sketches (2026-10-12).
    A: one tree, split — left half IVN in holographic pixels, right half FI in
    crowns and bark. B: touch a side, the other half slides to the edge.
@@ -37,7 +42,7 @@
 #tree-entry .top { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; display: flex; align-items: center; gap: 12px; padding: 14px 18px; z-index: 6; pointer-events: none; }
 #tree-entry .mark { font: 600 13px/1 var(--display); letter-spacing: .02em; color: var(--deep); }
 #tree-entry .chip { font: 500 10.5px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); border: 1px solid var(--mist); border-radius: 999px; padding: 5px 9px; background: rgba(251,249,244,.6); }
-#tree-entry .esc { margin-left: auto; pointer-events: auto; font: 500 12.5px var(--body); color: var(--deep); background: var(--paper); border: 1px solid var(--mist); border-radius: 999px; padding: 8px 14px 8px 12px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; box-shadow: 0 4px 14px rgba(20,48,42,.08); }
+#tree-entry .esc { pointer-events: auto; font: 500 12.5px var(--body); color: var(--deep); background: var(--paper); border: 1px solid var(--mist); border-radius: 999px; padding: 8px 14px 8px 12px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; box-shadow: 0 4px 14px rgba(20,48,42,.08); }
 #tree-entry .esc kbd { font: 600 10px var(--body); border: 1px solid var(--mist); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; color: var(--ink-soft); }
 #tree-entry .esc[hidden] { display: none !important; }
 #tree-entry.open-c .top { padding-left: 82px; }
@@ -47,7 +52,7 @@
 #tree-entry .half { position: relative; border: 0; margin: 0; padding: 0; background: transparent; cursor: pointer; color: inherit; font: inherit; -webkit-tap-highlight-color: transparent; }
 #tree-entry .half .veil { position: absolute; inset: 0; background: rgba(244,247,239,.5); opacity: 0; transition: opacity .45s ease; pointer-events: none; }
 #tree-entry .doors.hover-ivn .half.fi .veil, #tree-entry .doors.hover-fi .half.ivn .veil { opacity: 1; }
-#tree-entry .half .lab { position: absolute; top: calc(78px + env(safe-area-inset-top, 0px)); display: flex; flex-direction: column; gap: 10px; max-width: 280px; }
+#tree-entry .half .lab { position: absolute; top: calc(var(--topH, 56px) + 22px); display: flex; flex-direction: column; gap: 10px; max-width: 280px; }
 #tree-entry .half.ivn .lab { left: clamp(18px, 6vw, 80px); align-items: flex-start; text-align: left; }
 #tree-entry .half.fi .lab { right: clamp(18px, 6vw, 80px); align-items: flex-end; text-align: right; }
 #tree-entry .lab .kicker { font: 600 10.5px/1 var(--body); letter-spacing: .16em; text-transform: uppercase; }
@@ -105,7 +110,11 @@
 #tree-entry .toast.on { opacity: 1; }
 #tree-entry.nogl .hint::after { content: ' (3D off on this device)'; }
 @media (max-width: 720px) {
-#tree-entry .half .lab { top: calc(64px + env(safe-area-inset-top, 0px)); max-width: 42vw; }
+#tree-entry .half .lab { top: calc(var(--topH, 56px) + 12px); max-width: 42vw; }
+#tree-entry .mark { display: none; }
+#tree-entry .tool span { display: none; }
+#tree-entry .tool { padding: 7px 9px; }
+#tree-entry .tools { justify-content: flex-start; }
 #tree-entry .lab .name { font-size: 19px; }
 #tree-entry .room { align-items: flex-end; }
 #tree-entry .strip { width: 48px; align-self: stretch; }
@@ -115,12 +124,13 @@
 #tree-entry .room.c .menu, #tree-entry .room.d .menu { margin: 0 12px 14px; }
 #tree-entry .chip { display: none; }
 #tree-entry .esc { white-space: nowrap; padding: 7px 10px; }
+#tree-entry .esc kbd { display: none; }
 #tree-entry.open-c .top { padding-left: 62px; }
 #tree-entry.open-d .top { padding-right: 62px; }
 }
 @media (max-height: 560px) {
 #tree-entry .top { padding: 8px 14px; }
-#tree-entry .half .lab { top: calc(42px + env(safe-area-inset-top, 0px)); gap: 6px; }
+#tree-entry .half .lab { top: calc(var(--topH, 44px) + 8px); gap: 6px; }
 #tree-entry .lab .name { font-size: 18px; }
 #tree-entry .hint { bottom: calc(8px + env(safe-area-inset-bottom, 0px)); padding: 6px 12px; }
 #tree-entry .menu { padding: 12px 20px 6px; border-radius: 16px; }

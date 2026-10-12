@@ -175,9 +175,29 @@ async function testTreeEntry(browser) {
   assert.strictEqual(await page.evaluate(() => location.hash), '#guide/g-ivn-sheets', 'Appendixes opens the IVN guide\'s sheets');
   assert.ok(!(await on()), 'tree hides once you are in the app');
   assert.ok(!(await page.evaluate(() => document.querySelector('.container').hasAttribute('inert'))), 'app is reachable again');
-  await page.evaluate(() => { setRole('participant'); window.location.hash = ''; });
+  // back on the tree: every label follows the language (FR, DE)
+  await page.evaluate(() => { window.location.hash = ''; });
+  await page.waitForTimeout(400);
+  for (const [lang, fi, hint] of [['fr', 'Interventions en milieu forestier', 'Touchez un côté de l’arbre'], ['de', 'Waldbasierte Interventionen', 'Berühren Sie eine Seite des Baums']]) {
+    await page.click(`#tree-entry [data-lang="${lang}"]`);
+    await page.waitForTimeout(150);
+    const txt = await page.evaluate(() => ({ fi: document.querySelector('#tr-pick-fi .name').textContent, hint: document.getElementById('tr-hint').textContent, pressed: document.querySelector('#tree-entry [data-lang][aria-pressed="true"]').dataset.lang }));
+    assert.strictEqual(txt.fi, fi, `FI name in ${lang}`);
+    assert.strictEqual(txt.hint, hint, `hint in ${lang}`);
+    assert.strictEqual(txt.pressed, lang, `${lang} marked as current`);
+  }
+  await page.evaluate(() => setLang('fr'));
+  assert.strictEqual(await page.evaluate(() => document.querySelector('#tree-entry [data-lang][aria-pressed="true"]').dataset.lang), 'fr', 'pills follow a language change made elsewhere');
+  await page.click('#tree-entry [data-lang="en"]');
+  // the header's tools are on the tree: search opens over it, mode switch leaves it
+  await page.click('#tr-search');
+  await page.waitForTimeout(200);
+  assert.ok(await page.isVisible('#search-input'), 'search opens from the tree');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(200);
+  await page.click('#tree-entry [data-mode="participant"]');
   await page.waitForTimeout(300);
-  assert.ok(!(await on()), 'the Exploring role keeps its own entry');
+  assert.ok(!(await on()), 'Exploring (from the tree) keeps its own entry');
   await page.close();
 }
 

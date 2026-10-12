@@ -61,8 +61,15 @@ document.addEventListener('keydown', function (e) {
 });
 ROOT.querySelectorAll('[data-go]').forEach(function (b) { b.addEventListener('click', function () { go(b.dataset.go); }); });
 ROOT.querySelectorAll('[data-lang]').forEach(function (b) { b.addEventListener('click', function () { if (typeof setLang === 'function') setLang(b.dataset.lang); syncLang(); if (gl) gl.frame(); }); });
-function syncLang() { var l = (typeof currentLang !== 'undefined' && currentLang) || 'en'; ROOT.querySelectorAll('[data-lang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === l)); }); }
+var sb = $('search'); if (sb) sb.addEventListener('click', function () { if (typeof openSearchDialog === 'function') openSearchDialog(sb); });
+ROOT.querySelectorAll('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { if (typeof setRole === 'function') setRole(b.dataset.mode); }); });
+// the top bar can wrap on narrow screens: labels sit below it, whatever its height
+function syncTop() { var tb = ROOT.querySelector('.top'); if (tb) ROOT.style.setProperty('--topH', Math.round(tb.getBoundingClientRect().bottom) + 'px'); }
+addEventListener('resize', syncTop);
+function syncLang() { syncTop(); var l = (typeof currentLang !== 'undefined' && currentLang) || 'en'; ROOT.querySelectorAll('[data-lang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === l)); }); }
 syncLang();
+// keep the tree's language pills right whichever control changed the language
+if (typeof window.setLang === 'function') { var appSetLang = window.setLang; window.setLang = function (l) { appSetLang(l); syncLang(); }; }
 // Menu items are ordinary app routes; Implement starts Run Mode (navGoRun).
 function go(route) {
   // Run Mode opens over the Implement screen, so leave the entry first
@@ -77,7 +84,9 @@ function syncShown() {
   var v = visible();
   if (v !== shown) { shown = v; ROOT.classList.toggle('on', v); document.documentElement.style.overflow = v ? 'hidden' : '';
     // the app underneath is out of reach (keyboard, screen readers) while the tree is up
-    var c = document.querySelector('.container'); if (c) { if (v) c.setAttribute('inert', ''); else c.removeAttribute('inert'); } if (v) { syncLang(); if (gl) gl.frame(); } }
+    var c = document.querySelector('.container'); if (c) { if (v) c.setAttribute('inert', ''); else c.removeAttribute('inert'); } if (v) { syncLang(); if (gl) gl.frame(); }
+    // embedded in the Odoo page: the iframe sizes itself to the document, so give the tree room
+    if (window.self !== window.top) document.documentElement.style.minHeight = v ? '760px' : ''; }
   return v;
 }
 syncShown();
