@@ -30,6 +30,7 @@ function applyRouteActivateOnly(screenId) {
   // A parked screen (features.js) is gone from the page: land on the entry.
   const el = document.getElementById(screenId) || document.getElementById('entry-screen');
   if (el) el.classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen(el && el.id !== 'entry-screen' ? el.id : null);
   updateHeaderChrome();
 }
 
@@ -121,6 +122,7 @@ function applyRoute() {
   // #implement/<module>) flash the whole screen.
   document.querySelectorAll('.screen').forEach(s => { if (s !== target) s.classList.remove('active'); });
   target.classList.add('active');
+  if (typeof wfSetDeepFromScreen === 'function') wfSetDeepFromScreen(target.id);
 
   applyRouteOpenModule(target, moduleId);
   if (activityId) applyRouteHighlightActivity(activityId);
@@ -162,6 +164,11 @@ function updateHeaderChrome() {
     if (match) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
+
+  // Walk the Forest's "← Back to the forest" (as on REVAMP): shown whenever a
+  // screen is open over the forest; the start screen is the forest itself.
+  const backBtn = document.getElementById('wf-back-btn');
+  if (backBtn) backBtn.classList.toggle('wf-back-btn--visible', !!document.querySelector('.screen.active:not(#entry-screen)'));
 }
 
 // Nav entry point for "Run". Run Mode itself is unchanged (still the
@@ -532,3 +539,35 @@ function goToRoleScreen() {
 // blocks on a role choice: ensureRole() (called from inside applyRoute)
 // defaults to practitioner if no role is stored yet.
 applyRoute();
+
+// ─────────────────────────────────────────
+// WALK THE FOREST: ESCAPE / "OPEN SPACE" (from REVAMP, same behaviour).
+// Only while the forest is on; on the tree, entry-tree.js owns Escape
+// (pane, menu, tree).
+// ─────────────────────────────────────────
+function appEscapeAction() {
+  const searchOverlay = document.getElementById('search-overlay');
+  if (searchOverlay && searchOverlay.classList.contains('active')) return;
+  const runMode = document.getElementById('pb-runMode');
+  if (runMode && runMode.classList.contains('active')) return;
+  const timerModal = document.getElementById('pb-timerModal');
+  if (timerModal && timerModal.classList.contains('active')) return;
+
+  if (typeof WF !== 'undefined' && WF.openId) { wfClose(); return; }
+
+  const focusedScreen = document.querySelector('.screen.focus-mode');
+  if (focusedScreen) {
+    const back = focusedScreen.querySelector('.module-back-link.injected');
+    if (back) { back.click(); return; }
+  }
+
+  // Nothing left open: back to the forest itself.
+  if (window.location.hash) navigate('');
+  if (typeof wfSetDeep === 'function') wfSetDeep(false);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Escape' || !document.body.classList.contains('wf-scene-on')) return;
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  appEscapeAction();
+});

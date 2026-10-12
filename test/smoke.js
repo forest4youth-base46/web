@@ -151,7 +151,22 @@ const TESTS = [
   ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
   ['Entry tree — open each side, go back with Escape, menu items route into the app', testTreeEntry],
   ['Phone — Plan a Session in the pane keeps the builder\'s floating button on top', testPhoneBuilderFab],
+  ['Walk the Forest — the trail leads into it, its own toggle leads back to the tree', testWalkRoundTrip],
 ];
+
+async function testWalkRoundTrip(browser) {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.click('#tr-walk');
+  await page.waitForFunction(() => document.body.classList.contains('wf-scene-on'), null, { timeout: 30000 });
+  assert.ok(await page.evaluate(() => !document.getElementById('tree-entry').classList.contains('on')), 'the tree steps aside for the forest');
+  assert.ok(await page.evaluate(() => !document.querySelector('.screen.active')), 'the forest view has no screen open, as on REVAMP');
+  await page.waitForFunction(() => !document.querySelector('.wf-veil').classList.contains('on'), null, { timeout: 30000 });
+  await page.click('#wf-toggle-btn');
+  await page.waitForFunction(() => document.getElementById('tree-entry').classList.contains('on'), null, { timeout: 10000 });
+  assert.ok(await page.evaluate(() => document.getElementById('entry-screen').classList.contains('active')), 'back on the start screen, with the tree');
+  await page.close();
+}
 
 async function testPhoneBuilderFab(browser) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });

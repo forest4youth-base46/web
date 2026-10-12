@@ -64,9 +64,23 @@ document.addEventListener('keydown', function (e) {
   if (!visible()) return;
   // Escape steps back one level at a time, as in Walk the Forest:
   // open page -> menu -> tree. Search, Run Mode and the timer keep their own.
-  if (e.key === 'Escape') { if (appModalOpen()) return; if (S.pane) closePane(); else back(); return; }
+  if (e.key === 'Escape') { if (appModalOpen() || ROOT.classList.contains('walking')) return; if (S.pane) closePane(); else back(); return; }
   if (S.mode === 'A' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { $(e.key === 'ArrowLeft' ? 'pick-ivn' : 'pick-fi').focus(); }
 });
+// ───── Walk the Forest (iframed-2.0) ─────
+// The trail on the tree screen. The walker from Walk the Forest steps onto
+// the footpath, the camera follows him in the third person past the tree
+// and into the trees, the fog closes in, and Walk the Forest opens exactly
+// as it is on REVAMP (wf-bridge.js). Its own toggle brings you back here.
+function walkIn() {
+  if (S.mode !== 'A' || ROOT.classList.contains('walking')) return;
+  ROOT.classList.add('walking');
+  var enter = function () { if (typeof window.wfBridgeEnter === 'function') window.wfBridgeEnter(); };
+  if (!gl || still || typeof wf3dPerson !== 'function') { if (window.wfBridgeFog) window.wfBridgeFog(); setTimeout(enter, still ? 0 : 500); return; }
+  gl.follow(enter);
+}
+if ($('walk')) $('walk').addEventListener('click', walkIn);
+window.F4Y_TREE = { reset: function () { ROOT.classList.remove('walking'); if (gl) gl.unfollow(); } };
 ROOT.querySelectorAll('.menu [data-go]').forEach(function (b) { b.addEventListener('click', function () { openPane(b.dataset.go, b); }); });
 ROOT.querySelectorAll('[data-lang]').forEach(function (b) { b.addEventListener('click', function () { if (typeof setLang === 'function') setLang(b.dataset.lang); syncLang(); if (gl) gl.frame(); }); });
 var sb = $('search'); if (sb) sb.addEventListener('click', function () { if (typeof openSearchDialog === 'function') openSearchDialog(sb); });
@@ -185,7 +199,7 @@ addEventListener('resize', function () { if (S.pane) setPaneVars(paneRect()); })
 if (typeof window.scrollToViewTop === 'function') { var appScrollTop = window.scrollToViewTop; window.scrollToViewTop = function () { if (S.pane && container) container.scrollTop = 0; else appScrollTop(); }; }
 // Visible only while the entry screen is showing for a practitioner.
 var entry = document.getElementById('entry-screen');
-function visible() { return !!entry && (entry.classList.contains('active') || !!S.pane) && document.body.getAttribute('data-role') !== 'participant'; }
+function visible() { return !!entry && (entry.classList.contains('active') || !!S.pane) && document.body.getAttribute('data-role') !== 'participant' && !document.body.classList.contains('walking'); }
 var shown = null;
 function syncShown() {
   var v = visible();
@@ -288,6 +302,8 @@ function blobGeometry(seed, rough) {
   g.computeVertexNormals();
   return g;
 }
+// the clearing's gentle ground swell (shared by the ground and the footpath)
+function groundY(x, z) { return 0.25 * Math.sin(x * 0.18) * Math.cos(z * 0.21) * smooth(4, 14, Math.hypot(x, z)) + 0.04 * Math.sin(x * 1.3 + z); }
 function hash(x, y, z) { var s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return s - Math.floor(s); }
 function smooth(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
 function ease3(t) { t = Math.max(0, Math.min(1, t)); return 1 - Math.pow(1 - t, 3); }
@@ -484,7 +500,7 @@ function buildPixelMotes() {
   var a = new T.Color(0xA7AC8E), b = new T.Color(0x979D7E), moss = new T.Color(0x86A07E), deep = new T.Color(0x6F9474), tmp = new T.Color();
   for (var i = 0; i < p.count; i++) {
     var x = p.getX(i), z = p.getZ(i), d = Math.hypot(x, z);
-    p.setY(i, 0.25 * Math.sin(x * 0.18) * Math.cos(z * 0.21) * smooth(4, 14, d) + 0.04 * Math.sin(x * 1.3 + z));
+    p.setY(i, groundY(x, z));
     var n = 0.5 + 0.5 * Math.sin(x * 0.21 + Math.sin(z * 0.17) * 2) * Math.cos(z * 0.13 + x * 0.05);
     tmp.copy(a).lerp(b, n).lerp(moss, hash(Math.floor(x / 3), 0, Math.floor(z / 3)) * 0.35).lerp(deep, smooth(6, 30, d) * 0.7);
     col[i * 3] = tmp.r; col[i * 3 + 1] = tmp.g; col[i * 3 + 2] = tmp.b;
@@ -509,6 +525,7 @@ function buildPixelMotes() {
   for (var i = 0; i < n; i++) {
     var r = 0.9 + Math.pow(rnd(), 0.9) * 13, a = rnd() * 6.283, x = Math.cos(a) * r * 1.4, z = Math.sin(a) * r * 0.7 - 2.5;
     if (z > 5) z = 5 - rnd() * 3;
+    if (typeof pathX === 'function' && Math.abs(x - pathX(z)) < 1.0) x += (x < pathX(z) ? -1.1 : 1.1);
     var s = 0.55 + rnd() * 0.6; Q.setFromAxisAngle(Y, rnd() * 6.28);
     Mx.compose(P.set(x, -0.01, z), Q, Sv.set(s, s * (0.8 + rnd() * 0.7), s)); mesh.setMatrixAt(i, Mx);
     sway[i * 2] = 2.2; sway[i * 2 + 1] = 0.16;
@@ -524,7 +541,8 @@ function buildPixelMotes() {
   var cols = [0x5F8C73, 0x507D67, 0x3F6E5A, 0x2F5E4B, 0x24503F];
   for (var i = 0; i < n; i++) {
     var a = Math.PI * (1.05 + hash(i, 0, 1) * 0.9), r = 22 + hash(i, 1, 0) * 30;
-    var x = Math.cos(a) * r * 1.5, z = Math.sin(a) * r - 6, h = 6 + hash(i, 2, 2) * 6, w = 0.18 + hash(i, 3, 3) * 0.14;
+    var x = Math.cos(a) * r * 1.5, z = Math.sin(a) * r - 6,
+      _pd = x - pathX(Math.sin(a) * r - 6), _ = (Math.abs(_pd) < 2.6 ? (x += (_pd < 0 ? -2.8 : 2.8)) : 0), h = 6 + hash(i, 2, 2) * 6, w = 0.18 + hash(i, 3, 3) * 0.14;
     Mx.compose(P.set(x, -0.2, z), Q, Sv.set(w, h * 0.7, w)); trunks.setMatrixAt(i, Mx);
     var R = 1.6 + hash(i, 4, 4) * 1.4, ci = Math.min(4, Math.floor((r - 18) / 8));
     for (var k = 0; k < 2; k++) {
@@ -584,12 +602,39 @@ var pxFull = buildPixels(false); pxFull.mesh.visible = false;
 var pxMotes = buildPixelMotes();
 var shadowA = contactShadow();
 
+/* The footpath: from the front of the clearing, past the tree, into the
+   forest — where "Walk the forest" leads. Walk the Forest's trail colours
+   (#D8CDAF, worn #C7BA98, light #E9E0C8), soft edges via vertex alpha. */
+// clear of the crown (it reaches ~3.6 m): beside the tree, then bending into the trees
+function pathX(z) { return 5.4 + 1.4 * Math.sin((z + 4) * 0.08) - (z > 6 ? (z - 6) * 0.3 : 0); }
+var PATH_Z0 = 12, PATH_Z1 = -70;
+(function footpath() {
+  var segs = 160, wid = 1.5, pos = [], col = [], idx = [];
+  var mid = new T.Color(0xD8CDAF), edge = new T.Color(0xC7BA98), light = new T.Color(0xE9E0C8);
+  for (var i = 0; i <= segs; i++) {
+    var z = PATH_Z0 + (PATH_Z1 - PATH_Z0) * i / segs, x = pathX(z), w = wid * (1 + 0.12 * Math.sin(z * 0.7));
+    [[-1.35, 0], [-1, 1], [0, 1], [1, 1], [1.35, 0]].forEach(function (q, k) {
+      var px0 = x + q[0] * w * 0.5;
+      pos.push(px0, groundY(px0, z) + 0.035 + (k === 2 ? 0.004 : 0), z);
+      var c = (k === 2 ? light : (k === 0 || k === 4 ? edge : mid));
+      col.push(c.r, c.g, c.b, q[1] * (0.9 + 0.1 * Math.sin(z * 1.3 + k)));
+    });
+    if (i) for (var k = 0; k < 4; k++) { var a = (i - 1) * 5 + k, b = i * 5 + k; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+  }
+  var g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new T.Float32BufferAttribute(col, 4));
+  g.setIndex(idx); g.computeVertexNormals();
+  var m = new T.Mesh(g, new T.MeshLambertMaterial({ vertexColors: true, transparent: true, depthWrite: false }));
+  m.receiveShadow = true; m.renderOrder = 1; scene.add(m);
+})();
+
 /* Framing: the tree never moves. The camera frames it inside whatever part
    of the screen is free in each state (all of it in A; beside the menu on
    laptop/desktop; above the menu sheet on a phone), by choosing its distance
    to fit and shifting the view (setViewOffset). One rule for every size. */
 var view = { w: 1, h: 1, narrow: false, short: false };
-var cam = { d: 20, td: 20, ox: 0, tox: 0, oy: 0, toy: 0, px: 0, py: 0 };
+var cam = { w: 0, tw: 0, d: 20, td: 20, ox: 0, tox: 0, oy: 0, toy: 0, px: 0, py: 0 };
 var FOV = 40, TAN = Math.tan(FOV * Math.PI / 360), TREE = { w: 7.8, h: 9.8, cy: 4.6 };
 camera.fov = FOV;
 function freeRect() {
@@ -597,7 +642,7 @@ function freeRect() {
   if (S.mode === 'A') {
     var labs = ROOT.querySelectorAll('.half .lab'), lb = 0;
     labs.forEach(function (l) { lb = Math.max(lb, l.getBoundingClientRect().bottom); });
-    var hint = $('hint').getBoundingClientRect().top;
+    var hint = Math.min($('hint').getBoundingClientRect().top, $('walk') ? $('walk').getBoundingClientRect().top : 1e9);
     // on wide screens the labels sit in the corners, beside the tree
     var y0 = (view.narrow || W / Hh < 1.25) ? lb + 8 : top;
     return { x: 0, y: y0, w: W, h: Math.max(160, hint - 8 - y0) };
@@ -641,6 +686,15 @@ function setFIHalfX(x) { fiHalf.grp.position.x = x; clipFI.constant = -x; }
 
 gl = {
   hover: function (s) { st.hover = s; },
+  // The walker (Walk the Forest's own figure, wf3dPerson) walks the footpath
+  // and the camera follows him in the third person.
+  follow: function (done) {
+    if (!cam.walker) { cam.walker = wf3dPerson('stand', 1.74); scene.add(cam.walker.group); }
+    cam.walker.group.visible = true;
+    cam.follow = { t0: performance.now(), dur: 5200, done: done, fog: false, fired: false };
+    cam.tw = 1;
+  },
+  unfollow: function () { cam.follow = null; cam.tw = 0; cam.w = 0; if (cam.walker) cam.walker.group.visible = false; },
   frame: reframe,
   open: function (side) {
     var sw = slideW();
@@ -743,13 +797,37 @@ function frame(now) {
   // camera: slight parallax toward the pointer (as the WtF camera), eases to its target
   var kf = Math.min(1, dt * 2.2);
   cam.d += (cam.td - cam.d) * kf; cam.ox += (cam.tox - cam.ox) * kf; cam.oy += (cam.toy - cam.oy) * kf;
-  camera.setViewOffset(view.w, view.h, cam.ox, cam.oy, view.w, view.h);
-  scene.fog.density = 0.48 / cam.d;
+  cam.w += (cam.tw - cam.w) * Math.min(1, dt * (cam.tw ? 0.55 : 1.4));
+  var wk = cam.w * cam.w * (3 - 2 * cam.w);            // eased 0..1
+  camera.setViewOffset(view.w, view.h, cam.ox * (1 - wk), cam.oy * (1 - wk), view.w, view.h);
+  scene.fog.density = 0.48 / cam.d * (1 - wk) + 0.045 * wk;
   cam.spx = (cam.spx || 0) + ((still ? 0 : cam.px) - (cam.spx || 0)) * Math.min(1, dt * 1.6);
   cam.spy = (cam.spy || 0) + ((still ? 0 : cam.py) - (cam.spy || 0)) * Math.min(1, dt * 1.6);
   var px = cam.spx, py = cam.spy;
   camera.position.set(px * 0.8, TREE.cy + cam.d * 0.1 - py * 0.6, cam.d);
   camera.lookAt(px * 0.3, TREE.cy, 0);
+  if (cam.follow && cam.walker) {
+    var F = cam.follow, k = Math.min(1, (now - F.t0) / F.dur);
+    // a calm, steady walk: eases in from standing, then an even pace
+    var dist = k < 0.15 ? (k * k / 0.3) : (k - 0.075);
+    var z = 11 - 31 * dist, x = pathX(z), y = groundY(x, z);
+    var dx = pathX(z - 0.6) - x, rot = Math.atan2(dx, -0.6);
+    var W = cam.walker, ph = (now - F.t0) / 1000 * 6.4 * Math.min(1, k * 8);
+    W.group.position.set(x, y, z); W.group.rotation.y = rot;
+    W.legL.rotation.x = Math.sin(ph) * 0.42; W.legR.rotation.x = -Math.sin(ph) * 0.42;
+    W.armL.rotation.x = -Math.sin(ph) * 0.32; W.armR.rotation.x = Math.sin(ph) * 0.32;
+    W.hips.position.y = W.hipY + Math.abs(Math.cos(ph)) * 0.025;
+    // third person: behind and a little above him, looking down the path
+    var fx = Math.sin(rot), fz = Math.cos(rot);
+    var behind = new T.Vector3(x - fx * 4.4, y + 2.2, z - fz * 4.4);
+    var ahead = new T.Vector3(x + fx * 6, y + 1.2, z + fz * 6);
+    var fb = Math.min(1, (now - F.t0) / 1400); fb = fb * fb * (3 - 2 * fb);
+    camera.position.lerp(behind, fb);
+    camera.lookAt(new T.Vector3(px * 0.3, TREE.cy, 0).lerp(ahead, fb));
+    if (k > 0.74 && !F.fog) { F.fog = true; if (window.wfBridgeFog) window.wfBridgeFog(); }
+    if (k >= 1 && !F.fired) { F.fired = true; F.done(); }
+  }
+
   if (S.mode === 'A') { placeCue('cue-ivn', -1.7); placeCue('cue-fi', 1.7); }
   renderer.render(scene, camera);
 }

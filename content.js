@@ -140,6 +140,9 @@ function setLang(lang) {
   // next reload.
   // The Practical Guides screen is also built from JS (guide-render.js).
   if (typeof guideRender === 'function') guideRender();
+  // Walk the Forest (walk-forest.js) builds its scene from innerHTML too;
+  // re-render is a no-op unless it is running (as on REVAMP).
+  if (typeof wfRender === 'function' && typeof WF !== 'undefined' && WF.active) wfRender();
   if (window.__pbInited) {
     pbRenderGroups();
     pbRenderFilters();

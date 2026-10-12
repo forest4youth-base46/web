@@ -1,0 +1,59 @@
+/* ─── styles-wf-bridge.css: the tree ↔ Walk the Forest join (iframed-2.0).
+   The trail on the tree screen, the fog veil of the transition, and the bits
+   of REVAMP's app shell that Walk the Forest expects around it (copied from
+   REVAMP's styles-base.css, scoped to while the forest is on). Walk the
+   Forest's own styles stay in styles-walk-forest.css, unchanged. ─── */
+
+/* The trail: a few footsteps from the edge of the screen to a small marker,
+   on the side, part of the scene rather than a button under it. */
+#tree-entry .trail { position: fixed; z-index: 5; left: 0; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 0; padding: 0 0 0 10px; background: none; border: 0; cursor: pointer; color: #234A3E; font: inherit; -webkit-tap-highlight-color: transparent; }
+#tree-entry .trail-steps { width: 92px; height: 32px; color: #6E5847; opacity: .75; transition: opacity .3s ease; }
+#tree-entry .trail-pill { display: inline-flex; align-items: center; gap: 8px; font: 600 12.5px/1 'Montserrat', 'Segoe UI', Arial, sans-serif; color: #FBF9F4; background: #234A3E; border-radius: 999px; padding: 10px 15px 10px 11px; box-shadow: 0 8px 22px rgba(20,48,42,.22); transition: transform .35s cubic-bezier(.2,.7,.2,1), background .3s ease; }
+#tree-entry .trail:hover .trail-pill, #tree-entry .trail:focus-visible .trail-pill { background: #2C5446; transform: translateX(4px); }
+#tree-entry .trail:hover .trail-steps { opacity: 1; }
+#tree-entry .trail:focus-visible { outline: none; }
+#tree-entry .trail:focus-visible .trail-pill { outline: 3px solid #234A3E; outline-offset: 3px; }
+#tree-entry.open-c .trail, #tree-entry.open-d .trail, #tree-entry.deep .trail { display: none; }
+#tree-entry.walking .doors, #tree-entry.walking .hint, #tree-entry.walking .trail, #tree-entry.walking .cue, #tree-entry.walking .top { opacity: 0; pointer-events: none; transition: opacity .6s ease; }
+@media (max-width: 720px) {
+  #tree-entry .trail { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); padding-left: 4px; }
+  #tree-entry .trail-steps { width: 46px; }
+}
+@media (max-height: 560px) { #tree-entry .trail { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); } }
+
+/* The fog that carries you from the tree into Walk the Forest (its fog
+   colour, #D6E3D9, so the two scenes meet in the same mist). */
+.wf-veil { position: fixed; inset: 0; z-index: 400; background: radial-gradient(ellipse at 50% 60%, #E4ECE5 0%, #D6E3D9 70%); opacity: 0; pointer-events: none; transition: opacity .9s ease; }
+.wf-veil.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .wf-veil { transition: none; } }
+
+/* While walking, the start screen is the forest itself. */
+body.walking #entry-screen > * { display: none !important; }
+
+/* From REVAMP's styles-base.css, scoped to while the forest is on. */
+body.wf-scene-on .container { pointer-events: none; }
+body.wf-scene-on .container > * { pointer-events: auto; }
+body.wf-scene-deep #main-content { margin-top: 64px; }
+.wf-back-btn {
+  display: none;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--ember-soft);
+  background: var(--paper-pure);
+  color: var(--ember);
+  cursor: pointer;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.18s, color 0.18s;
+}
+.wf-back-btn:hover, .wf-back-btn:focus-visible { background: var(--ember); color: var(--paper-pure); }
+.wf-back-btn--visible { display: inline-flex; }
+body:not(.wf-scene-on) .wf-back-btn--visible { display: none; }
+/* REVAMP's header keeps the language switch in line (between search and the
+   forest toggle); this app pins it to the corner, where it would sit on top
+   of the forest toggle. In line while walking, as on REVAMP. */
+body.wf-scene-on .lang-bar { position: static; margin: 0; }
