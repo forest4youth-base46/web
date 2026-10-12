@@ -159,9 +159,11 @@ async function testWalkRoundTrip(browser) {
   await page.goto(BASE, { waitUntil: 'networkidle' });
   await page.click('#tr-walk');
   await page.waitForFunction(() => document.body.classList.contains('wf-scene-on'), null, { timeout: 30000 });
+  // the tree fades out over the forest, then hands over (body.walking)
+  await page.waitForFunction(() => document.body.classList.contains('walking'), null, { timeout: 60000 });
   assert.ok(await page.evaluate(() => !document.getElementById('tree-entry').classList.contains('on')), 'the tree steps aside for the forest');
   assert.ok(await page.evaluate(() => !document.querySelector('.screen.active')), 'the forest view has no screen open, as on REVAMP');
-  await page.waitForFunction(() => !document.querySelector('.wf-veil').classList.contains('on'), null, { timeout: 30000 });
+  await page.waitForTimeout(1600); // the Back to the tree button fades in
   assert.ok(await page.isVisible('#wf-home-tree'), 'top left: Back to the tree');
   assert.ok(!(await page.isVisible('#site-header')), 'no app header in the forest');
   await page.click('#wf-home-tree');

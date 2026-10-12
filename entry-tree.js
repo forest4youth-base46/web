@@ -76,7 +76,7 @@ function walkIn() {
   if (S.mode !== 'A' || ROOT.classList.contains('walking')) return;
   ROOT.classList.add('walking');
   var enter = function () { if (typeof window.wfBridgeEnter === 'function') window.wfBridgeEnter(); };
-  if (!gl || still || typeof wf3dPerson !== 'function') { if (window.wfBridgeFog) window.wfBridgeFog(); setTimeout(enter, still ? 0 : 500); return; }
+  if (!gl || still || typeof wf3dPerson !== 'function') { enter(); return; }
   gl.follow(enter);
 }
 if ($('walk')) $('walk').addEventListener('click', walkIn);
@@ -199,7 +199,7 @@ addEventListener('resize', function () { if (S.pane) setPaneVars(paneRect()); })
 if (typeof window.scrollToViewTop === 'function') { var appScrollTop = window.scrollToViewTop; window.scrollToViewTop = function () { if (S.pane && container) container.scrollTop = 0; else appScrollTop(); }; }
 // Visible only while the entry screen is showing for a practitioner.
 var entry = document.getElementById('entry-screen');
-function visible() { return !!entry && (entry.classList.contains('active') || !!S.pane) && document.body.getAttribute('data-role') !== 'participant' && !document.body.classList.contains('walking'); }
+function visible() { return !!entry && (entry.classList.contains('active') || !!S.pane || ROOT.classList.contains('walking')) && document.body.getAttribute('data-role') !== 'participant' && !document.body.classList.contains('walking'); }
 var shown = null;
 function syncShown() {
   var v = visible();
@@ -308,10 +308,11 @@ function blobGeometry(seed, rough) {
    drawn at first; the deep part and the trees along it fade in once the
    walker has crossed the tree (as Walk the Forest reveals its IVN room past
    the fallen log). */
-var TRAIL_PTS = [[14, 1.2], [9, -0.8], [4.6, -3.8], [1.2, -5.8], [-1.6, -7.9], [-3.2, -12.5], [-3.0, -20], [-1.2, -32], [1.8, -50], [3.6, -76]];
+var TRAIL_PTS = [[14, -2.2], [9, -2.6], [5.6, -3.2], [4.0, -4.6], [3.6, -7], [3.6, -14], [3.6, -28], [3.6, -50], [3.6, -80]];
 var trailCurve = new T.CatmullRomCurve3(TRAIL_PTS.map(function (p) { return new T.Vector3(p[0], 0, p[1]); }), false, 'centripetal');
 var TRAIL_N = 420, trailPts = trailCurve.getSpacedPoints(TRAIL_N), TRAIL_LEN = trailCurve.getLength();
-var TRAIL_CROSS = (function () { for (var i = 0; i < trailPts.length; i++) if (trailPts[i].x <= 0.8) return i / TRAIL_N; return 0.3; })();
+// where he has turned onto the straight, past the tree's side
+var TRAIL_CROSS = (function () { for (var i = 0; i < trailPts.length; i++) if (trailPts[i].z <= -5.2) return i / TRAIL_N; return 0.3; })();
 function distToTrail(x, z) { var m = 1e9; for (var i = 0; i < trailPts.length; i += 2) { var dx = trailPts[i].x - x, dz = trailPts[i].z - z, d = dx * dx + dz * dz; if (d < m) m = d; } return Math.sqrt(m); }
 function groundY(x, z) { return 0.25 * Math.sin(x * 0.18) * Math.cos(z * 0.21) * smooth(4, 14, Math.hypot(x, z)) + 0.04 * Math.sin(x * 1.3 + z); }
 function hash(x, y, z) { var s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return s - Math.floor(s); }
@@ -736,7 +737,7 @@ gl = {
     // start just outside the right edge of what the camera sees
     var edge = TAN * cam.d * camera.aspect + 1.2, u0 = 0;
     for (var i = 0; i < trailPts.length; i++) if (trailPts[i].x <= edge) { u0 = i / TRAIL_N; break; }
-    cam.follow = { t0: performance.now(), u0: u0, cross: 0, done: done, fog: false, fired: false };
+    cam.follow = { t0: performance.now(), u0: u0, cross: 0, done: done, fired: false, last: null, phase: 0 };
   },
   unfollow: function () { cam.follow = null; cam.tw = 0; cam.w = 0; if (cam.walker) cam.walker.group.visible = false; trail.near(0); trail.deep(0); },
   frame: reframe,
@@ -852,42 +853,43 @@ function frame(now) {
   camera.lookAt(px * 0.3, TREE.cy, 0);
   if (cam.follow && cam.walker) {
     var F = cam.follow, el = (now - F.t0) / 1000;
-    // a calm walk (1.5 m/s), easing in from standing
-    var sMeters = el < 0.8 ? 1.5 * el * el / 1.6 : 1.5 * (el - 0.4);
+    // an unhurried walk (1.6 m/s), easing in from standing
+    var sMeters = el < 0.8 ? 1.6 * el * el / 1.6 : 1.6 * (el - 0.4);
     var u = Math.min(1, F.u0 + sMeters / TRAIL_LEN);
     var P0 = trailCurve.getPointAt(u), tg = trailCurve.getTangentAt(u);
     var x = P0.x, z = P0.z, y = groundY(x, z), rot = Math.atan2(tg.x, tg.z);
-    var W = cam.walker, ph = el * 5.6 * Math.min(1, el * 1.5);
+    // Walk the Forest's own gait (walk-forest-3d-stations.js): the legs
+    // follow the ground covered, one stride cycle per 1.5 m, swing scaled
+    // by speed, so he walks exactly like the walker he becomes
+    var W = cam.walker, moved = F.last ? Math.hypot(x - F.last.x, z - F.last.z) : 0;
+    var speed = dt > 0 ? moved / dt : 0;
+    F.last = { x: x, z: z }; F.phase += moved / 1.5;
+    var ph = F.phase * Math.PI * 2, amp = Math.min(1, speed / 1.2);
     W.group.position.set(x, y, z); W.group.rotation.y = rot;
-    W.legL.rotation.x = Math.sin(ph) * 0.42; W.legR.rotation.x = -Math.sin(ph) * 0.42;
-    W.armL.rotation.x = -Math.sin(ph) * 0.32; W.armR.rotation.x = Math.sin(ph) * 0.32;
-    W.hips.position.y = W.hipY + Math.abs(Math.cos(ph)) * 0.025;
+    W.legL.rotation.x = Math.sin(ph) * 0.55 * amp; W.legR.rotation.x = -Math.sin(ph) * 0.55 * amp;
+    W.armL.rotation.x = -Math.sin(ph) * 0.4 * amp; W.armR.rotation.x = Math.sin(ph) * 0.4 * amp;
+    W.hips.position.y = W.hipY + Math.abs(Math.cos(ph)) * 0.035 * amp;
     trail.near(Math.min(1, el / 1.2));
-    // the picture holds still while he walks in; once he has crossed the
-    // tree, the camera drifts back behind him and the depth fades in
+    // The picture holds still while he walks in. Once he is on the straight
+    // past the tree, the camera simply moves along behind him (no turning),
+    // the forest beyond slowly appears, and Walk the Forest fades in under
+    // the tree scene.
     if (!F.cross && u >= TRAIL_CROSS) F.cross = now;
     if (F.cross) {
       var since = (now - F.cross) / 1000;
-      var fb = Math.min(1, since / 3.2); fb = fb * fb * (3 - 2 * fb);
-      trail.deep(Math.min(1, since / 2.4));
+      var fb = Math.min(1, since / 4); fb = fb * fb * (3 - 2 * fb);
+      trail.deep(Math.min(1, since / 3.5));
       cam.tw = 1;
-      var fx = Math.sin(rot), fz = Math.cos(rot);
-      var behind = new T.Vector3(x - fx * 4.6, y + 2.3, z - fz * 4.6);
-      var ahead = new T.Vector3(x + fx * 7, y + 1.2, z + fz * 7);
-      // swing round the right of the tree (never through it): a curve from
-      // where the camera was, past a point beside the crown, to behind him
-      if (!F.from) F.from = camera.position.clone();
-      var ctl = new T.Vector3(11, Math.max(F.from.y, 5.5), 3), g = 1 - fb;
-      camera.position.set(
-        g * g * F.from.x + 2 * g * fb * ctl.x + fb * fb * behind.x,
-        g * g * F.from.y + 2 * g * fb * ctl.y + fb * fb * behind.y,
-        g * g * F.from.z + 2 * g * fb * ctl.z + fb * fb * behind.z);
-      camera.lookAt(new T.Vector3(px * 0.3, TREE.cy, 0).lerp(ahead, fb));
-      scene.fog.density = scene.fog.density * (1 - fb) + 0.017 * fb;
-      if (since > 4.2 && !F.fog) { F.fog = true; if (window.wfBridgeFog) window.wfBridgeFog(); }
-      if (since > 5.1 && !F.fired) { F.fired = true; F.done(); }
+      if (!F.from) { F.from = camera.position.clone(); F.look = new T.Vector3(px * 0.3, TREE.cy, 0).sub(F.from).normalize(); }
+      var behind = new T.Vector3(x, y + 2.2, z + 5.2);
+      camera.position.copy(F.from).lerp(behind, fb);
+      var dir = F.look.clone().lerp(new T.Vector3(0, -0.12, -1).normalize(), fb);
+      camera.lookAt(camera.position.clone().add(dir));
+      scene.fog.density = scene.fog.density * (1 - fb) + 0.016 * fb;
+      if (since > 2.6 && !F.fired) { F.fired = true; F.done(); }
     }
   }
+
 
 
   if (S.mode === 'A') { placeCue('cue-ivn', -1.7); placeCue('cue-fi', 1.7); }

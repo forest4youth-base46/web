@@ -56,7 +56,7 @@ body.wf-scene-on .lang-bar { position: static; margin: 0; }
    the project logo, "Back to the tree". */
 body.walking #site-header { display: none; }
 .wf-home { display: none; position: fixed; z-index: 300; top: calc(14px + env(safe-area-inset-top, 0px)); left: 14px; gap: 8px; align-items: center; }
-body.walking.wf-scene-on .wf-home { display: flex; }
+body.wf-scene-on .wf-home { display: flex; }
 .wf-home-tree { display: inline-flex; align-items: center; gap: 10px; background: rgba(251,249,244,.94); border: 1px solid var(--forest-mist); border-radius: 999px; padding: 5px 16px 5px 8px; cursor: pointer; font: 600 12.5px/1 'Open Sans', sans-serif; color: var(--forest-deep); box-shadow: 0 6px 18px rgba(20,48,42,.12); }
 .wf-home-tree img { height: 30px; width: auto; display: block; }
 .wf-home-tree:hover, .wf-home-tree:focus-visible { background: #fff; }
@@ -65,3 +65,13 @@ body.walking.wf-scene-on .wf-home { display: flex; }
 body.walking.wf-screen-open .wf-home-forest { display: inline-flex; }
 body.walking.wf-screen-open #main-content { padding-top: 64px; }
 @media (max-width: 720px) { .wf-home-tree img { height: 24px; } .wf-home-tree { font-size: 12px; padding: 4px 12px 4px 6px; } }
+
+/* The hand-over into the forest: the tree scene dissolves over Walk the
+   Forest (already running underneath); the home button comes up gently. */
+#tree-entry { transition: opacity 2s ease; }
+#tree-entry.dissolve { opacity: 0; pointer-events: none; }
+body.walk-arriving #site-header { opacity: 0; pointer-events: none; }
+body.walk-arriving #entry-screen > * { visibility: hidden; }
+.wf-home { opacity: 0; pointer-events: none; transition: opacity 1.2s ease .2s; }
+body.walking.wf-scene-on .wf-home { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { #tree-entry, .wf-home { transition: none; } }

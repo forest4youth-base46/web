@@ -16,7 +16,7 @@
   veil.setAttribute('aria-hidden', 'true');
   document.body.appendChild(veil);
 
-  window.wfBridgeFog = function () { veil.classList.add('on'); };
+  window.wfBridgeFog = function () { veil.classList.add('on'); };   // kept for the no-WebGL path
 
   function want3d() {
     try {
@@ -25,21 +25,29 @@
       else if (location.hash) history.replaceState(null, '', u.pathname + u.search);
     } catch (e) {}
   }
+  // Gradual hand-over: Walk the Forest starts underneath while the tree
+  // scene (with him still walking) stays on top; once the 3D forest is
+  // ready the tree scene dissolves over ~2 s and the forest's own interface
+  // (and the home button) come up through it.
   function lift() {
-    var t0 = performance.now();
+    var t0 = performance.now(), tree = document.getElementById('tree-entry');
     (function wait() {
       var ready = typeof WF3D !== 'undefined' && WF3D.state === 'ready';
-      if (ready || performance.now() - t0 > 3000) {
+      if (ready || performance.now() - t0 > 4000) {
         veil.classList.remove('on');
-        if (window.F4Y_TREE) window.F4Y_TREE.reset();
+        if (tree) tree.classList.add('dissolve');
+        setTimeout(function () {
+          document.body.classList.add('walking');
+          if (tree) tree.classList.remove('dissolve');
+          if (window.F4Y_TREE) window.F4Y_TREE.reset();
+        }, 2100);
       } else requestAnimationFrame(wait);
     })();
   }
   var loading = false;
   window.wfBridgeEnter = function () {
-    veil.classList.add('on');
     want3d();
-    document.body.classList.add('walking');
+    document.body.classList.add('walk-arriving');
     // As on REVAMP, the forest view is "no screen open": the scene stays
     // crisp and the app floats over it only when you open something.
     var es = document.getElementById('entry-screen'); if (es) es.classList.remove('active');
@@ -49,7 +57,7 @@
     var s = document.createElement('script');
     s.src = 'walk-forest.js';
     s.onload = function () { loading = false; lift(); };
-    s.onerror = function () { loading = false; document.body.classList.remove('walking'); veil.classList.remove('on'); if (window.F4Y_TREE) window.F4Y_TREE.reset(); };
+    s.onerror = function () { loading = false; document.body.classList.remove('walking', 'walk-arriving'); veil.classList.remove('on'); if (window.F4Y_TREE) window.F4Y_TREE.reset(); };
     document.body.appendChild(s);
   };
 
@@ -62,8 +70,8 @@
   // Leaving the forest (home button, or its own toggle) returns to the tree.
   new MutationObserver(function () {
     var b = document.body;
-    if (b.classList.contains('walking') && !b.classList.contains('wf-scene-on') && typeof WF !== 'undefined' && !loading) {
-      b.classList.remove('walking', 'wf-scene-deep');
+    if ((b.classList.contains('walking') || b.classList.contains('walk-arriving')) && !b.classList.contains('wf-scene-on') && typeof WF !== 'undefined' && !loading) {
+      b.classList.remove('walking', 'walk-arriving', 'wf-scene-deep');
       // back on the tree: the start screen again
       if (location.hash) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
       if (typeof applyRoute === 'function') applyRoute();
