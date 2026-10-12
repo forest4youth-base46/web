@@ -142,13 +142,34 @@ async function testQrShareRoundTrip(browser) {
 
 const TESTS = [
   ['footer is absent, role switch still present', testFooterAbsent],
-  ['What is FI? — accordion + single column', (b) => testAccordionScreen(b, '#pwhat', 'participant', ['pw-def', 'pw-vs', 'pw-works'])],
-  ['Before your first session — accordion + single column', (b) => testAccordionScreen(b, '#pbefore', 'participant', ['pb-share', 'pb-normal'])],
-  ['Learn More — accordion + single column', (b) => testAccordionScreen(b, '#learn', 'practitioner', ['mod-what', 'mod-evidence'])],
+  ['Reflect — accordion + single column', (b) => testAccordionScreen(b, '#reflect', 'practitioner', ['mod-reflect-self', 'mod-indicators'])],
+  ['Exploring doors open the guide\'s own pages for young people and families', testParticipantDoors],
   ['role/nav state survives a real refresh', testRoleSurvivesRefresh],
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
   ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
 ];
+
+async function testParticipantDoors(browser) {
+  // The Exploring role has no pages of its own any more: its doors open the
+  // Practical Guide's chapters for young people, families and the IVN room.
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.evaluate(() => { setRole('participant'); window.location.hash = ''; });
+  await page.waitForTimeout(250);
+  const doors = await page.locator('#entry-screen [data-role-only="participant"] .pathway-card').count();
+  assert.strictEqual(doors, 3, 'three Exploring doors');
+  for (const [id, title] of [['fi-young', 'Young people'], ['fi-families', 'Family and carers'], ['ivn-young', 'For young people']]) {
+    await page.evaluate(id => { window.location.hash = 'guide/g-' + id; }, id);
+    await page.waitForTimeout(300);
+    const shown = await page.evaluate(() => ({
+      active: document.getElementById('guide-screen').classList.contains('active'),
+      title: (document.querySelector('#guide-screen .gd-guide:not([hidden]) .gd-title') || {}).textContent,
+    }));
+    assert.ok(shown.active, `participant can open #guide/g-${id}`);
+    assert.strictEqual(shown.title, title, `#guide/g-${id} shows "${title}"`);
+  }
+  await page.close();
+}
 
 async function testPracticalGuides(browser) {
   // #guide renders both practical guides as readable sections

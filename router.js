@@ -79,7 +79,7 @@ function applyRoute() {
 
   const hash = window.location.hash.replace('#', '');
   const parts = hash.split('/');
-  const section = parts[0];   // e.g. 'implement' / 'reference' / 'pwhat'
+  const section = parts[0];   // e.g. 'implement' / 'reference' / 'guide'
   const moduleId = parts[1];  // e.g. 'mod-pocket'
   const activityId = parts[2]; // e.g. 'act-sitspot'
 
@@ -150,7 +150,10 @@ function updateHeaderChrome() {
   if (section === 'implement') navKey = 'plan';
   else if (section === 'reflect') navKey = 'reflect';
   else if (section === 'reference') navKey = 'reference';
-  else if (['pwhat', 'psession', 'pforme', 'pbefore'].indexOf(section) !== -1) navKey = section;
+  else if (section === 'guide') {
+    const sub = window.location.hash.replace('#', '').split('/')[1] || '';
+    navKey = currentRole === 'participant' ? sub : 'guide';
+  }
 
   document.querySelectorAll('.site-nav-link').forEach(function(a) {
     const match = navKey !== null && a.getAttribute('data-navkey') === navKey;
@@ -212,7 +215,7 @@ function toggleModule(id) {
 // followed (el.textContent, not a JS data array): nothing here duplicates
 // the translated content, so there's nothing to drift out of sync with
 // content.js.
-const REF_KINDS = ['indication', 'adjunctive', 'competency', 'contraindication', 'population', 'dosage', 'integration'];
+const REF_KINDS = ['contraindication'];
 let refKind = 'all';
 
 function refSetKind(kind) {
@@ -396,20 +399,6 @@ function swapVisual(visualId, src, altText) {
   img.style.cssText = 'width:100%;display:block;';
   container.appendChild(img);
   if (captionHTML) container.insertAdjacentHTML('beforeend', captionHTML);
-}
-
-// ─────────────────────────────────────────
-// PARTICIPANT-SCREEN TOGGLES
-// ─────────────────────────────────────────
-// toggleTimeline/toggleExp were identical copies of the same plain
-// open/close toggle (one implementation each, kept in sync by hand) —
-// now one shared implementation under both call-site names, so the two
-// screens that use them (#psession-screen, #pforme-screen) can't drift.
-function toggleExp(id) {
-  document.getElementById(id).classList.toggle('open');
-}
-function toggleTimeline(id) {
-  toggleExp(id);
 }
 
 // ─────────────────────────────────────────

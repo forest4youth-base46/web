@@ -845,15 +845,18 @@ const ACTIVITIES = [
 ];
 
 // ─── ADAPTATIONS ─────────────────────────────────────────────────────────
+// Verbatim from D1.2.1 Practical Guide (Canva v2.2 / Interreg docx), table
+// "Supporting Safety, Autonomy, and Competence in Young People" (needs-based,
+// replaces the earlier invented diagnosis-based table, 2026-10-12).
 const ADAPTATIONS = [
-  { label:'High anxiety',
-    text:'Prioritise activities with a clear task and visible outcome over open-ended activities in early sessions. The colour palette walk, distributed responsibility, and the sit spot all provide structure without requiring performance. Avoid activities requiring physical proximity to others or closed/dark spaces until trust in the setting is established. Graduate sensory intensity across the programme arc.' },
-  { label:'Autistic young people',
-    text:'Predictability of structure is paramount. Describe the session arc in advance, ideally using a visual schedule. Assess sensory sensitivities before any sensory activity: the barefoot trail and activities involving unfamiliar textures should be offered as genuine options, not defaults. Many autistic young people show strong intrinsic interest in natural systems; the naming activity and colour palette walk often produce strong engagement. Allow extended time where genuine absorption occurs.' },
-  { label:'Very low mood',
-    text:'The primary aim in early sessions is physical presence in the natural environment, not activity completion. The hammock, the fire, and the sit spot are the most appropriate starting points. Frame success as arriving and staying rather than participating, to reduce the risk of a first session that confirms the young person\'s belief that they cannot engage.' },
-  { label:'High hyperactivity',
-    text:'Use physical and task-based activities early in the session to allow discharge of arousal before quieter activities are introduced. Bivouac building, fire preparation, and distributed responsibility all provide legitimate physical engagement. Transition to quieter activities gradually: moderate activity, then a short focused activity, then genuinely unstructured time.' },
-  { label:'First session resistance',
-    text:'Use the lightest possible structure: no requirements, an explicit offer to sit out, and a guide who does not appear to be managing the resistant young person. Giving a resistant young person a specific and optional responsibility — one requiring minimal engagement but placing them adjacent to the group activity — often provides a route in that confrontational approaches do not.' },
+  { label:"Sense of Safety",
+    text:"Choose activities with a clear task and a visible outcome; Discuss the session arc in advance; Share the session plan with the young people; Allow time to shift task; Avoid enclosed spaces and required physical closeness in early sessions; Consider IVN as a bridge where outdoor access is not yet possible." },
+  { label:"Sensory Processing Preferences",
+    text:"Gradually build sensory intensity; Introduce the session in advance; Always offer choice" },
+  { label:"Support Regulation",
+    text:"If high energy, start physical: building, carrying, fire-lighting, hiking, exploring; If low energy, offer hammock, sit spot, looking at a view. Slow down, explore." },
+  { label:"Autonomy and Choice",
+    text:"Offer choice of activities, and be prepared to follow through whatever they choose; Avoid focusing adult attention on the reluctant young person; Give small meaningful tasks with responsibility (carrying tea, holding the map) ; Do not require activity completion; Frame the session around presence, not performance." },
+  { label:"Support Relationships",
+    text:"Establish a stable bond before the first forest session; Maintain a non-directive presence" },
 ];

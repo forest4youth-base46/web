@@ -159,25 +159,25 @@ const PB_I18N = {
       5: { title: `Revenir à soi`, meta: `Prolonger l'expérience` },
     },
     adaptations: {
-      'High anxiety': {
-        label: `Anxiété élevée`,
-        text: `Privilégiez les activités à consigne claire et à résultat visible plutôt que les activités ouvertes lors des premières séances. La marche des couleurs, la responsabilité répartie et le coin d'observation offrent tous une structure sans exiger de performance. Évitez les activités nécessitant une proximité physique avec autrui ou des espaces clos/sombres tant que la confiance dans le cadre n'est pas établie. Graduez l'intensité sensorielle tout au long du programme.`,
+      "Sense of Safety": {
+        label: "Sentiment de sécurité",
+        text: "Choisissez des activités avec une tâche claire et un résultat visible ; Discutez à l'avance du déroulement de la séance ; Partagez le plan de la séance avec les jeunes ; Prévoyez du temps pour changer de tâche ; Évitez les espaces clos et la proximité physique obligatoire lors des premières séances ; Considérez l'IVN comme une solution de transition lorsque l'accès à l'extérieur n'est pas encore possible.",
       },
-      'Autistic young people': {
-        label: `Jeunes autistes`,
-        text: `La prévisibilité de la structure est primordiale. Décrivez le déroulé de la séance à l'avance, idéalement à l'aide d'un programme visuel. Évaluez les sensibilités sensorielles avant toute activité sensorielle : le sentier pieds nus et les activités impliquant des textures inhabituelles doivent être proposés comme de véritables options, non comme des passages obligés. De nombreux jeunes autistes manifestent un intérêt intrinsèque marqué pour les systèmes naturels ; l'activité de nommage et la marche des couleurs suscitent souvent un engagement fort. Accordez davantage de temps lorsqu'une véritable absorption se produit.`,
+      "Sensory Processing Preferences": {
+        label: "Préférences en matière de traitement sensoriel",
+        text: "Augmentez progressivement l'intensité sensorielle ; Présentez la séance à l'avance ; Proposez toujours un choix",
       },
-      'Very low mood': {
-        label: `Humeur très basse`,
-        text: `L'objectif premier des premières séances est la présence physique dans le milieu naturel, non l'accomplissement d'une tâche. Le hamac, le feu et le coin d'observation sont les points de départ les plus appropriés. Définissez la réussite comme le fait d'arriver et de rester plutôt que de participer, afin de réduire le risque qu'une première séance ne confirme la conviction du jeune qu'il est incapable de s'engager.`,
+      "Support Regulation": {
+        label: "Soutenez la régulation",
+        text: "Si l'énergie est élevée, commencez par des activités physiques : construire, porter, allumer un feu, faire de la randonnée, explorer ; Si l'énergie est faible, proposez un hamac, un coin pour s'asseoir, admirer la vue. Ralentissez, explorez.",
       },
-      'High hyperactivity': {
-        label: `Hyperactivité marquée`,
-        text: `Utilisez des activités physiques et orientées tâche en début de séance afin de permettre une décharge de l'agitation avant d'introduire des activités plus calmes. La construction du bivouac, la préparation du feu et la responsabilité répartie offrent toutes un engagement physique légitime. Passez progressivement à des activités plus calmes : une activité modérée, puis une courte activité ciblée, puis un temps réellement libre.`,
+      "Autonomy and Choice": {
+        label: "Autonomie et choix",
+        text: "Proposez un choix d'activités et soyez prêt à aller jusqu'au bout de ce qu'ils choisissent ; Évitez de concentrer l'attention des adultes sur le jeune réticent ; Confiez-lui de petites tâches significatives qui impliquent des responsabilités (apporter le thé, tenir la carte) ; N'exigez pas que l'activité soit menée à terme ; Organisez la séance autour de la présence, et non de la performance.",
       },
-      'First session resistance': {
-        label: `Résistance en première séance`,
-        text: `Utilisez la structure la plus légère possible : aucune exigence, une possibilité explicite de rester en retrait, et un accompagnateur qui ne semble pas gérer le jeune résistant. Confier à un jeune résistant une responsabilité précise et facultative — nécessitant un engagement minimal mais le plaçant à proximité de l'activité du groupe — offre souvent une porte d'entrée que les approches frontales n'offrent pas.`,
+      "Support Relationships": {
+        label: "Favoriser les relations",
+        text: "Établissez un lien solide avant la première séance en forêt ; Maintenir une présence non directive",
       },
     },
     tags: {
@@ -378,25 +378,25 @@ const PB_I18N = {
       5: { title: `Zu sich zurückkehren`, meta: `Es weitertragen` },
     },
     adaptations: {
-      'High anxiety': {
-        label: `Hohe Angst`,
-        text: `Bevorzugen Sie in frühen Sitzungen Aktivitäten mit klarer Aufgabe und sichtbarem Ergebnis gegenüber offenen Aktivitäten. Der Farbpalettenspaziergang, die verteilte Verantwortung und der Beobachtungsplatz bieten alle Struktur, ohne eine Leistung zu verlangen. Vermeiden Sie Aktivitäten, die körperliche Nähe zu anderen oder geschlossene/dunkle Räume erfordern, bis Vertrauen in den Rahmen aufgebaut ist. Steigern Sie die sensorische Intensität schrittweise über den Programmverlauf.`,
+      "Sense of Safety": {
+        label: "Sicherheitsgefühl",
+        text: "Wählen Sie Aktivitäten mit einer klaren Aufgabe und einem sichtbaren Ergebnis; Besprechen Sie den Ablauf der Sitzung im Voraus; Teilen Sie den Ablaufplan mit den Jugendlichen; Lassen Sie Zeit für einen Aktivitätenwechsel; Vermeiden Sie in den ersten Sitzungen geschlossene Räume und erzwungene körperliche Nähe; Betrachten Sie IVN als Brücke, wenn der Zugang im Freien noch nicht möglich ist.",
       },
-      'Autistic young people': {
-        label: `Autistische Jugendliche`,
-        text: `Die Vorhersehbarkeit der Struktur ist von größter Bedeutung. Beschreiben Sie den Sitzungsverlauf im Voraus, idealerweise mit einem visuellen Ablaufplan. Beurteilen Sie sensorische Empfindlichkeiten vor jeder sensorischen Aktivität: Der Barfußpfad und Aktivitäten mit ungewohnten Texturen sollten als echte Optionen angeboten werden, nicht als Standard. Viele autistische Jugendliche zeigen ein starkes intrinsisches Interesse an natürlichen Systemen; die Benennungsaktivität und der Farbpalettenspaziergang führen oft zu starkem Engagement. Gewähren Sie mehr Zeit, wenn echte Vertiefung entsteht.`,
+      "Sensory Processing Preferences": {
+        label: "Präferenzen bei der sensorischen Verarbeitung",
+        text: "Steigern Sie die sensorische Intensität schrittweise; Stellen Sie die Sitzung im Voraus vor; Bieten Sie immer eine Auswahl an Möglichkeiten an",
       },
-      'Very low mood': {
-        label: `Sehr gedrückte Stimmung`,
-        text: `Das vorrangige Ziel in frühen Sitzungen ist die physische Anwesenheit in der natürlichen Umgebung, nicht der Abschluss einer Aktivität. Der Hängematte, das Feuer und der Beobachtungsplatz sind die geeignetsten Ausgangspunkte. Definieren Sie Erfolg als Ankommen und Bleiben statt als Teilnehmen, um das Risiko zu verringern, dass eine erste Sitzung die Überzeugung des Jugendlichen bestätigt, sich nicht einlassen zu können.`,
+      "Support Regulation": {
+        label: "Unterstützen Sie die Selbstregulierung",
+        text: "Bei hohem Energiepegel mit körperlich aktiven Angeboten beginnen: Bauen, Tragen, Feuer machen, Wandern, Erkunden; Bei niedrigem Energielevel eher ruhige Settings wie: Hängematte, Sitzplatz, die Aussicht genießen, Entschleunigen, Beobachten, Erkunden.",
       },
-      'High hyperactivity': {
-        label: `Ausgeprägte Hyperaktivität`,
-        text: `Nutzen Sie zu Beginn der Sitzung körperliche und aufgabenbasierte Aktivitäten, um eine Entladung der Erregung zu ermöglichen, bevor ruhigere Aktivitäten eingeführt werden. Der Bau eines Biwaks, die Feuervorbereitung und die verteilte Verantwortung bieten alle ein legitimes körperliches Engagement. Gehen Sie schrittweise zu ruhigeren Aktivitäten über: eine moderate Aktivität, dann eine kurze fokussierte Aktivität, dann wirklich unstrukturierte Zeit.`,
+      "Autonomy and Choice": {
+        label: "Autonomie und Wahlmöglichkeiten",
+        text: "Bieten Sie eine Auswahl an Aktivitäten an und seien Sie bereit, das zu unterstützen, wofür sich die Jugendlichen entscheiden; Vermeiden Sie es, die Aufmerksamkeit der Erwachsenen gezielt auf die zurückhaltende junge Person zu richten. Übertrage kleine, bedeutungsvolle Aufgaben mit Verantwortung (Tee tragen, die Karte halten). Setze keinen Abschluss einer Aktivität voraus. Rahme die Sitzung als Erfahrungsraum von Präsenz, nicht von Leistung.",
       },
-      'First session resistance': {
-        label: `Widerstand in der ersten Sitzung`,
-        text: `Verwenden Sie die leichtestmögliche Struktur: keine Anforderungen, ein ausdrückliches Angebot, sich zurückzuziehen, und eine Begleitperson, die den widerständigen Jugendlichen nicht sichtbar zu steuern versucht. Einem widerständigen Jugendlichen eine bestimmte, freiwillige Verantwortung zu übertragen — die minimales Engagement erfordert, ihn aber in die Nähe der Gruppenaktivität bringt — eröffnet oft einen Zugang, den konfrontative Ansätze nicht bieten.`,
+      "Support Relationships": {
+        label: "Beziehungen fördern",
+        text: "Bauen Sie vor der ersten Waldsitzung eine stabile Bindung auf; Halten Sie eine nicht-direktive Präsenz aufrecht",
       },
     },
     tags: {
