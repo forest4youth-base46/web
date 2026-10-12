@@ -303,6 +303,16 @@ function blobGeometry(seed, rough) {
   return g;
 }
 // the clearing's gentle ground swell (shared by the ground and the footpath)
+/* The trail into the forest (V2). It comes in from the right, passes just
+   behind the tree, then turns away into the depth. Only the near part is
+   drawn at first; the deep part and the trees along it fade in once the
+   walker has crossed the tree (as Walk the Forest reveals its IVN room past
+   the fallen log). */
+var TRAIL_PTS = [[14, 1.2], [9, -0.8], [4.6, -3.8], [1.2, -5.8], [-1.6, -7.9], [-3.2, -12.5], [-3.0, -20], [-1.2, -32], [1.8, -50], [3.6, -76]];
+var trailCurve = new T.CatmullRomCurve3(TRAIL_PTS.map(function (p) { return new T.Vector3(p[0], 0, p[1]); }), false, 'centripetal');
+var TRAIL_N = 420, trailPts = trailCurve.getSpacedPoints(TRAIL_N), TRAIL_LEN = trailCurve.getLength();
+var TRAIL_CROSS = (function () { for (var i = 0; i < trailPts.length; i++) if (trailPts[i].x <= 0.8) return i / TRAIL_N; return 0.3; })();
+function distToTrail(x, z) { var m = 1e9; for (var i = 0; i < trailPts.length; i += 2) { var dx = trailPts[i].x - x, dz = trailPts[i].z - z, d = dx * dx + dz * dz; if (d < m) m = d; } return Math.sqrt(m); }
 function groundY(x, z) { return 0.25 * Math.sin(x * 0.18) * Math.cos(z * 0.21) * smooth(4, 14, Math.hypot(x, z)) + 0.04 * Math.sin(x * 1.3 + z); }
 function hash(x, y, z) { var s = Math.sin(x * 127.1 + y * 311.7 + z * 74.7) * 43758.5453; return s - Math.floor(s); }
 function smooth(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
@@ -525,7 +535,7 @@ function buildPixelMotes() {
   for (var i = 0; i < n; i++) {
     var r = 0.9 + Math.pow(rnd(), 0.9) * 13, a = rnd() * 6.283, x = Math.cos(a) * r * 1.4, z = Math.sin(a) * r * 0.7 - 2.5;
     if (z > 5) z = 5 - rnd() * 3;
-    if (typeof pathX === 'function' && Math.abs(x - pathX(z)) < 1.0) x += (x < pathX(z) ? -1.1 : 1.1);
+    if (distToTrail(x, z) < 0.95) { s = 0; }
     var s = 0.55 + rnd() * 0.6; Q.setFromAxisAngle(Y, rnd() * 6.28);
     Mx.compose(P.set(x, -0.01, z), Q, Sv.set(s, s * (0.8 + rnd() * 0.7), s)); mesh.setMatrixAt(i, Mx);
     sway[i * 2] = 2.2; sway[i * 2 + 1] = 0.16;
@@ -542,7 +552,8 @@ function buildPixelMotes() {
   for (var i = 0; i < n; i++) {
     var a = Math.PI * (1.05 + hash(i, 0, 1) * 0.9), r = 22 + hash(i, 1, 0) * 30;
     var x = Math.cos(a) * r * 1.5, z = Math.sin(a) * r - 6,
-      _pd = x - pathX(Math.sin(a) * r - 6), _ = (Math.abs(_pd) < 2.6 ? (x += (_pd < 0 ? -2.8 : 2.8)) : 0), h = 6 + hash(i, 2, 2) * 6, w = 0.18 + hash(i, 3, 3) * 0.14;
+      h = 6 + hash(i, 2, 2) * 6, w = 0.18 + hash(i, 3, 3) * 0.14;
+    if (distToTrail(x, z) < 3) x += x < 0 ? -3.4 : 3.4;
     Mx.compose(P.set(x, -0.2, z), Q, Sv.set(w, h * 0.7, w)); trunks.setMatrixAt(i, Mx);
     var R = 1.6 + hash(i, 4, 4) * 1.4, ci = Math.min(4, Math.floor((r - 18) / 8));
     for (var k = 0; k < 2; k++) {
@@ -606,27 +617,58 @@ var shadowA = contactShadow();
    forest — where "Walk the forest" leads. Walk the Forest's trail colours
    (#D8CDAF, worn #C7BA98, light #E9E0C8), soft edges via vertex alpha. */
 // clear of the crown (it reaches ~3.6 m): beside the tree, then bending into the trees
-function pathX(z) { return 5.4 + 1.4 * Math.sin((z + 4) * 0.08) - (z > 6 ? (z - 6) * 0.3 : 0); }
-var PATH_Z0 = 12, PATH_Z1 = -70;
-(function footpath() {
-  var segs = 160, wid = 1.5, pos = [], col = [], idx = [];
-  var mid = new T.Color(0xD8CDAF), edge = new T.Color(0xC7BA98), light = new T.Color(0xE9E0C8);
-  for (var i = 0; i <= segs; i++) {
-    var z = PATH_Z0 + (PATH_Z1 - PATH_Z0) * i / segs, x = pathX(z), w = wid * (1 + 0.12 * Math.sin(z * 0.7));
-    [[-1.35, 0], [-1, 1], [0, 1], [1, 1], [1.35, 0]].forEach(function (q, k) {
-      var px0 = x + q[0] * w * 0.5;
-      pos.push(px0, groundY(px0, z) + 0.035 + (k === 2 ? 0.004 : 0), z);
-      var c = (k === 2 ? light : (k === 0 || k === 4 ? edge : mid));
-      col.push(c.r, c.g, c.b, q[1] * (0.9 + 0.1 * Math.sin(z * 1.3 + k)));
-    });
-    if (i) for (var k = 0; k < 4; k++) { var a = (i - 1) * 5 + k, b = i * 5 + k; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+var trail = (function () {
+  function ribbon(u0, u1) {
+    var pos = [], col = [], idx = [], wid = 1.5, n = 0;
+    var mid = new T.Color(0xD8CDAF), edge = new T.Color(0xC7BA98), light = new T.Color(0xE9E0C8);
+    for (var i = Math.floor(u0 * TRAIL_N); i <= Math.ceil(u1 * TRAIL_N); i++) {
+      var p = trailPts[Math.min(TRAIL_N, i)], q = trailPts[Math.min(TRAIL_N, i + 1)] || p, r = trailPts[Math.max(0, i - 1)];
+      var tx = q.x - r.x, tz = q.z - r.z, L = Math.hypot(tx, tz) || 1, nx = -tz / L, nz = tx / L;
+      var w = wid * (1 + 0.12 * Math.sin(i * 0.31));
+      [[-1.35, 0], [-1, 1], [0, 1], [1, 1], [1.35, 0]].forEach(function (s, k) {
+        var x = p.x + nx * s[0] * w * 0.5, z = p.z + nz * s[0] * w * 0.5;
+        pos.push(x, groundY(x, z) + 0.035 + (k === 2 ? 0.004 : 0), z);
+        var c = k === 2 ? light : (k === 0 || k === 4 ? edge : mid);
+        col.push(c.r, c.g, c.b, s[1] * (0.9 + 0.1 * Math.sin(i * 1.7 + k)));
+      });
+      if (n) for (var k = 0; k < 4; k++) { var A = (n - 1) * 5 + k, B = n * 5 + k; idx.push(A, B, A + 1, A + 1, B, B + 1); }
+      n++;
+    }
+    var g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+    g.setAttribute('color', new T.Float32BufferAttribute(col, 4));
+    g.setIndex(idx); g.computeVertexNormals();
+    var m = new T.Mesh(g, new T.MeshLambertMaterial({ vertexColors: true, transparent: true, depthWrite: false, opacity: 0 }));
+    m.receiveShadow = true; m.renderOrder = 1; m.visible = false; scene.add(m);
+    return m;
   }
-  var g = new T.BufferGeometry();
-  g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
-  g.setAttribute('color', new T.Float32BufferAttribute(col, 4));
-  g.setIndex(idx); g.computeVertexNormals();
-  var m = new T.Mesh(g, new T.MeshLambertMaterial({ vertexColors: true, transparent: true, depthWrite: false }));
-  m.receiveShadow = true; m.renderOrder = 1; scene.add(m);
+  var near = ribbon(0, TRAIL_CROSS + 0.03), deep = ribbon(TRAIL_CROSS, 1);
+  // the trees that line the deep part of the trail
+  var n = 46, tg = new T.CylinderGeometry(0.42, 1, 1, 7, 1); tg.translate(0, 0.5, 0);
+  var cg = blobGeometry(7, 0.3);
+  var tMat = bendPatch(new T.MeshLambertMaterial({ color: 0x6E5847, transparent: true, opacity: 0 }), 12);
+  var cMat = bendPatch(new T.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0 }), 12);
+  var trunks = new T.InstancedMesh(tg, tMat, n), crowns = new T.InstancedMesh(cg, cMat, n * 2);
+  var Mx = new T.Matrix4(), Q = new T.Quaternion(), Sv = new T.Vector3(), P = new T.Vector3(), C = new T.Color(), cols = [0x4E7A68, 0x5B8872, 0x507D67, 0x446F5E];
+  for (var i = 0; i < n; i++) {
+    var u = TRAIL_CROSS + 0.05 + (1 - TRAIL_CROSS - 0.08) * (i / n), p = trailCurve.getPointAt(Math.min(1, u)), t2 = trailCurve.getTangentAt(Math.min(1, u));
+    var side = i % 2 ? 1 : -1, off = 2.6 + hash(i, 4, 1) * 2.4;
+    var x = p.x - t2.z * side * off, z = p.z + t2.x * side * off, h = 6.5 + hash(i, 5, 2) * 4.5, w = 0.22 + hash(i, 6, 3) * 0.12;
+    Mx.compose(P.set(x, groundY(x, z) - 0.2, z), Q, Sv.set(w, h * 0.7, w)); trunks.setMatrixAt(i, Mx);
+    var R = 1.5 + hash(i, 7, 4) * 1.2;
+    for (var k = 0; k < 2; k++) {
+      Mx.compose(P.set(x + (k ? R * 0.45 : -R * 0.3), h * (0.72 + k * 0.12), z + (k ? -0.4 : 0.3)), Q, Sv.set(R * (1 - k * 0.25), R * 0.85, R)); crowns.setMatrixAt(i * 2 + k, Mx);
+      crowns.setColorAt(i * 2 + k, C.setHex(cols[(i + k) % 4]).multiplyScalar(0.94 + hash(i, k, 9) * 0.12));
+    }
+  }
+  crowns.instanceColor.needsUpdate = true;
+  trunks.castShadow = crowns.castShadow = true; trunks.visible = crowns.visible = false;
+  scene.add(trunks); scene.add(crowns);
+  function fade(objs, mats, f) { objs.forEach(function (o) { o.visible = f > 0.001; }); mats.forEach(function (m) { m.opacity = f; m.transparent = f < 0.999 || m === near.material || m === deep.material; m.depthWrite = !(m === near.material || m === deep.material) && f > 0.999; }); }
+  return {
+    near: function (f) { fade([near], [near.material], f); },
+    deep: function (f) { fade([deep, trunks, crowns], [deep.material, tMat, cMat], f); }
+  };
 })();
 
 /* Framing: the tree never moves. The camera frames it inside whatever part
@@ -642,7 +684,7 @@ function freeRect() {
   if (S.mode === 'A') {
     var labs = ROOT.querySelectorAll('.half .lab'), lb = 0;
     labs.forEach(function (l) { lb = Math.max(lb, l.getBoundingClientRect().bottom); });
-    var hint = Math.min($('hint').getBoundingClientRect().top, $('walk') ? $('walk').getBoundingClientRect().top : 1e9);
+    var hint = $('hint').getBoundingClientRect().top;
     // on wide screens the labels sit in the corners, beside the tree
     var y0 = (view.narrow || W / Hh < 1.25) ? lb + 8 : top;
     return { x: 0, y: y0, w: W, h: Math.max(160, hint - 8 - y0) };
@@ -691,10 +733,12 @@ gl = {
   follow: function (done) {
     if (!cam.walker) { cam.walker = wf3dPerson('stand', 1.74); scene.add(cam.walker.group); }
     cam.walker.group.visible = true;
-    cam.follow = { t0: performance.now(), dur: 5200, done: done, fog: false, fired: false };
-    cam.tw = 1;
+    // start just outside the right edge of what the camera sees
+    var edge = TAN * cam.d * camera.aspect + 1.2, u0 = 0;
+    for (var i = 0; i < trailPts.length; i++) if (trailPts[i].x <= edge) { u0 = i / TRAIL_N; break; }
+    cam.follow = { t0: performance.now(), u0: u0, cross: 0, done: done, fog: false, fired: false };
   },
-  unfollow: function () { cam.follow = null; cam.tw = 0; cam.w = 0; if (cam.walker) cam.walker.group.visible = false; },
+  unfollow: function () { cam.follow = null; cam.tw = 0; cam.w = 0; if (cam.walker) cam.walker.group.visible = false; trail.near(0); trail.deep(0); },
   frame: reframe,
   open: function (side) {
     var sw = slideW();
@@ -807,26 +851,44 @@ function frame(now) {
   camera.position.set(px * 0.8, TREE.cy + cam.d * 0.1 - py * 0.6, cam.d);
   camera.lookAt(px * 0.3, TREE.cy, 0);
   if (cam.follow && cam.walker) {
-    var F = cam.follow, k = Math.min(1, (now - F.t0) / F.dur);
-    // a calm, steady walk: eases in from standing, then an even pace
-    var dist = k < 0.15 ? (k * k / 0.3) : (k - 0.075);
-    var z = 11 - 31 * dist, x = pathX(z), y = groundY(x, z);
-    var dx = pathX(z - 0.6) - x, rot = Math.atan2(dx, -0.6);
-    var W = cam.walker, ph = (now - F.t0) / 1000 * 6.4 * Math.min(1, k * 8);
+    var F = cam.follow, el = (now - F.t0) / 1000;
+    // a calm walk (1.5 m/s), easing in from standing
+    var sMeters = el < 0.8 ? 1.5 * el * el / 1.6 : 1.5 * (el - 0.4);
+    var u = Math.min(1, F.u0 + sMeters / TRAIL_LEN);
+    var P0 = trailCurve.getPointAt(u), tg = trailCurve.getTangentAt(u);
+    var x = P0.x, z = P0.z, y = groundY(x, z), rot = Math.atan2(tg.x, tg.z);
+    var W = cam.walker, ph = el * 5.6 * Math.min(1, el * 1.5);
     W.group.position.set(x, y, z); W.group.rotation.y = rot;
     W.legL.rotation.x = Math.sin(ph) * 0.42; W.legR.rotation.x = -Math.sin(ph) * 0.42;
     W.armL.rotation.x = -Math.sin(ph) * 0.32; W.armR.rotation.x = Math.sin(ph) * 0.32;
     W.hips.position.y = W.hipY + Math.abs(Math.cos(ph)) * 0.025;
-    // third person: behind and a little above him, looking down the path
-    var fx = Math.sin(rot), fz = Math.cos(rot);
-    var behind = new T.Vector3(x - fx * 4.4, y + 2.2, z - fz * 4.4);
-    var ahead = new T.Vector3(x + fx * 6, y + 1.2, z + fz * 6);
-    var fb = Math.min(1, (now - F.t0) / 1400); fb = fb * fb * (3 - 2 * fb);
-    camera.position.lerp(behind, fb);
-    camera.lookAt(new T.Vector3(px * 0.3, TREE.cy, 0).lerp(ahead, fb));
-    if (k > 0.74 && !F.fog) { F.fog = true; if (window.wfBridgeFog) window.wfBridgeFog(); }
-    if (k >= 1 && !F.fired) { F.fired = true; F.done(); }
+    trail.near(Math.min(1, el / 1.2));
+    // the picture holds still while he walks in; once he has crossed the
+    // tree, the camera drifts back behind him and the depth fades in
+    if (!F.cross && u >= TRAIL_CROSS) F.cross = now;
+    if (F.cross) {
+      var since = (now - F.cross) / 1000;
+      var fb = Math.min(1, since / 3.2); fb = fb * fb * (3 - 2 * fb);
+      trail.deep(Math.min(1, since / 2.4));
+      cam.tw = 1;
+      var fx = Math.sin(rot), fz = Math.cos(rot);
+      var behind = new T.Vector3(x - fx * 4.6, y + 2.3, z - fz * 4.6);
+      var ahead = new T.Vector3(x + fx * 7, y + 1.2, z + fz * 7);
+      // swing round the right of the tree (never through it): a curve from
+      // where the camera was, past a point beside the crown, to behind him
+      if (!F.from) F.from = camera.position.clone();
+      var ctl = new T.Vector3(11, Math.max(F.from.y, 5.5), 3), g = 1 - fb;
+      camera.position.set(
+        g * g * F.from.x + 2 * g * fb * ctl.x + fb * fb * behind.x,
+        g * g * F.from.y + 2 * g * fb * ctl.y + fb * fb * behind.y,
+        g * g * F.from.z + 2 * g * fb * ctl.z + fb * fb * behind.z);
+      camera.lookAt(new T.Vector3(px * 0.3, TREE.cy, 0).lerp(ahead, fb));
+      scene.fog.density = scene.fog.density * (1 - fb) + 0.017 * fb;
+      if (since > 4.2 && !F.fog) { F.fog = true; if (window.wfBridgeFog) window.wfBridgeFog(); }
+      if (since > 5.1 && !F.fired) { F.fired = true; F.done(); }
+    }
   }
+
 
   if (S.mode === 'A') { placeCue('cue-ivn', -1.7); placeCue('cue-fi', 1.7); }
   renderer.render(scene, camera);

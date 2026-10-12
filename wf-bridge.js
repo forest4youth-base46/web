@@ -53,7 +53,13 @@
     document.body.appendChild(s);
   };
 
-  // Leaving the forest with its own toggle returns to the tree.
+  // Home (top left while walking): back to the tree.
+  var home = document.getElementById('wf-home-tree');
+  if (home) home.addEventListener('click', function () { if (typeof wfSetOn === 'function') wfSetOn(false); });
+  function syncOpen() { document.body.classList.toggle('wf-screen-open', !!document.querySelector('.screen.active')); }
+  addEventListener('hashchange', function () { setTimeout(syncOpen, 0); });
+
+  // Leaving the forest (home button, or its own toggle) returns to the tree.
   new MutationObserver(function () {
     var b = document.body;
     if (b.classList.contains('walking') && !b.classList.contains('wf-scene-on') && typeof WF !== 'undefined' && !loading) {

@@ -63,6 +63,14 @@
      styles-walk-forest.css. -->
 <div id="wf-panel-root"></div>
 
+<!-- While walking (iframed-2.0): the only way home, top left, with the
+     project logo; the app header steps aside. "Back to the forest" shows
+     only when something from a stop (e.g. the session) is open over it. -->
+<nav class="wf-home" id="wf-home" aria-label="Forest4Youth">
+  <button type="button" class="wf-home-tree" id="wf-home-tree"><img src="assets/logo-interreg-forest4youth.png" alt="Forest4Youth" width="87" height="36"><span data-i18n="tree.back">Back to the tree</span></button>
+  <button type="button" class="wf-home-forest" id="wf-home-forest" onclick="appEscapeAction()" data-i18n="nav.backtoforest">← Back to the forest</button>
+</nav>
+
 <div class="container">
 
   <header id="site-header">
@@ -888,6 +896,7 @@
   <div class="top">
     <span class="mark">Forest4Youth</span>
     <div class="tools">
+      <button type="button" class="walk-cta" id="tr-walk"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4.5" r="2"/><path d="M12 8l-2 6 3 3v5"/><path d="M10 14l-3 7"/><path d="M12 8l4 3 3-1"/><path d="M11 10l-4 2"/></svg><span data-i18n="walk.toggle">Walk the Forest</span></button>
       <button type="button" class="esc" id="tr-esc" hidden data-i18n-attr="aria-label:tree.back.aria" aria-label="Back to the tree (Escape)"><span data-i18n="tree.back">Back to the tree</span> <kbd>Esc</kbd></button>
       <button type="button" class="tool" id="tr-search" data-i18n-attr="aria-label:nav.search.aria" aria-label="Search (Ctrl+K)"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M17 17l-4-4"/></svg><span data-i18n="nav.search">Search</span></button>
       <span class="pills" role="group" aria-label="Mode" data-i18n-attr="aria-label:nav.mode.label" data-feature="participant"><button type="button" data-mode="practitioner" aria-pressed="true" data-i18n="role.bar.practitioner">Practitioner</button><button type="button" data-mode="participant" aria-pressed="false" data-i18n="role.bar.participant">Exploring</button></span>
@@ -907,7 +916,6 @@
     <span class="cue" id="tr-cue-ivn"></span><span class="cue" id="tr-cue-fi"></span>
   </div>
   <p class="hint" id="tr-hint" data-i18n="tree.hint">Touch a side of the tree</p>
-  <button type="button" class="trail" id="tr-walk"><svg class="trail-steps" viewBox="0 0 120 40" aria-hidden="true"><path d="M2 34 C 30 34, 40 10, 70 12 S 108 22, 118 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="1 7" stroke-linecap="round"/></svg><span class="trail-pill"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="13" cy="4.5" r="2"/><path d="M12 8l-2 6 3 3v5"/><path d="M10 14l-3 7"/><path d="M12 8l4 3 3-1"/><path d="M11 10l-4 2"/></svg><span data-i18n="walk.toggle">Walk the Forest</span></span></button>
 
   <section class="room c" id="tr-room-fi" hidden aria-labelledby="tr-fi-h">
     <button type="button" class="strip" id="tr-strip-ivn" data-i18n-attr="aria-label:tree.back" aria-label="Back to the tree"><span class="v">IVN <small data-i18n="nav.back">Back</small></span></button>
