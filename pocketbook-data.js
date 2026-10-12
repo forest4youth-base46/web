@@ -143,12 +143,20 @@ const VISUAL = {
       <ellipse cx="412" cy="125" rx="5" ry="3" fill="#3A6B5A"/>
       <ellipse cx="420" cy="128" rx="5" ry="3" fill="#7FA396"/>
     </g>
-    <!-- two figures making, bent over -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="3.8s" fill="freeze"/>
-      <circle cx="180" cy="78" r="5" fill="#14302A"/>
-      <path d="M175 82 Q175 95 185 95 L188 100" stroke="#14302A" stroke-width="3" stroke-linecap="round" fill="none"/>
-      <circle cx="320" cy="78" r="5" fill="#14302A"/>
-      <path d="M325 82 Q325 95 315 95 L312 100" stroke="#14302A" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <!-- two children kneeling at the edges, reaching in -->
+    <g stroke-linecap="round" fill="none">
+      <line x1="86" y1="130" x2="101" y2="130" stroke="#234A3E" stroke-width="4.5"/>
+      <line x1="101" y1="130" x2="98" y2="119" stroke="#234A3E" stroke-width="5"/>
+      <line x1="98" y1="118" x2="106" y2="106" stroke="#234A3E" stroke-width="9"/>
+      <line x1="107" y1="108" x2="119" y2="121" stroke="#234A3E" stroke-width="2.8"/>
+      <circle cx="111.5" cy="99" r="5.8" fill="#3A6B5A" stroke="none"/>
+    </g>
+    <g stroke-linecap="round" fill="none">
+      <line x1="458" y1="128" x2="443" y2="128" stroke="#234A3E" stroke-width="4.5"/>
+      <line x1="443" y1="128" x2="446" y2="117" stroke="#234A3E" stroke-width="5"/>
+      <line x1="446" y1="116" x2="438" y2="104" stroke="#234A3E" stroke-width="9"/>
+      <line x1="437" y1="106" x2="425" y2="119" stroke="#234A3E" stroke-width="2.8"/>
+      <circle cx="432.5" cy="97" r="5.8" fill="#3A6B5A" stroke="none"/>
     </g>
     <text x="240" y="40" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#7C8E85">an imaginary world from what's underfoot</text>
   </svg>`,
@@ -215,33 +223,34 @@ const VISUAL = {
       <line x1="9" y1="40" x2="9" y2="55" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
       <line x1="8" y1="14" x2="28" y2="6" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
     </g>
-    <!-- tree 1: oak (revealed first) -->
+    <!-- item 1: acorn (revealed first) -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.4s" fill="freeze"/>
-      <ellipse cx="170" cy="78" rx="22" ry="16" fill="#3A6B5A" opacity="0.65"/>
-      <rect x="167" y="92" width="6" height="55" fill="#6B5240"/>
-      <line x1="170" y1="120" x2="195" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <text x="200" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Oak</text>
-      <text x="200" y="130" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">Quercus robur</text>
+      <path d="M162 110 Q172 100 182 110 L180 128 Q172 134 164 128 Z" fill="#8B6F47"/>
+      <path d="M161 108 Q172 98 183 108 L183 112 Q172 104 161 112 Z" fill="#6B5240"/>
+      <line x1="172" y1="134" x2="195" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <text x="200" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Acorn</text>
     </g>
-    <!-- tree 2: birch -->
+    <!-- item 2: beetle -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.2s" fill="freeze"/>
-      <path d="M280 80 Q270 62 280 50 Q290 62 280 80" fill="#3A6B5A" opacity="0.7"/>
-      <path d="M290 84 Q282 66 292 58 Q300 68 290 84" fill="#7FA396" opacity="0.6"/>
-      <rect x="282" y="80" width="4" height="65" fill="#FBF9F4" stroke="#14302A" stroke-width="0.5"/>
-      <g stroke="#14302A" stroke-width="0.4" opacity="0.6"><line x1="282" y1="95" x2="286" y2="95"/><line x1="282" y1="110" x2="286" y2="110"/><line x1="282" y1="125" x2="286" y2="125"/></g>
+      <ellipse cx="280" cy="118" rx="10" ry="7" fill="#14302A"/>
+      <line x1="280" y1="112" x2="280" y2="125" stroke="#F4F1EA" stroke-width="0.6"/>
+      <g stroke="#14302A" stroke-width="0.8" stroke-linecap="round">
+        <line x1="272" y1="113" x2="265" y2="109"/>
+        <line x1="272" y1="118" x2="264" y2="118"/>
+        <line x1="272" y1="123" x2="265" y2="128"/>
+        <line x1="288" y1="113" x2="295" y2="109"/>
+        <line x1="288" y1="118" x2="296" y2="118"/>
+        <line x1="288" y1="123" x2="295" y2="128"/>
+      </g>
       <line x1="290" y1="120" x2="315" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <text x="320" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Birch</text>
-      <text x="320" y="130" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">Betula pendula</text>
+      <text x="320" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Beetle</text>
     </g>
-    <!-- tree 3: pine -->
+    <!-- item 3: oak -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.0s" fill="freeze"/>
-      <polygon points="395,46 378,75 412,75" fill="#234A3E"/>
-      <polygon points="395,62 380,90 410,90" fill="#234A3E"/>
-      <polygon points="395,78 378,108 412,108" fill="#234A3E"/>
-      <rect x="392" y="105" width="6" height="42" fill="#6B5240"/>
-      <line x1="395" y1="135" x2="425" y2="135" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
-      <text x="430" y="133" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Pine</text>
-      <text x="430" y="145" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">P. sylvestris</text>
+      <ellipse cx="395" cy="78" rx="22" ry="16" fill="#3A6B5A" opacity="0.65"/>
+      <rect x="392" y="92" width="6" height="55" fill="#6B5240"/>
+      <line x1="395" y1="120" x2="420" y2="120" stroke="#234A3E" stroke-width="0.5" stroke-dasharray="2 2"/>
+      <text x="425" y="118" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#234A3E">Oak</text>
     </g>
   </svg>`,
 
@@ -264,12 +273,6 @@ const VISUAL = {
     <g stroke="#234A3E" stroke-width="0.4" opacity="0"><animate attributeName="opacity" from="0" to="0.5" dur="0.6s" begin="1.0s" fill="freeze"/>
       <path d="M115 85 Q240 132 365 85"/><path d="M115 85 Q240 138 365 85"/>
     </g>
-    <!-- person resting -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="1.7s" fill="freeze"/>
-      <ellipse cx="240" cy="118" rx="60" ry="7" fill="#14302A" opacity="0.85"/>
-      <circle cx="305" cy="115" r="7" fill="#14302A"/>
-      <line x1="170" y1="118" x2="160" y2="124" stroke="#14302A" stroke-width="3" stroke-linecap="round"/>
-    </g>
     <!-- gentle sway -->
     <g opacity="0"><animate attributeName="opacity" from="0" to="0.6" dur="0.6s" begin="2.4s" fill="freeze"/>
       <path d="M180 78 Q240 82 300 78" fill="none" stroke="#7FA396" stroke-width="0.5" stroke-dasharray="2 3">
@@ -281,35 +284,32 @@ const VISUAL = {
 
   barefoot: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
-    <!-- footprint trail above (animated) -->
-    <g fill="#14302A">
-      <ellipse cx="60" cy="32" rx="3" ry="5" opacity="0"><animate attributeName="opacity" from="0" to="0.55" dur="0.3s" begin="0.2s" fill="freeze"/></ellipse>
-      <ellipse cx="144" cy="36" rx="3" ry="5" opacity="0"><animate attributeName="opacity" from="0" to="0.55" dur="0.3s" begin="0.7s" fill="freeze"/></ellipse>
-      <ellipse cx="228" cy="32" rx="3" ry="5" opacity="0"><animate attributeName="opacity" from="0" to="0.55" dur="0.3s" begin="1.2s" fill="freeze"/></ellipse>
-      <ellipse cx="312" cy="36" rx="3" ry="5" opacity="0"><animate attributeName="opacity" from="0" to="0.55" dur="0.3s" begin="1.7s" fill="freeze"/></ellipse>
-      <ellipse cx="396" cy="32" rx="3" ry="5" opacity="0"><animate attributeName="opacity" from="0" to="0.55" dur="0.3s" begin="2.2s" fill="freeze"/></ellipse>
-    </g>
-    <!-- 5 texture tiles -->
-    <g><rect x="22" y="52" width="76" height="72" rx="3" fill="#7FA396" opacity="0.6"/>
-      <g stroke="#234A3E" stroke-width="0.5" opacity="0.5"><line x1="30" y1="118" x2="32" y2="60"/><line x1="40" y1="118" x2="42" y2="64"/><line x1="50" y1="118" x2="52" y2="60"/><line x1="60" y1="118" x2="62" y2="66"/><line x1="70" y1="118" x2="72" y2="60"/><line x1="80" y1="118" x2="82" y2="64"/><line x1="90" y1="118" x2="92" y2="60"/></g>
-      <text x="60" y="142" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">grass</text>
-    </g>
-    <g><rect x="106" y="52" width="76" height="72" rx="3" fill="#6B5240" opacity="0.7"/>
-      <g fill="#14302A" opacity="0.4"><circle cx="120" cy="72" r="1.2"/><circle cx="138" cy="88" r="1"/><circle cx="155" cy="70" r="1.4"/><circle cx="170" cy="98" r="1.1"/><circle cx="130" cy="108" r="1.3"/><circle cx="165" cy="115" r="1"/></g>
-      <text x="144" y="142" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">soil</text>
-    </g>
-    <g><rect x="190" y="52" width="76" height="72" rx="3" fill="#6B5240" opacity="0.5"/>
-      <g stroke="#14302A" stroke-width="0.6" opacity="0.5" fill="none"><path d="M200 64 Q228 84 256 66"/><path d="M200 84 Q228 102 256 86"/><path d="M200 104 Q228 118 256 106"/></g>
-      <text x="228" y="142" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">bark</text>
-    </g>
-    <g><rect x="274" y="52" width="76" height="72" rx="3" fill="#3A6B5A" opacity="0.7"/>
-      <g fill="#14302A" opacity="0.4"><circle cx="288" cy="72" r="2"/><circle cx="305" cy="84" r="1.6"/><circle cx="322" cy="68" r="2"/><circle cx="338" cy="92" r="1.8"/><circle cx="295" cy="104" r="1.6"/><circle cx="330" cy="112" r="2"/></g>
-      <text x="312" y="142" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">moss</text>
-    </g>
-    <g><rect x="358" y="52" width="76" height="72" rx="3" fill="#C8D8D0"/>
-      <g fill="#7C8E85" opacity="0.5"><ellipse cx="372" cy="74" rx="6" ry="4"/><ellipse cx="394" cy="92" rx="9" ry="5"/><ellipse cx="412" cy="70" rx="5" ry="3"/><ellipse cx="378" cy="108" rx="7" ry="4"/></g>
-      <text x="396" y="142" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">stone</text>
-    </g>
+    <g transform="translate(26 89)"><path d="M0 0 L0 -9 Q0 -11.5 2.5 -11.5 L9 -11.5 L11.5 -7.5 Q17 -6.5 21.5 -4.5 Q25 -3 25 0 Z" fill="#5A4636"/><rect x="0" y="0" width="25" height="2.6" rx="1.3" fill="#8B6B52"/></g><g transform="translate(33 96)"><path d="M0 0 L0 -9 Q0 -11.5 2.5 -11.5 L9 -11.5 L11.5 -7.5 Q17 -6.5 21.5 -4.5 Q25 -3 25 0 Z" fill="#3A2F22"/><rect x="0" y="0" width="25" height="2.6" rx="1.3" fill="#8B6B52"/></g>
+    <rect x="62" y="62" width="76" height="50" fill="#7FA396" opacity="0.6" rx="6"/>
+    <g stroke="#234A3E" stroke-width="0.5" opacity="0.5"><line x1="70" y1="108" x2="72" y2="68"/><line x1="80" y1="108" x2="82" y2="73"/><line x1="90" y1="108" x2="92" y2="68"/><line x1="100" y1="108" x2="102" y2="73"/><line x1="110" y1="108" x2="112" y2="68"/><line x1="120" y1="108" x2="122" y2="73"/><line x1="130" y1="108" x2="132" y2="68"/></g>
+    <rect x="138" y="62" width="76" height="50" fill="#6B5240" opacity="0.7"/>
+    <g fill="#14302A" opacity="0.4"><circle cx="152" cy="72" r="1.2"/><circle cx="170" cy="92" r="1.2"/><circle cx="188" cy="74" r="1.2"/><circle cx="202" cy="98" r="1.2"/><circle cx="160" cy="102" r="1.2"/><circle cx="196" cy="86" r="1.2"/></g>
+    <rect x="214" y="62" width="76" height="50" fill="#6B5240" opacity="0.45"/>
+    <g stroke="#14302A" stroke-width="0.6" opacity="0.5" fill="none"><path d="M218 72 Q252 82 286 72"/><path d="M218 87 Q252 97 286 87"/><path d="M218 102 Q252 112 286 102"/></g>
+    <rect x="290" y="62" width="76" height="50" fill="#3A6B5A" opacity="0.7"/>
+    <g fill="#14302A" opacity="0.4"><circle cx="304" cy="72" r="1.9"/><circle cx="320" cy="84" r="1.9"/><circle cx="338" cy="70" r="1.9"/><circle cx="354" cy="92" r="1.9"/><circle cx="310" cy="100" r="1.9"/><circle cx="346" cy="104" r="1.9"/></g>
+    <rect x="366" y="62" width="76" height="50" fill="#C8D8D0" opacity="1" rx="6"/>
+    <g fill="#7C8E85" opacity="0.5"><ellipse cx="382" cy="76" rx="7" ry="4"/><ellipse cx="406" cy="92" rx="10" ry="5"/><ellipse cx="426" cy="74" rx="6" ry="3"/><ellipse cx="388" cy="100" rx="7" ry="4"/></g>
+    <g transform="translate(80 79) rotate(90) scale(-0.95 0.95)" fill="#14302A" opacity="0.55"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(117.5 95) rotate(90) scale(0.95 0.95)" fill="#14302A" opacity="0.55"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(155 79) rotate(90) scale(-0.95 0.95)" fill="#F7F4EC" opacity="0.8"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(192.5 95) rotate(90) scale(0.95 0.95)" fill="#F7F4EC" opacity="0.8"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(230 79) rotate(90) scale(-0.95 0.95)" fill="#14302A" opacity="0.55"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(267.5 95) rotate(90) scale(0.95 0.95)" fill="#14302A" opacity="0.55"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(305 79) rotate(90) scale(-0.95 0.95)" fill="#F7F4EC" opacity="0.8"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(342.5 95) rotate(90) scale(0.95 0.95)" fill="#F7F4EC" opacity="0.8"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(380 79) rotate(90) scale(-0.95 0.95)" fill="#14302A" opacity="0.55"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <g transform="translate(417.5 95) rotate(90) scale(0.95 0.95)" fill="#14302A" opacity="0.55"><path d="M0 10 C-4 10 -5 6 -4.5 2 C-4 -2 -6 -5 -5.5 -8 C-5 -11 5 -11 5.5 -7 C6 -4 4 -1 4 2 C4 6 3.5 10 0 10 Z"/><circle cx="-3.4" cy="-13.2" r="2.3"/><circle cx="0.1" cy="-14.6" r="1.7"/><circle cx="2.7" cy="-13.9" r="1.5"/><circle cx="4.7" cy="-12.2" r="1.3"/><circle cx="6" cy="-9.9" r="1.1"/></g>
+    <text x="100" y="130" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">grass</text>
+    <text x="176" y="130" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">soil</text>
+    <text x="252" y="130" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">bark</text>
+    <text x="328" y="130" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">moss</text>
+    <text x="404" y="130" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#234A3E">stone</text>
     <text x="240" y="170" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85" letter-spacing="0.1em">SHOES OFF · WALK SLOWLY · NOTICE THE CHANGE</text>
   </svg>`,
 
@@ -392,26 +392,20 @@ const VISUAL = {
   sofa: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
     <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
-    <!-- log seat builds up: stages -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.3s" fill="freeze"/>
-      <ellipse cx="240" cy="125" rx="100" ry="8" fill="#6B5240"/>
-      <rect x="140" y="115" width="200" height="15" fill="#6B5240"/>
-      <ellipse cx="240" cy="115" rx="100" ry="8" fill="#8B6B52"/>
-      <g stroke="#4D3324" stroke-width="0.5" opacity="0.6"><circle cx="240" cy="115" r="80" fill="none"/><circle cx="240" cy="115" r="55" fill="none"/><circle cx="240" cy="115" r="30" fill="none"/></g>
-    </g>
-    <!-- people working then sitting -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.2s" fill="freeze"/>
-      <circle cx="160" cy="85" r="7" fill="#3A6B5A"/><rect x="154" y="92" width="12" height="18" rx="2" fill="#234A3E"/>
-      <line x1="166" y1="98" x2="190" y2="105" stroke="#234A3E" stroke-width="3" stroke-linecap="round"/>
-    </g>
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.6s" fill="freeze"/>
-      <circle cx="200" cy="80" r="7" fill="#3A6B5A"/><rect x="194" y="87" width="12" height="22" rx="2" fill="#234A3E"/>
-    </g>
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.0s" fill="freeze"/>
-      <circle cx="280" cy="80" r="7" fill="#3A6B5A"/><rect x="274" y="87" width="12" height="22" rx="2" fill="#234A3E"/>
-    </g>
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.4s" fill="freeze"/>
-      <circle cx="320" cy="85" r="7" fill="#3A6B5A"/><rect x="314" y="92" width="12" height="18" rx="2" fill="#234A3E"/>
+    <ellipse cx="225" cy="140" rx="117" ry="30" fill="#D9D2C2" opacity="0.55"/>
+    <line x1="101.2" y1="138.7" x2="109.1" y2="121.3" stroke="#4D3324" stroke-width="6.5" stroke-linecap="round"/><line x1="111.9" y1="119.5" x2="153.7" y2="106.1" stroke="#4D3324" stroke-width="6.5" stroke-linecap="round"/><line x1="163.3" y1="104.4" x2="225.9" y2="100.0" stroke="#4D3324" stroke-width="6.5" stroke-linecap="round"/><line x1="226.8" y1="100.0" x2="289.0" y2="104.8" stroke="#4D3324" stroke-width="6.5" stroke-linecap="round"/><line x1="286.8" y1="104.5" x2="332.9" y2="116.8" stroke="#4D3324" stroke-width="6.5" stroke-linecap="round"/><line x1="332.7" y1="116.7" x2="350.0" y2="133.7" stroke="#4D3324" stroke-width="6.5" stroke-linecap="round"/><line x1="102.8" y1="145.1" x2="98.6" y2="123.0" stroke="#4D3324" stroke-width="4.1" stroke-linecap="round"/><line x1="96.8" y1="138.3" x2="105.4" y2="113.4" stroke="#8B6B52" stroke-width="3.6" stroke-linecap="round"/><line x1="96.0" y1="133.6" x2="114.1" y2="106.9" stroke="#6B5240" stroke-width="3.0" stroke-linecap="round"/><line x1="101.0" y1="120.6" x2="125.3" y2="109.1" stroke="#4D3324" stroke-width="3.1" stroke-linecap="round"/><line x1="121.4" y1="113.4" x2="135.4" y2="104.2" stroke="#7A5E47" stroke-width="2.6" stroke-linecap="round"/><line x1="133.4" y1="103.7" x2="162.1" y2="103.7" stroke="#7A5E47" stroke-width="4.0" stroke-linecap="round"/><line x1="154.1" y1="103.1" x2="182.6" y2="95.6" stroke="#7A5E47" stroke-width="4.0" stroke-linecap="round"/><line x1="178.9" y1="96.9" x2="204.4" y2="98.7" stroke="#6B5240" stroke-width="3.4" stroke-linecap="round"/><line x1="198.1" y1="96.3" x2="221.7" y2="95.6" stroke="#8B6B52" stroke-width="2.8" stroke-linecap="round"/><line x1="221.0" y1="92.9" x2="250.2" y2="101.3" stroke="#4D3324" stroke-width="2.8" stroke-linecap="round"/><line x1="239.7" y1="98.4" x2="272.2" y2="97.5" stroke="#8B6B52" stroke-width="4.1" stroke-linecap="round"/><line x1="270.3" y1="100.9" x2="286.9" y2="98.8" stroke="#7A5E47" stroke-width="3.4" stroke-linecap="round"/><line x1="285.9" y1="101.0" x2="315.0" y2="106.5" stroke="#4D3324" stroke-width="3.3" stroke-linecap="round"/><line x1="314.6" y1="103.9" x2="329.9" y2="113.1" stroke="#4D3324" stroke-width="2.6" stroke-linecap="round"/><line x1="325.4" y1="107.8" x2="349.4" y2="122.5" stroke="#8B6B52" stroke-width="3.8" stroke-linecap="round"/><line x1="339.2" y1="110.3" x2="352.5" y2="134.0" stroke="#8B6B52" stroke-width="3.7" stroke-linecap="round"/><line x1="345.7" y1="118.0" x2="353.7" y2="138.1" stroke="#4D3324" stroke-width="2.9" stroke-linecap="round"/><line x1="104.0" y1="148.8" x2="97.8" y2="114.0" stroke="#7A5E47" stroke-width="3.2" stroke-linecap="round"/><line x1="95.3" y1="136.9" x2="104.9" y2="116.9" stroke="#7A5E47" stroke-width="2.4" stroke-linecap="round"/><line x1="91.3" y1="128.8" x2="114.3" y2="111.6" stroke="#8B6B52" stroke-width="2.7" stroke-linecap="round"/><line x1="102.3" y1="123.1" x2="117.2" y2="107.1" stroke="#7A5E47" stroke-width="2.7" stroke-linecap="round"/><line x1="103.5" y1="113.9" x2="130.6" y2="106.8" stroke="#7A5E47" stroke-width="3.2" stroke-linecap="round"/><line x1="113.6" y1="112.0" x2="145.2" y2="99.3" stroke="#8B6B52" stroke-width="2.7" stroke-linecap="round"/><line x1="137.5" y1="105.9" x2="161.9" y2="95.7" stroke="#7A5E47" stroke-width="4.1" stroke-linecap="round"/><line x1="155.9" y1="99.2" x2="187.9" y2="95.6" stroke="#4D3324" stroke-width="3.8" stroke-linecap="round"/><line x1="182.3" y1="94.4" x2="199.8" y2="95.7" stroke="#8B6B52" stroke-width="2.6" stroke-linecap="round"/><line x1="192.7" y1="97.3" x2="221.5" y2="90.8" stroke="#7A5E47" stroke-width="3.2" stroke-linecap="round"/><line x1="209.1" y1="96.8" x2="243.1" y2="90.2" stroke="#4D3324" stroke-width="4.2" stroke-linecap="round"/><line x1="234.7" y1="96.8" x2="253.7" y2="92.3" stroke="#6B5240" stroke-width="4.3" stroke-linecap="round"/><line x1="247.2" y1="97.4" x2="277.9" y2="93.0" stroke="#4D3324" stroke-width="4.2" stroke-linecap="round"/><line x1="269.5" y1="93.6" x2="303.4" y2="104.1" stroke="#8B6B52" stroke-width="2.5" stroke-linecap="round"/><line x1="300.7" y1="101.4" x2="320.4" y2="103.3" stroke="#7A5E47" stroke-width="3.9" stroke-linecap="round"/><line x1="311.4" y1="98.0" x2="336.5" y2="115.7" stroke="#8B6B52" stroke-width="3.0" stroke-linecap="round"/><line x1="316.6" y1="106.3" x2="349.9" y2="115.7" stroke="#6B5240" stroke-width="2.6" stroke-linecap="round"/><line x1="335.9" y1="111.7" x2="351.2" y2="122.2" stroke="#4D3324" stroke-width="3.3" stroke-linecap="round"/><line x1="342.5" y1="109.1" x2="354.1" y2="135.4" stroke="#7A5E47" stroke-width="3.7" stroke-linecap="round"/><line x1="351.5" y1="111.9" x2="348.5" y2="143.9" stroke="#4D3324" stroke-width="2.5" stroke-linecap="round"/><line x1="102.3" y1="136.7" x2="97.8" y2="113.0" stroke="#6B5240" stroke-width="2.8" stroke-linecap="round"/><line x1="96.7" y1="128.6" x2="108.6" y2="107.9" stroke="#7A5E47" stroke-width="3.6" stroke-linecap="round"/><line x1="94.7" y1="120.5" x2="125.4" y2="104.2" stroke="#7A5E47" stroke-width="3.9" stroke-linecap="round"/><line x1="112.3" y1="110.1" x2="133.6" y2="100.9" stroke="#4D3324" stroke-width="2.5" stroke-linecap="round"/><line x1="116.6" y1="100.8" x2="152.4" y2="101.4" stroke="#6B5240" stroke-width="3.9" stroke-linecap="round"/><line x1="139.8" y1="99.0" x2="159.1" y2="96.9" stroke="#7A5E47" stroke-width="2.8" stroke-linecap="round"/><line x1="157.4" y1="95.6" x2="178.0" y2="96.0" stroke="#6B5240" stroke-width="3.9" stroke-linecap="round"/><line x1="181.0" y1="92.4" x2="207.0" y2="92.7" stroke="#6B5240" stroke-width="4.0" stroke-linecap="round"/><line x1="212.1" y1="91.3" x2="234.4" y2="92.7" stroke="#8B6B52" stroke-width="3.5" stroke-linecap="round"/><line x1="230.8" y1="93.8" x2="246.6" y2="89.6" stroke="#8B6B52" stroke-width="3.3" stroke-linecap="round"/><line x1="242.7" y1="94.1" x2="277.1" y2="90.6" stroke="#6B5240" stroke-width="3.9" stroke-linecap="round"/><line x1="269.1" y1="93.7" x2="292.6" y2="96.6" stroke="#6B5240" stroke-width="4.0" stroke-linecap="round"/><line x1="285.5" y1="97.7" x2="315.9" y2="98.4" stroke="#4D3324" stroke-width="2.4" stroke-linecap="round"/><line x1="311.8" y1="98.7" x2="331.3" y2="107.5" stroke="#6B5240" stroke-width="3.6" stroke-linecap="round"/><line x1="326.6" y1="106.2" x2="348.4" y2="114.6" stroke="#4D3324" stroke-width="2.4" stroke-linecap="round"/><line x1="339.0" y1="109.8" x2="355.4" y2="125.7" stroke="#7A5E47" stroke-width="3.4" stroke-linecap="round"/><line x1="344.1" y1="112.2" x2="355.6" y2="136.2" stroke="#7A5E47" stroke-width="3.2" stroke-linecap="round"/><line x1="107.5" y1="114.4" x2="111.6" y2="105.4" stroke="#6B5240" stroke-width="1.2" stroke-linecap="round"/><line x1="178.2" y1="94.5" x2="185.0" y2="85.5" stroke="#6B5240" stroke-width="1.2" stroke-linecap="round"/><line x1="271.8" y1="94.5" x2="277.2" y2="85.5" stroke="#6B5240" stroke-width="1.2" stroke-linecap="round"/><line x1="338.3" y1="111.6" x2="341.8" y2="102.6" stroke="#6B5240" stroke-width="1.2" stroke-linecap="round"/>
+    <g><rect x="133.3" y="119" width="24" height="6" rx="3" fill="#1E3F35"/><rect x="139.3" y="104.6" width="12" height="15.6" rx="2.4" fill="#1E3F35"/><circle cx="145.3" cy="97.4" r="6.6" fill="#3A6B5A"/></g>
+    <g><rect x="175.6" y="108.2" width="24" height="6" rx="3" fill="#1E3F35"/><rect x="181.6" y="93.80000000000001" width="12" height="15.6" rx="2.4" fill="#1E3F35"/><circle cx="187.6" cy="86.60000000000001" r="6.6" fill="#3A6B5A"/></g>
+    <g><rect x="232.1" y="106.6" width="24" height="6" rx="3" fill="#1E3F35"/><rect x="238.1" y="92.19999999999999" width="12" height="15.6" rx="2.4" fill="#1E3F35"/><circle cx="244.1" cy="85" r="6.6" fill="#3A6B5A"/></g>
+    <g><rect x="281.4" y="114.6" width="24" height="6" rx="3" fill="#1E3F35"/><rect x="287.4" y="100.19999999999999" width="12" height="15.6" rx="2.4" fill="#1E3F35"/><circle cx="293.4" cy="93" r="6.6" fill="#3A6B5A"/></g>
+    <g>
+      <path d="M398 121 L452 150" stroke="#6B5240" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M438 142 L446 133 M444 146 L456 142 M449 148 L452 157" stroke="#6B5240" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      <circle cx="398" cy="100" r="6" fill="#3A6B5A"/>
+      <rect x="393" y="106" width="10" height="18" rx="2" fill="#234A3E"/>
+      <line x1="401" y1="112" x2="399" y2="122" stroke="#234A3E" stroke-width="2.6" stroke-linecap="round"/>
+      <line x1="395" y1="123" x2="386" y2="138" stroke="#234A3E" stroke-width="2.6" stroke-linecap="round"/>
+      <line x1="401" y1="123" x2="406" y2="138" stroke="#234A3E" stroke-width="2.6" stroke-linecap="round"/>
     </g>
     <text x="240" y="40" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#7C8E85">a place the group has built — together</text>
   </svg>`,
@@ -558,31 +552,31 @@ const VISUAL = {
   project: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
     <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
-    <line x1="60" y1="120" x2="420" y2="120" stroke="#7C8E85" stroke-width="0.8"/>
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.3s" fill="freeze"/>
-      <circle cx="80" cy="120" r="4" fill="#7FA396"/>
-      <g stroke="#234A3E" stroke-width="0.8" fill="none"><line x1="70" y1="90" x2="90" y2="90" stroke-dasharray="2 2"/></g>
-      <text x="80" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 1</text>
-      <text x="80" y="80" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="9" fill="#234A3E">sketch</text>
+    <ellipse cx="80" cy="118" rx="40" ry="5" fill="#D9D2C2" opacity="0.7"/><ellipse cx="190" cy="118" rx="40" ry="5" fill="#D9D2C2" opacity="0.7"/><ellipse cx="300" cy="118" rx="40" ry="5" fill="#D9D2C2" opacity="0.7"/><ellipse cx="410" cy="118" rx="40" ry="5" fill="#D9D2C2" opacity="0.7"/>
+    <line x1="60" y1="134" x2="430" y2="134" stroke="#7C8E85" stroke-width="0.8"/>
+    <g>
+      <g><g stroke="#234A3E" stroke-width="2.4" stroke-linecap="round"><line x1="59" y1="100" x2="66" y2="106"/><line x1="54" y1="111" x2="53" y2="118"/><line x1="58" y1="111" x2="59" y2="118"/></g><rect x="51.5" y="96" width="9" height="15" rx="2" fill="#234A3E"/><circle cx="56" cy="90.5" r="5.5" fill="#3A6B5A"/></g><line x1="66" y1="106" x2="74" y2="117" stroke="#6B5240" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="88" cy="117" rx="17" ry="4" fill="none" stroke="#6B5240" stroke-width="1" stroke-dasharray="2.5 2"/>
+      <circle cx="80" cy="134" r="3.5" fill="#7FA396"/>
+      <text x="80" y="150" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 1</text>
+      <text x="80" y="68" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">sketch</text>
     </g>
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.9s" fill="freeze"/>
-      <circle cx="190" cy="120" r="4" fill="#7FA396"/>
-      <g stroke="#234A3E" stroke-width="1" fill="none"><line x1="180" y1="90" x2="200" y2="90"/><line x1="190" y1="88" x2="190" y2="78"/></g>
-      <text x="190" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 3</text>
-      <text x="190" y="68" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="9" fill="#234A3E">plan</text>
+    <g>
+      <g><g stroke="#234A3E" stroke-width="2.4" stroke-linecap="round"><line x1="169" y1="100" x2="175" y2="109"/><line x1="164" y1="111" x2="163" y2="118"/><line x1="168" y1="111" x2="169" y2="118"/></g><rect x="161.5" y="96" width="9" height="15" rx="2" fill="#234A3E"/><circle cx="166" cy="90.5" r="5.5" fill="#3A6B5A"/></g><ellipse cx="198" cy="117" rx="17" ry="4" fill="none" stroke="#6B5240" stroke-width="0.8" stroke-dasharray="2.5 2" opacity="0.6"/><g stroke="#6B5240" stroke-width="2.4" stroke-linecap="round"><line x1="182" y1="116" x2="192" y2="113.5"/><line x1="195" y1="113.2" x2="206" y2="113.8"/><line x1="209" y1="114.8" x2="215" y2="118.5"/><line x1="181" y1="119" x2="193" y2="121.6"/><line x1="197" y1="121.9" x2="210" y2="120.8"/></g>
+      <circle cx="190" cy="134" r="3.5" fill="#7FA396"/>
+      <text x="190" y="150" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 3</text>
+      <text x="190" y="68" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">plan</text>
     </g>
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.5s" fill="freeze"/>
-      <circle cx="300" cy="120" r="4" fill="#3A6B5A"/>
-      <g stroke="#234A3E" stroke-width="1.2" fill="none"><rect x="290" y="78" width="20" height="12" rx="1"/><line x1="294" y1="78" x2="294" y2="70"/><line x1="306" y1="78" x2="306" y2="70"/></g>
-      <text x="300" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 5</text>
-      <text x="300" y="60" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="9" fill="#234A3E">build</text>
+    <g>
+      <line x1="293" y1="118" x2="304.44" y2="84" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="303" y1="118" x2="305.64" y2="84" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="315" y1="118" x2="307.08" y2="84" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="322" y1="118" x2="307.92" y2="84" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><g><g stroke="#234A3E" stroke-width="2.4" stroke-linecap="round"><line x1="277" y1="99" x2="285" y2="89"/><line x1="272" y1="111" x2="271" y2="118"/><line x1="276" y1="111" x2="277" y2="118"/></g><rect x="269.5" y="96" width="9" height="15" rx="2" fill="#234A3E"/><circle cx="274" cy="90.5" r="5.5" fill="#3A6B5A"/></g><line x1="283" y1="88" x2="304" y2="85" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/>
+      <circle cx="300" cy="134" r="3.5" fill="#3A6B5A"/>
+      <text x="300" y="150" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 5</text>
+      <text x="300" y="68" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">build</text>
     </g>
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.1s" fill="freeze"/>
-      <circle cx="410" cy="120" r="4" fill="#234A3E"/>
-      <rect x="400" y="80" width="20" height="14" fill="#6B5240" rx="1"/>
-      <path d="M396 80 L410 66 L424 80 Z" fill="#3A6B5A"/>
-      <text x="410" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 8</text>
-      <text x="410" y="60" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="9" fill="#234A3E">finish</text>
+    <g>
+      <g><g stroke="#234A3E" stroke-width="2.4" stroke-linecap="round"><line x1="385" y1="99" x2="393" y2="89"/><line x1="380" y1="111" x2="379" y2="118"/><line x1="384" y1="111" x2="385" y2="118"/></g><rect x="377.5" y="96" width="9" height="15" rx="2" fill="#234A3E"/><circle cx="382" cy="90.5" r="5.5" fill="#3A6B5A"/></g><line x1="400" y1="118" x2="414.08" y2="78" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="406" y1="118" x2="414.8" y2="78" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="412" y1="118" x2="415.52" y2="78" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="419" y1="118" x2="416.36" y2="78" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="426" y1="118" x2="417.2" y2="78" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="432" y1="118" x2="417.92" y2="78" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><line x1="437" y1="118" x2="418.52" y2="78" stroke="#6B5240" stroke-width="2.1" stroke-linecap="round"/><path d="M412 118 L417 103 L422 118 Z" fill="#3A2F22"/><g fill="#3A6B5A"><ellipse cx="414" cy="88" rx="5" ry="2.6" transform="rotate(-25 414 88)"/><ellipse cx="421" cy="92" rx="5" ry="2.6" transform="rotate(30 421 92)"/><ellipse cx="411" cy="98" rx="4.5" ry="2.4" transform="rotate(-10 411 98)"/></g>
+      <circle cx="410" cy="134" r="3.5" fill="#234A3E"/>
+      <text x="410" y="150" text-anchor="middle" font-family="Open Sans, sans-serif" font-size="9" fill="#7C8E85">wk 8</text>
+      <text x="410" y="68" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="10" fill="#234A3E">finish</text>
     </g>
     <text x="240" y="40" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#7C8E85">one piece of work, returned to across sessions</text>
   </svg>`,
@@ -618,79 +612,36 @@ const VISUAL = {
 
   checkin: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
-    <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
-    <!-- card -->
-    <rect x="150" y="22" width="180" height="120" rx="6" fill="#FBF9F4" stroke="#234A3E" stroke-width="1"/>
-    <text x="170" y="44" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#7C8E85">how am I leaving today?</text>
-    <g font-family="Open Sans, sans-serif" font-size="11" fill="#1B2A24">
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.4s" fill="freeze"/>
-        <circle cx="172" cy="62" r="5" fill="none" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="66">much better</text>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.8s" fill="freeze"/>
-        <circle cx="172" cy="82" r="5" fill="#234A3E" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="86">a bit better</text>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.2s" fill="freeze"/>
-        <circle cx="172" cy="102" r="5" fill="none" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="106">about the same</text>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.6s" fill="freeze"/>
-        <circle cx="172" cy="122" r="5" fill="none" stroke="#234A3E" stroke-width="1"/>
-        <text x="186" y="126">a bit worse</text>
-      </g>
+    <ellipse cx="240" cy="152" rx="30" ry="5" fill="#14302A" opacity="0.15"/>
+    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="0.3s" fill="freeze"/>
+      <circle cx="240" cy="46" r="2" fill="#7FA396"/>
+      <circle cx="251" cy="38" r="1.4" fill="#7FA396" opacity="0.7"/>
+      <circle cx="230" cy="40" r="1.4" fill="#7FA396" opacity="0.5"/>
     </g>
-    <!-- hand placing in box -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="2.0s" fill="freeze"/>
-      <rect x="350" y="100" width="40" height="30" rx="2" fill="none" stroke="#234A3E" stroke-width="1.2"/>
-      <path d="M370 102 L390 102 L390 96 L370 96" fill="#FBF9F4" stroke="#234A3E" stroke-width="0.8"/>
-      <line x1="332" y1="92" x2="350" y2="105" stroke="#7C8E85" stroke-width="0.5" stroke-dasharray="2 2"/>
+    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.6s" fill="freeze"/>
+      <circle cx="240" cy="68" r="15" fill="#3A6B5A"/>
+      <rect x="222" y="86" width="36" height="60" rx="10" fill="#234A3E"/>
+      <circle cx="240" cy="112" r="6" fill="none" stroke="#F4F1EA" stroke-width="1.2"/>
+      <circle cx="240" cy="112" r="2" fill="#F4F1EA"/>
     </g>
-    <text x="240" y="160" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#7C8E85">private. quietly collected.</text>
+    <text x="240" y="165" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="11" fill="#7C8E85">private. held quietly within.</text>
   </svg>`,
 
   campfire: `<svg viewBox="0 0 480 180" xmlns="http://www.w3.org/2000/svg">
     <rect width="480" height="180" fill="#F4F1EA"/>
     <ellipse cx="240" cy="170" rx="200" ry="6" fill="#C8D8D0" opacity="0.6"/>
-    <ellipse cx="240" cy="125" rx="130" ry="36" fill="#6B5240" opacity="0.1"/>
-    <!-- fire first -->
-    <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="0.3s" fill="freeze"/>
-      <ellipse cx="240" cy="135" rx="22" ry="5" fill="#6B5240" opacity="0.4"/>
-      <g stroke="#6B5240" stroke-width="1.5" stroke-linecap="round" fill="none">
-        <line x1="226" y1="135" x2="240" y2="118"/>
-        <line x1="254" y1="135" x2="240" y2="118"/>
-      </g>
-      <path d="M240 130 Q232 120 240 105 Q248 120 240 130" fill="#B8552E" opacity="0.85">
-        <animate attributeName="d" values="M240 130 Q232 120 240 105 Q248 120 240 130;M240 130 Q230 118 240 100 Q250 118 240 130;M240 130 Q232 120 240 105 Q248 120 240 130" dur="2s" repeatCount="indefinite"/>
-      </path>
-      <path d="M240 126 Q235 118 240 110 Q245 118 240 126" fill="#E8A05C">
-        <animate attributeName="d" values="M240 126 Q235 118 240 110 Q245 118 240 126;M240 126 Q233 116 240 106 Q247 116 240 126;M240 126 Q235 118 240 110 Q245 118 240 126" dur="2s" repeatCount="indefinite"/>
-      </path>
-    </g>
-    <!-- figures gather one by one -->
-    <g fill="#14302A">
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.0s" fill="freeze"/>
-        <circle cx="130" cy="118" r="6"/><rect x="125" y="123" width="10" height="14" rx="2"/>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.4s" fill="freeze"/>
-        <circle cx="180" cy="98" r="6"/><rect x="175" y="103" width="10" height="14" rx="2"/>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="1.8s" fill="freeze"/>
-        <circle cx="240" cy="92" r="6"/><rect x="235" y="97" width="10" height="14" rx="2"/>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.2s" fill="freeze"/>
-        <circle cx="300" cy="98" r="6"/><rect x="295" y="103" width="10" height="14" rx="2"/>
-      </g>
-      <g opacity="0"><animate attributeName="opacity" from="0" to="1" dur="0.4s" begin="2.6s" fill="freeze"/>
-        <circle cx="350" cy="118" r="6"/><rect x="345" y="123" width="10" height="14" rx="2"/>
-      </g>
-    </g>
-    <!-- ember sparks -->
-    <g opacity="0"><animate attributeName="opacity" values="0;0.8;0" dur="3s" begin="3s" repeatCount="indefinite"/>
-      <circle cx="232" cy="90" r="1" fill="#E8A05C"/>
-      <circle cx="248" cy="85" r="0.8" fill="#E8A05C"/>
-      <circle cx="240" cy="78" r="1" fill="#E8A05C"/>
-    </g>
+    <ellipse cx="240" cy="124" rx="120" ry="36" fill="#6B5240" opacity="0.1"/>
+    <g><rect x="231" y="87.5" width="18" height="4.5" rx="2.25" fill="#14302A"/><rect x="235.5" y="76.7" width="9" height="11.700000000000001" rx="1.8" fill="#14302A"/><circle cx="240" cy="71.3" r="4.95" fill="#14302A"/></g>
+    <g><rect x="144.5" y="111.25" width="19" height="4.75" rx="2.375" fill="#14302A"/><rect x="149.25" y="99.85" width="9.5" height="12.35" rx="1.9" fill="#14302A"/><circle cx="154" cy="94.15" r="5.225" fill="#14302A"/></g>
+    <g><rect x="316.5" y="111.25" width="19" height="4.75" rx="2.375" fill="#14302A"/><rect x="321.25" y="99.85" width="9.5" height="12.35" rx="1.9" fill="#14302A"/><circle cx="326" cy="94.15" r="5.225" fill="#14302A"/></g>
+    
+    <ellipse cx="240" cy="132" rx="34" ry="14" fill="#E8A05C" opacity="0.12"/>
+    <ellipse cx="240" cy="138" rx="20" ry="4" fill="#6B5240" opacity="0.4"/>
+    <g stroke="#6B5240" stroke-width="1.8" stroke-linecap="round"><line x1="226" y1="138" x2="240" y2="119"/><line x1="254" y1="138" x2="240" y2="119"/></g>
+    <path d="M240 135 Q228 121 240 102 Q252 121 240 135" fill="#B8552E" opacity="0.85"/>
+    <path d="M240 131 Q233 121 240 110 Q247 121 240 131" fill="#E8A05C"/>
+    <g><rect x="182" y="145" width="20" height="5" rx="2.5" fill="#14302A"/><rect x="187" y="133" width="10" height="13" rx="2" fill="#14302A"/><circle cx="192" cy="127" r="5.5" fill="#14302A"/></g>
+    <g><rect x="278" y="145" width="20" height="5" rx="2.5" fill="#14302A"/><rect x="283" y="133" width="10" height="13" rx="2" fill="#14302A"/><circle cx="288" cy="127" r="5.5" fill="#14302A"/></g>
     <text x="240" y="40" text-anchor="middle" font-family="Montserrat, sans-serif" font-style="italic" font-size="12" fill="#7C8E85">a circle. shared stillness. then leaving.</text>
   </svg>`,
 };
