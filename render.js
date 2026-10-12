@@ -7,12 +7,14 @@ function renderModuleHeader(m) {
     ? `openModulePage('${m.id}','${m.screen}')`
     : `toggleModule('${m.id}')`;
 
+  // Description and count badge are translated like the title and tag, under
+  // keys derived from the card id (e.g. mod.mod-indicators.desc).
   const descHTML = m.descText
-    ? `<div class="module-desc">${m.descText}</div>`
+    ? `<div class="module-desc" data-i18n="mod.${m.id}.desc">${m.descText}</div>`
     : '';
 
   const rightHTML = m.badgeText
-    ? `<div class="module-header-right"><span class="module-count-badge">${m.badgeText}</span><div class="module-toggle">+</div></div>`
+    ? `<div class="module-header-right"><span class="module-count-badge" data-i18n="mod.${m.id}.badge">${m.badgeText}</span><div class="module-toggle">+</div></div>`
     : `<div class="module-toggle">+</div>`;
 
   return `<div class="module-header" onclick="${onclick}">

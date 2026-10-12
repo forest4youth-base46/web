@@ -501,7 +501,7 @@ function pbResetBodyZoom() {
 async function exportRunPDF() {
   if (!pbSession.length) return;
   if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
-    alert('Export library not loaded.');
+    alert(t('exp.err.lib'));
     return;
   }
   const root = document.getElementById('print-session');
@@ -514,7 +514,7 @@ async function exportRunPDF() {
     pbSavePDFFromCanvases(canvases, 'forest4youth-session');
   } catch (err) {
     console.error('PDF export failed', err);
-    alert('PDF export failed. Try Export to PNG instead.');
+    alert(t('exp.err.pdfpng'));
   } finally {
     restoreZoom();
     document.body.classList.remove('is-exporting-png');
@@ -524,7 +524,7 @@ async function exportRunPDF() {
 async function exportRunPNG() {
   if (!pbSession.length) return;
   if (typeof html2canvas === 'undefined') {
-    alert('Export library not loaded.');
+    alert(t('exp.err.lib'));
     return;
   }
   exportRenderPrintSession();
@@ -547,7 +547,7 @@ async function exportRunPNG() {
     link.click();
   } catch (err) {
     console.error('PNG export failed', err);
-    alert('PNG export failed. Try Export to PDF instead.');
+    alert(t('exp.err.pngpdf'));
   } finally {
     restoreZoom();
     document.body.classList.remove('is-exporting-png');
@@ -738,7 +738,7 @@ async function exportSessionReportPDF() {
   if (!pbLoadSessionRecords().length) return;
   if (!pbHasReflectionContent()) return;
   if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
-    alert('Export library not loaded.');
+    alert(t('exp.err.lib'));
     return;
   }
   const root = document.getElementById('print-report');
@@ -752,7 +752,7 @@ async function exportSessionReportPDF() {
     pbSavePDFFromCanvases(canvases, 'forest4youth-reflection');
   } catch (err) {
     console.error('PDF export failed', err);
-    alert('PDF export failed. Try Export to PNG instead.');
+    alert(t('exp.err.pdfpng'));
   } finally {
     restoreZoom();
     document.body.classList.remove('is-exporting-png');
@@ -770,7 +770,7 @@ async function exportSessionReportPNG() {
   if (!pbLoadSessionRecords().length) return;
   if (!pbHasReflectionContent()) return;
   if (typeof html2canvas === 'undefined') {
-    alert('Export library not loaded.');
+    alert(t('exp.err.lib'));
     return;
   }
   exportRenderPrintReport();
@@ -793,7 +793,7 @@ async function exportSessionReportPNG() {
     link.click();
   } catch (err) {
     console.error('PNG export failed', err);
-    alert('PNG export failed. Try Export to PDF instead.');
+    alert(t('exp.err.pngpdf'));
   } finally {
     restoreZoom();
     document.body.classList.remove('is-exporting-png');

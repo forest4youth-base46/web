@@ -173,3 +173,12 @@ body.tree-pane-in .container { opacity: 1; }
 /* inside the pane the × and the tabs do the app's own back link and guide
    switch: each side's pane stays on its own guide */
 body.tree-pane .back-btn, body.tree-pane #guide-screen .gd-tabs { display: none; }
+
+/* The Session Builder's own floating button (#pb-fab, body-level, z 60) and
+   its sheet must sit above the pane, or the FAB disappears behind it. */
+body.tree-pane .pb-fab { z-index: 175; }
+@media (max-width: 720px) {
+  body.tree-pane #tree-entry .strip { visibility: hidden; }
+  body.tree-pane .container { border-radius: 0; border-left: 0; border-right: 0; padding: 4px 12px 96px; }
+  #tree-entry .panehead { border-radius: 0; border-left: 0; border-right: 0; }
+}

@@ -150,7 +150,31 @@ const TESTS = [
   ['QR share link round-trips through a refresh', testQrShareRoundTrip],
   ['Guides — both render as readable sections, no document codes, deep links work', testPracticalGuides],
   ['Entry tree — open each side, go back with Escape, menu items route into the app', testTreeEntry],
+  ['Phone — Plan a Session in the pane keeps the builder\'s floating button on top', testPhoneBuilderFab],
 ];
+
+async function testPhoneBuilderFab(browser) {
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  await page.goto(BASE, { waitUntil: 'networkidle' });
+  await page.tap('#tr-pick-fi');
+  await page.waitForTimeout(400);
+  await page.tap('#tr-room-fi [data-go="implement/mod-pocket"]');
+  await page.waitForTimeout(1200);
+  const fab = await page.evaluate(() => {
+    const f = document.getElementById('pb-fab'); const r = f.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    const pane = document.querySelector('.container').getBoundingClientRect();
+    return { shown: getComputedStyle(f).display !== 'none' && r.width > 0, onTop: !!top && (top === f || f.contains(top)), paneW: pane.width };
+  });
+  assert.ok(fab.shown, 'the builder FAB shows on a phone inside the pane');
+  assert.ok(fab.onTop, 'nothing covers the FAB');
+  assert.strictEqual(Math.round(fab.paneW), 390, 'the pane takes the full phone width');
+  await page.tap('#pb-fab');
+  await page.waitForTimeout(500);
+  assert.ok(await page.evaluate(() => document.querySelector('.pb-builder').classList.contains('expanded')), 'the FAB opens the session builder');
+  await ctx.close();
+}
 
 async function testTreeEntry(browser) {
   // The practitioner entry is one split tree (entry-tree.js). It must work
@@ -175,11 +199,11 @@ async function testTreeEntry(browser) {
   // a menu item opens inside the pane; the tree stays behind
   await page.click('#tr-room-ivn [data-go="guide/g-ivn-sheets"]');
   await page.waitForTimeout(900);
-  assert.strictEqual(await page.evaluate(() => location.hash), '#guide/g-ivn-sheets', 'Appendixes opens the IVN guide\'s sheets');
+  assert.strictEqual(await page.evaluate(() => location.hash), '#guide/g-ivn-sheets', 'Ready-to-use sheets opens the IVN guide\'s sheets');
   assert.ok(await on(), 'the tree stays behind the pane');
   assert.ok(await page.evaluate(() => document.body.classList.contains('tree-pane') && !document.querySelector('.container').hasAttribute('inert')), 'the app is open in the pane and reachable');
   assert.ok(await page.isVisible('#guide-screen'), 'the guide shows in the pane');
-  assert.strictEqual(await page.evaluate(() => document.querySelector('#tr-panetabs [aria-current="page"]').textContent), 'Appendixes', 'the open section is marked');
+  assert.strictEqual(await page.evaluate(() => document.querySelector('#tr-panetabs [aria-current="page"]').textContent), 'Ready-to-use sheets', 'the open section is marked');
   await page.click('#tr-panetabs [data-go="guide/g-ivn-start"]');
   await page.waitForTimeout(300);
   assert.strictEqual(await page.evaluate(() => location.hash), '#guide/g-ivn-start', 'tabs move between sections in the pane');

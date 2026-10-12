@@ -74,9 +74,13 @@ function searchGuideEntries() {
   // subheading (shown only once there's a query — see renderSearchResults).
   const out = [];
   if (typeof GUIDES === 'undefined') return out;
+  // Guide text is English data; show and match it in the current language
+  // (contentT, content.js), keeping the English in the keywords too.
+  const tr = function(x) { return typeof contentT === 'function' ? contentT(x) : x; };
+  const both = function(x) { const y = tr(x); return y === x ? x : x + ' ' + y; };
   const textOf = function(b) {
     return [b.text, b.title, b.q, b.a].concat(b.items || []).map(function(x) {
-      return typeof x === 'string' ? x : (x && (x.title || x.text || x.q || x.label)) || '';
+      return both(typeof x === 'string' ? x : (x && (x.title || x.text || x.q || x.label)) || '');
     }).join(' ');
   };
   ['fi', 'ivn'].forEach(function(key) {
@@ -91,15 +95,15 @@ function searchGuideEntries() {
       };
       out.push({
         category: t('search.cat.guide'),
-        title: sec.title,
+        title: tr(sec.title),
         sub: guideName,
-        keywords: (sec.title + ' ' + (sec.teaser || '') + ' ' + sec.blocks.map(textOf).join(' ')).toLowerCase(),
+        keywords: (both(sec.title) + ' ' + both(sec.teaser || '') + ' ' + sec.blocks.map(textOf).join(' ')).toLowerCase(),
         action: go
       });
       sec.blocks.forEach(function(b) {
         if (b.t !== 'h') return;
-        out.push({ category: t('search.cat.guide'), title: b.text, sub: guideName + ' · ' + sec.title,
-                   keywords: b.text.toLowerCase(), action: go, minor: true });
+        out.push({ category: t('search.cat.guide'), title: tr(b.text), sub: guideName + ' · ' + tr(sec.title),
+                   keywords: both(b.text).toLowerCase(), action: go, minor: true });
       });
     });
   });

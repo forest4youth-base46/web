@@ -97,7 +97,8 @@ function routeFor(btn) { return btn.dataset.go === 'run' ? 'implement/mod-pocket
 function paneRect() {
   var W = innerWidth, Hh = innerHeight, tb = ROOT.querySelector('.top').getBoundingClientRect().bottom;
   var narrow = W <= 720, strip = narrow ? 48 : 64, c = S.last === 'fi';
-  if (narrow) return { l: c ? strip + 8 : 8, r: c ? 8 : strip + 8, t: tb + 6, b: 8 };
+  // phones: the pane takes the whole width (the strip steps aside), so the Session Builder has room
+  if (narrow) return { l: 0, r: 0, t: tb + 4, b: 0 };
   var room = W >= 1280 ? 320 : 140, w = Math.max(520, Math.min(1080, W - strip - 40 - room));
   var near = strip + 20;
   return c ? { l: near, r: Math.max(20, W - near - w), t: tb + 8, b: 20 } : { l: Math.max(20, W - near - w), r: near, t: tb + 8, b: 20 };

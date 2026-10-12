@@ -25,7 +25,10 @@ const GUIDES = { fi: typeof GUIDE_FI !== 'undefined' ? GUIDE_FI : null,
 let guideActive = 'fi';
 const guideSection = { fi: 'fi-start', ivn: 'ivn-start' };
 
+// Escapes guide text for HTML, translating it on the way (contentT,
+// content.js). Only ever used for text shown to the reader.
 function guideEsc(s) {
+  if (typeof contentT === 'function') s = contentT(s);
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
@@ -146,7 +149,7 @@ function guideNav(key) {
 function guidePanel(key) {
   const g = GUIDES[key];
   return '<div class="gd-lead"><p class="gd-lead-quote">' + guideEsc(g.lead_quote) + '</p><p>' + guideEsc(g.lead) + '</p>' +
-      (currentLang !== 'en' ? '<p class="gd-langnote">' + guideEsc(t('guide.langnote')) + '</p>' : '') + '</div>' +
+      '</div>' +   // the guides are translated now (content-i18n-*.js); no 'shown in English' note
     '<div class="gd-layout">' +
       '<nav class="gd-nav" aria-label="' + guideEsc(t('guide.sections')) + '"><ol id="gd-nav-' + key + '">' + guideNav(key) + '</ol></nav>' +
       '<article class="gd-article" id="gd-article-' + key + '">' + guideArticle(key) + '</article>' +
