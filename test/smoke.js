@@ -174,7 +174,14 @@ async function testWalkRoundTrip(browser) {
   assert.strictEqual(await page.evaluate(() => WF.to), 6, 'a rail segment walks to its activity');
   assert.ok(await page.isVisible('#wf-home-tree'), 'top left: Back to the tree');
   assert.ok(!(await page.isVisible('#site-header')), 'no app header in the forest');
-  await page.click('#wf-home-tree');
+  // The Session Builder opened from the forest: Escape goes straight back to
+  // the forest (never to its hub), and Escape again goes home to the tree.
+  await page.click('.wf-list-link');
+  await page.waitForFunction(() => document.querySelector('#implement-screen.active'), null, { timeout: 10000 });
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => !document.body.classList.contains('wf-screen-open'), null, { timeout: 10000 });
+  assert.ok(await page.evaluate(() => !document.querySelector('.screen.active:not(#entry-screen)') && document.body.classList.contains('wf-scene-on') && !document.body.classList.contains('module-focus')), 'Escape from the builder goes back to the forest, not to a hub');
+  await page.keyboard.press('Escape');
   await page.waitForFunction(() => document.getElementById('tree-entry').classList.contains('on'), null, { timeout: 10000 });
   assert.ok(await page.evaluate(() => document.getElementById('entry-screen').classList.contains('active')), 'back on the start screen, with the tree');
   await page.close();

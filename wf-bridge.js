@@ -143,7 +143,7 @@
   // Home (top left while walking): back to the tree.
   var home = document.getElementById('wf-home-tree');
   if (home) home.addEventListener('click', function () { if (typeof wfSetOn === 'function') wfSetOn(false); });
-  function syncOpen() { document.body.classList.toggle('wf-screen-open', !!document.querySelector('.screen.active')); }
+  function syncOpen() { document.body.classList.toggle('wf-screen-open', !!document.querySelector('.screen.active:not(#entry-screen)')); }
   addEventListener('hashchange', function () { setTimeout(syncOpen, 0); });
 
   // The rail under the forest: each segment walks to its activity

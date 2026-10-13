@@ -27,6 +27,7 @@ function navigate(section) {
 // branches, none of which have anything else left to do afterward.
 function applyRouteActivateOnly(screenId) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  applyFocusMode(null, null);   // no module stays focused (and no builder FAB) on these screens
   // A parked screen (features.js) is gone from the page: land on the entry.
   const el = document.getElementById(screenId) || document.getElementById('entry-screen');
   if (el) el.classList.add('active');
@@ -328,7 +329,9 @@ function applyFocusMode(screenEl, modId) {
   back.className = 'module-back-link injected';
   back.type = 'button';
   const screenHash = screenEl.id.replace('-screen','');
-  back.onclick = () => { window.location.hash = screenHash; };
+  // In the forest (V2), a module opened from a stop or "See all activities"
+  // goes straight back to the forest, never through its screen's hub.
+  back.onclick = () => { window.location.hash = document.body.classList.contains('walk-arriving') ? '' : screenHash; };
   mod.insertBefore(back, mod.firstChild);
 
   // Plan is one screen: the Pocketbook already holds the activity picker
@@ -555,6 +558,13 @@ function appEscapeAction() {
 
   if (typeof WF !== 'undefined' && WF.openId) { wfClose(); return; }
 
+  // In the forest (V2): whatever is open closes straight back to it.
+  if (document.body.classList.contains('walk-arriving') && document.querySelector('.screen.active:not(#entry-screen)')) {
+    navigate('');
+    if (typeof wfSetDeep === 'function') wfSetDeep(false);
+    return;
+  }
+
   const focusedScreen = document.querySelector('.screen.focus-mode');
   if (focusedScreen) {
     const back = focusedScreen.querySelector('.module-back-link.injected');
@@ -565,6 +575,20 @@ function appEscapeAction() {
   if (window.location.hash) navigate('');
   if (typeof wfSetDeep === 'function') wfSetDeep(false);
 }
+
+// In the forest (V2) with nothing open, Escape goes home to the tree, as the
+// logo button does. Capture phase: decided before search, a stop's panel or
+// a screen closes itself on the same key. A click on open ground keeps
+// appEscapeAction's behaviour; only the key goes home.
+document.addEventListener('keydown', function(e) {
+  const b = document.body;
+  if (e.key !== 'Escape' || !b.classList.contains('walk-arriving') || !b.classList.contains('wf-scene-on')) return;
+  if (typeof WF !== 'undefined' && WF.openId) return;
+  if (document.querySelector('.screen.active:not(#entry-screen)')) return;
+  if (['search-overlay', 'pb-runMode', 'pb-timerModal'].some(id => { const el = document.getElementById(id); return el && el.classList.contains('active'); })) return;
+  e.stopPropagation(); e.preventDefault();
+  if (typeof wfSetOn === 'function') wfSetOn(false);
+}, true);
 
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Escape' || !document.body.classList.contains('wf-scene-on')) return;
